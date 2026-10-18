@@ -1,0 +1,52 @@
+Native Buddy/cannon shutter follow-up: Sol High, 2026-10-18
+Status: PARTIALLY VERIFIED; diagnostic build NOT installed. Floating unresolved.
+
+The original installed verified executable is preserved. User ROM and real saves
+are untouched. All current tests used copies of the earned-rabbit-key saves.
+
+Current changes beyond the previous Sol Medium handoff:
+- Opt-in SM64DS_PC_ACTOR_Y_TRACE logs before/action/after phases of fBase::Process.
+  Runtime traced the first wrong Player Y adjustment to Player191 Behavior/action24.
+  tick4471 changed y2932736 to2847744 and ground became2847744. Subsequent ticks
+  increased Y by173056 (42.25 world units) with the floor following it.
+- Found raw DS vtable slot calls in collision helper code. MSVC moving-collider
+  slots5/6/7 are sphere/line/ground; old line helper calls slot7. BeforeClsn is
+  native slot8, whereas the old helper calls slot9 (TransformPos).
+- Broad typed-call repair changed static helper3859c and dynamic3842c plus
+  BeforeClsn38324. It compiled and passed generator checks, but the normal route
+  stalled in the castle before course entry. That run is not a shutter acceptance.
+- Current narrower repair in buddy_host.py changes only dynamic line3842c and
+  platform callback38324. Static3859c/38ea4 remain unchanged. The route enters
+  Battlefield; the first Buddy's conversation completes, but floating remains.
+- Input-only TEST_BUDDY_TALK helper approaches/talks/retreats using normal input.
+  mode=cannon selects a native cannon Buddy with variant1/2. No actor/progress
+  teleport or fixture unlock occurs. Buddy trace now records message, control,
+  shutter state, cannon flags and player state.
+
+Evidence under build/port/:
+- native-buddy-y-owner-20261018: original regression phase trace.
+- native-buddy-fix-talk-20261018: broad-helper repair; castle route stalled.
+- native-buddy-dynamic-fix-talk-20261018: exit0,7200 frames. Course level6:
+  y829.75 at4500/4600;0 at4700;138.5 in talk at4800/4900;1195.75 at5000;
+  2123.5 at5100;2510 at5300; returnsground0 by5700 and remains0 through7200.
+  Buddy176 state1 + message active; completed4940; control returns. Screenshot
+  reload-4900.png shows actual original dialogue. This does NOT prove collision fixed.
+- native-buddy-cannon-20261018: exit0,10000 frames. Mission1 was confirmed despite
+  scheduled Right4200. Thus no cannon Buddy variant1/2, no opening exercised.
+  Fix the mission-selection input timing before treating this as a cannon test.
+
+Verification: current native build succeeded; 52/52 CTests passed (56.61s),
+8/8 Buddy adapter tests passed. No claim of gameplay fix or cannon unlock.
+The broad static change was backed out; current dynamic typed calls remain
+diagnostic, not promoted. Cannon actor207 still not enrolled (firing separate).
+
+Recommended next model: Astra Low. Remaining work needs a focused native ABI/
+collision investigation: instrument actual registry line/ground/sphere calls at
+first invalid Player floor correction, compare with shutters disabled, and prove
+the actual caller/callee arguments before changing more dispatch paths. Then
+repeat grounded landing, Buddy dialogue/control return, mission2 shutter opening
+and a no-shutter baseline. Stop speculative ABI changes. Full project unfinished.
+
+Public repository now exists at wigwoo1/Super-Mario-64-DS-Enhanced-PC-Port.
+Daily publication heartbeat runs9AM America/Indianapolis. Read the local
+work/GITHUB_PUBLICATION.txt for source/build publishing constraints and tooling.

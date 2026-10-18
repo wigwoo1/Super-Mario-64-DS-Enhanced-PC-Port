@@ -6449,6 +6449,11 @@
       "bytes": 4697
     },
     {
+      "path": "port/docs/native-buddy-sol-high-handoff-2026-10-18.txt",
+      "sha256": "7c41d2d5ea866642178697673f27d3e49c3a88e57617c0cf81abf9270309c346",
+      "bytes": 3492
+    },
+    {
       "path": "port/docs/native-coins-input-gate-checkpoint-2026-10-15.txt",
       "sha256": "002bf3dcd35b3fc4bcf7865b58997f97e406e5c371382a5c30ac313afd903e3f",
       "bytes": 4675
@@ -25630,8 +25635,8 @@
     },
     {
       "path": "tools/assemble_pc_build.py",
-      "sha256": "72d6e80bd3ecda052784c5d9f8b1525ed55476d9db3881627c6d69189bbe6dba",
-      "bytes": 4561
+      "sha256": "3d2d0886d8f3be6489b65df49d7825810e07d11d141f38c7d0757cbe10c32c21",
+      "bytes": 4596
     },
     {
       "path": "tools/asset_catalog.py",

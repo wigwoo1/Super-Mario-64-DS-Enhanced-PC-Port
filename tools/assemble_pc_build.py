@@ -79,7 +79,7 @@ def main():
     objects = [str(ROOT / x['path']) for x in metadata['prebuilt'] if x['path'].endswith('.obj')]
     response = build / 'kit-link.rsp'
     link_args = objects + generated_objects + [str(ROOT / '.native-kit/ntr.lib')] + metadata['system_libraries']
-    response.write_text(subprocess.list2cmdline(link_args))
+    response.write_text('\n'.join(subprocess.list2cmdline([arg]) for arg in link_args) + '\n')
     run(['link', '/nologo', '@' + str(response), '/out:' + str(build / 'sm64ds_pc.exe'),
          '/subsystem:console', '/OPT:REF', '/version:0.0', '/MAP:' + str(build / 'sm64ds_pc.map')])
     (ROOT / 'Play.cmd').write_text('@echo off\nsetlocal\ncd /d "%~dp0"\nset "SM64DS_ASSET_ROOT=%~dp0"\n"%~dp0build\\port\\sm64ds_pc.exe" "' + str(rom) + '"\n')
