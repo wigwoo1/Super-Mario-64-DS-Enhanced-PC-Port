@@ -4,6 +4,7 @@ Requires Python 3 + ndspy and an x86 Visual Studio developer command prompt.
 All extracted and generated data remains local under build/ and extracted/.
 """
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -53,6 +54,15 @@ def main():
     for index, overlay in cartridge.loadArm9Overlays().items():
         (ROOT / f'extracted/overlays/overlay_{index:04d}.bin').write_bytes(overlay.data)
     run([sys.executable, ROOT / 'tools/asset_catalog.py', 'generate', rom])
+    filesystem = ROOT / 'extracted/dsd/files'
+    filesystem.mkdir(parents=True, exist_ok=True)
+    with (ROOT / 'build/assets/files.tsv').open(newline='', encoding='utf-8') as catalog:
+        for row in csv.DictReader(catalog, delimiter='\t'):
+            destination = (filesystem / row['path']).resolve()
+            if not destination.is_relative_to(filesystem.resolve()):
+                sys.exit('Invalid ROM filesystem path')
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(cartridge.files[int(row['file_id'])])
     shutil.copyfile(ROOT / '.native-kit/link-names.json', host / 'pc_link_data.json')
     shutil.copyfile(ROOT / '.native-kit/link-requests.txt', ROOT / 'build/pc-game-link-history.log')
     run([sys.executable, ROOT / 'port/tools/host_headers.py', ROOT,

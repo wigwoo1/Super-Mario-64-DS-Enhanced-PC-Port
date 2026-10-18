@@ -6249,9 +6249,24 @@
       "bytes": 4400
     },
     {
+      "path": "port/build-support/pc-game-link-requests.txt",
+      "sha256": "0c531de656aa7485099c7182728aef0ae60f04e7018f7e57f44cb13edbd2efd4",
+      "bytes": 450733
+    },
+    {
+      "path": "port/build-support/pc_link_data.json",
+      "sha256": "b9dc30389e37cc3609fa77030d98f7926111038906d8fc59b729cee4835de8db",
+      "bytes": 249549
+    },
+    {
+      "path": "port/build-support/README.md",
+      "sha256": "25fc8e14784ebb78f221b41c2d95b992ecdfd8d53858568e917dd75b16380b22",
+      "bytes": 735
+    },
+    {
       "path": "port/CMakeLists.txt",
-      "sha256": "1f4089ba2a80e37350e1aea0ef3bba0cb602ea5916916473357555070dd97f8e",
-      "bytes": 72900
+      "sha256": "9ef01843ba12f37b7d7dd00a929f2dce9aa9b4f67af4c4a323b3bdae214c095a",
+      "bytes": 73589
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6620,8 +6635,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "7bf93dac9ecdeddfb5fbb9b82949badd11a6e4b2f2eab08bfb7e3b00999d0ce1",
-      "bytes": 3486
+      "sha256": "5fe3d93a549fea4ae74cd2728e6bd6b9f2b188597219236ad707d3f54d868dd8",
+      "bytes": 3492
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7910,8 +7925,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "4bda5944feb17a8323758191f15bfea507fda34dc60ca5641fedd03028c12243",
-      "bytes": 5539
+      "sha256": "0cd32dd1204530e597cfb52432c3f00a1bc918b8c20be979aa0c4a4f7693b4a8",
+      "bytes": 5827
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -25635,8 +25650,8 @@
     },
     {
       "path": "tools/assemble_pc_build.py",
-      "sha256": "3d2d0886d8f3be6489b65df49d7825810e07d11d141f38c7d0757cbe10c32c21",
-      "bytes": 4596
+      "sha256": "d2cb83fb17e3c9c64255115c55eedbf6d5744e87249848f71cead99f9057d3bc",
+      "bytes": 5181
     },
     {
       "path": "tools/asset_catalog.py",
@@ -26145,8 +26160,8 @@
     },
     {
       "path": "tools/pc_publication.py",
-      "sha256": "8f5e937d762bed30e932fea8b6790455df4afb16d470b23dbc9754558dcc8429",
-      "bytes": 4957
+      "sha256": "07bd646cbbb7d039fb2263bcee3bbe9750fefa53e634f9c20381ecfdfb3aebcc",
+      "bytes": 4943
     },
     {
       "path": "tools/permuter/batch.py",

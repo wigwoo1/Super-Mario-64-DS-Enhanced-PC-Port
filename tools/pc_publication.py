@@ -43,7 +43,7 @@ def stage(destination):
                 if (not path.is_file() or path.is_symlink() or
                 set(rel.parts) & SKIP_DIRS or path.name in SKIP_NAMES or
                 path.suffix.lower() not in EXTENSIONS or
-                path.name.startswith(('pc-game-', 'claims_')) or
+                path.name.startswith('claims_') or
                 path.name == 'BUILD-STATUS.txt'):
                     continue
                 files.append(path)

@@ -52,8 +52,8 @@ passing component tests does not establish complete gameplay compatibility.
 
 For a full source build, prepare your local ROM extraction and asset catalog,
 then use `port/build-port.cmd` for the component checks and build the explicit
-`sm64ds_pc` CMake target for the game. The private-data symbol request list in
-the build kit also supplies the current indirect data link closure. The native
+`sm64ds_pc` CMake target for the game. ROM-free symbol lists in `port/build-support/`
+supply the current indirect data link closure on a fresh checkout. The native
 build does not need the proprietary original DS compiler.
 
 ## Credits and license

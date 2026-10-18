@@ -398,6 +398,13 @@ set(OV002_DATA_SYMBOLS
     data_ov002_02110064 data_ov002_020ff120 data_ov002_021101cc)
 set(OV002_DATA_CPP "${CMAKE_BINARY_DIR}/host-src/ov002_data.cpp")
 set(PC_GAME_LINK_HISTORY "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log")
+# Public, ROM-free symbol requests make a fresh checkout independent of a
+# developer's old linker failures. Keep accumulated local history when present.
+if(NOT EXISTS "${PC_GAME_LINK_HISTORY}")
+    file(MAKE_DIRECTORY "${PORT_REPO_ROOT_ABS}/build")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build-support/pc-game-link-requests.txt"
+                   "${PC_GAME_LINK_HISTORY}" COPYONLY)
+endif()
 add_custom_command(OUTPUT "${OV002_DATA_CPP}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/overlay_data.py"
             --out "${OV002_DATA_CPP}" --link-log "${PC_GAME_LINK_HISTORY}"
@@ -1004,6 +1011,11 @@ add_custom_target(pc_host_headers DEPENDS "${PC_HEADER_STAMP}")
 # ROM bytes into source. The linker log is an input so each subsequent build
 # learns only the data symbols the previous link proved it needs.
 set(BOOT_LINK_DATA_CPP "${CMAKE_BINARY_DIR}/host-src/pc_link_data.cpp")
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/host-src/pc_link_data.json")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/host-src")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/build-support/pc_link_data.json"
+                   "${CMAKE_BINARY_DIR}/host-src/pc_link_data.json" COPYONLY)
+endif()
 set(BOOT_LINK_LOG "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log")
 add_custom_command(OUTPUT "${BOOT_LINK_DATA_CPP}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/link_data.py"

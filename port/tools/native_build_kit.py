@@ -15,6 +15,7 @@ DATA_SOURCES = {'minigame_menu_data.asm', 'dsmt_data.asm', 'pc_link_data.cpp',
                 'romdata.c', 'ov002_data.cpp', 'ov001_image.cpp',
                 'level_overlay_tables.cpp', 'title_overlay_data.cpp',
                 'level_overlay_data.cpp'}
+SOURCE_ADAPTERS = {'pc_boot_dsmt.cpp', 'pc_title_session.cpp', 'player_render.cpp'}
 
 
 def main():
@@ -41,6 +42,8 @@ def main():
             local.append({'source': source, 'object': f'local-{index:04d}.obj',
                           'source_sha256': hashlib.sha256((ROOT / source).read_bytes()).hexdigest()})
             continue
+        if '/host-src/' in original and source_name not in SOURCE_ADAPTERS and '/host-src/src/' not in original:
+            raise ValueError('Review new generated object before publishing: ' + original)
         data = (ROOT / 'build/port' / original).read_bytes()
         # Replace the compiled-in local checkout fallback with ".". The launcher
         # supplies SM64DS_ASSET_ROOT explicitly. Preserve COFF offsets and sizes.
