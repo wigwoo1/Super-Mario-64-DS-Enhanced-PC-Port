@@ -68,7 +68,7 @@ def stage(destination):
             data = text.encode('utf-8')
         if relative == '.gitignore':
             data += b'\n# Local reconstruction and release staging\n.native-kit/\nPlay.cmd\n*.obj\n*.lib\n*.exe\n*.pdb\n*.log\n'
-        data = data.replace(b'\r\n', b'\n')
+        data = data.replace(b'\r\r\n', b'\n').replace(b'\r\n', b'\n').replace(b'\r', b'\n')
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
