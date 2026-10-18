@@ -1,0 +1,60 @@
+Native Adventure transition repair, 2026-10-15
+
+UPDATE: File A now tested successfully through intro and idle Yoshi; menu
+overlay corrected. See native-menu-file-a-verified-2026-10-15.txt for latest.
+
+Status VERIFIED for the previously crashing Adventure transition; full menu and
+port incomplete. Previous turn made input progress. Goal active, user model
+Astra Low. Keep Astra Low for remaining menu integration. No model switch/pause.
+
+Cause proved with isolated original-source regression:
+func_ov007_020c798c allocates a20-byte object then calls func_ov007_020c78b0()
+with no argument. Actual initializer takes void* and clears20bytes. Original
+native cdecl call supplies unrelated stack data, allowing caller-memory damage.
+Before test compiles the ORIGINAL caller and initializer, with allocator and
+MultiStore fixtures; it fails safely before corrupting memory:
+ build/menu-constructor-before/result.log
+ FAIL: initializer did not receive the allocated object
+Compilation script build/check-menu-constructor-before.cmd.
+Previous COFF caller disassembly build/menu-transition-init-disassembly.txt.
+Do not misdiagnose as exhausted heap or enlarge heap; no heap change needed.
+
+Repair in port/tools/hostgen.py only: exact reviewed function changes the
+initializer prototype to void* and passes t. Fail-closed anchor and idempotent.
+Original src untouched. GPU projection unchanged. The default gameplay route
+is not altered by this menu-only caller repair.
+New smoke_dsmt_constructor compiles actual generated caller + original initializer
+and tests all16 count/flag combinations, exact destination, field values,
+item/link creation and guard bytes. It is added to CMake.
+New test_hostgen_constructor.py covers exact transformation/idempotence and
+unrelated call preservation. Six hostgen Python tests pass.
+
+Build passed; all44 CTests pass26.67s (build/menu-constructor-ctest.log).
+Native data audit passes (build/menu-constructor-data-audit.log).
+Executable SHA256:
+A1B9598794A393A493CADB103F341C79F9AF29E76F4E42C36D9AD5354F625D63
+
+End-to-end SAME failing replay now exits0 after1800ticks at3840x2160:
+build/run-native-file-menu.ps1 -Mode original -Tag constructor-fix -Frames1800
+ -TouchSchedule '450:128:96,1250:128:168' -CaptureTicks '1180,1400,1780'
+Original File A/B/C NEW, File Options, and Back are now visibly rendered.
+Screenshot inspected/shown:
+build/port/native-file-menu-original-constructor-fix-1780.png
+Log build/native-file-menu-original-constructor-fix.log.
+44tests include normal model/actor/input regressions; long gameplay replay was
+not repeated this turn because change is isolated to this menu constructor.
+Last previous exact gameplay replay was menu-input4200ticks, Yoshi4K identical.
+
+Next useful test: select FILE A at logical x64,y70 after1850, then follow original
+new-game scene handoff. Extend replay e.g.6000ticks with captures2000/2500/5900.
+No file selection has yet been tested from this menu, and active-file pause label
+still FILE1 from prior implementation. Keep ORIGINAL_MENU opt-in until integrated.
+No new repair attempts pending; the first focused constructor repair succeeded.
+
+Remaining menu defects: native title background/button textures corrupt, white
+side borders, lower-screen presentation remains minimap overlay and overlaps
+FILE C. Title contains Mario head by design; gameplay starts Yoshi3. Input tap
+coordinates currently map the full window to logical256x192. Physical mouse and
+Xbox not verified. Original save/copy/erase/file handoff needs end-to-end tests.
+F: untouched this turn, still previous native-save install. All test handles
+completed; no live sessions. Full original goal scope retained, not complete.

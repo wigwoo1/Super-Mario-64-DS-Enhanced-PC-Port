@@ -1,0 +1,72 @@
+Native King Bob-omb milestone - 2026-10-17 - Sol High
+
+Status: local and installed F: Yoshi fight/reward VERIFIED.
+The complete PC port remains unfinished. Mario/Luigi/Wario boss strategies,
+other missions and physical Xbox hardware were not verified in this milestone.
+
+Implementation
+- Registered original King Bob-omb actor189 and ordinary Bob-omb206 profiles,
+  native factories and resources. Recovered18 original boss state pairs from
+  overlay78; bound them to36 typed native callbacks with the original16-byte
+  record stride. Constructed13 original boss file handles.
+- Preserved native class layouts: boss0x50c, health0x500; Bob-omb0x400,
+  fuse0x3ea. Restored the original contiguous Bob-omb carry vectors.
+- Supplied the held-player receiver in the recovered health checks. Original
+  grabbing/throwing states were observed in the earlier fight scout.
+- Fixed invisible billboard bodies: the HAL default scale was zero. Original
+  ARM9 bytes at02099f88 are three4096 values; restored that exact unit scale
+  and the original texture-size table at02099f94. Native audit checks both
+  compiled templates against the ROM. King Bob-omb's spherical body now shows.
+- Cartridge src/ and include/ remain unchanged. All adaptations live in port/
+  or generated build files. No boss damage, health, reward or save shortcuts.
+
+Verification
+- Final local replay: native-file-menu-baseline-bombking-final,4600frames,
+  exit0. Uses isolated six-star Yoshi seed saves. The explicitly labelled QA
+  travel moves only Yoshi to the summit once at1700. The original map boss is
+  actor99,paramff01; no Power Star QA fixture is enabled.
+- The controller uses real analog/buttons: Yoshi catches and spits the boss's
+  spawned bombs105,107,110. Real collision flags precede health3->2 at2072,
+  2->1 at2430,1->0 at2964. Defeat dialogue runs; boss removes itself and original
+  UntrackAndSpawnStar releases actor111,param0x41,kind4,starID1 at3145.
+- Actual contact/pickup3311; original celebration states5/6/7; course exit3460.
+  Story-course0 bit0x02 and total6->7. Original Save & Continue touch4000 writes
+  checksum-valid native save files. Later castle jump4300 and final normal
+  idle/control4600. Other course masks and saved character preserved.
+- Original course-clear special input accepts Start/Select or touch; generic
+  A presses are ignored during that screen. The replay uses the established
+  original touch target128,55 to confirm saving. This needed a test route
+  adjustment, not a gameplay save fix.
+- Release build passes.52/52 CTests pass18.85s; five new boss generator tests,
+  eleven altered-evidence rejection checks and boss/reward/player-animation
+  data audits pass. Actual1280x720 GPU screenshots were inspected and shown.
+- Installed verification: Watch King Bob-omb.ps1 ran the installed EXE and F:
+  ROM for4600frames,exit0. Independent verifier confirms identical three hits,
+  reward spawn3145,pickup3311,course exit3460,saved total7,castle jump and final
+  normal control. Dedicated checkpoint saves used; ordinary user saves untouched.
+
+Final executable SHA256:
+45DEEB8449303FD83564E1FB15A4800E8534BA148589FF07C6EE37C04A91C48F
+Final map SHA256:
+554A3E73A42C06D48E2DF4849A341AA9CB83205B94F6A0F96DDEB0C2955C8E5F
+Previous installed executable (rollback):
+BFDAAC31DB0915374D229A2D6C810CE2A2A2C8ADC2A010786E7F9C6F52FB7D45
+
+How to check
+F:\AI Games\Mario 64 DS\Watch King Bob-omb Test.cmd
+It resets only dedicated checkpoint QA saves, selects Bob-omb Battlefield,
+moves Yoshi to the summit once, plays the original fight and collects/saves the
+reward. It closes automatically after4600simulation frames. Normal Play Mario
+64 DS.cmd uses ordinary saves with all automation flags cleared.
+
+Camera request added to pc-settings-menu-plan-2026-10-15.txt and F: plan:
+saved Preset Angles (original touch-button increments via right stick) or Free
+Camera (right stick/mouse continuous orbit), sensitivity/invert-Y, safe mouse
+capture and preserved cutscenes/pause. PLANNED only; no camera feature claimed.
+
+Repeat reward collection verified on the installed build (Luna Medium,
+2026-10-17): replay began with course-0 mask2 and total7. The original boss
+again took three real Yoshi-spat Bob-omb hits; Star111 spawned and was touched,
+but the live and saved credit remained mask2,total7. The course exited, save
+committed, and normal control returned; process exit0. No gameplay fix or
+rebuild was needed. See native-checkpoint-2026-10-17-bombking/repeat-test.

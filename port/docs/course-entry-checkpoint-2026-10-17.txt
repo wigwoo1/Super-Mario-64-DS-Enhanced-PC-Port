@@ -1,0 +1,136 @@
+ORIGINAL COURSE ENTRY VERIFIED - 2026-10-17
+
+Original title -> Adventure -> File A -> castle key door -> lobby stairs ->
+Bob-omb room door -> native painting -> original mission1 -> Yoshi gameplay.
+Final candidate replay from F: passed6000ticks, later jump and idle/control;
+seven-star QA save byte-identical. EXE SHA256 3A292142642E68CB2DCE0D8C2274D0A111CD85F42F54944BFB45D4863B98D9A9.
+Build passed;52/52 CTests8.63sec;3 painting-transform tests;5 verifier
+negative-evidence checks;11 native actor profiles/416 shared bindings pass.
+Original painting actor307 and resources/texture cache integrated; original
+cartridge src/include unchanged. Original mission selection is promoted.
+
+First installed replay failed at room door. Root cause in input-only replay:
+presentation hook could advance waypoint state twice per simulation tick.
+Now course/boss replay controls update once per simulation tick. Failed
+evidence retained in checkpoint/qa; corrected evidence in qa-tick-gated.
+Normal player input is unchanged.
+
+Watch Original Course Entry Test.cmd uses isolated QA saves (seven stars,
+Yoshi, castle key already owned). User saves and settings untouched. Prior
+reward Watch scripts use their preserved original EXE to retain verified
+schedules. Rollback: native-checkpoint-2026-10-17-pre-course-entry.
+
+Remaining: repeated course exit/re-entry, painting texture cleanup/reload,
+other courses and fresh-save key acquisition are unverified. Full port is
+incomplete. Next bounded regression: leave and re-enter this same course.
+Luna Medium recommended for that check; pause for model switch after install.
+
+COURSE EXIT AND RE-ENTRY VERIFIED (2026-10-17, Luna Medium)
+The installed diagnostic replay entered Bob-omb Battlefield, used the pause
+menu's Exit Course option, returned to the castle lobby, selected the course
+again, and returned to Yoshi gameplay. It completed 10,800 frames and exited
+with code 0.
+
+The trace recorded the painting texture cache reset and six painting actors
+created on initial castle load, then all six cleaned up on course entry. On
+the castle return, the cache reset and six actors were created again; all six
+were cleaned up when the second course entry began. The replay confirmed both
+mission-selection screens and both Battlefield entries. The second visit
+selected mission 2; the first selected mission 1. Both are in the same course.
+The final state capture shows Yoshi back in normal control. The isolated QA
+save matched its seed byte for byte.
+
+The follow-up replay captured the reloaded Bomb-omb painting at frame 7100,
+after the second cache reset and six-actor creation but before cleanup on course
+entry. The screenshot visibly shows the original Bomb-omb artwork with 908
+rendered triangles. The checker verifies that capture falls between reload and
+cleanup. Course frames 9800 and 10400, the full state CSV, logs, exit code and
+executable hash are retained in the F: checkpoint's timestamped qa-reentry
+folder and qa-reentry-evidence.zip. Run Watch Course Reentry Test.cmd to repeat
+with a fresh isolated save folder. The verified main F: executable was not
+replaced; the replay used a diagnostic copy with opt-in trace logging.
+Build and 52/52 CTests passed before the replay; the painting transform tests
+passed 3/3 and the evidence checker passed. Other courses and fresh-save key
+acquisition remain unverified; the full PC port remains in development.
+
+CURRENT STATUS: local original course-entry + native painting replay VERIFIED.
+Promoted EXE864AE78EF6FE317B5EA7293E46E1EC7A69259F5386EEBB8EA112B3EAE1FE4304 to F:.
+Installed verification is running; prior notes below are the investigation history.
+
+Original course-entry validation in progress - 2026-10-17
+Model: Astra Low. Do not promote mission-selection preview until original route passes.
+
+Verified so far:
+- Current preview with A/confirm at poll450, touch Adventure1250:128:168,
+  File A1850:64:70 loads original castle exterior (level1), Yoshi character3,
+  normal control. input-check replay2600 exits0, screenshot2580.
+- Touch-only at450:128:96 failed to leave title; that tap was not a valid
+  replacement for the historical default A450. No game-code fix made for it.
+- Existing 52 tests plus extended input smoke checks pass (16.51s).
+- Native actor data and415 shared bindings passed before the final input gate fix.
+
+New QA helper in port/main.cpp and port/ntr/input.cpp:
+SM64DS_PC_TEST_COURSE_ROUTE plus AUTOMATION_ONLY=1 uses only normal stick/A
+inputs; decimal level:x:z:radius waypoints. Logs native doors and original
+transitions. No forced player positions, scene changes or save writes.
+Harness build/run-goomba-file-menu.ps1 accepts -CourseRoute.
+First helper run was interrupted because input_test_controls still required
+boss-only opt-in. New smoke_input case20 caught it; corrected both gates and
+all52 tests now pass, including route opt-in/revocation checks.
+
+Fixtures:
+Original seven-star test save flags1=1 has NO castle key. Isolated
+build/original-course-entry-key-seed.sav changes only castle-key bit0x40 and
+native CRC. Original key-unlock state still required; real saves untouched.
+The original ROM door table variant12 uses keyIndex5, flagShift5.
+Exterior door actor center positions are +/-75,y784,z-1050 after InitResources.
+Painting exit level2 is x-5100,y400,z-450, destination6.
+
+Live replay prefix native-file-menu-original-course-route-walk-verified-input:
+5500frames,1280x720,D3D11; A450, touch1250Adventure/1850FileA;
+route1:-75:5800:60,1:-75:-1250:40,2:-1000:0:60,2:-2800:-700:50,
+2:-3400:-700:50,2:-5200:-450:40,6:0:0:50.
+Captures3200,3700,4200,4800,5480. Save directory original-course-entry-key-saves.
+Check live session/log before rerunning; F installation untouched this task.
+
+Continuation: initial verified-input process was externally interrupted at1180;
+its tool handle no longer existed and Get-Process confirmed no game running.
+No crash trace or exit result; do not count it as a passing replay.
+Restarted as course-route-resumed with same arguments, currentEXE
+EABDC93646AB01539A945E618FFF2B283085B1951D1930DEFE083A5F8C03B6ED.
+
+VERIFIED original course entry (before painting rendering integration):
+- Geometry-derived stairs route succeeds. The earlier route hit staircase and
+  outer lobby walls; those were replay path errors, not game failures.
+- Final prefix native-file-menu-original-course-route-painting-entry exits0
+  at6000. Checker port/tools/check_original_course_entry_replay.py PASS:
+  first playable level1=1920,level2=2740,level6=5050; normal original mission1
+  confirmation, original painting jump, later Yoshi jump5800 and final idle.
+  Seven stars throughout, isolated save byte-identical before/after.
+- Route: 1:-75:5800:60,1:-75:-1250:40,2:-1000:1400:60,2:-2100:600:50,
+  2:-2300:500:40,2:-2750:50:40,2:-2800:-700:50,2:-3400:-700:50,
+  2:-3700:-450:40,2:-5200:-450:40:1.
+  Optional final :1 is real B/jump near the waypoint. No forced positions.
+  Touch1250:128:168,1850:64:70,4400:110:20;AutoConfirm450;
+  Buttons4600:1,4800:1,5000:1,5200:1,5800:2. 1280x720,D3D11.
+- Screens mission4450,course5250,jump5810 shown to user. All normal game logic.
+- Build/tests before painting changes:52/52(13.53s), native actor and415shared
+  binding audits passed. Keep runtime EXE in this replay directory as evidence.
+
+Real issue found: Bob-omb painting appears as flat green backing. Original
+PICTURE_GATE actor307 is absent from native registry. Integrating its original
+mesh/texture/ripple code now; NOT promoted. Added picture_gate_host.py,
+boot closure and registry profile307/304 from ROM02128290. Native factory,
+19 shared handles, native texture-record cache alias(+20 loaded flag), reset
+cache when no painting instances remain. Build in progress. F unchanged.
+
+
+Installed verification follow-up (2026-10-17):
+The first installed run exited normally but failed semantic verification at
+the Bob-omb room door. It diverged at waypoint6: replay callbacks run on
+presentation frames, which can repeat a simulation tick. A repeated callback
+advanced the next waypoint without the intended neutral input tick.
+port/main.cpp now advances course/boss replay controls once per simulation
+tick. This changes only opt-in automated input, not normal player controls.
+Rebuild succeeded;52/52 CTests passed in8.63sec. Corrected installed replay
+is running in qa-tick-gated. Do not treat the first installed run as passing.

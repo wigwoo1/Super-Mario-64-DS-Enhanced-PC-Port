@@ -1,0 +1,65 @@
+UPDATE 2026-10-17: Normal-Goomba swallowing and egg creation are now verified
+and installed. See yoshi-goomba-swallow-checkpoint-2026-10-17.txt for current
+hashes and the Sol Medium handoff. The following is historical evidence.
+
+Native Goomba integration - 2026-10-16 (Sol High)
+Status: PARTIALLY VERIFIED. Native spawning/rendering/movement/contact verified;
+Yoshi swallowing, egg conversion, stomping/rewards and complete gameplay are not.
+
+Changes
+- Register recovered normal/small/large Goomba factories at actor IDs200/201/202.
+  Course6 actually spawns15 normal Goombas; small/large are data-audited only.
+- Preserve the original8-byte callback stride with native function/self records.
+  Defer nine resource-handle constructors until native game startup.
+- Rebase seven animation handles, six cap-table slots and six embedded material
+  pointers. Preserve original profile/material scalar data from the user's ROM.
+- Repair two ARM tail-call veneers that lost the collision object's receiver on
+  Windows. These caused stack corruption on the first Goomba update.
+- Replace Yoshi raw DS virtual-slot calls with typed native actor queries in the
+  power state, tongue-contact helper and mouth/crouch helper.
+- Add optional Goomba CSV telemetry and five focused generator checks.
+Original src/ and include/ files remain unchanged; adaptations live under port/.
+Temporary compiler/debugging overrides were removed before the final build.
+
+Verification
+Release build succeeds;52/52CTests pass (18.10s). Five Goomba-generator and
+14existing host-generator checks pass. Five linked-data audits pass: Goomba,
+actor/message, player animation, Wanted and Rec Room.
+Goomba audit verifies all3factory/profile records,7animation handles,6cap slots,
+6material pointers and the remaining original material bytes.
+
+Runtime evidence (1280x720,D3D11, isolated saves)
+- goomba-collision-fixed:2200frames,exit0;15Goombas/84stable actors.
+- goomba-approach:2400frames,exit0; rendered Goombas walk/chase/jump toward Yoshi,
+  contact puts Yoshi into St_Hurt_Main. Screenshots1620/1680 show the encounter.
+- goomba-bite and goomba-bite-native:2400frames each,exit0. Two focused tongue
+  routes, with native query repairs between them, did not establish swallowing.
+  Final build records Yoshi power at1620 then hurt at1640; sampled Goomba eaten
+  values remain0. Sampling/timing may be involved: this is not proof of a specific
+  collision defect. Stop timing guesses; inspect candidate/contact/mouth records.
+- Exact installed F: EXE/ROM replay:1800frames,exit0;15Goombas alive at1800,
+  84actors, Yoshi3, no seeded stars/coin records. Captures1620/1680/1780 and CSV
+  saved as installed-goomba-preview-*; root INI absence restored after the run.
+
+Installation
+EXE SHA256 9124A6A7967E1A4AF2A19B3A7BDD8F4C7DA7F35AC4D6CFD90D20B225D6BF8347
+MAP SHA256 3E8F8B19F5205F63921B8A686B6B2781A449D9B8440815A5520B49F72352C3ED
+Installed root F:/AI Games/Mario 64 DS and build/wanted-callback-preview match.
+Rollback/evidence: native-checkpoints/native-checkpoint-2026-10-16-goombas.
+User ROM/settings/saves preserved. Checkpoint has a separate preview save with
+only introduction-complete/Yoshi flags, zero stars and no coin records.
+Double-click Play Goomba Development Preview.cmd, dismiss the tutorial and
+approach the first slope. Main original-menu launcher remains available.
+This preview is a development route, not evidence of full Adventure progression.
+
+Next action / model handoff
+Recommend Astra Low for the remaining Yoshi tongue/contact investigation after
+two focused interaction tests failed to establish capture. Current model Sol High.
+Trace candidate ID at Player+0x338, mouth state +0x360, tongue hit flags and
+Goomba mEatenByYoshi every frame near1600..1660; current CSV is only every60ticks.
+Inspect func_ov002_020d6998/020d6dac/020d7030 and native mdCcAc hit delivery.
+Use existing final replay as a controlled reproduction before changing behavior.
+Check egg factory enrollment only after actual tongue capture is demonstrated.
+See goomba-native-integration-handoff-2026-10-16.txt for original enrollment notes.
+Overall PC-port goal remains incomplete. Pause for the specifically recommended
+model switch, per the user's standing request.

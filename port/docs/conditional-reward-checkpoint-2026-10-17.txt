@@ -1,0 +1,95 @@
+Conditional Goomba silver-star release: VERIFIED (2026-10-17)
+
+Runtime finding and test scope
+- The original condition uses the VS star sequence, not the story mission
+  selected in the PC course picker. Live data_0209f208=0 and
+  data_0209f344[0]=0 throughout these encounters.
+- The only static conditional Goomba in the original course inventory is in
+  unused course0 TEST MAP, area0/filter1, parameterf12f. Runtime actor16
+  carries reward2/star15. The retail VS order contains IDs0..4. Changing the
+  story mission cannot make this unused star15 placeholder match that order.
+- Original actor/map parameters remain intact during ordinary play. A new
+  explicit automation-only fixture lets this one test-map parameter use a
+  valid VS star ID0..4 before InitResources parses it. It is restricted to
+  course0, exact original parameterf12f and AUTOMATION_ONLY=1; invalid values,
+  other maps/parameters and ordinary launches preserve the original parameter.
+- Both fixture setup and live comparison values are recorded. This verifies
+  the original conditional payout code; it does not implement native VS mode.
+
+Confirmed gameplay results (all actual controller inputs, independent QA saves)
+- Ground pound hits actor16 at tick1722; death1 and last-hit0x400028 include
+  original HIT_SPIN_OR_POUND bit0x20. Earlier missed hits are not reward passes.
+- Original star15 versus active0: no new silver star or marker, reward remains
+  unspent. Native replay2350frames, same-course idle/control, later jump,exit0.
+- Matching fixture star0 versus active0: at1737 creates marker20 and silver
+  star21, both parameter0x30 at the defeated Goomba's position. Goomba marks
+  reward3(spent)/clears reward bits; star and marker link reciprocally. Exactly
+  one silver reward, no duplicate during continuation. Local and installed F:
+  replay2350frames, later jump, same-course idle/control,exit0.
+- Non-matching fixture star1 versus active0: installed F: replay confirms the
+  same ground-pound hit, no star/marker, reward unspent, later jump/idle,exit0.
+- Silver-star RELEASE is verified. Collection of this VS-style kind3 star,
+  sequence advancement, five-star completion/Power Star178 and full VS mode
+  remain unverified. Do not claim a counter increase or pickup in these runs.
+
+Real crash found and fixed
+- Pre-fix original/matching runs sometimes crashed at tick1792 in the BCA
+  bone-curve reader func_020457f0 after retreat movement. Crash snapshot showed
+  Yoshi animation index263 using a Mario head BMD (fileID0312), with zero BCA
+  frame count and invalid curve descriptors. Failed runs remain archived.
+- Original __sinit_ov002_021019d0 initializes data_ov002_0210e168 to archive
+  animation0x8099. Legacy PC_INIT_PLAYER_ANIM_HANDLE(e168,0x4c0) in the native
+  HAL then overwrote it with the Mario head model. Removed that erroneous
+  override, preserving the original constructor's animation. The other eight
+  overrides match their original source IDs and remain unchanged.
+- Updated animation audit checks all explicit HAL overrides against original
+  constructor IDs, alongside736 original table entries and383 native symbols.
+- All final gameplay replays complete beyond the old fault without crashing.
+  Original src/ and include/ cartridge code are unchanged.
+
+Verification
+- Native build passes. CTest52/52 passes20.95s, including fixture gate cases.
+- Five Goomba host-generator tests pass. Seven meaningful negative checks
+  prove the conditional verifier rejects crashes, missing drops, unconfirmed
+  hits, wrong active IDs, broken links, lost final control and an actual earlier
+  missed ground-pound replay. The negative-check exercise also tightened the
+  checker to require normal idle/control at the final sample.
+- Final Goomba/egg/coin, reward callback/resource and player-animation audits
+  pass. Logs build/conditional-final-*.log, conditional-goomba-tests.log,
+  conditional-verifier-rejections.log and conditional-player-animation-audit.log.
+- Live reward CSV adds active_star_index, active_star_id,last_hit,tracked_star,
+  player_anim_index and player_anim_file_id. Recording remains opt-in. Native
+  crash reports now include a defensive player-animation/handle snapshot.
+- Evidence prefixes: build/port/native-file-menu-baseline-conditional-original-fixed,
+  native-file-menu-baseline-conditional-match-fixed, installed-conditional-match,
+  installed-conditional-mismatch. Screenshots inspected/shown from installed
+  silver-star release1740 and continued play1850.
+
+Installed result and user check
+- EXE SHA25671432172C751CA0E9158662290541A2BF2B5D634BE3E52A441DAF5FF64BC227E
+- MAP SHA2569718B07F6E96D321DDABA81375607B746726B7C0DF4BC5A878405E6FF6BA8D27
+- Exact EXE/MAP installed at F:\AI Games\Mario 64 DS and local preview.
+- Rollback native-checkpoints/native-checkpoint-2026-10-17-conditional-reward/
+  previous-install contains prior EXE9533D6D00C9D7CB2E5E1663A646635B00B18930AB6FB6844AFCC04757BE3C7A0
+  and prior MAP59E3B609815AA01143E9E41DA4082DD679250F8F2F4716C0A60A0F1FE36F3954.
+- Double-click Watch Conditional Silver-Star Test.cmd in the F: project folder.
+  It demonstrates the explicitly labelled matching test fixture with separate
+  test saves, then closes normally. Avoid keyboard/controller input during it.
+- Watch Conditional Silver-Star.ps1 supports Match,Original,Mismatch plus an
+  optional EvidenceDirectory. Installed Match and Mismatch paths were tested.
+  Root user INI remains absent; user ROM/save/settings were not modified.
+- Source/evidence archived at the new checkpoint. BMPs converted to verified
+  pixel-identical PNGs; only redundant BMPs removed. Cleanup manifest:
+  build/conditional-image-cleanup.json. All logs/CSV/saves/source retained.
+
+Next bounded task / model handoff
+- Sol Medium is appropriate for checking pickup of this already released
+  kind3 silver star and whether the VS sequence advances. Use the existing
+  matching fixture, live sequence trace and ordinary controller replay.
+- Start from the final matching replay; the star is released and linked, but
+  the current retreat moves Yoshi away. Check marker touch/hold and pickup
+  states before changing the original behavior. Recommend Sol High again if
+  a new callback or actor integration is needed. Power Star178 remains absent.
+- Standing user instructions authorize pausing for this recommended switch
+  to Sol Medium. The overall port is not complete. The goal tracker was
+  already paused and offers no supported resume operation through its tool.

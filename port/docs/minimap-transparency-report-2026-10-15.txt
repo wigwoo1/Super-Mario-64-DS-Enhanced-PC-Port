@@ -1,0 +1,25 @@
+Mario 64 DS native PC port: minimap backdrop transparency, 2026-10-15
+Status: VERIFIED for transparent minimap backdrop compositing in the bounded castle-ground replay. Overall PC-port/minimap completion remains PARTIALLY VERIFIED; marker upload/visibility and full gameplay remain open.
+
+Change:
+- PPU scanout accepts an optional transparent_backdrop flag (default false), preserving the original opaque scanout for all existing callers.
+- The bottom-screen minimap scanout opts into this flag. Untouched palette backdrop pixels and display-off/forced-blank pixels have zero alpha; sampled map pixels and OBJ sprite pixels remain opaque.
+- The minimap blend multiplies configured opacity by source alpha, leaving the top screen untouched where the bottom screen had no drawn map pixel.
+- smoke_ppu_affine now checks default compatibility, a drawn red and green affine map pixel staying opaque, and an uncovered pixel becoming transparent.
+
+Build and checks:
+- Release sm64ds_pc and smoke_ppu_affine, smoke_stage_graph, smoke_frames built successfully (minimap-transparency-build.log).
+- Four CTest checks passed: smoke_stage_graph, smoke_ppu_affine, smoke_frames, smoke_video (minimap-transparency-ctest.log).
+- Run136 used the isolation automation (Down poll 300, confirm poll 450, no repeats) and a 6000-simulation-frame limit. It reached frame 6000, returned through native shutdown, and exited 0. No FATAL/unhandled line appeared in the bounded trace review.
+- Both screenshot BMPs have valid headers and expected sizes. Visual evidence compares the previous opaque-backdrop capture with run136: 1640 pixels changed overall, including 450 pixels in the top-right minimap corner, where blended green backdrop pixels now reveal the underlying scene. Map artwork remains rendered. See minimap-transparency-visual-diff.txt.
+
+Files:
+- minimap-transparency.bmp: top-screen capture with minimap overlay.
+- minimap-transparency-bottom.bmp: raw bottom screen (raw captures retain backdrop color by design).
+- minimap-transparency136.stderr.log.gz: compressed full run trace.
+- minimap-transparency-build.log and minimap-transparency-ctest.log: build/test evidence.
+
+Limits and next work:
+- The run is stationary after startup; it does not verify marker uploads or marker motion.
+- Full game scenes/course transitions, physical Xbox controller, higher internal render resolution, 4K replacement texture pack, and true 120/240 gameplay simulation remain unverified or incomplete.
+- This bounded compositor change is complete. Luna Low is suitable for the next simple scoped task; use Sol Medium/High if investigation reaches native OAM/VBlank callback ABI or marker-upload reverse engineering.

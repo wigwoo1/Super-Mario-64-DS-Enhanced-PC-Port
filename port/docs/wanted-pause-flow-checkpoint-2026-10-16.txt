@@ -1,0 +1,95 @@
+Wanted pause, retry and Rec Room flow - 2026-10-16
+Current user selected model: Sol Low.
+
+Milestones:1.pause button animation/render/touch;2.options/back;3.return to
+Rec Room;4.results/retry and return;5.regression/build/tests/screenshots.
+Original src/ and include/ remain unchanged. Host changes in port/ only.
+
+Observed first replay wanted-pause-first,3350frames,exit0:
+- Start2200 pauses Wanted. Menu positions remain-128,48;384,96;128,224
+  through2760. These are the initial offscreen animation positions, proving
+  the buttons are not being updated. Options panel active/count remain0/0.
+- Touch2500:128:48 cannot select an offscreen button. Start2800 resumes.
+- Screenshot2380 shows pause help and blank touch screen (inspected).
+- Identified raw stand-in v28() calls in func_ov004_020aeb24. DS slot28 is
+  OnHitFromUnderneath; native host transform now calls that typed method.
+- Identified extern int func_ov004_020b8f78(char*) declaration while the actual
+  definition in dMgPsOpt_c.cpp returns u8. x86 caller reads full EAX even
+  though callee only promises AL, so closed panel can appear active. Host
+  transform now declares unsigned char. This early return precedes all menu
+  position updates and touch hit tests.
+- Added trace for positions/cursor/options activity and hardware BG/OAM state.
+- Extended existing generator regression assertions;5Python checks pass.
+
+Second replay wanted-pause-controls is running. Its exact EXE/map are retained
+in build/native-file-menu-original-wanted-pause-controls-runtime. Do not claim
+pause touch/return/retry success until screenshots and trace confirm it.
+
+Potential separate options-panel issue to check: original __sinit_ov004_
+020b9b24 initializes17 width/height pairs at020bfe74..020bfeb4. Those resource
+addresses are hosted BSS and the original initializer may not be called.
+Do not change this until options touch evidence confirms empty extents.
+
+Verified pause/return replay: wanted-pause-controls,3500frames,exit0.
+- Byte-return repair allows positions to animate to128,48;128,96;128,144.
+- Screenshot2380 shows Continue/Quit/Options. Touch2500:128:48 selects0;
+  menu0 and timer resumes by2640. Start2800 opens menu again.
+- Touch3100:128:96 selectsQuit. Screenshot3480 shows the real Rec Room
+  selection screen. Profile5 is created and prior Wanted scene is cleaned up.
+- Exact replay EXE/map retained in its runtime directory.
+
+Verified options/retry replay: wanted-options-retry,5400frames,exit0.
+- Start2200;Options2500:128:144;Back2800:128:168;Continue3100:128:48.
+- Screenshot2680 shows original sound/backlight/OK panel. These center taps
+  work, but raw BSS sizes were zero: old TouchArea_Update accepts the exact
+  center even for a zero-width/height box. Source __sinit_ov004_020b9b24 sets
+  these sizes; the original initializer is absent from the native closure.
+- Native pause_extents() generator now recovers all17 POD width/height pairs
+  directly from that initializer. A helper writes canonical storage before the
+  dMgPsOpt constructor places the icons. No ARM destructor-list registration.
+- New Python check verifies17records, expected sound/back dimensions and
+  constructor adaptation/idempotence. Total6 generator tests PASS.
+- Timeout then results. Early taps4000/4300 did not restart;5050:128:96 hits
+  Play Again. Screenshot4900 shows Play Again/Quit;5350 shows new Luigi target,
+  time9 and board. Trace controller18 ->-1,state1,time10 ->state2.
+
+Final build/tests so far
+EXE2FC6827F1C6461B341005ECCC0ABF618C533D9431594A3420E448363FE16205F
+MAP80D99DE0F3833FF74FD161D72FB4B5507E91852F7D05B1DC191790713F221F0C
+Build succeeds.50/50 CTests PASS in15.62s (build/wanted-pause-ctest.log).
+All3 linked-data audits PASS (wanted-pause-native/actor/menu-audit.log).
+Final7300-frame software/right-left replay is running: off-center sound/OK/
+Continue taps, results Play Again, then results Quit back to Rec Room.
+
+Final software/right-left replay wanted-pause-final-flow completed7300frames,
+exit0, exact final EXE. Sound next tapped2650:246:58 (away from arrow center)
+changes displayed mode to HEADPHONES. OK2850:148:174 (away from button center)
+returns to menu. Continue3100:150:52 resumes. Screenshots2680/3280 inspected.
+Initial timeout then results:4900 is still high-score screen;5050 tap advances
+it to Play Again/Quit (visible5350). Therefore5050 did NOT retry in this replay.
+6500 tap128:80 misses both buttons.6850:128:156 selects results Quit;7250 shows
+Rec Room. Do not claim two games/retry in this software replay.
+A separate exact-final-build GPU retry replay (wanted-retry-final) is running
+with4500 high-score advance,5000:128:108 Play Again,5500Start,5800pauseQuit.
+
+Exact-final-build retry confirmed in wanted-retry-final:
+4500 high-score touch advances to Play Again/Quit, visible4900.
+5000:128:108 selects Play Again;5280 controller-1,state2,time10;5350 screenshot
+shows the new Luigi target and time8;5400 time8. Start5500 pauses the new game
+(time6),pause Quit5800 is sent. Final exit/Rec Room capture pending.
+
+FINAL milestone status: VERIFIED by scripted native stylus input.
+Wanted-retry-final completed6300frames,exit0. After retry, Start5500 pauses,
+Quit5800 returns to Rec Room (6250 screenshot inspected). Exact final EXE used
+by this GPU replay and by the7300-frame software/options/results-Quit replay.
+All running build/test/game sessions finished. Preview EXE/map match final
+hashes above. Screenshots kept as BMP+PNG under build/port with replay prefixes.
+F: installation unchanged. Manual physical input/audio/backlight effects and
+other minigames remain unverified; full port goal is incomplete. No new Stage
+behavior change was made; the previous Yoshi regression and current50 CTests
+are the regression evidence, rather than a new Stage gameplay replay.
+
+Next model recommendation: Luna Medium for bounded menu polish using the
+existing native UI. Goal paused for that recommended model switch, per user
+instruction. New minigame callback/ABI failures may require a stronger model;
+apply the two-focused-attempt rule if one arises.

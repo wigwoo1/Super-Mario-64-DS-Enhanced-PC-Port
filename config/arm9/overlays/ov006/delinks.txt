@@ -1,0 +1,323 @@
+    .text       start:0x020bfec0 end:0x0212b890 kind:code align:32
+    .rodata     start:0x0212b890 end:0x0212f4c4 kind:rodata align:4
+    .init       start:0x0212f4c4 end:0x0213356c kind:code align:4
+    .ctor       start:0x0213356c end:0x021335e8 kind:rodata align:4
+    .data       start:0x02133600 end:0x021402e0 kind:data align:32
+    .bss        start:0x021402e0 end:0x021430a0 kind:bss align:32
+src/actors/unit020bfec0.cpp:
+    complete
+    .text start:0x020bfec0 end:0x020c4048
+
+src/actors/dMg3DHeyhoObjAdapter_c.cpp:
+    complete
+    .text start:0x020c4048 end:0x020c6f8c
+    .init start:0x0212f4c4 end:0x0212f52c
+    .ctor start:0x0213356c end:0x02133570
+    .bss start:0x02140330 end:0x02140358
+
+src/actors/dMgJump3DMario_c.cpp:
+    complete
+    .text start:0x020c6f8c end:0x020c8a30
+    .init start:0x0212f52c end:0x0212f660
+    .ctor start:0x02133570 end:0x02133574
+    .bss start:0x02140438 end:0x021404c4
+
+src/actors/unit020c8a30.cpp:
+    complete
+    .text start:0x020c8a30 end:0x020c8dd4
+
+src/actors/dMgTrmpln2Mario_c.cpp:
+    complete
+    .text start:0x020c8dd4 end:0x020cd744
+
+src/actors/unit020cd744.cpp:
+    complete
+    .text start:0x020cd744 end:0x020d1018
+
+src/actors/dScMgAmida_c.cpp:
+    complete
+    .text start:0x020d1018 end:0x020d5a54
+
+src/actors/dScMgBomroom_c.cpp:
+    complete
+    .text start:0x020d5a54 end:0x020d9574
+
+src/d_s_mg_bomroom.cpp:
+    complete
+    .text start:0x020d9574 end:0x020d95a4
+
+src/minigames/d_s_mg_card.cpp:
+    complete
+    .text start:0x020d95a4 end:0x020dbe40
+    .init start:0x021300b0 end:0x0213014c
+    .ctor start:0x02133584 end:0x02133588
+    .bss start:0x02141774 end:0x021417b0
+
+src/actors/dScMgCoin_c.cpp:
+    complete
+    .text start:0x020dbe40 end:0x020de940
+
+src/d_s_mg_coin.cpp:
+    complete
+    .text start:0x020de940 end:0x020de988
+
+src/actors/dScMgCup_c.cpp:
+    complete
+    .text start:0x020de988 end:0x020e0638
+    .init start:0x021303d0 end:0x021304ac
+    .ctor start:0x0213358c end:0x02133590
+    .bss start:0x02141870 end:0x021418b0
+
+src/actors/dScMgCurling_c.cpp:
+    complete
+    .text start:0x020e0638 end:0x020e3820
+    .init start:0x021304ac end:0x02130758
+    .ctor start:0x02133590 end:0x02133594
+    .bss start:0x021418b0 end:0x02141978
+
+src/d_s_mg_curling.cpp:
+    complete
+    .text start:0x020e3820 end:0x020e3854
+
+src/actors/dScMgCurling2_c.cpp:
+    complete
+    .text start:0x020e3854 end:0x020e5450
+    .init start:0x02130758 end:0x02130a04
+    .ctor start:0x02133594 end:0x02133598
+    .bss start:0x02141978 end:0x02141a40
+
+src/unnamed/ov006/func_ov006_020e5450.cpp:
+    complete
+    .text start:0x020e5450 end:0x020e59b0
+
+src/actors/dScMgCurling2_c_upper.cpp:
+    complete
+    .text start:0x020e59b0 end:0x020e6bf4
+
+src/d_s_mg_curling2.cpp:
+    complete
+    .text start:0x020e6bf4 end:0x020e6c28
+
+src/actors/dScMgD3DBase_c.cpp:
+    complete
+    .text start:0x020e6c28 end:0x020e7660
+
+src/actors/dMg3DEspAnimSet_c.cpp:
+    complete
+    .text start:0x020e7660 end:0x020ea280
+    .init start:0x02130a08 end:0x02130df8
+    .ctor start:0x0213359c end:0x021335a0
+    .bss start:0x02141e54 end:0x02141fcc
+
+src/actors/dScMgHanachan_c.cpp:
+    complete
+    .text start:0x020ea280 end:0x020ede18
+    .init start:0x02130df8 end:0x02130e9c
+    .ctor start:0x021335a0 end:0x021335a4
+    .bss start:0x02142018 end:0x02142044
+
+src/minigames/d_s_mg_hanachan.cpp:
+    complete
+    .text start:0x020ede18 end:0x020edec0
+
+src/actors/dScMgJump_c.cpp:
+    complete
+    .text start:0x020edec0 end:0x020ee994
+    .init start:0x02130e9c end:0x02130f00
+    .ctor start:0x021335a4 end:0x021335a8
+    .bss start:0x02142188 end:0x021421b0
+
+src/d_s_mg_jump.cpp:
+    complete
+    .text start:0x020eeafc end:0x020eebe8
+
+src/minigames/d_s_mg_jump2.cpp:
+    complete
+    .text start:0x020eebe8 end:0x020efc08
+    .init start:0x02130f00 end:0x02130f64
+    .ctor start:0x021335a8 end:0x021335ac
+    .bss start:0x021421c4 end:0x021421ec
+
+src/unnamed/ov006/func_ov006_020efc08.c:
+    complete
+    .text start:0x020efc08 end:0x020efc0c
+
+src/actors/dScMgLuigi_c.cpp:
+    complete
+    .text start:0x020efc0c end:0x020f3834
+
+src/minigames/d_s_mg_memory.cpp:
+    complete
+    .text start:0x020f3834 end:0x020f5564
+    .init start:0x021311c8 end:0x021314e4
+    .ctor start:0x021335b0 end:0x021335b4
+    .bss start:0x021422a4 end:0x021423a8
+
+src/actors/dScMgMemory2_c.cpp:
+    complete
+    .text start:0x020f5564 end:0x020f7634
+    .init start:0x021314e4 end:0x021318a0
+    .ctor start:0x021335b4 end:0x021335b8
+    .bss start:0x021423a8 end:0x021424ec
+
+src/minigames/d_s_mg_m_carlo.cpp:
+    complete
+    .text start:0x020f7634 end:0x020f8ef4
+    .init start:0x021318a0 end:0x0213195c
+    .ctor start:0x021335b8 end:0x021335bc
+    .bss start:0x0214250c end:0x02142558
+
+src/minigames/d_s_mg_m_carlo2.cpp:
+    complete
+    .text start:0x020f8ef4 end:0x020fa75c
+    .init start:0x0213195c end:0x02131a38
+    .ctor start:0x021335bc end:0x021335c0
+    .bss start:0x021425a8 end:0x02142604
+
+src/actors/dScMgPachinko_c.cpp:
+    complete
+    .text start:0x020fa75c end:0x020ff3ec
+    .init start:0x02131a38 end:0x02131cd0
+    .ctor start:0x021335c0 end:0x021335c4
+    .bss start:0x02142604 end:0x021426cc
+
+src/d_s_mg_pachinko.cpp:
+    complete
+    .text start:0x020ff3ec end:0x020ff420
+
+src/actors/dScMgPachinko2_c.cpp:
+    complete
+    .text start:0x020ff420 end:0x0210428c
+    .init start:0x02131cd0 end:0x02131fa4
+    .ctor start:0x021335c4 end:0x021335c8
+    .bss start:0x021426cc end:0x021427ac
+
+src/actors/dScMgPanel_c.cpp:
+    complete
+    .text start:0x0210428c end:0x02107858
+
+src/d_s_mg_panel.cpp:
+    complete
+    .text start:0x02107858 end:0x0210788c
+
+src/actors/dScMgRoulette_c.cpp:
+    complete
+    .text start:0x0210788c end:0x0210a400
+
+src/minigames/d_s_mg_roulette.cpp:
+    complete
+    .text start:0x0210a400 end:0x0210a4b0
+
+src/minigames/d_s_mg_single3_d_base.cpp:
+    complete
+    .text start:0x0210a4b0 end:0x0210a8c0
+
+src/actors/dScMgSlots.cpp:
+    complete
+    .text start:0x0210a8c0 end:0x0210c9e0
+    .init start:0x02132894 end:0x02132970
+    .ctor start:0x021335d0 end:0x021335d4
+    .bss start:0x02142bdc end:0x02142c1c
+
+src/minigames/d_s_mg_slot1.cpp:
+    complete
+    .text start:0x0210d1fc end:0x0210d740
+
+src/actors/dScMgSmartball_c.cpp:
+    complete
+    .text start:0x0210d740 end:0x02119904
+
+src/actors/dScMgSound_c.cpp:
+    complete
+    .text start:0x02119904 end:0x0211cbd0
+
+src/actors/dScMgTeresa_c.cpp:
+    complete
+    .text start:0x0211cbd0 end:0x021207a8
+    .init start:0x02132f68 end:0x0213322c
+    .ctor start:0x021335d8 end:0x021335dc
+    .bss start:0x02142e88 end:0x02142f60
+
+src/d_s_mg_teresa.cpp:
+    complete
+    .text start:0x021207a8 end:0x021207dc
+
+src/minigames/d_s_mg_trampoline.cpp:
+    complete
+    .text start:0x021207dc end:0x021225ac
+    .data start:0x0213faa0 end:0x0213fbc4
+
+src/minigames/d_s_mg_trampoline2.cpp:
+    complete
+    .text start:0x021225ac end:0x02124908
+    .data start:0x0213fbc4 end:0x0213fd0c
+    .init start:0x0213322c end:0x0213326c
+    .ctor start:0x021335dc end:0x021335e0
+    .bss start:0x02142f80 end:0x02142f94
+
+src/minigames/d_s_mg_bsc.cpp:
+    complete
+    .text start:0x02124908 end:0x0212568c
+    .init start:0x0213326c end:0x021333e0
+    .ctor start:0x021335e0 end:0x021335e4
+    .bss start:0x02142f94 end:0x02143004
+
+src/actors/dScMgSnowball_c.cpp:
+    complete
+    .text start:0x0212568c end:0x0212a520
+    .init start:0x021333e0 end:0x0213356c
+    .ctor start:0x021335e4 end:0x021335e8
+    .data start:0x0213ff58 end:0x0213ffd0
+    .bss start:0x02143020 end:0x021430a0
+
+src/d_s_mg_snowball.cpp:
+    complete
+    .text start:0x0212a520 end:0x0212a554
+
+src/actors/dScMgFlower_c.cpp:
+    complete
+    .text start:0x0212a554 end:0x0212b7f8
+
+src/d_s_mg_flower.cpp:
+    complete
+    .text start:0x0212b7f8 end:0x0212b890
+
+src/unnamed/ov006/__sinit_ov006_0212f660.c:
+    complete
+    .init start:0x0212f660 end:0x0212f6b4
+
+src/unnamed/ov006/__sinit_ov006_0212f6b4.c:
+    complete
+    .init start:0x0212f6b4 end:0x0212fc7c
+
+src/unnamed/ov006/__sinit_ov006_0212fc7c.c:
+    complete
+    .init start:0x0212fc7c end:0x0212fd48
+
+src/unnamed/ov006/__sinit_ov006_0212fd48.c:
+    complete
+    .init start:0x0212fd48 end:0x021300b0
+
+src/unnamed/ov006/__sinit_ov006_0213014c.c:
+    complete
+    .init start:0x0213014c end:0x021303d0
+
+src/unnamed/ov006/__sinit_ov006_02130a04.c:
+    complete
+    .init start:0x02130a04 end:0x02130a08
+
+src/unnamed/ov006/__sinit_ov006_02130f64.c:
+    complete
+    .init start:0x02130f64 end:0x021311c8
+
+src/unnamed/ov006/__sinit_ov006_02131fa4.c:
+    complete
+    .init start:0x02131fa4 end:0x021322bc
+
+src/unnamed/ov006/__sinit_ov006_021322bc.c:
+    complete
+    .init start:0x021322bc end:0x02132894
+
+src/unnamed/ov006/__sinit_ov006_02132970.c:
+    complete
+    .init start:0x02132970 end:0x02132f68

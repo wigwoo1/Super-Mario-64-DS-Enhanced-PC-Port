@@ -1,0 +1,42 @@
+Mario 64 DS native PC port: minimap screen-center initialization, 2026-10-15
+Status: VERIFIED for the missing center initialization and corrected placement in the bounded stationary castle-ground replay. Overall PC-port/minimap completion remains PARTIALLY VERIFIED: the overlay still blends the green DS backdrop, and marker uploads, movement/course transitions and the full feature set are not established by this run.
+
+Root cause and changes:
+The original overlay-2 initializer __sinit_ov002_0210804c sets data_ov002_0211116c to (0x80000,0,0x60000), i.e. (128,0,96) in 20.12 fixed point. Both world-to-minimap projection and its inverse use this vector as the screen center. The native startup omitted this constructor. Before repair, the linked center vector contained twelve zero bytes and the initializer was absent from the executable map. Clamping/scrolling therefore used an incorrect screen origin, moving the background off the right edge after native affine uploads were enabled.
+- Existing once-only overlay-2 initialization in actor_vtables.cpp now invokes the original initializer alongside the Player/Stage initializers.
+- The initializer is explicitly enrolled in boot_closure.py.
+- Its missing destructor-registration BSS node data_ov002_02111160 was enrolled through the existing linker-history input, then supplied by the ROM-data generator. The first build's unresolved symbol is recorded; the second build passes.
+- smoke_stage_graph includes the original initializer with a registration fixture and verifies its exact center values and object/destructor/node registration. This adds coverage to the existing transform/runtime checks.
+- dMap Behavior has bounded trace diagnostics for the actual center vector, map center, player-icon position, inverse scale and angle.
+The reconstructed G2x affine math and previous callback/palette repairs remain in use. This repair restores original constructor state.
+
+Build/tests:
+Release game and focused test targets build successfully (minimap-center-init-build2.log).
+Four CTest checks pass: smoke_stage_graph (including initialization), smoke_gx_bank_state, smoke_ppu_affine and smoke_frames (minimap-center-init-ctest.log).
+Audits pass: seven tables/65 canonical sprite pointers and exact ROM sprite bytes; 13 correctly offset VRAM bank fields; 252 shared C/C++ bindings with zero divergent addresses; existing actor profiles/callbacks/resources audit.
+Before/after evidence is in minimap-center-baseline-evidence.txt and minimap-center-runtime-evidence.txt.
+
+Game replay:
+Run135 uses isolated automation Down300/A450/no repeats, European ROM, 6000 simulation frames. It completes the intro and Stage reload, shows Mario on castle grounds and the map centered in its screen view, and exits0 through normal bounded shutdown. The previous off-right placement is corrected in this scene.
+Steady-state trace: screen_center=524288,0,393216; map_center=64,93; player icon=115,128; inverse_scale=3050; angle=0000. Latest progress reaches presentation7920 with script0, pending_level-1,current_level1, then completed simulation frame6000. No fatal/unhandled exception occurs. Counts are not delivered-FPS measurements. The replay does not inject movement after startup and does not establish physical Xbox behavior or full gameplay.
+Top/bottom final and intermediate screenshots were viewed. final bottom-screen.bmp retains the green backdrop surrounding the map; last-render.bmp shows that backdrop blended into the top-screen minimap rectangle.
+
+Recommended next task: backdrop transparency, suitable for Luna Medium
+The difficult placement investigation is complete for the tested route. Recommend switching from Sol High to Luna Medium for this focused compositing step, then reassess difficulty before marker-upload/other ABI work. This is a task judgment, not a claim of measured intelligence or usage. Official model reference checked: https://developers.openai.com/api/docs/models/gpt-6-luna . It documents focused work and medium effort support.
+Suggested implementation path (not yet implemented or verified):
+- Preserve whether each pixel came from a drawn background/sprite or from the DS backdrop. ppu_scanout currently initializes every pixel to opaque palette color0, so video.cpp cannot distinguish empty map background from drawn green content.
+- Add optional backdrop coverage/alpha for the bottom-screen minimap scanout while keeping existing/default PPU behavior for callers. A transparent-backdrop argument or a separate coverage mask are possible. Ordinary drawn BG samples and nontransparent OBJ pixels should remain covered.
+- Make blend_minimap respect that coverage/alpha along with the user's minimap_opacity. Preserve the RGB contents of diagnostic bottom captures. Display-off/forced-blank behavior needs an explicit covered/uncovered choice for overlay use.
+- Extend affine/PPU coverage tests to prove uncovered backdrop does not tint the game while a genuinely drawn green pixel remains visible. Preserve existing default scanout tests and opacity settings. Build and run a bounded game replay with screenshots.
+- Do not color-key all green pixels or crop/recenter to disguise missing coverage. The map's placement fix should remain intact.
+A separate unresolved lead: native runtime does not dispatch the complete original VBlank IRQ. Its before_present hook currently uploads only the Stage affine state. OAM::Flush/Load normally run in func_02019144. Player/icon visibility and full sprite uploads remain to be checked independently; do not claim this replay verified marker rendering just because its computed coordinates are on-screen. Consider Sol Medium/High for that native callback work if needed.
+
+Model switch/pause:
+Current model confirmed by user: Sol High. Recommended next model: Luna Medium for backdrop compositing only. Pause under the user's explicit conditional instruction to allow a recommended model switch. The full PC-port goal remains unfinished.
+
+How to check:
+Open last-render.bmp and bottom-screen.bmp. Launch-test.cmd repeats the isolated startup and exits after 6000 simulation frames, writing manual logs/captures. Launch-game.cmd clears automation and has no frame limit. Launchers use the European ROM two directories above this checkpoint on F:.
+
+Other open requirements:
+Full minimap composition/markers and other overlay graphics; true scene4 star selection; complete gameplay, missing actors, course/door transitions/audio; physical Xbox verification; internal4K rendering and complete replacement texture assets; measured60/120/240FPS behavior. Existing resolution settings stretch DS output. This remains a development build.
+Authoritative full source remains C: work/source-extracted/sm64ds-decomp-main. changed-source contains this milestone's five files; reference-source includes the original unchanged initializer. Build/map/logs and build-inputs preserve evidence. Previous checkpoints remain available.

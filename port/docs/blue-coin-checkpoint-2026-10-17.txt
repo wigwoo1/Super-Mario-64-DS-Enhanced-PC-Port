@@ -1,0 +1,62 @@
+Large Goomba blue-coin reward: VERIFIED (2026-10-17, Sol Medium)
+
+Actual gameplay result
+- Original course24, mission1, entrance Yoshi, separate intro-complete saves.
+- Hold B from polls1600..1649, release, then R1652. Ordinary controller
+  input clears the original224-unit large-Goomba collider and ground pounds.
+- Large Goomba actor202 ID13 enters death1 with coin payload3 at tick1670.
+- It creates blue coin actor290 ID49,param242 at1685 at its own X/Z.
+- Walk toward the landed coin at1740..1769. Coin pickup at1754 increases
+  the actual course counter from0 to5; both Goomba and coin are removed.
+- B2250 still produces a jump; Yoshi returns to normal idle/control in the
+  same course24. Both local and installed F: replays complete2450frames,exit0.
+- Scout held-jump2600frames also exits0; coin uncollected expires1894 with
+  counter0. This is explicitly not a collection pass.
+- No gameplay defect was found. Existing native EXE/MAP are unchanged:
+  EXE9533D6D00C9D7CB2E5E1663A646635B00B18930AB6FB6844AFCC04757BE3C7A0
+  MAP59E3B609815AA01143E9E41DA4082DD679250F8F2F4716C0A60A0F1FE36F3954
+
+What changed
+- New replay validator port/tools/check_large_goomba_blue_replay.py links
+  the defeated large Goomba to its newly spawned blue reward by time and
+  position. Requires actual ground-pound state, exact+5 at coin disappearance,
+  nearby player, actor removal, later jump and same-course normal idle/exit0.
+- Eight tests reject expired coins, wrong values, unrelated blue coins,
+  incorrect enemy rewards, absent ground pound, lost control/course and crash.
+- Native Goomba data audit now checks original enemy coin IDs288/289/290/0
+  and native coin values1/2/5, alongside existing profile/resource/callbacks.
+- Added Blue mode to the existing Watch Reward Verification.ps1 and installed
+  Watch Large Goomba Blue Coin Test.cmd on F:. Existing watcher backed up in
+  native-checkpoints/native-checkpoint-2026-10-17-blue-coin/previous-launchers.
+- Watcher uses separate resettable QA saves, its own runtime INI and the actual
+  installed EXE/ROM. The seed matches the successful local fixture SHA256.
+
+Build and tests
+- build/build-native-file-menu.cmd passes; native build already up to date.
+- CTest52/52 passes,46.68s: build/blue-coin-ctest.log.
+- Eight validator unit tests pass: build/blue-coin-verifier-tests.log.
+- Native Goomba/egg/coin data audit passes: build/blue-coin-goomba-data.log.
+- Local and installed blue-coin validators pass: blue-coin-local-verification.log
+  and blue-coin-installed-verification.log. Watcher syntax/parser passes.
+- Evidence prefixes: build/port/native-file-menu-baseline-large-blue-held,
+  native-file-menu-baseline-large-blue-collect and installed-special-blue.
+  PNG screenshots shown before ground pound, blue reward, and after pickup.
+- Lossless BMP-to-PNG cleanup retains pixels, CSVs/logs/saves and all source;
+  manifest build/blue-coin-image-cleanup.json. No required files removed.
+
+User check
+Double-click F:\AI Games\Mario 64 DS\Watch Large Goomba Blue Coin Test.cmd.
+It automatically demonstrates the ground pound and blue-coin pickup, then
+closes normally. Avoid controller/keyboard input while watching the replay.
+This is an automated demonstration with test saves, not a normal play launcher.
+
+Next bounded milestone / model handoff
+- Luna Medium is reasonable for remaining routine reward regression checks
+  using the established fixtures, replay framework and actor implementation.
+  Begin with conditional/current-mission silver-star reward2 release; inspect
+  original mission selector before designing inputs. If a new callback/actor
+  integration is required, recommend Sol High before that work.
+- Five-silver-star completion/Power Star178 integration, broader progression,
+  physical Xbox-controller testing and full port completion remain outstanding.
+- Overall goal is NOT complete. Standing user instructions permit pausing for
+  this recommended switch to Luna Medium. Tracker was already paused on entry.

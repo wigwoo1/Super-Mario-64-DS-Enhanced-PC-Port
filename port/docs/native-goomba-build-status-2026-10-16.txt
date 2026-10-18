@@ -1,0 +1,29 @@
+Current installed build - Native Goombas (2026-10-16)
+Status: PARTIALLY VERIFIED. Full PC port remains incomplete.
+
+Native Goombas now spawn, render, walk/chase and hurt Yoshi on contact.
+Three original profiles are registered;15normal Goombas verified in course6.
+Small/large runtime behavior, swallowing, eggs, stomping and rewards remain
+unverified. Two focused tongue routes did not establish capture.
+
+How to check: double-click Play Goomba Development Preview.cmd, dismiss the
+tutorial and approach the first slope. This uses separate preview saves with
+only the introduction completed, no seeded stars or coin records.
+Play Mario 64 DS.cmd still opens the original menu.
+
+Release build succeeds;52/52CTests,19generator checks and5data audits pass.
+Final local2400-frame replay exits0. Exact installed F:1800-frame replay exits0
+with15Goombas and84actors. Screenshots/state logs retained in the checkpoint.
+EXE SHA256 9124A6A7967E1A4AF2A19B3A7BDD8F4C7DA7F35AC4D6CFD90D20B225D6BF8347
+MAP SHA256 3E8F8B19F5205F63921B8A686B6B2781A449D9B8440815A5520B49F72352C3ED
+Rollback/evidence: native-checkpoints/native-checkpoint-2026-10-16-goombas
+User ROM/settings/saves preserved. C: workspace remains authoritative source.
+See port/docs/native-goomba-checkpoint-2026-10-16.txt.
+
+Recommended next model: Astra Low to trace Yoshi tongue/contact/mouth records
+after two interaction tests failed to verify swallowing. Goal paused for this
+specifically recommended model switch, per the user's standing request.
+
+Remaining: full gameplay/progression/all actors/minigames, physical controls/
+audio, HD textures, FSR3/motion blur/render distance/clothing, independent
+120/240FPS, VS networking/browser Download Play and final release.

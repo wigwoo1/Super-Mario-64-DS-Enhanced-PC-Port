@@ -1,0 +1,486 @@
+{
+  "description": "Source-reviewed archive role changes. Paths/fingerprints are read from the local user ROM; no artwork inferred by color.",
+  "confirmed": [
+    {
+      "path": "ARCHIVE/arc0.narc#131",
+      "role": "Character",
+      "handle": "8083",
+      "symbol": "data_ov002_0210ec50",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a68c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a68c",
+        "index": 0,
+        "address": "0210ec50"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#128",
+      "role": "Character",
+      "handle": "8080",
+      "symbol": "data_ov002_0210ebb8",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a68c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a68c",
+        "index": 1,
+        "address": "0210ebb8"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#186",
+      "role": "Character",
+      "handle": "80ba",
+      "symbol": "data_ov002_0210ec60",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a68c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a68c",
+        "index": 2,
+        "address": "0210ec60"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#196",
+      "role": "Character",
+      "handle": "80c4",
+      "symbol": "data_ov002_0210e818",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a68c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a68c",
+        "index": 3,
+        "address": "0210e818"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#129",
+      "role": "Character",
+      "handle": "8081",
+      "symbol": "data_ov002_0210e690",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a69c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a69c",
+        "index": 0,
+        "address": "0210e690"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#126",
+      "role": "Character",
+      "handle": "807e",
+      "symbol": "data_ov002_0210eb20",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a69c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a69c",
+        "index": 1,
+        "address": "0210eb20"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#184",
+      "role": "Character",
+      "handle": "80b8",
+      "symbol": "data_ov002_0210e758",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a69c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a69c",
+        "index": 2,
+        "address": "0210e758"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#194",
+      "role": "Character",
+      "handle": "80c2",
+      "symbol": "data_ov002_0210e7a8",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a69c[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a69c",
+        "index": 3,
+        "address": "0210e7a8"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#130",
+      "role": "Character",
+      "handle": "8082",
+      "symbol": "data_ov002_0210ec38",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a6ac[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a6ac",
+        "index": 0,
+        "address": "0210ec38"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#127",
+      "role": "Character",
+      "handle": "807f",
+      "symbol": "data_ov002_0210eb00",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a6ac[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a6ac",
+        "index": 1,
+        "address": "0210eb00"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#185",
+      "role": "Character",
+      "handle": "80b9",
+      "symbol": "data_ov002_0210e790",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a6ac[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a6ac",
+        "index": 2,
+        "address": "0210e790"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#195",
+      "role": "Character",
+      "handle": "80c3",
+      "symbol": "data_ov002_0210e7f0",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210a6ac[",
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii"
+      ],
+      "reason": "Player body/head/hatless-head table; ROM pointers, resource constructor and model loader agree",
+      "table": {
+        "name": "data_ov002_0210a6ac",
+        "index": 3,
+        "address": "0210e7f0"
+      }
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#189",
+      "role": "Character",
+      "handle": "80bd",
+      "symbol": "data_ov002_0210e7b0",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_021019d0.c",
+      "consumer": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "consumer_needles": [
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii(c + 0x174, _ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210e7b0)"
+      ],
+      "reason": "Wing-cap attachment loaded directly into the player model component",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#1",
+      "role": "Character",
+      "handle": "9c01",
+      "symbol": "data_ov014_02114978",
+      "initializer": "src/game/actors/d_a_wanwan.cpp",
+      "consumer": "src/game/actors/d_a_wanwan.cpp",
+      "consumer_needles": [
+        "data_ov014_02114978",
+        "mLinkModels",
+        "Model::LoadFile"
+      ],
+      "reason": "Chain Chomp body/link model owned by the enemy; retain original parts",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#2",
+      "role": "Character",
+      "handle": "9c02",
+      "symbol": "data_ov014_02114968",
+      "initializer": "src/game/actors/d_a_wanwan.cpp",
+      "consumer": "src/game/actors/d_a_wanwan.cpp",
+      "consumer_needles": [
+        "data_ov014_02114968",
+        "mModelAnim",
+        "Model::LoadFile"
+      ],
+      "reason": "Chain Chomp body/link model owned by the enemy; retain original parts",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#5",
+      "role": "Level",
+      "handle": "9c05",
+      "symbol": "data_ov075_0211d3fc",
+      "initializer": "src/actors/dEntObj_c.cpp",
+      "consumer": "src/actors/dEntObj_c.cpp",
+      "consumer_needles": [
+        "mModel.SetFile((BMD_File*)data_ov075_0211d3fc.ptr"
+      ],
+      "reason": "Multiplayer entry-room background scenery",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#9",
+      "role": "Object",
+      "handle": "9c09",
+      "symbol": "data_ov100_0214875c",
+      "initializer": "src/actors/daDoor_c.cpp",
+      "consumer": "src/actors/daDoor_c.cpp",
+      "consumer_needles": [
+        "DoorModelFilePtr",
+        "data_ov100_0214875c",
+        "data_ov100_02148204"
+      ],
+      "reason": "DOOR variant model/keyhole resource, not a character part",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#10",
+      "role": "Object",
+      "handle": "9c0a",
+      "symbol": "data_ov100_0214877c",
+      "initializer": "src/actors/daDoor_c.cpp",
+      "consumer": "src/actors/daDoor_c.cpp",
+      "consumer_needles": [
+        "DoorModelFilePtr",
+        "data_ov100_0214877c",
+        "data_ov100_02148204"
+      ],
+      "reason": "DOOR variant model/keyhole resource, not a character part",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#11",
+      "role": "Object",
+      "handle": "9c0b",
+      "symbol": "data_ov100_0214874c",
+      "initializer": "src/actors/daDoor_c.cpp",
+      "consumer": "src/actors/daDoor_c.cpp",
+      "consumer_needles": [
+        "DoorModelFilePtr",
+        "data_ov100_0214874c",
+        "data_ov100_02148204"
+      ],
+      "reason": "DOOR variant model/keyhole resource, not a character part",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#12",
+      "role": "Object",
+      "handle": "9c0c",
+      "symbol": "data_ov002_0210d9f0",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_02100560.c",
+      "consumer": "src/actors/daDpLift_c.cpp",
+      "consumer_needles": [
+        "mModel2.SetFile((BMD_File *)Model::LoadFile(data_ov002_0210d9f0)"
+      ],
+      "reason": "Shared platform marker/shadow prop",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#13",
+      "role": "Object",
+      "handle": "9c0d",
+      "symbol": "data_ov100_02148a54",
+      "initializer": "src/game/actors/daObjPathLift_c.cpp",
+      "consumer": "src/game/actors/daObjPathLift_c.cpp",
+      "consumer_needles": [
+        "mModel.SetFile((BMD_File *)Model::LoadFile(data_ov100_02148a54)"
+      ],
+      "reason": "Path lift platform model",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/ar1.narc#15",
+      "role": "Object",
+      "handle": "9c0f",
+      "symbol": "data_ov002_0210d9d8",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_02100560.c",
+      "consumer": "src/actors/da1up_c.cpp",
+      "consumer_needles": [
+        "Model::LoadFile(data_ov002_0210d9d8)"
+      ],
+      "reason": "1UP mushroom collectible/reward model",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#9",
+      "role": "Object",
+      "handle": "8009",
+      "symbol": "data_ov002_0210d9a8",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_02100560.c",
+      "consumer": "src/actors/daCoin_c.cpp",
+      "consumer_needles": [
+        "Model::LoadFile(*(SharedFilePtr *)&data_ov002_0210d9a8)"
+      ],
+      "reason": "Red-coin number/collectible model",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#11",
+      "role": "Object",
+      "handle": "800b",
+      "symbol": "data_ov002_0210da28",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_02100560.c",
+      "consumer": "src/game/actors/d_a_obj_number.cpp",
+      "consumer_needles": [
+        "Model::LoadFile(data_ov002_0210da28)"
+      ],
+      "reason": "Silver-star floating number model",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#12",
+      "role": "Object",
+      "handle": "800c",
+      "symbol": "data_ov002_0210da58",
+      "initializer": "src/unnamed/ov002/__sinit_ov002_02100560.c",
+      "consumer": "src/actors/daObjHatenaBlock_c.cpp",
+      "consumer_needles": [
+        "Model::LoadFile(*(SharedFilePtr *)data_ov002_0210da58)"
+      ],
+      "reason": "Feather item model used by question-block contents, separate from worn player wings",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#14",
+      "role": "Object",
+      "handle": "800e",
+      "symbol": "data_ov102_0214e800",
+      "initializer": "src/actors/daObjHatenaBlock_c.cpp",
+      "consumer": "src/actors/daObjHatenaBlock_c.cpp",
+      "consumer_needles": [
+        "modelFile = Model::LoadFile(data_ov102_0214e800)"
+      ],
+      "reason": "Question-block object model",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#21",
+      "role": "Object",
+      "handle": "8015",
+      "symbol": "data_ov002_0211094c",
+      "initializer": "src/actors/daStar_c.cpp",
+      "consumer": "src/actors/daStar_c.cpp",
+      "consumer_needles": [
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii",
+        "data_ov002_0211094c"
+      ],
+      "reason": "Power/silver-star collectible or star reward cage object",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#25",
+      "role": "Object",
+      "handle": "8019",
+      "symbol": "data_ov002_02110954",
+      "initializer": "src/actors/daStar_c.cpp",
+      "consumer": "src/actors/daStar_c.cpp",
+      "consumer_needles": [
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii",
+        "data_ov002_02110954"
+      ],
+      "reason": "Power/silver-star collectible or star reward cage object",
+      "table": null
+    },
+    {
+      "path": "ARCHIVE/arc0.narc#28",
+      "role": "Object",
+      "handle": "801c",
+      "symbol": "data_ov002_0211092c",
+      "initializer": "src/actors/daStar_c.cpp",
+      "consumer": "src/actors/daStar_c.cpp",
+      "consumer_needles": [
+        "_ZN9ModelBase7SetFileEP8BMD_Fileii",
+        "data_ov002_0211092c"
+      ],
+      "reason": "Power/silver-star collectible or star reward cage object",
+      "table": null
+    }
+  ],
+  "deferred": [
+    {
+      "paths": [
+        "ARCHIVE/arc0.narc#5",
+        "ARCHIVE/arc0.narc#7",
+        "ARCHIVE/ar1.narc#6"
+      ],
+      "reason": "Coin models used as enemy daTrs_c mBodyModel; resolve draw ownership before enabling shared art",
+      "source": "src/actors/daTrs_c.cpp",
+      "needles": [
+        "mBodyModel.SetFile",
+        "data_ov002_0210d9b8",
+        "data_ov002_0210d9f8",
+        "data_ov002_0210d9c8"
+      ]
+    },
+    {
+      "paths": [
+        "ARCHIVE/arc0.narc#16",
+        "ARCHIVE/arc0.narc#17",
+        "ARCHIVE/arc0.narc#20"
+      ],
+      "reason": "Standalone cap items also loaded as player cosmetics; resolve use at draw time",
+      "source": "src/unnamed/ov002/func_ov002_020e5948.c",
+      "needles": [
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210da40)",
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210d9a0)",
+        "_ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210d9c0)"
+      ]
+    }
+  ]
+}

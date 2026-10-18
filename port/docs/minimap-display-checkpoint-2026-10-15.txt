@@ -1,0 +1,40 @@
+Mario 64 DS native PC port: minimap display checkpoint, 2026-10-15
+Status: PARTIALLY VERIFIED. The minimap palette is repaired. The transform now reaches scanout, but the map is incorrectly positioned/clipped on the right. Both bounded game tests exit normally; full minimap display correctness is not established. Pause for specifically recommended model switch to Sol High.
+
+Completed changes:
+1. Stage's PC graphics callback table had four no-op callbacks. Slot 2 now calls the real recovered GraphCallback2, which uploads the map transform through G2x::SetBGyAffine. Callback 0/1/3 behavior is otherwise preserved.
+2. The map callback's vtable, four matrix words and four center/destination values now occupy one explicit 36-byte native state object. UpdateMinimap's PC branch writes that object, avoiding reliance on adjacent independent generated globals at data_0209f3c4 and data_0209f3c8. Its DS branch is preserved. The real GraphCallback2 source is enrolled in the boot closure.
+3. The GX bank state at ROM 020a6088..020a60a0 now occupies one allocation with 13 correctly offset halfword labels. A data-only x86 MASM file supplies real interior COFF labels. C/C++ names bind to this canonical storage. Previously the aggregate root and named fields were independent generated arrays: e.g. data_020a609e was native root+44 instead of root+22. Sub BG palette upload/unmap read a different field than bank selection wrote, so extended palette enable was lost.
+4. Added an optional before_present callback to the fiber runtime. The game wires pc_stage_graph_prepare, which applies only the active Stage map callback. The runtime currently does not dispatch the original ARM VBlank IRQ that calls callback slot 2, so fixing the table alone did not update registers. Existing runtime callers default to no preparation callback.
+5. Added transform/state and GX bank-state tests and expanded the sprite-data audit to check all 13 field offsets.
+
+Build and tests:
+Release builds pass (minimap-transform-build.log, minimap-palette-build.log, minimap-present-build.log). MSVC's assembler warns that it ignores inherited C/C++ compiler flags; assembly and linking succeed. No ARM game instructions are assembled in the new data-only file.
+Four rebuilt CTest checks pass: smoke_gx_bank_state, smoke_stage_graph, smoke_ppu_affine, smoke_frames (minimap-present-ctest.log).
+The bank test checks enable -> unmap -> restore through the real GX helpers and asserts saved bank 0x80 and DISPCNT bit30. Its initial direct comparison of linker-alias addresses was compiler-folded as distinct external objects (exit3); checking the actual runtime addresses fixes the test assumption. The map-file audit independently verifies all 13 offsets.
+The transform test checks a nontrivial matrix and center through slot 2, preservation of the callback pointer, runtime preparation across three distinct simulation ticks, and no update when Stage is inactive. Presentation repeats are allowed.
+Final compiled-data audits pass: 65 native sprite pointers and ROM sprite bytes, all 13 GX offsets, and 252 C/C++ shared bindings with zero divergent addresses. Existing actor-data audit also passes at the palette build.
+
+Game tests and screenshots:
+Run133 has callback/storage and palette repairs, before wiring the presentation hook. It selects course1 with isolated Down300/A450, completes 6000 simulation frames, and exits0. The map colors become coherent: red roof, blue water, green grass and paths. It remains a 128-pixel image at top-left with green remainder. Last register mode has DISPCNT=40011803 (extended palette enabled); matrix remains identity/origin zero because native VBlank dispatch is absent.
+Run134 adds the before-presentation transform upload. It selects the same route, completes the intro and Stage reload, runs6000 simulation frames, and exits0. Mario remains visible in castle grounds. The map is now clipped on the right; this is not a correct final layout. Last mode-change trace: DISPCNT40011803, BG3CNT1f12, matrix -191,0,0,-191, origin0000e650,0000b17c. These are mode-change diagnostics, not a separately sampled final register dump. Latest progress reaches presentation10080, script0, pending_level-1,current_level1; no new crash is claimed. No delivered FPS is measured.
+All top/bottom screenshots were viewed. Final files are last-render.bmp/bottom-screen.bmp (run134). palette-only-render.bmp/palette-only-bottom.bmp preserve run133 for comparison. Intermediate captures are retained too. A partial BMP read during continuous capture was retried by validating a complete BMP header/file length; it was a capture-read race, not a game crash.
+
+Exact next investigation:
+The palette issue is resolved. Placement remains wrong after two focused attempts: restoring the no-op callback, then arranging for native scanout to invoke it. Stop further behavior patches under the user's two-attempt rule.
+Inspect the steady-state PcStageGraphState matrix, center_x/y and destination_x/y after the intro, along with dMap_c mMapCenterX/Y, mMapCenterWorld, mMapOrigin, mInvScale, mAngle and player icon positions. Verify dMap field offsets and recovered G2x::SetBGyAffine semantics against original ARM9 function02055278. Current C++ math uses dx=c-a/dy=d-b and matrix*delta + (a,b)<<12; the test establishes this implementation's behavior, not independent correctness of that reconstructed math. Also check the sine table and map origin/center inputs before changing signs or constants. Avoid guessing offsets, forcing a fixed center or cropping the output to disguise the fault.
+The before_present connection currently remains enabled in this diagnostic build. It exposes the incorrect placement instead of retaining the identity transform. Prior checkpoint remains available and run133 screenshots show the palette-only result.
+
+MODEL UPGRADE RECOMMENDED
+Current model confirmed by user: Sol Medium.
+Recommended model: Sol High.
+Reason: the remaining fault spans recovered fixed-point affine math and native map-object fields. Two targeted repairs made the transform execute, but did not establish correct map placement. A more careful source/ROM investigation is appropriate before further changes. This recommendation is based on observed debugging difficulty, not measured intelligence or usage cost.
+What has been attempted: real callback dispatch/canonical state; then native before-presentation upload. Palette bank ownership was separately repaired and tested.
+Next action: select Sol High, resume, and investigate the exact state/ROM contract above. User conditionally authorizes pause for a specifically recommended model switch. The full PC-port goal is not complete.
+
+How to check:
+Open last-render.bmp and bottom-screen.bmp, then compare palette-only-bottom.bmp. Launch-test.cmd repeats the isolated 6000-frame startup and saves logs/captures. Launch-game.cmd clears automation and runs with normal controls. The launchers reference the European ROM two directories above this F-drive checkpoint.
+
+Other open work:
+Remaining minimap layout/background/composition, other overlay graphics, true scene4 star selection, complete gameplay/course/door transitions/actors/audio, physical Xbox verification, internal4K rendering and complete replacement textures, measured60/120/240FPS. Current resolution settings stretch the DS output. This is a development checkpoint, not a complete playable release.
+Full source remains in C: work/source-extracted/sm64ds-decomp-main. changed-source contains this milestone's14 files. Build/map/logs and build-inputs preserve reproducible evidence. Earlier checkpoints remain available.

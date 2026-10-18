@@ -1,0 +1,91 @@
+UPDATE: Egg throwing, normal Goomba egg-hit/stomp death and coin rewards are
+now verified and installed. Current build/handoff:
+egg-goomba-rewards-checkpoint-2026-10-17.txt. Historical swallowing evidence follows.
+
+Yoshi swallowing native Goombas - 2026-10-17 (Astra Low)
+Status: VERIFIED for normal-Goomba tongue capture, holding, manual and automatic
+swallowing, egg creation/following and subsequent jump/landing in course6.
+Full PC port and the rest of the enemy interactions remain incomplete.
+
+Root causes and repairs
+1. Player::IsState returns bool through AL under MSVC. Its legacy C callers
+   read a full int from EAX. The bridge left the state pointer in the upper
+   bytes, making false appear true. A captured Goomba was released immediately
+   because func_020d6790 incorrectly entered St_Swallow during tongue retraction.
+   cxxname_bridge.cpp now widens the bool to an exact0/1 integer.
+2. func_020d674c's DS slot18 query called the wrong native method when crouching
+   with a Goomba. Port host generation now calls the existing typed query bridge.
+   St_Swallow_Init/Main also use typed OnYoshiTryEat/OnTurnIntoEgg virtual calls.
+3. WillHitFrame had the same bool/int bridge mismatch. The frame3 branch kept
+   appearing true, preventing the frame7 consume/egg event. Its bridge now also
+   returns a full0/1 int. Final disassembly confirms movzx eax,al in both bridges.
+4. Register native YOSHI_EGG actor9 from its original ov0020210ad90 profile:
+   factory daYegg_c_classInit, priorities9/157, flags2, clip values32000/46000/
+   1000000/1000000 hex. Rebase its two model-handle pointers at021000a0.
+   Egg TU already belongs to the closure; explicitly enroll its factory.
+   Replace egg target slot30 and slot20 scaffold calls with native actor methods.
+   Assert egg size0x42c and mPlayer offset0x38c. Its eight native state callbacks
+   are audited; the table is entirely owned/dispatched by C++ and has native
+   member-pointer widths. No ROM initializer writes the DS table over it.
+Original src/ and include/ remain intact.
+
+Observations and reproducible evidence
+- Diagnostic yoshi-contact-trace,1800frames,exit0: tongue hits Goomba5 at1622,
+  mouth=5 at1623, erroneous swallow/release at1624, later hurt.
+- yoshi-swallow-fix: state check fix sustains mouth capture; crouch at1700
+  faults in the raw slot18 query func020d674c. Exact stack evidence retained.
+- yoshi-egg,2000frames,exit0: no crash after typed query, but repeated swallow
+  animations without consuming. This isolated the frame-event return mismatch.
+- FINAL yoshi-swallow-events,2000frames,exit0: actual scripted stick/tongue input;
+  Goomba5 captured1623, held84frames, manual swallow1700, Goomba removed and
+  native egg89 present1708. Normal control returns; jump1880, landing/idle.
+- FINAL installed-yoshi-swallow,2000frames,exit0: exact F: executable and ROM,
+  separate minimal intro-complete save, zero seeded stars/coin records.
+  No crouch input: capture1623, hold109frames, automatic swallow1725, Goomba
+  removed/egg89 present1733. Jump1880, landing1900, idle1940..2000.
+- Screenshots include tongue/retraction, holding, swallowing, egg and continuation.
+  D3D11,1280x720,NVIDIA RTX5070LaptopGPU. No physical controller test this turn.
+- Optional SM64DS_PC_YOSHI_CAPTURE observes every frame from1500; no state
+  injection. CSV records Player state/mouth/tongue cylinder, Goombas and first egg.
+  Goomba mEatenByYoshi remains0 in these paths; actor flags0x20000/0x40000 and
+  Player mouth pointer are the reliable observed capture/hold evidence.
+- port/tools/check_yoshi_swallow_replay.py verifies successful exit, Goomba
+  capture persisting through retraction, swallow, target removal, egg creation,
+  no hurt during capture/consume and normal control/100+frames continuation.
+
+Verification
+Release build succeeds. Final52/52CTests pass19.07s.14host-generator and5Goomba
+generator checks pass. Five final linked-data audits pass. Goomba audit now also
+checks original egg profile metadata/factory,2model pointers and all8state
+callbacks. Manual and installed automatic replay verification scripts both PASS.
+No compiler/debugging overrides were introduced.
+
+Installed artifacts
+F:/AI Games/Mario 64 DS/sm64ds_pc.exe and .map match build/port and preview.
+EXE SHA256 5D99E84CAB1AC3102B73F990B9D5A8C034D62F799F45AE2327538D885848812F
+MAP SHA256 C3DFCA328DC984A52C0409D05C099337503E40BA6EB21148B2990DD8F41863A1
+Rollback: native-checkpoints/native-checkpoint-2026-10-17-yoshi-swallow/previous-install
+Previous EXE9124A6A7... retained. ROM hash remains
+CE5829AAA79F06C67140ED1F45CBCA738B0A9D0180538C8C1498472D859DB032.
+User saves preserved. Installed test's temporary INI removed, restoring its
+original absence. QA uses separate checkpoint/qa-saves. C: remains authoritative
+source; changed-source snapshot, scripts and evidence copied to F: checkpoint.
+
+How to check
+Open Play Goomba Development Preview.cmd in the F: game folder.
+Dismiss the tutorial, approach a Goomba, press Space / Xbox A to use the tongue.
+Wait for automatic swallowing or press E / Xbox RB to swallow sooner.
+An egg should appear behind Yoshi; LeftShift / Xbox B jumps.
+These are the existing Standard control mappings; physical hardware unverified.
+
+Next task / model handoff
+The difficult swallow repair is complete. Recommend stepping down to Sol Medium
+for bounded egg throwing and Goomba stomp/reward checks using this verified
+baseline. Record real input and screenshots; do not inject mouth/actor states.
+Egg throwing, payouts, multiple eggs, other enemy sizes and full progression are
+still unverified. Do not infer those work from egg creation.
+The bool/int mismatch may matter at other legacy boundaries; investigate only
+when supported by an actual failing path. Remaining bool bridges include
+dBgCh_Lin::DetectClsn and short ApproachLinear; no new failure established here.
+Pause for the specifically recommended model switch, per user instruction.
+Overall goal remains incomplete.

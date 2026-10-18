@@ -1,0 +1,48 @@
+HISTORICAL CHECKPOINT: the allocation/ownership crash below was resolved by
+heap-ownership-checkpoint-2026-10-14.txt and subsequent gameplay milestones.
+Do not treat this document as the current blocker or model recommendation.
+See port/BUILD-STATUS.txt and the newest checkpoint for current status.
+
+Mario 64 DS native PC port: stage-transition checkpoint, 2026-10-14
+Status: PARTIALLY VERIFIED overall. The original intro now finishes, camera/stage teardown completes, and native scene 3 starts a second stage initialization. The latest game run still fails during that second initialization. This is a diagnostic development checkpoint, not a playable release.
+
+Corrections to the preceding report:
+data_02092110 is the pending level ID, not dialogue state. The old "dialogue" trace label was incorrect; source assignments in LoadLevel and stage initialization establish its meaning. The intro-transition report in C: and on F: has been corrected. Repeated A did not establish a dialogue problem. Current diagnostics print pending_level and current_level.
+
+Changes:
+- Stage Behavior now calls real native dFader_c::IsAtStart. Its old six-slot shadow class selected native IsAtEnd instead, skipping the pending-level transition branch at fade=0. The DS path is preserved.
+- Camera and Stage manual vtables now use a common MSVC scalar deleting-destructor helper. It accepts the native flags argument, calls the derived destructor qualified to avoid recursive virtual dispatch, and deallocates exactly when flag bit 0 requests deletion. The camera's real D1 source is explicitly enrolled. Previously cleanup recursively re-entered each wrapper and never returned.
+- The 12-entry Stage preload/release table now points at canonical native SharedFilePtr objects. Initial loading no longer skips the entire table via an unrelated overlay-8 address mapper. Generation binds pointers through public C symbols so strong initialized definitions in ov002_data/daStar win over raw zero-filled fallback allocations. The audit caught this distinction before the new runtime test.
+- Stage cleanup uses Model::Destructor0 for its explicit native two-slot model convention and native delete for TextureTransformer, instead of a cdecl call to DS virtual slot 1.
+- Native scene 3 is registered with the real Stage factory and original priorities 3/6. Factory validation and dispatch accept it. Its eight-byte descriptor is compared with original g_profile_STAGE at ARM9:0209213c.
+- GAME_HEAP_PTR and data_020a0eac are now one native object, matching their shared ROM address 020a0eac. The historical fixture name data_020a0eac_c aliases it too. The previous bridge allocated separate storage, allowing actor allocation to fall back to the current default heap. The shared-data audit now checks this semantic-name pair.
+- Unchanged generated source files retain their timestamps. Later focused builds compile only changed sources instead of rewriting/recompiling roughly 280 generated translation units. Generated source contents and transformations are preserved.
+- Smoke coverage now checks fade readiness through a native base pointer and deleting/non-deleting virtual destructor dispatch with exact destruction/free counts.
+
+Build and verification:
+Latest Release game build passed: actor-heap-binding-build.log. Earlier focused build logs are included. The camera's first qualified-destructor build exposed its previously unenrolled D1; camera-cleanup-build2.log resolves it.
+Eight rebuilt CTest checks pass: smoke, smoke_heap, smoke_stage_layout, smoke_ppu_affine, smoke_actor, smoke_modelanim, smoke_frames, smoke_video. The layout test asserts Stage size 0x9c8, Model offset 0x86c, texture slots 0x8bc, collider 0x91c, and Player size 0x768/callback stride.
+Audits pass: six native actor profiles, prior DOOR records and scratch bounds, four jump descriptors/three workers, 18 complete animation lists, eight DEMO sprite targets, 12 canonical Stage handle pointers, and 252 shared-data bindings with zero divergent addresses.
+Run122 clears pending_level to -1 and reaches the last intro event, then fails in camera cleanup. Run123 gets through camera cleanup and identifies the raw Stage release pointer. Run124 completes Stage resource cleanup and reaches its recursive destructor. Run125 completes all teardown, clears the active script, runs 4,000 simulation frames and exits 0, but exposes the missing scene-3 registry entry. These are distinct concrete failures, not equivalent repeated successful gameplay runs.
+Run126 enters native scene 3's second Stage initialization, then the allocator refuses a new Player allocation. Run127, after the canonical heap binding repair, also enters its second Stage initialization, but the allocator now refuses loading a transition-fader model. It exits through the game's fatal Crash path (exit -1073740791). No passing second-stage/gameplay run is claimed. Screenshots are retained for every run. No delivered FPS is measured.
+
+Exact current block and handoff:
+The latest failure stack is Heap::Allocate(u32,int) -> Memory::Allocate(u32) -> pc_fs_load_file -> LoadFile -> Model::LoadAndSetFile -> dFdWipe_c::LoadAndSetFile -> dScStage_c::InitResources. The allocator returns null and its fail-fast flag calls Crash. The log records two Stage initialization entries. The first intro renders; the second stage does not finish initializing.
+Latest run: build/resume127.stderr.log and resume127.exit-code.txt. Final linked map/executable are build/port/sm64ds_pc.map and .exe, copied into this checkpoint. Run126's earlier failure was the same allocation guard reached through fBase_c::operator new/daPly_c_classInit.
+Recommended next investigation: instrument the failing allocation with heap address, size, alignment, flags and available space; compare Memory::defaultHeapPtr with GAME_HEAP_PTR before/after stage cleanup and during reload. Track per-stage resource ownership, file-loader allocations, release/reference counts, and free-list restoration. Do not enlarge the heap to hide a leak or force the pending-level/script flags. Also audit the declaration mismatch in Stage CleanupResources: it calls Deallocate() without an argument although src/Deallocate.c takes void*. Establish the original ARM return-register/call contract before changing it. That mismatch is an investigation lead, not a proven cause of the current failure.
+Stop speculative repairs here. Scene teardown and canonical heap binding have both been repaired and tested, but the allocation failure remains. A focused ownership/ABI investigation is needed next.
+
+Other unfinished requirements:
+The top overlay is visibly corrupt (repeated glyphs/green regions), and the minimap remains a partial image on green. Complete post-intro controls/physics, door/course transitions, missing actor profiles, audio, physical Xbox gameplay, internal 4K rendering, complete upscaled texture assets and measured 60/120/240 behavior remain open. Scene 4 still uses the existing bootstrap shortcut to Stage; original scene 4 is star selection, and that native flow must be implemented before course-entry behavior is complete. The new scene-3 registration does not establish scene-4 correctness. The full original PC-port goal remains unfinished.
+
+How to check:
+Read REPORT.txt and open last-render.bmp/bottom-screen.bmp. Launch-test.cmd replays startup with one Down and one A press and a 4,500-frame limit. In the latest checkpoint it is expected to stop at the documented second-stage allocation failure; the limit is an intended upper bound, not a completed run count. Launch-game.cmd has no automated input or frame limit. Both use the user's European ROM in the main Mario 64 DS folder.
+The authoritative full source remains in C: under work/source-extracted/sm64ds-decomp-main. changed-source contains this milestone's edits only. Compressed runtime logs and build-inputs preserve diagnosis/rebuild evidence. Previous checkpoints remain available.
+
+MODEL UPGRADE RECOMMENDED
+Last human-confirmed model: Sol High; the current selector is not directly observable.
+Recommended next model: Astra Low.
+Reason: the remaining failure spans resource ownership, two heap names, scene destruction and native-versus-ARM calling conventions. Further isolated patches risk hiding the cause. This recommendation is based on the observed debugging difficulty, not measured intelligence or usage cost.
+What has already been attempted: typed native fade dispatch, camera/Stage destructor repairs, canonical resource-table binding, proper scene-3 registration, and unification of the two ROM-equivalent heap globals. Their narrow tests/audits pass; second-stage allocation still fails.
+Next action: select Astra Low, resume the goal, and trace the precise allocation/ownership path above before making another repair. The user's conditional instruction authorizes pausing when a model switch is recommended. Pause for this handoff; do not mark the full goal complete.
+Official model reference checked for the handoff: https://developers.openai.com/api/docs/models/gpt-6-astra (complex reasoning/coding and low reasoning effort are documented). The specific recommendation here is a project judgment.

@@ -1,0 +1,210 @@
+//cpp
+#include "types.h"
+#include "PlayerInput.h"
+#include "Sound.h"
+extern "C" {
+    short ReadUnalignedShort(unsigned char* p);
+    unsigned int ReadUnalignedInt(unsigned char* p);
+    unsigned int func_02012790(unsigned int a);
+    void func_0201f32c(int a);
+    void LoadLevelNoReturn(u32 levelID, u32 arg1, u32 arg2, u32 arg3);
+    int func_02008550(void* obj, unsigned char* msg, int a2, int a3);
+    int func_0200e5ac(void* c, int r1, int r2);
+    int func_0200e494(void* c, int r1, int r2);
+    void EndKuppaScript(void);
+
+    extern unsigned char* data_0209fc48;
+    extern u16 data_0209b274;
+    extern u8 data_020a0e58[];
+    extern u8 data_0209d66c;
+    extern u32 data_0209fc4c;
+    extern u8 data_0209f2d8;
+    extern s8 data_0209d45c;
+    extern u32 data_ov002_02110aec;
+    extern void* data_0209f318;
+    extern s8 data_02092110;
+}
+#ifdef SM64DS_PLATFORM_PC
+#include "dFdColor_c.h"
+using PcMovieFader = dFdColor_c;
+#define fieldC color
+#else
+struct dFdBrightness_c {
+    Fix12i currInterp;
+    Fix12i speed;
+    virtual ~dFdBrightness_c();
+    virtual int Advance();
+    virtual int SetBackwardTime(unsigned frames, unsigned arg2);
+    virtual int SetForwardTime(unsigned frames, unsigned arg2);
+    virtual int IsAtStart();
+    virtual int IsAtEnd();
+    virtual void Virtual1C();
+    virtual void SetToEnd();
+    virtual void SetToStart();
+    u16 fieldC;
+};
+using PcMovieFader = dFdBrightness_c;
+#endif
+extern "C" PcMovieFader data_0209b294;
+extern "C" dFdBrightness_c* data_0209d4b0;
+
+#ifdef SM64DS_PLATFORM_PC
+using UnkVis = dFader_c;
+#else
+struct UnkVis {
+    virtual void u0();
+    virtual void u1();
+    virtual void u2();
+    virtual void u3();
+    virtual void u4();
+    virtual void u5();
+    virtual void u6();
+    virtual int u7();
+};
+#endif
+extern "C" UnkVis* data_0209f5bc;
+static int movieForward(PcMovieFader *f, unsigned frames, unsigned unused) {
+#ifdef SM64DS_PLATFORM_PC
+    return f->SetForwardTime(frames);
+#else
+    return f->SetForwardTime(frames, unused);
+#endif
+}
+static int movieBackward(PcMovieFader *f, unsigned frames, unsigned unused) {
+#ifdef SM64DS_PLATFORM_PC
+    return f->SetBackwardTime(frames);
+#else
+    return f->SetBackwardTime(frames, unused);
+#endif
+}
+static int movieFaderActive() {
+#ifdef SM64DS_PLATFORM_PC
+    return data_0209f5bc->IsBetweenStartAndEnd();
+#else
+    return data_0209f5bc->u7();
+#endif
+}
+
+class dScene_c {
+public:
+    static void StartSceneFade(unsigned int a, unsigned int b, unsigned short c);
+    static void SetAndStopColorFader();
+    static void SetFaders(dFdBrightness_c* f);
+};
+class SaveData {
+public:
+    static int IsCharacterUnlocked(unsigned int a);
+};
+
+#pragma opt_common_subs off
+
+extern "C" void ProcessKuppaScript(void)
+{
+    unsigned char* s = data_0209fc48;
+    int next;
+    int fin;
+    if (s == 0)
+        return;
+    next = 0;
+    fin = 1;
+    while (*s != 0) {
+        int beg = ReadUnalignedShort(s + 2);
+        int end = ReadUnalignedShort(s + 4);
+        u16 t = data_0209b274;
+        if (beg > t) {
+            fin = 0;
+        } else if (end < 0 || end >= t) {
+            u8 cmd = s[1];
+            if (cmd == 5) {
+                if (movieFaderActive() == 0) {
+                    u32 i = gActivePlayerSlot;
+                    u32 off = i * 4;
+                    if (*(u16*)(data_020a0e58 + i * 4 + 2) != 0 ||
+                        ((gTouchHeld[off] != 0 && *(gTouchHeld + off + 1) != 0) ? 1 : 0)) {
+                        dScene_c::StartSceneFade(1, 0, 0);
+                        Sound::StopLoadedMusic_Layer1(0x3c);
+                    }
+                }
+                fin = 0;
+            } else if (cmd == 6) {
+                next = ReadUnalignedInt(s + 6);
+            } else if (cmd == 7) {
+                Sound::LoadAndSetMusic_Layer1(ReadUnalignedInt(s + 6));
+            } else if (cmd == 8) {
+                Sound::Play2D(1, ReadUnalignedInt(s + 6));
+            } else if (cmd == 9) {
+                func_02012790(ReadUnalignedInt(s + 6));
+            } else if (cmd == 0xa) {
+                if (beg == t) {
+                    beg = ReadUnalignedShort(s + 6);
+                    if (beg == 0xd && SaveData::IsCharacterUnlocked(1) == 0 && SaveData::IsCharacterUnlocked(2) == 0)
+                        beg = 0x16;
+                    func_0201f32c(beg);
+                } else if (end == t) {
+                    data_0209d66c = 1;
+                }
+            } else if (cmd == 0xb) {
+                LoadLevelNoReturn((s8)s[6], s[7], (s8)s[8], 0);
+                data_0209fc4c = ReadUnalignedInt(s + 9);
+                if (((data_0209f2d8 == 2) ? 1 : 0) == 0)
+                    Sound::StopLoadedMusic_Layer1(0x3c);
+                dScene_c::SetAndStopColorFader();
+                data_0209d4b0 = 0;
+            } else if (cmd == 0xc) {
+                PcMovieFader* f = &data_0209b294;
+                f->SetToStart();
+                f->fieldC = 0x7fff;
+                movieForward(f, 0xe, 0);
+                data_0209d4b0 = f;
+            } else if (cmd == 0xd) {
+                PcMovieFader* f = &data_0209b294;
+                f->SetToEnd();
+                f->fieldC = 0x7fff;
+                movieBackward(f, 0x50, 0);
+                data_0209d4b0 = f;
+            } else if (cmd == 0xe) {
+                PcMovieFader* f = &data_0209b294;
+                f->SetToStart();
+                f->fieldC = 0;
+                movieForward(f, 0x1e, 0);
+                data_0209d4b0 = f;
+            } else if (cmd == 0xf) {
+                PcMovieFader* f = &data_0209b294;
+                data_0209d45c = 0x10;
+                f->SetToEnd();
+                f->fieldC = 0;
+                movieBackward(f, 0x50, 0);
+                data_0209d4b0 = f;
+            } else if (cmd == 0x10) {
+                PcMovieFader* f = &data_0209b294;
+                f->SetToEnd();
+                f->fieldC = 0;
+                movieForward(f, 0x1e, 0);
+                dScene_c::SetFaders(f);
+            } else if (cmd == 0x11) {
+                data_ov002_02110aec = 0;
+            } else if (cmd == 4) {
+                func_02008550(data_0209f318, s, beg, end);
+            } else if (cmd <= 3) {
+                func_0200e5ac(s, beg, end);
+            } else if (cmd >= 0x12) {
+                func_0200e494(s, beg, end);
+            }
+            if (end >= 0)
+                fin = 0;
+        }
+        s += *s;
+    }
+    if (next != 0) {
+        data_0209fc48 = (unsigned char*)next;
+        data_0209b274 = 0;
+        return;
+    }
+    if (fin != 0 && data_02092110 < 0) {
+        EndKuppaScript();
+        return;
+    }
+    data_0209b274++;
+    if (data_0209b274 == 0)
+        data_0209b274--;
+}

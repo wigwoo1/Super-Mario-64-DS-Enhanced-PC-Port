@@ -1,0 +1,89 @@
+Egg throwing and normal-Goomba rewards - 2026-10-17 (Sol Medium)
+Status: VERIFIED for egg flight, hit/death, reward spawn/collection and stomp/
+bounce/reward spawn, including actual installed F: replays. Full PC port remains
+incomplete.
+
+Confirmed repairs (original src/include unchanged)
+- hal/actor_ctor_bridge.cpp: replace the game target's fatal
+  dActor_c::OnAimedAtWithEggReturnVec placeholder with a native return-value
+  adapter around the recovered explicit-output-pointer function. The original
+  body returns actor position plus its virtual aim height; no new aim algorithm.
+  The actor-only smoke gate keeps its original explicit trap.
+- tools/link_data.py: preserve all16bytes at ov08402130208, the four Goomba
+  collision heights. Ambiguous labels at +3/+10 previously shortened the copied
+  region to4bytes. Index1 then read the next generated animation word272 as a
+  fixed-point height (0.066 units), instead of the original100units. This made
+  egg contact and normal stomps miss. Original values40/100/224/100units restored.
+- check_goomba_native_data.py now audits all4height words against the local ROM.
+- Optional per-frame SM64DS_PC_REWARD_CAPTURE observes eggs, Goombas, coins,
+  death/hit/payout state and the real per-course coin counter. No game state is
+  injected. A multi-segment stick schedule, restricted to AUTOMATION_ONLY,
+  allows repeatable walking to drops through the real input adapter.
+- check_goomba_rewards_replay.py verifies actual recorded death/removal, spawned
+  rewards, egg follow-to-flight/payout, stomp bounce, continuation/idle and exit.
+
+Local gameplay evidence (final exact executable,1280x720,D3D11)
+- egg-rewards-height:2400frames,exit0. Real tongue input captures Goomba5 at1623;
+  manual swallow1700 creates egg89 at1708. Throw1800 targets Goomba12.
+  Goomba12 enters egg-hit death5 at1811 and is removed1834. Egg payout coins90
+  and91 (param2) appear1811/1816; Goomba body reward coin92 (param0xf2) appears
+  1834. Yoshi walks via stick segment1840..1869 and collects coin90 at1867:
+  course counter0->1. Jump2200 and return to idle; continuation2400.
+- goomba-stomp-height:2200frames,exit0. Same approach, jump1615. Goomba5 enters
+  stomp death1 at1630, Player bounces, Goomba removed1645 and normal coin89
+  (param0xf2) spawns. This route does not collect that coin; counter stays0.
+  Further jump2100/landing/idle verified. Screens show flattening and coin drop.
+- The swallowing replay verifier also passes on the final egg route.
+
+Initial failures preserved for diagnosis
+- egg-throw-initial aborts at1807 on the target-position placeholder.
+- egg-throw-isolated after the adapter exits0 and pays egg coins, but Goombas
+  survive. The height table audit identifies the exact missing original data.
+- goomba-stomp-isolated before height repair exits0 but hurts Yoshi; no stomp.
+- Two parallel early routes accidentally shared a save fixture; save locking
+  canceled the initial course load and later inputs launched a different route.
+  These are invalid gameplay evidence. All subsequent parallel runs use separate
+  fixture copies. Original saves were preserved; no lock bypass implemented.
+
+Build/checks
+Release build succeeds;52/52CTests pass28.86s.14existing host-generator and5Goomba
+generator checks pass. All5final linked-data audits pass (Goomba,actor/message,
+animation,Wanted,Rec Room). The Goomba audit includes egg profile/model pointers,
+all8egg state callbacks and all4Goomba cylinder heights.
+
+Installation / preservation
+Installed root F:/AI Games/Mario 64 DS and build/wanted-callback-preview match:
+EXE SHA256 5C3A63970ABED198ED7AEEF7471AB3DB889E7BA214D384BA5D5733DEA5247031
+MAP SHA256 F2D7253D5C8312C9BDA738B37935173E4804843CB54AE761881B3ED263E804DC
+Rollback: native-checkpoints/native-checkpoint-2026-10-17-egg-rewards/previous-install
+Previous swallow build5D99E84C... retained. User ROM/saves preserved. QA uses a
+private copy of the earlier minimal introduction-complete save, zero best
+stars/coins; local fixtures retain their earlier seeded best records, which
+are not evidence of earned progress. The observed course-coin increments are
+real. C: remains authoritative source; checkpoint stores changed-source/QA.
+
+Installed verification
+- installed-goomba-rewards:2200frames,exit0. Stomp5/removal/coin spawn/bounce and
+  idle pass. A walk-back segment1685..1704 misses the coin, so the optional
+  require-collection assertion fails; the normal stomp/drop verifier passes.
+- installed-egg-rewards:2400frames,exit0. The same egg route defeats Goomba12,
+  creates all3reward coins and collects coin90 at1867; course counter0->1.
+  Subsequent jump/landing and idle pass. Both reward and swallowing replay
+  verifiers PASS. Screenshots include1812hit and1870after pickup.
+- Both installed runs use the F: ROM and exact final root executable with
+  isolated minimal saves. The temporary root INI is removed after each run,
+  restoring original absence. ROM SHA256 remains
+  CE5829AAA79F06C67140ED1F45CBCA738B0A9D0180538C8C1498472D859DB032.
+
+How to check
+Open Play Goomba Development Preview.cmd. Approach a Goomba and press
+Space/Xbox A to catch it; wait or use E/Xbox RB to swallow. Press Space/A again
+to throw the resulting egg. Walk over dropped coins. LeftShift/Xbox B jumps;
+land on a Goomba while descending to stomp it. Physical hardware unverified.
+
+Scope / next work
+Normal Goomba coins and the swallowed-Goomba egg payload are covered. Blue-coin
+large Goombas, silver-star/cap rewards, multiple eggs, other courses/enemies and
+complete progression remain unverified. Full requested PC feature plan remains
+open. Keep Sol Medium for bounded gameplay/progression checks; no model switch
+is specifically recommended for this completed repair.

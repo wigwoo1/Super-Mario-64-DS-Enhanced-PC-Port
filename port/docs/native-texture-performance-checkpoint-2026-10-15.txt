@@ -1,0 +1,77 @@
+Mario 64 DS PC port: cached texture identities, 2026-10-15
+Status: VERIFIED for eliminating repeated decoded-texture scans in the tested
+path, with unchanged game pixels. Full-pack memory/FPS and the full game remain
+unfinished. Goal stays active. Keep Sol High for remaining rendering/streaming.
+
+What changed
+- Decoded VRAM-cache entries compute their RGBA identity and partial-alpha flag
+  once, after decoding. Immutable metadata travels with each submitted triangle.
+  Native D3D11 reuses that identity instead of scanning all texture pixels again
+  at every presentation. GPU upload also uses the cached alpha classification.
+- Mutable bindings retain change detection. New decoded pixels carry a new
+  content identity and cause one new upload. Existing role/quality separation,
+  texel coordinates, shadows, alpha and material behavior are unchanged.
+- Added counters for identity scans, material uploads/cache reuse and CPU
+  submission time. Optional SM64DS_PC_GPU_PROFILE=<csv> records native samples;
+  SM64DS_PC_GPU_FORCE_TEXTURE_SCAN=1 retains a diagnostic A/B path. Neither is
+  enabled in normal play. Material upload counters exclude regular2D/base uploads.
+- A strict geometry test caught six unused padding bytes copied by MSVC. They
+  are now explicit, zero-initialized reserved bytes. The original full-record
+  memcmp check remains intact and passes. Temporary diagnostic edits to that
+  test were restored; failed/diagnostic logs are retained.
+- No retail src files, artwork, texture role rules or game timing were changed.
+
+Build and tests
+- Release/default builds succeed. All34 CTest checks pass (21.80s). Native-data
+  audit passes. New performance test covers cached/forced paths, exact RGBA
+  output, partial alpha, changed immutable identities and mutable same-pointer
+  updates. Existing492-triangle game-pump byte comparison is unchanged and passes.
+- Isolated WARP test uses a4096x4096 texture at256x192 output to isolate texture
+  maintenance.20 warm renders scan335544320 texels in the forced reference path
+  and zero in the cached path, with identical output and zero material uploads.
+  Measured CPU submission averages 45.140ms vs 0.2572ms in that fixture.
+  These numbers are not complete game FPS or GPU-completion measurements.
+- Two4200-tick actual native3840x2160 castle replays exit0. Original and synthetic
+  replacement screenshots each match the corresponding previous ownership
+  checkpoint RGB exactly, and raw bottom RGB matches too. Screenshots inspected.
+- Original run:7710 profiled presentations; fixture:4593. Both have zero GPU
+  material identity-scan texels throughout. In stable ticks4000..4180 both have
+  zero material upload bytes; largest per-presentation decode-metadata scan is
+  117504 texels, well below a4K image's16777216 texels.
+- Stable render CPU medians: Original842.5us, fixture776us; render+present CPU
+  medians1593us/1446us. They exclude the rest of gameplay and GPU completion.
+  The concurrent replay wall times129.800s/186.538s are observational, not a
+  controlled end-to-end speed comparison. Simulation and presentation counts
+  differ; independent high-FPS game frames remain unimplemented.
+- Executable SHA256: 37F9975A4D1D1CCC40056A497F625D3162C5655EE843959E660929963369DF36
+- Evidence: texture-performance-*.log/CSV/state/captures; run-texture-performance.ps1,
+  verify-texture-performance.py and texture-performance-evidence.json.
+
+Still required before a complete art pack
+- Profile/avoid repeated missing-PNG lookups and transient tex/palette pairs
+  decoded between register writes. Counters show small decode work still occurs;
+  this milestone removes repeated full-RGBA scans, not every source of overhead.
+- Add bounded CPU/GPU replacement streaming for the32-bit executable. A4K RGBA
+  image takes64MiB; a full scene cannot retain arbitrarily many CPU images. The
+  existing256MiB GPU cache clears wholesale when exceeded and needs an active
+  resource budget/LRU strategy before a full pack can perform reliably.
+- Resolve63 Unknown model roles and121 texture records without initial material
+  bindings, then generate/review the complete stylistically accurate level/object
+  AI artwork while excluding every character. No production AI art exists yet.
+- Full courses/gameplay/audio/save, independent60/120/240 behavior, physical Xbox
+  and mouse testing, and final standalone packaging remain unfinished.
+
+How to check
+- Launch Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS. Original art should
+  look unchanged. Upscaled still says NO PACK. Synthetic test colors are confined
+  to the local diagnostic runtime; they are not part of the active installation.
+
+Installed-folder verification
+- Installed on F: with75 initial SHA256-verified copies and a rollback checkpoint
+  at native-checkpoint-2026-10-15-texture-performance. User INI absence is preserved.
+- Installed executable/map audit passes; the installed ROM hash matches the
+  tested European Rev0 ROM. A separate1800-tick TestMap run exits0 at1280x720,
+  retains one live coin, and captures actual GPU output at1750. Screenshot
+  inspected and shown. Its profile records zero repeated material scan texels.
+- No diagnostic replacement PNGs are active in the installed folder. Goal stays
+  active. Keep Sol High for full-pack streaming/memory and remaining engine work.

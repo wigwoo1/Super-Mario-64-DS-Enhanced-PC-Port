@@ -1,0 +1,34 @@
+Mario 64 DS PC port: native coin registration and input-gate diagnosis, 2026-10-15
+Status: PARTIALLY VERIFIED. Selected yellow-coin resource initialization is verified; complete coin behavior and in-game analog movement remain unverified. Overall native PC port remains incomplete.
+
+Changes:
+Registered the already compiled canonical COIN, RED_COIN and BLUE_COIN profiles for actor IDs 288-290. Fixed the two three-entry model-resource tables to bind to initialized native SharedFilePtr storage rather than raw DS addresses. The recovered actor code remains in use.
+Added optional state CSV and crash-only tracing, plus timed start/end polls for synthetic stick input. No diagnostic files are written during normal play.
+Corrected the standalone piano-animation probe's orthographic depth framing. The renderer clips all six planes, while the old test fit only X/Y. The original >500-pixel coverage check remains, and every fitted vertex is now checked against the view volume.
+
+Build/tests:
+Release game builds successfully. All default smoke targets were rebuilt (89 build steps); the final configured suite passes 27/27.
+Native actor-data audit passes nine profiles including the three coin factory/metadata records and all six coin model-resource targets.
+Input smoke passes timed partial travel, neutral boundaries, input isolation, no synthetic D-pad bits and the prior deadzone/normalization cases.
+Animation probe: 250 triangles, 8575 pixels, all geometry inside the view volume. Initial failure and corrected results are preserved in separate logs.
+
+Runtime evidence:
+Test Map: 1800 simulation frames, exit 0. The current course filter selects one of the 128 authored yellow coin records. The CSV reports yellow_total=1, yellow_alive=1 at frame 1800. This verifies basic spawn/resource lifecycle in this route, not collection, visible coin rendering at this camera, every filter, or red/blue gameplay.
+Castle: 6000 frames, exit 0, synthetic stick X=20000 at polls 5000-5119. The host sees input but player position does not change.
+Focused castle gate probe: 3600 frames, exit 0, X=20000 at polls 3360-3479. Frame 3360 reports script_active=0, intro_ready=0, game_mode=0, game_stick_magnitude=0. Position remains (-4915200,1040384,27852800). The game clears/ignores movement through its authored intro-completion gate before reaching the native stick injection.
+All three top/bottom screenshot pairs were viewed. These tests do not establish hardware Xbox behavior or playable control.
+
+Next concrete work:
+The retail actor table maps C_JUGEM/Lakitu to actor 235 (0xeb), profile ov085:0x02130320, factory daC_Jugem_c_classInit. The native registry does not register it. Its recovered StateIntroMain at src/actors/daC_Jugem_c.cpp writes the 0x80 intro-ready bit after the camera/timer/music-query path completes. Integrate its actual native factory, resource handles and state member callbacks; do not force the ready flag to bypass the missing game sequence. Then rerun the timed stick test and require an unlocked gate, nonzero game magnitude and actual horizontal player movement.
+Relevant controller code: src/_ZN10dScStage_c10CheckInputEv.cpp. It returns early while the single-player intro-ready bit is clear. Its native analog injection IS present in the generated host source; the current failure is before that block.
+Lakitu's source defines model/animation/texture resource objects and eleven state-pair arrays. Audit the ROM member-pointer constants copied into those arrays before enabling the actor. Check sound-query behavior only if its real state machine subsequently stalls.
+
+How to check:
+Run Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS. Select Test Map with Space, or S then Space for castle. The screenshots show the tested states. Castle controls are still gated; the new probe documents this limitation rather than claiming a controller fix.
+
+Recommended next model: Sol High for Lakitu's native member callbacks and state initialization. Keep Sol High if already selected. No goal pause or model switch is requested at this checkpoint.
+
+Remaining full scope:
+Complete native actors and playable scenes/transitions/audio; real Xbox gameplay validation; internal rendering up to 4K and replacement art; real 60/120/240 output behavior; final standalone packaging. Current 4K modes scale DS-sized output and higher pacing settings repeat game states.
+
+Authoritative source: <USER_HOME>\Documents\Codex\2026-10-10\can-you-compile-this-mario-64\work\source-extracted\sm64ds-decomp-main. Changed-source, executable/map, reports and screenshots are preserved in the F: checkpoint when installed; previous executable/map are retained for rollback.

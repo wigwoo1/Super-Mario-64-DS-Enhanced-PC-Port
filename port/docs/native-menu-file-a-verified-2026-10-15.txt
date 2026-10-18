@@ -1,0 +1,51 @@
+Original File A entry and menu overlay: 2026-10-15
+
+VERIFIED for fresh File A entry through the opening sequence and idle Yoshi.
+Full original menu/port remains incomplete. User selected Astra Low; retain it
+for remaining title rendering and file management investigation. No switch or
+new pause requested. Goal tool reported pre-existing paused state; tools cannot
+resume that state, but this explicit continuation was performed normally.
+
+Original-menu replay BEFORE this turn's code change completed 6000 ticks, exit0:
+build/run-native-file-menu.ps1 -Mode original -Tag file-a -Frames 6000
+ -TouchSchedule '450:128:96,1250:128:168,1850:64:70'
+ -CaptureTicks '1780,2000,2500,5900'
+At tick1920 level1 begins; Lakitu opening camera appears at2500. By6000,
+intro_ready1, script_active0, player/body character3, St_Wait_Main.
+The previous constructor/input repairs already make File A work; no new file
+selection repair was necessary. Physical mouse/Xbox still unverified.
+
+New change: port/ntr/video.cpp and its header expose video_minimap_visible().
+Both software compositing and GPU map submission now require the active
+gameplay scene, map enabled, and no pause screen. Previously title-screen
+bottom artwork was scaled as a minimap, obscuring FILE C. Actual gameplay
+maps retain all previous settings. smoke_video tests all8 predicate states.
+Pre-change sources are in build/menu-overlay-before.
+
+Build/verification:
+- Full game/all build passed, build/native-file-menu-build.log.
+- 44/44 CTests passed28.52seconds, build/menu-overlay-final-ctest.log.
+- Native DSMT data audit passed, build/menu-overlay-data-audit.log.
+- Exact same6000tick replay with Tag file-a-overlay-fix exited0 at native4K.
+- Corrected1780 PNG shows File C unobstructed. Final5900 gameplay RGB is
+  pixel-identical to pre-change5900 PNG. State assertions passed, recorded in
+  build/menu-overlay-replay-verification.json.
+- Final exe SHA256:
+  1FDDC6E9B292E2C947F2075611BCBC9CD5C50465976E8B7C4A8E4EDA3CE49310
+- Screenshots under build/port/native-file-menu-original-file-a-overlay-fix-
+  1780.png and5900.png were inspected and shown to user.
+
+Cleanup follow-up: build/pc-game-link-history.log is an ACTIVE CMake input.
+Previous cleanup had compressed it safely but removed the required plaintext.
+Restored all9575180bytes from verified gzip; explicitly reconfigured CMake to
+restore source discovery (missing log had omitted C++ methods). Final build
+and all tests then passed. Never remove/compress-away this plaintext input.
+Cleanup helper excludes it and cleanup notes record correction.
+
+Remaining: title texture corruption/white menu background; fresh-file save
+persistence and selecting saved slots B/C; copy/erase; active-slot pause label;
+physical controller/mouse. Gameplay minimap after original intro retains some
+decorative clouds/arrows visible in screenshots, separate from menu overlap.
+Keep ORIGINAL_MENU opt-in; F: install unchanged. No game processes or tool
+sessions remain running from this task. Next useful milestone is title/menu
+background rendering or original file management testing with isolated saves.

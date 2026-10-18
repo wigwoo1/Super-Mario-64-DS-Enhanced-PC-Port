@@ -1,0 +1,36 @@
+Mario 64 DS PC port: course overlay data ownership, 2026-10-15
+Status: VERIFIED for all 52 course data images and the two bounded startup routes below. Overall PC-port status remains PARTIALLY VERIFIED/incomplete.
+
+Root cause:
+The game stores all course overlays at the same DS address range. Stage initialization always used the castle (overlay 9) host mapper, including when Test Map (overlay 8) was selected. Test Map record 0x02111210 was therefore interpreted as castle code bytes, yielding model ID ff1e instead of 07d7. Model loading then failed and collision setup dereferenced a missing file. The dynamic actor overlay warnings in that log were not the demonstrated cause of this particular crash.
+
+Changes:
+- New course data loader covers the retail 52-course table and overlays 8-59. Images are loaded from the mounted ROM, decompressed, kept in separate Windows-heap buffers, and adjusted using self-reference offsets validated against the extracted ROM.
+- Metadata generator embeds bounds and relocation offsets only. The game executable no longer needs the old embedded overlay-8/9 images for Stage data.
+- Stage initialization resolves the course owner before mapping its record. Native LoadModel consumes the canonical host pointer instead of remapping through the castle image.
+- Dynamic ARM actor code is not executed or implemented by this loader. Existing recovered actor code remains compiled natively; actor overlays 60-102 still require work.
+
+Build/tests:
+Release sm64ds_pc and smoke_level_overlay build successfully.
+ROM audit passes: 52 images, 344384 bytes including BSS, 4689 self-references; duplicate DS addresses resolve to different course buffers. Invalid level/address bounds are rejected.
+Configured CTest suite passes 27/27.
+To repeat the ROM audit, build target smoke_level_overlay and run its executable with two arguments: the European ROM path and the repository root containing extracted/overlays.
+
+Runtime:
+Test Map: isolated confirm450, Down disabled, no repeats; completed 1800 simulation frames and exited 0. It reads model 07d7 with a valid model pointer and renders the pipe scene. This previously failed with model ff1e and a collision-file crash.
+Castle: isolated Down300/confirm450, no repeats; completed 6000 simulation frames and exited 0 after intro and Stage reload. Mario and the minimap remain visible.
+Both top/bottom screenshot pairs were viewed. These tests do not establish every course, movement, physical controller input, or general actor support.
+Installed-folder check: the F: executable/map match the tested build hashes and the F: ROM matches the tested ROM hash. A further isolated Test Map startup run from the installed folder completes 1800 frames and exits 0. Its one-time presentation-1200 screenshot shows the Peach intro; it is not a final-frame Test Map capture. Both installed screenshot images were viewed. No user settings INI was created or replaced.
+
+How to check:
+Run Play Mario 64 DS.cmd from F:\AI Games\Mario 64 DS. On the course list, leave Test Map selected and press Space to test the previously failing route. For castle, move down once with S and confirm with Space. Check the checkpoint's Test Map and castle screenshots for the tested states.
+
+Recommended next model:
+Sol High for native actor profiles, callbacks and remaining overlay-code integration. If already using Sol High, keep it. No goal pause is requested for this completed data-loading milestone.
+
+Remaining full-port requirements:
+Complete native actor/scene support, playable courses/transitions and audio; hardware Xbox analog validation; native internal rendering through 4K and replacement texture content; true 60/120/240 output behavior; final standalone packaging. Current resolution presets scale the DS-sized frame and higher pacing settings repeat game states. Do not treat this checkpoint as a completed PC release.
+
+Source:
+Authoritative source remains <USER_HOME>\Documents\Codex\2026-10-10\can-you-compile-this-mario-64\work\source-extracted\sm64ds-decomp-main.
+Changed paths are listed in the checkpoint's changed-source tree. Runtime assets continue to come from the user's European ROM. Previous executable and map are retained for rollback when this build is installed.

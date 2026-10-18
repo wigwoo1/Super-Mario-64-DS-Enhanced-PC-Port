@@ -1,0 +1,65 @@
+UPDATE: Adventure crash fixed; see native-menu-file-select-handoff-2026-10-15.txt for current state.
+
+Native original-menu input milestone, 2026-10-15
+
+Status PARTIALLY VERIFIED: input/title progression works; Adventure transition
+exposes a new crash. Goal active; continue Astra Low. F: untouched.
+Previous turn verified BG0 selector; this turn makes concrete input progress.
+
+Changes
+- New hal/dsmt_input.cpp adapter. Generated dScDSMT Behavior calls it instead
+  of discarding selected input index and calling indexed accessors with no args.
+- Player0 reads existing native InputState and ntr_input_get_menu_keys, matching
+  gameplay's existing native substitution. The wireless input table is not
+  populated by host mouse/XInput. Other indices use original typed accessors.
+- Original menu func_020b7090 still handles touch/button history and transitions.
+  No state bypass/forced scene transition added. Original src untouched.
+- Isolated automation adds SM64DS_PC_TEST_TOUCH entries poll:x:y (decimal),
+  each5polls. Uses same input_set_touch/hardware latch as mouse. Only enabled
+  when AUTOMATION_ONLY=1. Invalid coordinates/entries ignored, release verified.
+- build/run-native-file-menu.ps1 now accepts -TouchSchedule and -CaptureTicks.
+- smoke_dsmt_input compiles actual original indexed accessors and new adapter;
+  tests nonzero selected records and native local touch/buttons/release.
+- smoke_input extended with scheduled touch, release, invalid input and latch.
+- test_dsmt_input_transform.py verifies generated call and fail-closed anchor.
+
+Build passed;43/43 CTests pass32.02s. Two input-transform Python tests pass.
+ROM/native data audit passes. Exact executable SHA256:
+9AA945F9F88F308030687E01130E2478916995F43E44D84D4DA233ACFE80DE45
+Logs: build/menu-touch-input-ctest.log, build/menu-input-data-audit.log.
+
+Actual menu replay:
+run-native-file-menu.ps1 -Mode original -Tag touch-input -Frames1200 -Dump
+ -TouchSchedule '450:128:96'
+Exit0. Tick600 callback0, animation67/157; previously callback1,frame0.
+Tick1180 state0 and animation163/700; original Mario-head title visible.
+Screenshot build/port/native-file-menu-original-touch-input-1180.png.
+This is Mario's title head, not the gameplay character (Yoshi remains3).
+Visible background/button texture corruption and dual-screen layout unfinished.
+
+Next reproducible crash:
+run-native-file-menu.ps1 -Mode original -Tag touch-adventure -Frames1800
+ -TouchSchedule '450:128:96,1250:128:168' -CaptureTicks '1180,1400,1780'
+Exit-1073741819 near1280. Actual fault RVA0xd9ec0 (preferred004d9ec0)
+in func_ov007_020c798c+0x20: writing t->field10 with t=NULL.
+An initial hypothesis of exhausted heap is NOT proven and should not drive
+increasing heap sizes. Source and COFF evidence show a missing initializer arg:
+ src/unnamed/ov007/func_ov007_020c798c.c:
+   t=func_ov007_020c3df4(0,0x14);
+   func_ov007_020c78b0();  // declared void, called with NO argument
+ src/unnamed/ov007/func_ov007_020c78b0.c:
+   void func_ov007_020c78b0(void *c) { MultiStore_Int(0,c,0x14); }
+The emitted caller stores returned pointer at[ebp-4], calls initializer with
+no push, then reloads[ebp-4] asNULL. Disassembly saved:
+ build/menu-transition-init-disassembly.txt.
+Next: verify this boundary with an isolated original-caller/initializer test,
+then correct the generated PC caller to pass t and match prototype void*.
+Keep original src unchanged. Reproduce same Adventure tap after repair.
+No focused repair for this newly reached crash has yet been attempted.
+
+Current original-menu remains opt-in; default course picker preserved.
+Full requested port remains incomplete, including original menu layout/file
+operations, full game/audio/actors, independent120/240FPS, full4K AI pack and
+standalone F: packaging. Do not mark whole goal complete.
+
+Final default gameplay4200ticks exit0, native4K Yoshi tick4180 RGB-identical to BG0 baseline: True. All test/replay handles completed.

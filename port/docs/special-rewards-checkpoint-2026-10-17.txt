@@ -1,0 +1,124 @@
+NATIVE SILVER-STAR AND CAP REWARDS — 2026-10-17 — Sol High
+
+Status: VERIFIED locally and in the installed F: executable for the specific
+gameplay paths below. Overall PC port remains incomplete.
+
+Implementation (original src/ and include/ unchanged)
+- Native SILVER_STAR179, STARBASE180 and OBJ_MARIO_CAP269 factories/profiles
+  registered. Exact original descriptor metadata retained; native C++ factories
+  construct the real star and marker classes and their native virtual tables.
+- reward_host.py adapts the cap's nine enter/execute records to 18 typed native
+  callbacks, with original 8-byte descriptor / 16-byte record strides. The
+  cap's actual mStateEntry supplies the state, replacing the DS-only PMF views.
+- Canonical cap/star resource handles and all four cap model/animation pointer
+  tables resolve to native storage. Star's 14 handlers use the native table
+  compiled in its recovered TU. Data audit checks every handler and profile.
+- Static caps have no active BCA. Their unconditional frame Advance reached
+  modulo-zero on x86. Native cap adaptation now advances only an installed
+  animation; static model pose remains unchanged. An unlocked-save load that
+  previously crashed at480 now passes through collection and continuation.
+- Player::St_NoControl_Init had a separate 20-entry original DS callback table,
+  beyond the already adapted Player::State records. Touching caps/silver stars
+  tried to execute020c9c00/020c9de4. A typed native dispatcher now calls all17
+  distinct original workers (20 entries), retaining the original descriptors.
+  ROM/source unit checks and executable data checks cover the complete table.
+- Two recovered star-marker Collect calls lacked their receiver. Native
+  adaptation resolves the already validated marker ID and calls its method.
+  Those kind6 marker paths are not claimed gameplay verified here.
+- Optional reward telemetry observes stars/markers/caps, Goomba cap/reward
+  fields and the real silver-star counter. No positions or actors are injected.
+- QA mission selection uses the ordinary LoadLevel API and is gated by
+  AUTOMATION_ONLY; default/invalid values select the original mission1.
+- make_reward_test_save.py creates a NEW separate QA copy, unlocks the three
+  cap characters, preserves selected Yoshi/progress and recomputes checksums.
+  This reproduces cap availability rules without editing user saves.
+
+Local gameplay evidence — exact final executable, D3D11,1280x720
+1. silver-collect-native,course42,2800frames,exit0:
+   Real tongue captures silver-carrying Goomba13. Manual swallow1780 removes
+   it at1787 and creates marker43 and egg44, payload133(star+coin).
+   Throw1880; egg burst1893 pays coin45 and silver star46, param0x10.
+   Native star46 and marker43 link reciprocally. Stick2000..2064 walks to
+   the bouncing star. Touch/collection states5,6,7 run, silver count0->1 at
+   2109, star removed2109. Jump2450 and normal control/idle through2800.
+2. mario-cap-native,course0,2400frames,exit0:
+   Ordinary input reaches original placed Mario cap10. Pickup runs native
+   no-control kind8, cap removed1716 and original respawning replacement19
+   appears. Yoshi's underlying character remains3; rendered body/hat become0
+   (Mario disguise). Jump2200 and idle/control restored. Screens inspected
+   during transformation and after it. Course0 is the original development
+   test map; older test tags called it "castle" and should not be taken as
+   an identification of the castle exterior.
+3. luigi-cap-corner,course6,2850frames,exit0:
+   Walk past the first Goomba, north, then east around the wall and north.
+   Real tongue strips active Luigi cap from Goomba16 at1944: cap93,type18,
+   observed parameter0x112, enters Yoshi's mouth. Cap actor removed2001.
+   Body/hat become1(Luigi disguise), Yoshi remains underlying character3.
+   Later attack2300/jump2700 and same-course idle/normal control pass.
+   The cap manager correctly hides other lower-priority caps; attacking one
+   of those did not provide a cap drop. Original selection rules preserved.
+4. egg-reward-regression,course6,2400frames,exit0:
+   Swallow, egg flight/hit, Goomba12 death5/removal and three reward coins
+   pass. Coin93 collected1867, course coins0->1; jump/idle restored.
+
+Build and automated evidence
+- Release native build passes: build/native-file-menu-build.log.
+- Final52/52CTests pass,20.03s: build/reward-final-ctest.log.
+- 24Python generator checks pass:14hostgen+5Goomba+5reward.
+- Six executable/data audits pass: native actors, Goomba/egg,736player
+  animation entries/383handles, model renderer, texture consumers, rewards.
+  Reward audit covers3profiles,18cap callbacks,14star callbacks,12resource
+  pointers and20no-control descriptors/native dispatcher.
+- Replay assertion logs: reward-silver-egg-verification.log,
+  reward-cap-placed-verification.log,reward-goomba-cap-verification.log,
+  reward-egg-regression-verification.log. All local PASS.
+- All three installed replay launchers also PASS using the F: executable and
+  F: ROM: Silver2800frames,GoombaCap2850frames,Cap2400frames,each exit0.
+  Installed silver count0->1 and enemy cap93->Luigi disguise repeat exactly.
+  Separate saved-game/runtime directories used for each replay; captures are
+  build/port/installed-special-{silver,goombacap,cap}-*.png / CSV / logs.
+  See reward-installed-*-verification.log. Installed screenshots inspected.
+- Failed approach/crash evidence retained in build with its matching tags.
+  No third speculative code repair: both identified crash causes were fixed
+  from their actual fault addresses and original source/table layouts.
+
+Executable SHA256
+9533D6D00C9D7CB2E5E1663A646635B00B18930AB6FB6844AFCC04757BE3C7A0
+MAP SHA256
+59E3B609815AA01143E9E41DA4082DD679250F8F2F4716C0A60A0F1FE36F3954
+User ROM SHA256(read-only F: check)
+CE5829AAA79F06C67140ED1F45CBCA738B0A9D0180538C8C1498472D859DB032
+
+Install/checkpoint
+- build/install-special-rewards.ps1 stages exact EXE/MAP in F: and the existing
+  local preview. Previous install preserved in the special-rewards checkpoint.
+- Watch Silver-Star Reward Test.cmd, Watch Goomba Cap Reward Test.cmd and
+  Watch Cap Transformation Test.cmd replay actual game inputs with separate
+  resettable test saves/runtime INIs. User saves/settings remain separate.
+- Checkpoint: F:\AI Games\Mario 64 DS\native-checkpoints\
+  native-checkpoint-2026-10-17-special-rewards
+- Root executable, local preview and installed replay copies match the exact
+  final executable hash above; MAP matches root/source/preview. Previous F:
+  executable retained for rollback. User ROM hash matches above.
+- Consolidated274captured BMPs into pixel-identical PNGs, then removed only
+  the redundant BMPs. Removed32duplicate runtime EXE/MAP files (64,384,181
+  bytes), retaining a copy of every distinct binary/map, all saves/logs/source
+  and rollback. Cleanup manifests: build/reward-image-cleanup.json and
+  build/reward-runtime-dedup.json. Original captures consumed557,103,564BMP
+  bytes before lossless PNG compression; net storage reduction recorded in
+  build/reward-final-verification.json.
+
+Limits / next milestone
+- Conditional/current-VS-star rewards, five-silver-star completion/Power Star
+  actor178, cap variants beyond the above cases and full progression remain
+  unverified. Power Star178 is not registered by this milestone.
+- Large-Goomba blue-coin payout/collection remains open. Original collision
+  height is224units; five-poll short jumps peak around190units. Use sustained
+  jump/Flutter input (overlapping B schedule pulses keep held input active),
+  then ground pound, instead of inferring a reward bug from a short jump that
+  never clears the target. Preserve normal ground-pound behavior.
+- Sol Medium is appropriate for the next bounded reward checks; use a stronger
+  model again if an actual new ABI/actor integration is diagnosed.
+- Goal tracker was already paused on entry and has no supported resume tool.
+  Do not replace/complete the overall goal. Standing user request permits
+  pausing when recommending the next model switch.

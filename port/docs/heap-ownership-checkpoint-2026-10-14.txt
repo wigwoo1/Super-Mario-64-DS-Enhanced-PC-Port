@@ -1,0 +1,27 @@
+Mario 64 DS native PC port: heap ownership checkpoint, 2026-10-14
+Status: PARTIALLY VERIFIED overall. The stage-transition allocation and actor-list failures are resolved in the tested intro replay. The next stage loads and renders castle grounds. A later minimap sprite rendering crash remains. This is a diagnostic checkpoint, not a playable release.
+
+Changes:
+1. Stage CleanupResources now passes the collision-file getter result to Deallocate on PC. Original ARM9 calls at 0202caf8 and 0202cafc are consecutive: getter result in r0 is consumed by Deallocate. The former native declaration discarded that result and called Deallocate without an argument. The DS source branch is preserved.
+2. The actor deallocation bridge now preserves its explicit heap argument and calls Memory::Deallocate(ptr, heap). It previously ignored the actor heap and freed through the default/root heap, corrupting ownership. The shared Memory header now declares this overload.
+3. Added a regression test using a child heap with the root as default: deletion must restore child free space without changing root free space. A null heap must still fall back to root. The test fails both ownership assertions before the bridge fix and passes after it.
+4. Fail-fast allocation diagnostics now record request, alignment, arena, parent, default/game heap, largest free block and total free space.
+
+Verification:
+Release game and four relevant smoke targets build successfully (actor-free-ownership-build.log). Four CTest checks pass: smoke, smoke_heap, smoke_stage_layout, smoke_actor. The regression's expected pre-fix failures are in actor-free-regression-before.log. An initial test build exposed that Heap::Destroy is not enrolled in this smoke fixture; the test was scoped to allocation/free ownership without adding unrelated heap-destruction enrollment.
+Run128 reproduces the prior allocation guard: root size 8388584, request 16916, largest block 16384, free total 16616; exit -1073740791.
+Run129, with collision release repaired, loads all transition-fader models and the next stage model. It then faults in func_0203b438 during player registration (RVA 63490), consistent with corrupt actor lifecycle state; exit -1073741819.
+Run130, with actor heap ownership repaired, passes that point and renders castle grounds. It later faults in OAM::Render called from OAM::RenderSub/dMap_c::Render, trying to read DS address 020ab800; exit -1073741819. No heap failure is logged in this run. The intended 4500-frame bound is not a completed frame count. Screenshots were viewed for all three runs. No delivered FPS is measured.
+
+Next task:
+Repair minimap sprite-data relocation/initialization. Current fault RVA 5bb80 maps to _ZN3OAM6RenderEbP7OamAttriiii5Fix12IiES3_ii+90; caller RVA 5ba37 is OAM::RenderSub+27; dMap_c::Render RVA 341d0. EDI=020ab800 is the sprite pointer being dereferenced. Inspect dMap_c Render's MM_PLAYER_ICONS and related OAM sprite tables, their initializers, canonical native storage and generated data relocations. Do not hide the crash by skipping the minimap or blindly mapping that address. Existing DEMO sprite relocation patterns may help. Player-icon rendering was skipped during the intro, so this path is newly exercised after reload.
+
+Model handoff:
+Current model confirmed by user: Astra Low. Recommended next model: Sol High. The difficult heap-ownership investigation is now resolved with a failing-then-passing regression and an integration replay reaching the next scene. The remaining crash is localized to minimap sprite data, suitable for a focused Sol investigation. Luna is not recommended for the current raw-pointer/ABI repair. This is a judgment based on observed task scope, not measured intelligence or usage. Official reference checked: https://developers.openai.com/api/docs/models/gpt-6-sol . Pause for this specifically recommended switch under the user's authorization; the full PC-port goal remains incomplete.
+
+How to check:
+Open last-render.bmp for the latest castle-ground frame and intro.bmp for a saved intro frame. Launch-test.cmd replays startup and is expected to stop at the documented minimap crash. Launch-game.cmd has no scripted inputs or frame limit. Both use the European ROM two directories above this F-drive checkpoint. They are development launchers, not a complete playable release.
+
+Other open work:
+Top overlay corruption, partial minimap, true scene-4 star selection, complete gameplay/actors/course transitions, audio, physical Xbox controller validation, internal 4K rendering, complete replacement textures, and measured 60/120/240 FPS behavior remain unverified or incomplete. Current resolution options stretch the DS-sized output; they do not prove internal 4K rendering. Keep prior checkpoint documentation for detailed project history.
+Authoritative source remains in C: work/source-extracted/sm64ds-decomp-main. changed-source contains this milestone's five files only. Build/map/logs preserve evidence. Prior F checkpoints remain available.

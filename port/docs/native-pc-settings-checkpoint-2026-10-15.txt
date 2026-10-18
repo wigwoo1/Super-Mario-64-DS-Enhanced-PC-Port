@@ -1,0 +1,83 @@
+Mario 64 DS PC port: native pause-menu PC settings, 2026-10-15
+Status: PARTIALLY VERIFIED overall. Native menu and saved-setting integration
+pass automated/runtime checks. Physical Xbox and mouse navigation are unverified.
+The complete PC port goal remains unfinished.
+
+What changed
+- The game's original pause Options entry opens PC SETTINGS / GAME OPTIONS /
+  BACK, using the original native font, golden panel artwork and tile renderer.
+- Four PC pages expose resolution presets through 3840x2160, 60/120/240 FPS,
+  replacement texture toggle, crisp/smooth 2D scaling, minimap enabled,
+  upright/player-relative orientation, opacity, size, hide touch target and X/Y.
+- All choices use the same saved settings as F1. Original Sound/Backlight
+  options are reachable through GAME OPTIONS. F1 remains available.
+- Added ordinary button navigation to the original touch-oriented pause menu,
+  with direction repeat delay and A confirmation while paused. Opening A is
+  consumed so it cannot immediately change a setting. Gameplay does not receive
+  menu navigation while paused. Custom rows also accept native touch input.
+- All retail src files remain unchanged. Hooks are generated only for the PC
+  build. The new native menu adapter and state/renderer use existing settings.
+- Optional diagnostics can capture specified simulation ticks and record page,
+  row and settings in the state CSV. These are inactive without environment flags.
+
+Build and tests
+- Final Release executable and smoke targets build with MSVC x86.
+- Executable SHA256:
+  A184832092075959A2F8775F11E56CDF81DA17FD2D5EDDF2FEF3690396B17A8A
+- Final CTest: 29/29 pass, including the new smoke_pause_settings test.
+- State tests cover all controls and settings, wrap/repeat, reverse resolution/
+  FPS selection, bounds/reclamping, native Options/Back actions and tile ranges.
+- Compiled actor/input/OAM/camera/control/profile data audit passes on this exe.
+- Final castle replay completes 6250 ticks and exits 0. It visits all four PC
+  pages, changes all 12 settings, selects 120 then 240 then 120 FPS, opens the
+  unmodified Sound/Backlight screen, returns to PC Settings and resumes gameplay.
+- Runtime CSV verifies actual settings and page transitions. Player X/Z are
+  unchanged through 191 paused samples; pause/fullscreen flags clear on resume.
+- Eight paused main captures match all 49,152 raw bottom-screen menu RGB pixels.
+  BMP comparison normalizes both bit depth and top/bottom row orientation; the
+  first comparison fixture omitted row normalization and was corrected. No
+  production change was needed for that comparison failure.
+- Separate application restart: all 12 saved values reload in every state
+  sample, Test Map completes 1800 ticks with one live yellow coin, exits 0.
+- Screenshots from both runs were inspected. Native original Options and PC
+  menus are readable; gameplay returns after backing out of the menu.
+
+How to check
+1. Open Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS.
+2. After the intro, press Enter / Xbox Start to pause.
+3. Select Options using W/S or controller D-pad/left stick; press Space / A.
+4. Choose PC SETTINGS. Change values with A/D or Left/Right; Q/E or shoulder
+   buttons change page. Left Shift / B backs out. Settings save automatically.
+5. GAME OPTIONS opens the original Sound/Backlight screen. Back out to the
+   main pause menu and choose Continue or press Start to resume.
+
+Evidence (under build/ locally; checkpoint evidence/ on F:)
+- native-pc-settings-final-ctest.log, native-pc-settings-final-audit.log,
+  native-pc-settings-final-verify.log, verify-native-pc-settings.py.
+- native-pc-settings-final.log, exit-code, saved-probe-settings.ini,
+  port/native-pc-settings-final-state.csv and scheduled main/bottom captures.
+- native-pc-settings-restart.log, exit-code,
+  port/native-pc-settings-restart-state.csv and tick1750 captures.
+- Smoke target build logs and earlier baseline/pilot evidence retained locally.
+- Final scripted buttons (tick:hex DS mask):
+  4200:8,4250:80,4300:80,4350:1,4400:1,4450:10,4500:80,4550:10,
+  4600:10,4650:20,4700:80,4750:1,4800:100,4850:1,4900:80,4950:1,
+  5000:80,5050:1,5100:100,5150:10,5200:80,5250:10,5300:80,5350:1,
+  5400:100,5450:20,5500:80,5550:10,5600:2,5650:80,5700:1,5800:2,
+  5850:80,5900:80,5950:1,6000:1,6050:2,6100:2,6150:8.
+  Automation-only, Down poll300, confirm poll450, capture ticks
+  4380,4480,4770,5080,5380,5580,5780,6030,6180; CSV interval10.
+  Restart uses the saved probe INI, confirm450, no Down/button script,
+  capture1750 and maximum1800 ticks. ROM: supplied European Rev0.
+
+Limits and next work
+- Input replay verifies software menu behavior, not physical Xbox or mouse.
+- Output resolution currently scales the DS-sized framebuffer. FPS120/240
+  repeat simulation states. No new 4K texture pack was supplied by this task.
+  These toggles do not establish native 4K detail or independent high-FPS frames.
+- Full actors/courses, gameplay fidelity, audio, save and standalone packaging
+  remain part of the active larger port goal and are not established here.
+- Keep Sol High for the next difficult native gameplay/rendering investigation.
+  Luna Low is suitable for isolated menu wording/documentation after this
+  verified milestone. No model upgrade is needed to save this checkpoint.
+- Pause the goal after installation, as explicitly requested by the user.

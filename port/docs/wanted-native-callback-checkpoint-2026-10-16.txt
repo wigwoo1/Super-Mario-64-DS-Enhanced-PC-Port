@@ -1,0 +1,123 @@
+Wanted native callbacks: checkpoint and renderer handoff
+2026-10-16. Current user-selected model: Sol High.
+Callback/layout milestone VERIFIED; Wanted overall PARTIALLY VERIFIED.
+Recommend Astra Low for the remaining DS window composition work. Pause the
+goal for the model switch, as explicitly requested by the user.
+
+Exact final build
+EXE SHA256 11704D5111877B5F5E79DEED297E88D493AE5966D1D116B8FBCB4D4D7591B876
+MAP SHA256 2FD59D7F826D432530CE331924C97737027FA06E6F47D4FB5A4AB5F0383A7319
+build/port/sm64ds_pc.exe and sm64ds_pc.map.
+Preview: build/wanted-callback-preview/Play Wanted Development Preview.cmd.
+Separate preview/test saves; F: installation is unchanged.
+No original src/ or include/ source was edited. Changes are host-only port/
+code/generators and generated build artifacts.
+
+Repairs
+- PcMinigameCallback<Args...> is an explicit native C thunk plus adjustment,
+  exactly 8 bytes and trivially copyable. It supports null, no-argument and
+  integer-slot calls. Original two-word copies no longer overwrite neighbors.
+- host_headers.py emits the dMgState_c callback typedef adaptation and mirrors
+  its transitive header consumers. Otherwise quoted nested includes bypass the
+  host header directory. No appended-padding workaround was used.
+- Restored dMgState_c=0x28, base=0x4660, Wanted=0x545c; behavior/render/state
+  offsets8/0x10/0x18, base controller0xcc, touch options0xf4, Wanted penalty
+  0x4660 and state0x4f78 have compile-time and smoke coverage.
+- minigame_host.py validates original ROM descriptors and emits72 native
+  callback constants (48 state-controller,24 Wanted) plus Wanted's23 startup
+  table entries. Native wrappers call correctly typed C++ members. Do not run
+  the original overlay initializer over these native records.
+- Adapted the two related graphics/effect dispatchers (unit020b2c84 and
+  unit020b4aa4) to the same8-byte contract; their shadow state fields then
+  retain the original offsets. Existing native constructed arrays remain owned
+  by their actual C++ definitions, not duplicate ASM allocations.
+- minigame_data.py preserves51064 resource/config/BSS bytes,1522 interior
+  labels and1157 data/function relocations;38 indirect graphics workers are
+  source-closure seeds. Original vtables and native callback objects are
+  excluded. No ARM function address is used as a native callback.
+- Added native profile366, factory dScMgLuigi_c_classInit, priorities366/366.
+- Replaced old DS virtual slots with typed methods in shared minigame logic,
+  fader gates, canvas/sprite helpers and the four graph dispatch phases.
+  pc_minigame_graph_dispatch bridges the C cdecl IRQ/OAM shards to the genuine
+  MSVC thiscall graph registry. Preserve other existing graph representations.
+- Fixed the LDR ip/BX ip veneer func_ov004_020adc68 to explicitly pass LoadFile's
+  ID and return its allocation on x86. The void(void) reconstruction dropped it.
+- pc_fs_load_path implements func_020182bc's raw-file allocation contract using
+  the existing catalog/ROM read seam and game allocator; avoids DS card threads.
+  Its raw bytes must remain compressed when callers decode to VRAM themselves.
+- Fixed a diagnostics-only PPU crash when BG0 is disabled: never dereference
+  its zero-initialized map/character addresses. Regression coverage added.
+- ppu_geometry_active gates stale 3D packets according to main DISPCNT's BG0
+  enable/3D selection/display/blank bits in both CPU and GPU presentation.
+  This did not fix Wanted's normal-play hidden poster by itself.
+- OBJ mode2 is a window mask, not visible color; Wanted DrawCurtains explicitly
+  sets0x800. Tile rendering now skips its color output, plus unsupported mode3
+  bitmap output. This removed the black disc covering the poster during the
+  catch, but full window-mask composition remains unimplemented.
+
+Verification and evidence
+- build/build-native-file-menu.cmd succeeds; full final CTest evidence is
+  build/wanted-final-ctest.log. One new smoke_minigame_layout target makes49.
+- Python:14 existing test_hostgen_*.py checks and5 test_minigame_host.py checks
+  pass. New tests cover descriptor rosters, real dispatcher transformations,
+  idempotence, scope isolation, native table generation, frame bridge/file seam,
+  and resource ownership/relocations. They do not substitute for game testing.
+- check_minigame_native_data.py validates the linked EXE:72 callbacks,23 table
+  slots,1522 labels,1157 resource relocations,51064 bytes and native profile366.
+  Existing native actor and Rec Room data audits also pass. Evidence logs:
+  build/wanted-native-data-audit.log, wanted-actor-data-audit.log,
+  wanted-rec-room-data-audit.log.
+- Real original-menu route: touch450:128:96,1250:224:168,1850:88:60.
+  All recent tests use1280x720, Left/Right layout1 and isolated workspace saves.
+  Scripts use the same native stylus sample path as mouse input. Physical input
+  and all other minigames/layouts are not verified by this milestone.
+- wanted-unpaused replay:3300frames, exit0. Wanted advances setup->place->play,
+  timer10->0, catch and native state-controller18. It supersedes initialization
+  crashes recorded in earlier wanted-callback-first/native-loader/native-graph
+  replays. Those binaries/maps/logs are retained for evidence.
+- wanted-display-touch replay:3600frames, exit0. Tap2320:112:80 finds Mario:
+  state3 catch, time6->11, then state2 another round, then timeout/controller18.
+  Screenshot2500 still had a black window-mask disc; superseded by next replay.
+- FINAL wanted-play-pause-return replay:3750frames, exit0. Tap2320:112:80 again
+  finds Mario and adds5 seconds; new round starts. Start2700 pauses (menu1,
+  time9); tap2830:128:48 does NOT resume. Start3080 resumes (menu0, time8).
+  Tap3200:128:96 then hits the board and causes a miss/time0; it did NOT exit.
+  Do not claim return-to-Rec-Room verification. Captures2200/2500/2790/2990/
+  3180/3700;2500 shows the actual Mario poster and five-second reward.
+  Prefix: build/port/native-file-menu-original-wanted-play-pause-return-*.png
+- FINAL baseline Stage regression:4900frames, exit0. Entered level1 as Yoshi
+  (character3), opened native PC Settings page8 at4500, and resumed at4880.
+  Screenshots4180/4500/4880 were inspected; Yoshi and the minimap are present
+  after returning from settings. Same final EXE hash,1280x720, isolated saves.
+  Prefix: build/port/native-file-menu-baseline-wanted-callback-stage-regression.
+  This is a baseline Stage/menu regression check, not verification of the
+  independently observed original-menu Adventure action crash.
+- Final CTest result:49/49 pass in21.63 seconds. Final build/audit evidence
+  corresponds to the exact hashes above, not one of the superseded test builds.
+
+Remaining blocker and next action (Astra Low)
+1. PPU has no WIN0/WIN1/OBJ-window per-pixel layer masks or complete OBJ/BG
+   priority composition. Normal play still shows a black top screen with TIME,
+   so the player cannot reliably see the wanted character before tapping.
+   After the correct catch, BG2 clears and the Wanted poster is visible.
+2. Review Wanted CurtainStart/DrawCurtains and StartIris/BuildIrisTable:
+   - DrawCurtains emits mode2 OBJ masks (not colored black sprites).
+   - CurtainStart sets WINOUT and DISPCNT OBJ-window selection, along with the
+     data_0209d460 window-enable shadow.
+   - StartIris installs HBlank mask2, func_ov006_020efcf8. rt.cpp currently moves
+     VCOUNT through lines but dispatches pending IRQs at the frame boundary;
+     scanline window tables may need faithful delivery/capture.
+   - Account for window layer enables/effects and BG/OBJ priorities in shared
+     CPU scanout, preserving both engines and GPU/software parity. Do not simply
+     disable BG2 or replace the game's curtain rules to hide the symptom.
+3. Two focused display changes were made: gate3D by actual display state, and
+   correct OBJ-window color handling. Both are valid independently tested fixes,
+   but neither supplies the missing window unit or fixes normal-play visibility.
+   Stop speculative changes here and switch models for the architectural repair.
+4. Then verify visible initial poster, correct AND incorrect taps, rewards,
+   next rounds, timeout/results/retry, pause UI and real return-to-Rec-Room.
+   Show screenshots; test all three75/25 layouts, software and native4K.
+5. Preserve the prior independently observed Adventure action-crash evidence
+   from minigame-touch-fix-2026-10-16.txt; it is not diagnosed by this repair.
+6. Goal remains far from complete, including many planned PC/graphics/settings
+   features and VS P2P/browser Download Play. No multiplayer work implemented.

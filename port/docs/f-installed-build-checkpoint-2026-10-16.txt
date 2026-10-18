@@ -1,0 +1,34 @@
+F: installed build checkpoint - 2026-10-16
+
+Status: VERIFIED for installing and launching the current native executable in
+F:\AI Games\Mario 64 DS. The full port goal remains active and incomplete.
+
+Installed executable and map were copied from the current workspace build after
+the previous F: executable, map, BUILD-STATUS.txt, and pc-development-progress.md
+were preserved in:
+F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-16-wanted-settings-polish\previous-install
+
+Installed hashes:
+EXE 3266812E5F3A10E248D4BC0FBC699E93E959459A59B4F79A68B6EFA81BA444D2
+MAP 4F675ADAED2761E28D2F772143E07545D33B4D34F2AF59F44C3CF9CE3ABD4FF7
+ROM CE5829AAA79F06C67140ED1F45CBCA738B0A9D0180538C8C1498472D859DB032 (unchanged)
+
+Verification:
+- The native build succeeds and all51/51 CTests pass.
+- The installed F: executable was run with the European ROM from F:. A
+  3600-frame software-rendered Wanted PC Settings replay exited0. State capture
+  shows all seven pages, then returns to the settings chooser. Screenshots show
+  Display, Visual, Graphics, Map, Position, Save, and Minigame View.
+- QA captures, log, state CSV, exit code and isolated native save data are in
+  F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-16-wanted-settings-polish\qa-run
+- Existing user saves were not used or modified. No sm64ds_pc.ini remains in the
+  install folder from this test. The ROM was not copied or altered.
+- This installed replay used the software renderer and native256x192 DS output.
+  It verifies the installed package/menu route, not 4K rendering or physical
+  controller support.
+
+How to run: double-click Play Mario 64 DS.cmd. In Rec Room choose Wanted, open
+pause with Start/Enter, choose Options, then PC Settings.
+
+Rollback: copy the previous-install\sm64ds_pc.exe and .map pair back to the
+install root if needed. The previous status and progress notes are retained there.

@@ -1,0 +1,97 @@
+Mario 64 DS PC port: texture ownership and source inventory, 2026-10-15
+Status: VERIFIED for the bounded model-context guard, source inventory and test
+replacement route. PARTIALLY VERIFIED overall; the complete AI art pack is not
+created. Goal remains active. Keep Sol High for remaining rendering/ownership work.
+
+Implemented
+- Explicit model ownership table has505 entries:105 Character,65 Level,
+  272 Object and63 Unknown. Named animals are excluded alongside playable
+  characters/NPCs/enemies. Ambiguous UI and archive models remain Unknown.
+- Generated full-model fingerprints recognize archive copies before relocation;
+  model identity follows native FS loads. Actual ModelComponents::Render has a
+  generated PC-only scoped origin; nested draws restore their caller. Individual
+  frees, heap resets and heap destruction forget the affected model origins.
+  All changes are in port/ adaptations; retail src/ is unchanged.
+- VRAM decode/cache keys include model role, quality and current encoded/palette
+  content. A cached eligible object image cannot be reused for Character/Unknown.
+  Content uploads/changed palettes at the same VRAM address get new pixels.
+  Cache history is reclaimed only after neither geometry buffer references it;
+  a100-update test verifies bounded history without stale pointers.
+- Stable texture keys now use only referenced palette entries, matching offline
+  models to live VRAM despite neighboring palette data. Direct-color keys work
+  without a palette. The PNG reference writer now initializes Windows COM;
+  its first export test exposed that missing initialization and now passes.
+
+Inventory evidence
+- All455 named BMDs plus50 validated BMDs in seven NARC archives are listed:
+  505 models,1574 texture records,1796 decoded initial material bindings and
+  1122 unique original-reference PNGs. C++ production parsing/decoding is checked
+  independently against the Python ROM identities and every PNG's dimensions/
+  alpha counts. All entries parse/decode successfully; zero inventory errors.
+-121 textures have no initial material binding. They remain explicitly listed,
+  rather than invented palette associations. Animation/selection references need
+  further work. Eleven are Object variants (1UP digits and minigame cards),56
+  are Character variants; the remaining records are unclassified/archive/UI.
+-835 unique referenced texture keys have Level/Object ownership in this table.
+  Referenced character/eligible keys do not currently overlap. The new synthetic
+  unit fixture deliberately shares an identical texture key across roles and
+  verifies both cache orders and nested context restoration, so exclusion does
+  not depend on that absence of sharing in the current catalog.
+- Reference originals and TSVs are archived in texture-original-references.zip;
+  per-file hashes are in texture-ownership-source-archive-manifest.json.
+  These are original references from the user's ROM, not generated4K art.
+
+Build and runtime verification
+- Release game/tool builds, compiled-data audit and33/33 CTest pass (22.34s).
+  The new ownership test covers canonical paths, role lookup, nested scopes,
+  removal/reuse, shared-key exclusion, palette padding, content changes and cache
+  lifetime. Prior native4K, shadows, controller, menus and quality checks pass.
+- Two4200-tick hardware-native4K castle replays exit0. Original tick4180 matches
+  the previous texture-quality checkpoint RGB exactly. Player/camera positions
+  and raw-bottom RGB match the diagnostic Upscaled replay.
+- The private diagnostic pack contains a4096x4096 magenta grass PNG and a cyan
+  Mario-body PNG. The grass loads at4096x4096; Mario's body remains64x64. It is
+  currently recognized as archive member131 with Unknown ownership, which also
+  blocks replacements. Existing Character bindings also retain original sizes.
+-2847762 main-view pixels change; the full620x600 Mario/road region is identical.
+  The raw bottom image is unchanged. Actual screenshots were inspected and shown.
+  These test colors are not production artwork and are not placed in the active
+  F: texture folder. Installed game art remains original.
+- Executable SHA256: EE0ADE656FAAFFA1D74C04828454013AC6620DF914ADA61BEC3DB0B18D9A642E
+
+Remaining required work / next concrete actions
+1. Profile replacement-texture CPU/GPU work before generating a full art pack.
+   One4K RGBA texture occupies64MiB. The native executable is32-bit
+   (PE machine=0x14c, characteristics=0x102). Many full-sized CPU
+   images need a memory budget/streaming path. gpu.cpp currently hashes complete
+   RGBA images per presentation; bind_from_vram also decodes transient tex/palette
+   pairs between register writes. These are profiling/optimization candidates;
+   no full-pack frame-time or memory result is claimed.
+2. Resolve63 Unknown models. Player archive members128..131 already have concrete
+   source leads: ov002 initializer registers0x8080..0x8083 at lines1097..1103;
+   daLuigi_c::InitResources consumes data_ov002_0210ebb8 (member128).
+   Members129/131 contain Mario head/body materials. Trace the remaining player
+   workers/table ownership before changing the classification; they stay blocked.
+3. Extend inventory through texture sequences/selection for all121 unbound
+   texture records, including the11 eligible object variants. Verify repeat,
+   mirror/clamp, palette animation and alpha in representative courses.
+4. Generate/review stylistically accurate4K AI art for every eligible level and
+   object texture, wire a reviewed pack manifest, and verify full coverage and
+   zero character substitutions. Upscaled still reports NO PACK in this install.
+5. Complete gameplay/course/actor/audio/save, independent120/240FPS, physical
+   Xbox/mouse verification and final standalone packaging. Full goal unfinished.
+
+How to check
+- Launch Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS. Original mode
+  should look unchanged. The inventory and original references are in this
+  milestone's checkpoint. No AI pack is installed.
+
+Installed verification
+- F: executable/source copies match verified hashes, with rollback copies and
+  inventory/original-reference ZIP in native-checkpoint-2026-10-15-texture-ownership.
+  The initial93 file copies were verified. User INI absence remains unchanged.
+- Installed executable/map data audit passes. Installed ROM hash matches the
+  inventory/test ROM. A separate1800-tick TestMap startup exits0 at1280x720,
+  retains one live coin, and captures actual native GPU output at1750. That
+  screenshot was inspected and shown. Diagnostic replacement PNGs are not active
+  in the installed folder. Root installed art remains original.

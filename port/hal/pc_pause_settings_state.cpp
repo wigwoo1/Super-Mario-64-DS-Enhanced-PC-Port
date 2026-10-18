@@ -1,0 +1,193 @@
+#include "hal/pc_pause_settings_state.h"
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+
+namespace pc_pause {
+uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks) {
+    uint16_t pressed = keys & ~previous;
+    previous = keys;
+    uint16_t direction = keys & 0xf0;
+    if ((direction & 0xc0) == 0xc0) direction &= ~0xc0;
+    if ((direction & 0x30) == 0x30) direction &= ~0x30;
+    direction = direction & 0xc0 ? direction & 0xc0 : direction & 0x30;
+    pressed = static_cast<uint16_t>((pressed & ~0xf0) | (pressed & direction));
+    if (direction != repeat) { repeat = direction; ticks = 0; }
+    else if (direction && ++ticks >= 18 && (ticks - 18) % 6 == 0) pressed |= direction;
+    return pressed;
+}
+void Menu::reset(uint16_t held) { *this = Menu{}; previous = held; }
+unsigned Menu::rows() const {
+    if(page==Page::Position || page==Page::Save) return 2;
+    if(page==Page::Graphics) return 2;
+    if(page==Page::Screens) return 1;
+    return 3;
+}
+
+Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
+    const auto edge = events(keys, previous, repeat, ticks);
+    if (edge & (2 | 8)) {
+        if (page == Page::Options) return Action::BackPause;
+        page = Page::Options; row = 0; return Action::None;
+    }
+    if (edge & 0x40) row = (row + rows() - 1) % rows();
+    if (edge & 0x80) row = (row + 1) % rows();
+    if (page == Page::Options) {
+        if (!(edge & 1)) return Action::None;
+        if (row == 1) return Action::GameOptions;
+        if (row == 2) return Action::BackPause;
+        page = Page::Display; row = 0; return Action::None;
+    }
+    if (edge & 0x300) {
+        int next = static_cast<int>(page) + ((edge & 0x100) ? 1 : -1);
+        page = static_cast<Page>(next > 7 ? 1 : next < 1 ? 7 : next);
+        row = 0; return Action::None;
+    }
+    if(page==Page::Save) {
+        if(!(edge&1))return Action::None;
+        if(row==0)return Action::SaveProgress;
+        page=Page::Options;row=0;return Action::None;
+    }
+    const int direction = edge & (0x10 | 1) ? 1 : edge & 0x20 ? -1 : 0;
+    if (!direction) return Action::None;
+    auto step = [direction](int value, int amount, int low, int high) {
+        return std::max(low, std::min(high, value + direction * amount));
+    };
+    switch (page) {
+    case Page::Display:
+        if (row == 0) for (int i=0; i<(direction > 0 ? 1 : 11); ++i) ntr::video_cycle_resolution(s);
+        if (row == 1) s.target_fps = direction > 0
+            ? (s.target_fps == 60 ? 120 : s.target_fps == 120 ? 240 : 60)
+            : (s.target_fps == 60 ? 240 : s.target_fps == 240 ? 120 : 60);
+        if (row == 2) s.texture_quality = ntr::texture_cycle_quality(s.texture_quality,direction);
+        break;
+    case Page::Visual:
+        if (row == 0) s.upscale_2d = !s.upscale_2d;
+        if (row == 1) s.minimap = !s.minimap;
+        if (row == 2) s.minimap_rotate_with_player = !s.minimap_rotate_with_player;
+        break;
+    case Page::Graphics: {
+        if(row==1) {
+            s.renderer=s.renderer==ntr::VideoRenderer::D3D11?ntr::VideoRenderer::OpenGLSoftware:ntr::VideoRenderer::D3D11;
+            break;
+        }
+        static constexpr uint8_t levels[]={0,2,4,8,16};
+        unsigned current=0;
+        while(current<4 && levels[current]!=s.anisotropic_filtering) ++current;
+        s.anisotropic_filtering=levels[(current+(direction>0?1:4))%5];
+        break;
+    }
+    case Page::Map:
+        if (row == 0) s.minimap_opacity = static_cast<uint8_t>(step(s.minimap_opacity, 16, 0, 255));
+        if (row == 1) s.minimap_scale = static_cast<uint16_t>(step(s.minimap_scale, 10, 100, 500));
+        if (row == 2) s.minimap_hide_touch_target = !s.minimap_hide_touch_target;
+        break;
+    case Page::Screens:
+        s.minigame_layout=static_cast<ntr::MinigameLayout>((static_cast<unsigned>(s.minigame_layout)+(direction>0?1:2))%3);
+        break;
+    case Page::Position:
+        if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000-s.minimap_scale));
+        if (row == 1) s.minimap_y = static_cast<uint16_t>(step(s.minimap_y, 10, 0, 1000-s.minimap_scale));
+        break;
+    default: break;
+    }
+    s.minimap_x = std::min<uint16_t>(s.minimap_x, 1000-s.minimap_scale);
+    s.minimap_y = std::min<uint16_t>(s.minimap_y, 1000-s.minimap_scale);
+    return Action::Changed;
+}
+
+void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size) const {
+    const char *on = "ON", *off = "OFF";
+    switch (page) {
+    case Page::Options: std::snprintf(out,size,"%s", i==0?"PC SETTINGS":i==1?"GAME OPTIONS":"BACK"); break;
+    case Page::Display:
+        if (i==0) std::snprintf(out,size,"RESOLUTION %uX%u",s.width,s.height);
+        if (i==1) std::snprintf(out,size,"FRAME RATE %u FPS",s.target_fps);
+        if (i==2) std::snprintf(out,size,"TEXTURES %s%s",ntr::texture_quality_name(s.texture_quality),
+            s.texture_quality==ntr::TextureQuality::Upscaled?" - NO PACK":"");
+        break;
+    case Page::Visual:
+        if (i==0) std::snprintf(out,size,"2D SCALING %s",s.upscale_2d?"CRISP":"SMOOTH");
+        if (i==1) std::snprintf(out,size,"MINIMAP %s",s.minimap?on:off);
+        if (i==2) std::snprintf(out,size,"MAP ROTATION %s",s.minimap_rotate_with_player?"FOLLOW":"UPRIGHT");
+        break;
+    case Page::Graphics:
+        if(i==1) {std::snprintf(out,size,"RENDERER %s",s.renderer==ntr::VideoRenderer::OpenGLSoftware?"OPENGL CPU":"D3D11");break;}
+        if(i==0) std::snprintf(out,size,"ANISOTROPIC %s",s.anisotropic_filtering==0?"OFF":
+            s.anisotropic_filtering==2?"2X":s.anisotropic_filtering==4?"4X":
+            s.anisotropic_filtering==8?"8X":"16X");
+        break;
+    case Page::Map:
+        if (i==0) std::snprintf(out,size,"OPACITY %u%%",(unsigned(s.minimap_opacity)*100+127)/255);
+        if (i==1) std::snprintf(out,size,"MAP SIZE %u%%",s.minimap_scale/10);
+        if (i==2) std::snprintf(out,size,"HIDE TOUCH TARGET %s",s.minimap_hide_touch_target?on:off);
+        break;
+    case Page::Position:
+        std::snprintf(out,size,"MAP %s POSITION %u%%",i==0?"X":"Y",
+            (i==0?s.minimap_x:s.minimap_y)/10); break;
+    case Page::Save:
+        std::snprintf(out,size,"%s",i==0?"SAVE CURRENT FILE":"BACK");break;
+    case Page::Screens:
+        std::snprintf(out,size,"MINIGAME VIEW %s",ntr::screen_layout_name(s.minigame_layout));break;
+    }
+}
+
+static unsigned glyph(char c) {
+    if (c>='0' && c<='9') return c-'0';
+    if (c>='A' && c<='Z') return c-'A'+0x0a;
+    if (c>='a' && c<='z') return c-'a'+0x2d;
+    return c=='%' ? 0x4f : c=='-' ? 0x47 : c==':' ? 0x4a : c=='/' ? 0x4e : 0x4d;
+}
+void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
+          uint16_t *text, uint16_t *panels, const unsigned char *font,
+          const uint16_t *panel, uint16_t blank_panel, bool touch_navigation) {
+    // Dynamic glyph area is the same 0x200..0x2ff tiles used by Message.
+    std::memset(chars+0x4000,0,0x2000);
+    for (unsigned c=0;c<=0x4e;++c) {
+        const unsigned offset = ((c&0x1f)+((c&0xe0)<<1))*32;
+        std::memcpy(chars+0x4000+c*64,font+offset,32);
+        std::memcpy(chars+0x4000+c*64+32,font+offset+0x400,32);
+    }
+    // The retail Latin font has no percent glyph. Use the same 8x16 tile
+    // format and ink palette as its zero glyph for the three new percentages.
+    static const unsigned char percent[16]={0,0x60,0x90,0x90,0x60,0x02,0x04,0x08,
+        0x10,0x20,0x46,0x09,0x09,0x06,0,0};
+    unsigned char ink=1;
+    const auto *zero=chars+0x4000;
+    for(unsigned i=0;i<64;++i) if(zero[i]) {ink=zero[i]&15?zero[i]&15:zero[i]>>4;break;}
+    auto *percent_tiles=chars+0x4000+0x4f*64;
+    for(unsigned y=0;y<16;++y) for(unsigned x=0;x<8;++x)
+        if(percent[y]&(0x80>>x)) percent_tiles[y*4+x/2]|=ink<<((x&1)*4);
+    std::fill(text,text+1024,0x2ff);
+    std::fill(panels,panels+1024,blank_panel);
+    auto line = [text](const char *label, unsigned y) {
+        const unsigned count = std::min<size_t>(std::strlen(label),30);
+        const unsigned x = (32-count)/2;
+        for (unsigned i=0;i<count;++i) {
+            const unsigned tile = 0x200+glyph(label[i])*2;
+            text[y*32+x+i] = static_cast<uint16_t>(tile);
+            text[(y+1)*32+x+i] = static_cast<uint16_t>(tile+1);
+        }
+    };
+    char label[64];
+    if (m.page==Page::Options) line("OPTIONS",1);
+    else { std::snprintf(label,sizeof(label),"PC SETTINGS %u/7",static_cast<unsigned>(m.page)); line(label,1); }
+    if(m.page==Page::Screens) line("TOP 75%  BOTTOM 25%",15);
+    if(m.page==Page::Graphics && ntr::video_renderer_notice()[0])line(ntr::video_renderer_notice(),15);
+    for (unsigned i=0;i<m.rows();++i) {
+        const unsigned y=4+i*5;
+        for (unsigned j=0;j<128;++j)
+            panels[y*32+j] = static_cast<uint16_t>((panel[j]&0x0fff)|(i==m.row?0x2000:0x1000));
+        m.line(i,s,label,sizeof(label)); line(label,y+1);
+    }
+    if(m.page==Page::Save) {
+        if(m.save_status)line(m.save_status>0?"PROGRESS SAVED":"SAVE FAILED - TRY AGAIN",16);
+        line(touch_navigation?"L PAGE    BACK    R PAGE":"L/R PAGE  A SELECT  B BACK",21);
+    }
+    else if (m.page==Page::Options) line(touch_navigation?"TAP ROW    BACK    B BACK":"A SELECT  B BACK",21);
+    else {
+        line(touch_navigation?"TAP VALUE OR LEFT/RIGHT":"L/R PAGE  LEFT/RIGHT CHANGE",20);
+        line(touch_navigation?"L PAGE    BACK    R PAGE":"A CHANGE  B BACK",22);
+    }
+}
+}

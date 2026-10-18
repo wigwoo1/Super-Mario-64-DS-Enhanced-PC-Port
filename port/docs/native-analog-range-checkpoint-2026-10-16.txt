@@ -1,0 +1,52 @@
+Native analog movement range checkpoint - 2026-10-16
+Status: VERIFIED for native automated input and bounded gameplay.
+Full PC port incomplete. Keep Sol Medium for gameplay interactions; goal active.
+
+What changed
+The Xbox radial deadzone was followed by the retail virtual touch stick's
+stationary range and integer speed steps. Old rawX12000 mapped to game663,
+which never moved the player. Active host travel now maps across the usable
+retail movement range. Neutral stays zero; full travel stays4096; direction
+and partial speed remain analog. Menu stick navigation retains its old curve.
+
+port/ntr/input.cpp/.h: separate ntr_input_movement_stick, mode-aware minimum
+1344/4096 for Standard and1536/4096 for Touch mode, with remaining travel
+rescaled to1. Minimum margin survives radius105 integer vector quantization.
+port/tools/hostgen.py: call the movement adapter only in generated CheckInput.
+port/CMakeLists.txt: controller smoke object now uses that generated copy too.
+port/tests/smoke_controller_state.cpp: sweep small-to-full travel, both modes,
+tiny signed diagonals, release, no phantom buttons; existing neutral/menu tests.
+Original src/include left unchanged.
+
+Verification
+Build succeeds.52/52CTests pass29.59s.14host-generator checks pass.
+Four linked-data audits pass (actor/message,animation,Wanted,Rec Room).
+Preliminary3000-frame small/full replays both exit0. At2300 small speed14894
+versus full131040; full magnitude4096. The final minimum1344 adjustment changes
+only partial travel; final controller test verifies full4096 unchanged.
+
+Exact final EXE replays,1280x720,D3D11,isolated introduction-complete fixture:
+- analog-small-final,3000frames,exit0: rawX12000,Y0,active2200..2649.
+  At2180 x=-25497600,z26021888. At2400 x=-22538906, speed14894,mag1794.
+  At2980 x=-18765512,mag0,speed0,St_Wait_Main.
+- analog-diagonal-final,3000frames,exit0: rawX5553,Y5553,active2200..2649.
+  At2180 x=-25497600,z26021888. At2400 x=-25076400,z25600688,
+  speed2978,mag1326. At2980 x=-24787316,z25311604,mag0,speed0,St_Wait_Main.
+  The raw radius is just outside the Xbox7849 deadzone.
+Both pass tutorial paging,jump at2000,attack2800,continuation3000.
+Screens/state/logs under build/port/native-file-menu-baseline-analog-* and
+build/native-file-menu-baseline-analog-*.log. All observed characters Yoshi3.
+Fixture progress is seeded; earning stars/coins is not verified.
+
+Final EXE SHA256 2A3F2A05ACF44AFD419BC2E41C6162FA9B723DDF70AEB1D15B7D2DBFDA6AFB07
+Final MAP SHA256 07F90AB4399BA59A6B7F07010DB57CED6A68C1B7424820230650668043D79F19
+Installed F: and preview EXE/MAP byte-identical to tested final build.
+Rollback/evidence: native-checkpoints/native-checkpoint-2026-10-16-analog-range.
+No actual F: replay repeated for this milestone. Original-menu launcher,
+settings,renderer DLLs,user saves and ROM remain in place. ROM hash checked.
+
+Limits
+Physical Xbox input remains unverified. This retains retail discrete speed
+steps; it is not a rewrite of all character movement physics. Full courses,
+enemy interactions/progression,other minigames and remaining planned PC
+features still need development. Goal active; Sol Medium next.

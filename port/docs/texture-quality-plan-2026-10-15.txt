@@ -1,0 +1,170 @@
+Texture quality menu and art plan - requested 2026-10-15
+UPDATED USER REQUIREMENT (2026-10-16): provide two separate HD texture options.
+The SUPIR Upscaled option covers all game texture categories, including eligible
+character textures. A separate AI Generated 4K option creates replacements that
+closely match their individual source textures, but only for eligible level and
+object textures. Do not generate character textures for AI Generated 4K;
+characters in that mode must use the SUPIR-upscaled versions. Existing code
+still has one placeholder Upscaled choice and no production art pack; adding the
+second choice and routing by asset role are future implementation milestones.
+
+SUPIR delivery milestones:
+- Check official SUPIR setup, model availability/license, local GPU memory needs,
+  and feasible batch settings before downloading/installing or processing assets.
+- Complete the texture inventory across levels, objects, characters/NPCs/enemies,
+  UI, title/menu artwork, effects, animated textures, and palette variants.
+- Run a small reviewed SUPIR pilot from original extracted textures, aiming for
+  stylistically faithful 4K assets. Preserve aspect ratio, UV/atlas positions,
+  tiling seams, alpha/cutouts and animation consistency. Preserve/reapply alpha
+  separately where required; avoid inventing text or changing character designs.
+- Batch the full inventory with reproducible settings, model/version provenance,
+  source keys, resumable progress and per-texture validation. Keep originals.
+- SUPIR is the required upscaler for the Upscaled pack. Its intended scope is
+  every game texture, including playable characters, NPCs, enemies, UI, title
+  art, effects, animated frames and palette variants. SUPIR is an image
+  restoration/upscaling model, so tune its prompts/strength and review outputs
+  against each original; do not treat it as an automatic guarantee of 4K detail
+  or game-style fidelity. Record SUPIR/model version, settings, source key and
+  output dimensions for each result.
+- Extend the existing replacement pipeline and role tests to support the
+  all-texture SUPIR scope and a distinct level/object AI Generated 4K pack; do
+  not simply disable safety checks for unidentified assets.
+- Expose both packs as separate native pause/options Texture Quality choices,
+  preserving Original / 75% / 50% / 25% / No Textures. In AI Generated 4K mode,
+  route character textures to SUPIR-upscaled content and never to generated
+  replacements. Label missing/incomplete packs honestly and fall back to source
+  art or the SUPIR pack as appropriate.
+- Verify every inventory entry, live switching, saved preference, rendering at
+  native4K, GPU memory/frame-time limits, and side-by-side in-game screenshots.
+SUPIR has not yet been installed or run; no production HD pack is claimed.
+The installed Python environment, model compatibility, license terms and
+available GPU memory must be verified before processing. Keep SUPIR and its
+large checkpoints in a separate asset-generation environment; the game itself
+should consume the reviewed texture pack and must not require Python, SUPIR or
+GPU inference at runtime. Do not distribute SUPIR software or weights unless
+their current license explicitly allows the intended use.
+
+Feasibility check (2026-10-16): the isolated SUPIR source checkout and Python
+3.10 virtual environment exist, but SUPIR, PyTorch and model weights have not
+been installed. The local RTX 5070 Laptop GPU reports 8,151 MiB total VRAM.
+The official README uses Python 3.8 and requests SDXL, SUPIR, CLIP and a
+LLaVA-13B model. Its alternate ComfyUI wrapper drops the separate LLaVA
+requirement and its maintainer reports 512-to-2048 fp8 UNet runs below 10 GB;
+that is a third-party experimental result, not a verified guarantee for this
+8 GB device. Treat direct native 4K output as unproven and compare tiled or
+multi-pass workflows on a small texture before scaling up. The wrapper also
+warns about high system RAM use. Model/checkpoint download sizes and the
+non-commercial-only SUPIR terms must be included in any setup decision.
+
+Texture-art safeguards for the pilot: test a level surface, an object, a
+character in the SUPIR-upscaled pack only, and an alpha/cutout texture; preserve each original as the
+authoritative UV atlas; reapply its original alpha channel after upscaling;
+record dimensions, key, model/settings and random seed; reject invented
+features, text, palette shifts, or changed character identity. Treat animation
+frames/palettes as linked sets and do not enable a result until its complete
+set passes side-by-side review. Generate outputs offline and integrate only
+reviewed PNGs through the existing manifest/streaming path.
+
+The following implementation history describes the previous asset scope:
+Status: SELECTOR AND ORIGINAL/REDUCED/UNTEXTURED MODES IMPLEMENTED.
+Release build, compiled-data audit and32/32 CTest pass. A7900-tick native4K
+castle replay selects/resumes all six values, with clean native-menu captures.
+Original matches the prior shadow checkpoint RGB. Upscaled is explicitly marked
+NO PACK and falls back to originals until the remaining inventory/art work below.
+See native-texture-quality-checkpoint-2026-10-15.txt for evidence and limits.
+
+1. IMPLEMENTED: Replaced the toggle with one saved Texture Quality choice in the game's own
+   pause/options PC Settings page. Choices in order:
+   Original / 75% / 50% / 25% / No Textures / Upscaled.
+   Percentage means each original texture's width and height (not a percentage
+   of 4K). Minimum dimension one texel; resample predictably and cache results.
+   No Textures keeps geometry and material lighting; preserve alpha/cutout masks
+   needed to avoid turning trees, fences or effects into opaque rectangles.
+   Verify each choice, persistence, changing modes during gameplay, and F1 parity.
+
+2. IN PROGRESS:505 named/archive model identities and roles are now captured.
+   Runtime FS/model-render scopes supply actual ownership, including nested draws
+   and lifetime removal. Role/quality/current VRAM content separates cache entries.
+   The inventory validates1574 records and1796 initial material bindings, with1122
+   original PNG references.34 Unknown models and121 unbound/animated/selected
+   texture records remain required work. Full checkpoint:
+   native-texture-ownership-checkpoint-2026-10-15.txt.
+   Original instruction: Inventory original assets before generating replacements.
+   The decoder now has explicit Level/Object/Character/Unknown roles and blocks
+   Character/Unknown replacements, even when matching PNGs exist. Unresolved game
+   materials remain Unknown until ownership is established.
+   Track VRAM uploads/palette changes and include role in replacement cache
+   identity, so a shared character/object texture cannot inherit object art.
+   Tests establish the bounded model guard, not complete role classification or
+   runtime asset coverage. Record source ROM
+   file/model, stable content key, original dimensions, material/UV behavior,
+   texture sharing and role. Classify levels, objects and characters explicitly.
+   This milestone applies to the all-texture SUPIR pack. The separate AI
+   Generated 4K pack remains limited to eligible Level/Object roles; character,
+   UI/effect and Unknown roles must not receive generated replacements. In its
+   runtime mode, character draws must resolve to the corresponding SUPIR-upscaled
+   texture. Ambiguous/shared assets remain source art until ownership is
+   established; shared keys must preserve distinct consumers where their source
+   content or intended output differs. Role identification must use
+   model/material ownership, never guesses from image color.
+
+3. Generate two distinct HD packs. Use SUPIR to upscale every identified game
+   texture, including characters, with source shape, colors, tiling seams, alpha,
+   atlas/UV placement and painted style preserved. Separately AI-generate
+   source-matching 4K replacements only for eligible Level/Object textures;
+   do not generate character textures. For each pack, target 4096 pixels along
+   the long side, preserve aspect ratio and atlas layout, and keep provenance,
+   source key, generation/upscaling settings and review status per replacement.
+   Do not claim complete coverage based on a few sample replacements.
+
+4. Integrate both reviewed packs with stable keys and model-role routing,
+   bounded GPU caching/streaming, graceful original-texture fallback for missing
+   files, and live mode switching without stale material bindings. Verify
+   replacement UV scale, repeat/flip and animated/shared palettes. Keep original
+   ROM files untouched. Ship pack manifests and installation instructions.
+
+5. Verify complete inventory coverage for both policies: SUPIR across all
+   categories, and generated 4K for eligible level/object textures only. Confirm
+   character textures resolve to SUPIR in AI Generated 4K mode. Review seams,
+   alpha and source fidelity in representative scenes, then every course,
+   character, menu and shared/animated asset. Capture original/reduced/
+   untextured/SUPIR/generated comparisons from matching game states. Measure
+   memory and frame time at 1080p and 4K; texture quality and native rendering
+   resolution are independent settings.
+
+The six-choice menu and original/reduced/untextured rendering are implemented.
+The inventory, runtime role propagation, full AI art pack and complete coverage
+verification remain required. A 4K framebuffer alone does not supply4K art.
+
+Performance milestone (2026-10-15): immutable decoded RGBA identities/alpha flags
+are cached and reused by the native renderer.34/34 tests and matching real4K
+screenshots verify the change. Remaining pack work includes CPU/GPU streaming,
+resource budgets/eviction, missing-file lookups and transient register-pair decode.
+The complete art pack and independent highFPS still require separate verification.
+
+Streaming milestone (2026-10-15): NativeGpu uses original CPU proxies and a bounded
+GPU LRU, temporary PNG decode, missing-file memoization and epoch reload. Queued
+GPU draws retire before eviction so resource references cannot grow unchecked.
+Software runtime Upscaled uses original art. Synthetic32-asset4K stress and the
+35-test suite pass; final native/installed verification is recorded separately in
+native-texture-streaming-checkpoint-2026-10-15.txt. Remaining ownership/animated
+variant coverage, complete art generation, full-course verification and complete-
+pack memory/FPS measurement remain required. Transient register-pair CPU decode
+is still small original art; it no longer opens replacement PNGs.
+
+Archive role milestone (2026-10-15):29 source-reviewed classifications, including
+12 user-ROM player model slots. Counts120 Character/285 Object/66 Level/34 Unknown;
+854 referenced eligible keys,185 Character keys, no current overlap. All505
+anonymous identities resolve the table's role, but classification/coverage remains
+incomplete. Shared coin enemy-body and cap player-cosmetic draws require explicit
+consumer ownership.121 initial-unbound records include24 Object/83 Character/14
+Unknown. Next: finish shared-use context and remaining role/variant evidence,
+then production art generation/review. See native-archive-roles-checkpoint notes.
+
+Consumer/Yoshi milestone (2026-10-15): nine reviewed shared file paths can resolve
+an Object use only under an explicit consumer; Character scopes retain originals.
+Native Player/Coin scopes and nested/GPU policy tests pass; enemy/cap native
+course coverage remains required. Base Unknown count stays34. Pack inventory must
+record eligible object uses separately from protected character draws. Correct
+new-file startup now shows Yoshi; direct base-render bridge preserves his head.
+Three matching cyan4K Yoshi files remain rejected in tested native gameplay.

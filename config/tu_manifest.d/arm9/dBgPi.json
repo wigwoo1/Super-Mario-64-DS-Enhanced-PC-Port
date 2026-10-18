@@ -1,0 +1,223 @@
+{
+  "id": "arm9/dBgPi",
+  "module": "arm9",
+  "source": "src/engine/collision/dBgPi.cpp",
+  "promoted_source": "src/engine/collision/dBgPi.cpp",
+  "status": "promoted",
+  "boundary_confidence": "high",
+  "boundary_evidence": [
+    "The class's complete member set in one contiguous run: GetClsnID begins the run at 0x02037f4c and C2 ends it at 0x020381cc; the six accessors/setters between them were enrolled as anonymous func_ shards whose first parameter is the dBgPi result record and whose bodies only touch its fields.",
+    "func_02037f44 at 0x02037f44 is excluded: notes in src/actors/daMky_c.cpp record that it returns word 8 of a different record type (a dBgPi local would emit C1, which those bodies do not call).",
+    "func_020381cc after C2 walks the collider table through a pointer-to-pointer argument, not a dBgPi receiver, and belongs to the CLPS_BlockRef neighbourhood that follows."
+  ],
+  "sections": [
+    {
+      "name": ".text",
+      "start": "0x02037f4c",
+      "end": "0x020381cc"
+    }
+  ],
+  "functions": [
+    {
+      "symbol": "_ZNK5dBgPi9GetClsnIDEv",
+      "address": "0x02037f4c",
+      "size": "0x00000008",
+      "legacy_source": "src/_ZNK5dBgPi9GetClsnIDEv.cpp",
+      "ordinal": 0
+    },
+    {
+      "symbol": "_ZNK5dBgPi16GetColliderIndexEv",
+      "address": "0x02037f54",
+      "size": "0x00000008",
+      "legacy_source": "src/func_02037f54.c",
+      "ordinal": 1
+    },
+    {
+      "symbol": "_ZN5dBgPi16SetColliderIndexEi",
+      "address": "0x02037f5c",
+      "size": "0x00000008",
+      "legacy_source": "src/func_02037f5c.c",
+      "ordinal": 2
+    },
+    {
+      "symbol": "_ZNK5dBgPi7IsHitByEiP8dActor_cP4dBgW",
+      "address": "0x02037f64",
+      "size": "0x00000030",
+      "legacy_source": "src/func_02037f64.c",
+      "ordinal": 3
+    },
+    {
+      "symbol": "_ZNK5dBgPi7IsValidEv",
+      "address": "0x02037f94",
+      "size": "0x0000002c",
+      "legacy_source": "src/func_02037f94.c",
+      "ordinal": 4
+    },
+    {
+      "symbol": "_ZNK5dBgPi11HasColliderEv",
+      "address": "0x02037fc0",
+      "size": "0x00000014",
+      "legacy_source": "src/func_02037fc0.c",
+      "ordinal": 5
+    },
+    {
+      "symbol": "_ZN5dBgPi9RecordHitEsP11SurfaceInfo",
+      "address": "0x02037fd4",
+      "size": "0x00000018",
+      "legacy_source": "src/func_02037fd4.c",
+      "ordinal": 6
+    },
+    {
+      "symbol": "_ZN5dBgPi11SetColliderEiiP8dActor_cP4dBgW",
+      "address": "0x02037fec",
+      "size": "0x0000002c",
+      "legacy_source": "src/func_02037fec.c",
+      "ordinal": 7
+    },
+    {
+      "symbol": "_ZN5dBgPiaSERKS_",
+      "address": "0x02038018",
+      "size": "0x00000054",
+      "legacy_source": "src/_ZN5dBgPiaSERKS_.cpp",
+      "ordinal": 8
+    },
+    {
+      "symbol": "_ZNK5dBgPi6CopyToERS_",
+      "address": "0x0203806c",
+      "size": "0x00000054",
+      "legacy_source": "src/_ZNK5dBgPi6CopyToERS_.cpp",
+      "ordinal": 9
+    },
+    {
+      "symbol": "_ZN5dBgPi5ResetEv",
+      "address": "0x020380c0",
+      "size": "0x0000002c",
+      "legacy_source": "src/func_020380c0.c",
+      "ordinal": 10
+    },
+    {
+      "symbol": "_ZN5dBgPiD2Ev",
+      "address": "0x020380ec",
+      "size": "0x00000028",
+      "legacy_source": "src/_ZN5dBgPiD2Ev.cpp",
+      "ordinal": 11
+    },
+    {
+      "symbol": "_ZN5dBgPiD0Ev",
+      "address": "0x02038114",
+      "size": "0x00000030",
+      "legacy_source": "src/_ZN5dBgPiD0Ev.cpp",
+      "ordinal": 12
+    },
+    {
+      "symbol": "_ZN5dBgPiD1Ev",
+      "address": "0x02038144",
+      "size": "0x00000028",
+      "legacy_source": "src/_ZN5dBgPiD1Ev.cpp",
+      "ordinal": 13
+    },
+    {
+      "symbol": "_ZN5dBgPiC1Ev",
+      "address": "0x0203816c",
+      "size": "0x00000030",
+      "legacy_source": "src/_ZN5dBgPiC1Ev.cpp",
+      "ordinal": 14
+    },
+    {
+      "symbol": "_ZN5dBgPiC2Ev",
+      "address": "0x0203819c",
+      "size": "0x00000030",
+      "legacy_source": "src/_ZN5dBgPiC2Ev.cpp",
+      "ordinal": 15
+    }
+  ],
+  "data": [],
+  "bss": [],
+  "compiler_only_output": [
+    {
+      "symbol": "_ZTI5dBgPc",
+      "disposition": "deadstrip-data",
+      "canonical_module": "arm9",
+      "canonical_address": "0x0209921c",
+      "reason": "dBgPi's emitted _ZTI names its dBgPc base through this pointer, so mwcc emits the base's typeinfo as vague linkage even though non-polymorphic dBgPc has no vtable of its own. The cartridge record at arm9:0x0209921c is proved by romdata_check before isolation discards the copy."
+    },
+    {
+      "symbol": "_ZTS5dBgPc",
+      "disposition": "deadstrip-data",
+      "canonical_module": "arm9",
+      "canonical_address": "0x02099214",
+      "reason": "The base's type-name string, emitted alongside _ZTI5dBgPc for the same vague-linkage reason; equals the cartridge record at arm9:0x02099214."
+    },
+    {
+      "symbol": "_ZTV5dBgPi",
+      "disposition": "deadstrip-data",
+      "canonical_module": "arm9",
+      "canonical_address": "0x02099368",
+      "reason": "The destructor is the key function, so the TU emits the class's two-slot vtable (D1, D0). The cartridge copy lives at arm9:0x02099368 -- the _ZTV5dBgPi alias the C1/C2 vptr store relocates against -- and romdata_check proves every slot before isolation discards this copy."
+    },
+    {
+      "symbol": "_ZTI5dBgPi",
+      "disposition": "deadstrip-data",
+      "canonical_module": "arm9",
+      "canonical_address": "0x02099230",
+      "reason": "Emitted with the vtable group for the same key-function reason; the cartridge's single-inheritance record is arm9:0x02099230 and its relocations (abi class vptr, _ZTS5dBgPi, base _ZTI5dBgPc) are proved by romdata_check."
+    },
+    {
+      "symbol": "_ZTS5dBgPi",
+      "disposition": "deadstrip-data",
+      "canonical_module": "arm9",
+      "canonical_address": "0x0209920c",
+      "reason": "The emitted type-name string equals the cartridge's record at arm9:0x0209920c -- the class carries the ROM's own dBgPi spelling, not a coined name -- so the copy is discarded after proof."
+    }
+  ],
+  "externalized_output": [],
+  "notes": [
+    "Eight members arrived as anonymous func_ shards; symbols.txt now names them by their member spellings. GetColliderIndex/SetColliderIndex read and write colliderIdx -- the slot in the 0x18-entry registered-collider table at data_020a0c80 -- and IsValid/HasCollider are the two validity tests the registry helpers run on it. SetCollider records the hitting collider's identity triplet (its slot, ownerUniqueID, owner and the collider pointer); IsHitBy compares that triplet.",
+    "All five ABI variants are cartridge-retained: dBgCh_Gnd/Lin/SphCrr construct their dBgPi result sub-object as a non-primary base (calls C2, destroys via D2) while complete dBgPi locals use C1/D1. Deferred codegen emits D2,D0,D1 then C1,C2, matching the ROM order.",
+    "func_02037de8 (the five-word surface-record copy RecordHit calls) stays an extern: it lives in the SurfaceInfo/dBgPc cluster below this span and is a different TU's job."
+  ],
+  "verification": {
+    "round": "tools/tubuild.py verify -- text-only, whole shadow TU compiled once",
+    "toolchain": "tools/mwccarm/2004/b56/mwccarm.exe",
+    "flags": "-O4,p -enum int -lang c++ -char signed -interworking -proc arm946e -gccext,on -msgstyle gcc -Cpp_exceptions off",
+    "object": "build/tu/arm9-dBgPi/dBgPi.o (gitignored)",
+    "comparison": "tools/match.py extract_func+compare (bytes/relocs) AND tools/objisolate.py plan() (relocation type/addend) AND tools/reloc_audit.py check_destinations() (relocation target identity)",
+    "functions_matched": 16,
+    "functions_declared": 16,
+    "compilerOnlyOutput": {
+      "requested": [],
+      "deadstripped": [],
+      "droppedSections": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "data": [
+        "_ZTI5dBgPc",
+        "_ZTS5dBgPc",
+        "_ZTV5dBgPi",
+        "_ZTI5dBgPi",
+        "_ZTS5dBgPi"
+      ],
+      "dataExternalized": [
+        "_ZTI5dBgPc",
+        "_ZTI5dBgPi",
+        "_ZTS5dBgPc",
+        "_ZTS5dBgPi",
+        "_ZTV5dBgPi"
+      ]
+    },
+    "criteria": {
+      "every_declared_function_defined": "PASS",
+      "every_declared_function_bytes_match": "PASS",
+      "declared_function_set_equals_defined_function_set": "PASS",
+      "functions_occur_in_expected_order": "PASS",
+      "relocation_destinations_verified": "PASS"
+    }
+  }
+}

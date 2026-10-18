@@ -1,0 +1,25 @@
+Current installed build - Yoshi swallowing Goombas (2026-10-17)
+Status: VERIFIED for normal-Goomba capture/hold/swallow and egg creation in
+course6. Full PC port remains incomplete.
+
+Fixed premature capture release, crouch-swallow crash and missed animation
+events. Native eggs now spawn and follow Yoshi.
+Manual swallow and automatic swallow each verified through2000frames,exit0;
+the automatic test ran the installed F: executable with the F: ROM.
+Jump/landing and return to idle also verified. Screenshots retained.
+Release build succeeds;52/52CTests,19generator checks and5data audits pass.
+
+How to check: open Play Goomba Development Preview.cmd, dismiss the tutorial,
+approach a Goomba and press Space / Xbox A. Wait to swallow automatically,
+or press E / Xbox RB. An egg appears behind Yoshi. LeftShift / Xbox B jumps.
+This uses separate preview saves. Physical Xbox testing remains unverified.
+
+EXE SHA256 5D99E84CAB1AC3102B73F990B9D5A8C034D62F799F45AE2327538D885848812F
+MAP SHA256 C3DFCA328DC984A52C0409D05C099337503E40BA6EB21148B2990DD8F41863A1
+Rollback/evidence: native-checkpoints/native-checkpoint-2026-10-17-yoshi-swallow
+ROM, user saves and settings preserved. C: workspace is authoritative source.
+See port/docs/yoshi-goomba-swallow-checkpoint-2026-10-17.txt.
+
+Recommended next model: Sol Medium for egg throwing and Goomba stomp/reward
+checks. The difficult swallow repair is complete; goal paused for the requested
+model switch. Full gameplay/progression and the remaining PC features are open.

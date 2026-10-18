@@ -1,0 +1,47 @@
+Locked castle door / Lakitu guide - VERIFIED 2026-10-17
+
+The fresh-file door was waiting forever for a message-sound volume of zero.
+PC startup disables the DS audio driver, but PlaySub left a volume of 127
+behind and the disabled driver's update never cleared it. Yoshi was already
+inside the door's box with the correct facing.
+
+Change: src/engine/sound/Sound.cpp, PC-only disabled-driver branches in
+PlaySub and ChangeMusicVolume. Requests finish without starting absent sound
+sequences and leave consistent idle/volume state. Enabled-driver behavior
+remains on the original path. Audible native audio is still unfinished.
+port/main.cpp adds read-only nearest-door/audio columns to the optional
+Lakitu diagnostic CSV. Its legacy no_control column is mNoCtrlKind, which
+can remain nonzero after control returns; state.csv player_no_control and
+player_disabled are the actual control flags.
+
+Explicit Release target sm64ds_pc built successfully. The generic all target
+excludes the game executable. CTest passed 52/52 in 20.34s.
+Candidate SHA256:
+B45E905C52523A5E6FBC6F5919F16DAC7BF45BED064DA1A98FEC19BAF612BCFB
+
+Fresh empty QA save replay:
+- File A -> native opening -> courtyard -> locked castle door, using the
+  original menu, ordinary stick input, and the original message interaction.
+- Frame 5960: flags2 becomes 0x10088, player St_Talk_Main, message_volume 0.
+- Frame 6140: flags2 becomes 0x30088 and native Lakitu state 0x02130810 starts
+  its conversation. Frame 6200 screenshot displays Lakitu's map guidance.
+- Lakitu leaves; Yoshi walks to the final waypoint, then idles with both
+  actual control-disable flags clear. Clean exit 0 after 8500 frames.
+- Watch Fresh File Gate.ps1 -VerifyOnly passes on the recorded evidence.
+
+Shared audio API regression:
+- Existing Watch Original Course Entry script passed with the same executable
+  and a separate seven-star QA seed: original menu -> castle doors -> original
+  painting -> mission selection -> Battlefield. Yoshi's movement/jump and
+  normal control passed, clean exit 0 at 6000, QA save byte-identical to seed.
+
+Evidence under local build/port:
+fresh-save-door-state-20261017 (baseline blocker, exit 0 at 6500)
+fresh-save-door-fixed-20261017 (fresh progression, exit 0 at 8500)
+course-entry-audio-regression-20261017 (existing entry regression, exit 0 at 6000)
+
+Next unresolved milestone: native rabbit/MIP profile, behavior/callback and
+reward integration, then test the fresh-file rabbit capture, castle key,
+door unlock and course entry. The native actor registry currently has no MIP
+entry. This fix verifies the door/guide gate only, not rabbit/key progression.
+The full PC port and requested feature roadmap remain incomplete.

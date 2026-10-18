@@ -1,0 +1,87 @@
+Mario 64 DS PC port: bounded replacement texture streaming, 2026-10-15
+Status: VERIFIED for the tested native texture path and synthetic stress.
+Full AI art, ownership/variant coverage and complete game remain unfinished.
+Goal remains active. Keep Sol High for asset/rendering reverse engineering.
+
+What changed
+- Native geometry retains original decoded pixels in the CPU cache and carries
+  a small canonical replacement identity and role. Only submitted geometry opens
+  eligible replacement PNGs. Transient texture/palette register states no longer
+  perform replacement-file reads or decode large PNGs.
+- One temporary PNG vector is limited to64MiB decoded RGBA (a4096x4096 image),
+  uploaded and released. GPU resources use an LRU by bytes and1024-entry cap.
+  Startup hardware budget: half DXGI local budget, clamped128MiB..4GiB; WARP256MiB.
+  Diagnostic tests can override it down to64MiB.
+- Geometry groups retain stable descriptions; GPU images resolve at draw time.
+  Eviction cannot leave dangling resource pointers in the second alpha pass.
+  Missing/corrupt/oversize/upload-failed assets fall back to original art and are
+  memoized until settings/backend change. Original->Upscaled reloads edited PNGs.
+  Character and Unknown roles are checked again at the GPU boundary.
+- D3D11 queued draws retain image references even after cache removal. The first
+  stress run exposed this and exhausted WARP memory. Eviction and replacement
+  epoch retirement now wait for preceding GPU commands before releasing images.
+  Frames whose working set fits have no eviction wait. Oversized sets can stall
+  or repeatedly decode. This is bounded storage, not a full-pack FPS guarantee.
+- Software runtime Upscaled retains original art; reduced/none modes continue.
+  Offline tooling retains its existing eager decoder for references/tests.
+- Added profile payload counts for GPU cache/budget, evictions, replacement
+  attempts/uploads, temporary PNG peak and retained GX CPU pixels. Payload
+  counters exclude process, driver, framebuffer and other allocation overhead.
+- Retail src, texture role tables, artwork and game timing remain unchanged.
+
+Build and tests
+- Release/default builds succeed. All35/35 CTest checks pass (25.97s); native-data
+  audit passes. Existing shadow, geometry byte equality, native menus, minimap,
+  quality/UV/alpha and mutable texture regressions pass unchanged.
+- New stress authors32 unique4096x4096 diagnostic PNGs (2GiB decoded in total),
+  using one vector. A128MiB GPU cache performs33 replacement uploads and31
+  evictions, retaining134217728 bytes, temporary decoded peak67108864 bytes.
+  Opaque and partial-alpha pixel samples pass after eviction/reload. Missing-file
+  memoization, live reload of newly created/edited files, invalid data/size guard,
+  explicit character/unknown exclusion and original CPU proxies pass.
+- Second focused stress run had already solved queued-resource exhaustion, then
+  exposed a test setup error: DS fixed-address reservations were made after GPU
+  allocations. io_init now runs first, as in the game. No speculative game fixes.
+  Failed logs remain with final passing evidence.
+- Separate100ms process observation of successful whole WARP stress:
+  peak working set363978752 bytes, peak virtual472002560 bytes; sampled private
+  maximum353402880 bytes. Includes PNG authoring, DS memory reservations, WARP
+  driver and staging; not a game/hardware-GPU memory measurement.
+- Two final4200-tick actual3840x2160 castle replays exit0. Original and diagnostic
+  replacement screenshots match their previous checkpoint RGB exactly; bottom
+  RGB also matches. Mario/road ROI is identical between original and fixture.
+  Screenshots inspected and shown; pink grass is diagnostic, not production art.
+- Native runs retain the same629760-byte peak GX CPU pixel payload. Original GPU
+  material payload peaks799744 bytes; fixture67904512 bytes. Fixture loads its
+  single4K replacement once, with29 total eligible lookup attempts, then no warm
+  PNG lookups/uploads. Both have zero material identity-hash texels throughout.
+  Warm4000..4180 render CPU median802us both; render+present1466/1458us. These
+  CPU measurements do not establish complete-game FPS or GPU completion time.
+- Evidence: build/texture-streaming-*, verify-texture-streaming.py,
+  run-texture-streaming.ps1, smoke_texture_streaming.cpp and final CTest log.
+
+How to check
+Launch F:\AI Games\Mario 64 DS\sm64ds_pc.exe using the existing launcher/ROM.
+Open pause Options -> PC Settings -> Display, select3840x2160 and Original.
+Mario, shadows and the minimap should look as before. No diagnostic pink texture
+is installed. Upscaled still says NO PACK until production artwork is supplied.
+
+Remaining required work
+- Complete unknown model/animated material ownership, generate/review all eligible
+  level/object AI4K art while excluding every character, verify complete coverage,
+  seams, alpha and performance in every course. Never infer full coverage from
+  the one diagnostic replacement or the32 synthetic stress files.
+- Full gameplay/course/actor coverage, independent120/240FPS, physical input,
+  audio/save verification and final standalone packaging remain unfinished.
+- Next model: Sol High. Remaining model ownership needs source tracing/reverse
+  engineering; a switch to Luna is not recommended yet. Goal stays active.
+
+Installed verification
+- Installed executable/map, changed source, docs and evidence on F: with SHA256
+  verification and previous-install/source backups. User INI absence preserved.
+- Actual installed executable with F: user ROM completes1800 TestMap ticks, exit0,
+  one live coin at1750, hardware GPU1280x720, zero material rescans. Screenshot
+  inspected. Installed compiled-data audit and source/installed ROM hash agree.
+- Checkpoint: F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-15-texture-streaming
+- Executable SHA256:
+  6F1AFCFE36F71B6FCDAA9F315BF5AFBDFC254780F0C1B1C905B5DDF607F11B41

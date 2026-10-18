@@ -1,0 +1,25 @@
+Mario 64 DS PC port: character lighting, 2026-10-14
+Status: PARTIALLY VERIFIED overall; character-light enable repair VERIFIED for the command check and bounded castle startup run.
+
+What changed:
+The renderer calculated lighting from a separate mask which the real game's polygon commands never updated. BEGIN_VTXS now latches the four light-enable bits from POLYGON_ATTR along with other polygon attributes. The test helper gx_enable_lights changes the pending bits through the same state, so it follows the same BEGIN timing. Mario is now visibly red and blue in the captured castle scene instead of a black silhouette.
+Hardware command reference: https://mgba-emu.github.io/gbatek/#ds-3d-polygon-attributes
+
+Build and tests:
+Release executable and four relevant test targets built successfully.
+CTest: smoke_gx_visibility, smoke_gx, smoke_modelanim and smoke_actor all passed (4/4).
+The new command test sets white light and red ambient reflection using hardware ports, enables light 0 using POLYGON_ATTR, then disables it during a polygon. It checks that the current polygon remains red and the next polygon becomes black. It does not call the host light-enable helper.
+Game run resume104 completed simulation frame 1200, performed native shutdown, and exited with code 0. It uses the same automatic input and frame target as resume103. The screenshot visually confirms character color. No gameplay frame-rate measurement is claimed.
+
+Files changed:
+port/ntr/gx.cpp
+port/tests/smoke_gx_visibility.cpp
+
+How to check:
+Open last-render.bmp in this folder. Mario should have a red cap/shirt and blue overalls. Launch-test.cmd repeats the bounded startup test using the ROM in the main Mario 64 DS folder. It saves manual-run logs and a screenshot beside the executable.
+
+Remaining work:
+Full lighting accuracy (including directional light transforms/specular shading), character/gameplay correctness, native missing profiles including MAP and DEMO, HUD and bottom-screen map appearance, doors/exit transitions, audio, physical Xbox verification, internal 4K rendering, replacement texture assets, and requested delivered FPS remain incomplete or unverified. Existing presentation settings are not proof of these requirements. The complete original goal remains open.
+Recommended next model: Sol Medium for continuing native actor and rendering integration. No model switch is recommended at this milestone; keep the goal active.
+
+This is a development checkpoint. Full authoritative source remains in the C: task workspace's work/source-extracted/sm64ds-decomp-main directory. changed-source is a partial snapshot carrying the preceding actor/shadow repairs and these two files. build-inputs preserves the learned enrollment input.

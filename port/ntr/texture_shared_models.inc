@@ -1,0 +1,10 @@
+// Draw-context allowlist. Base roles stay Unknown; explicit object scopes only.
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#5", 0x8005, "data_ov002_0210d9b8")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#6", 0x8006, "data_ov002_0210da48")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#7", 0x8007, "data_ov002_0210d9f8")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#8", 0x8008, "data_ov002_0210da50")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/ar1.narc#6", 0x9c06, "data_ov002_0210d9c8")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/ar1.narc#7", 0x9c07, "data_ov002_0210da00")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#16", 0x8010, "data_ov002_0210d9a0")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#17", 0x8011, "data_ov002_0210da40")
+PC_TEXTURE_SHARED_MODEL("ARCHIVE/arc0.narc#20", 0x8014, "data_ov002_0210d9c0")

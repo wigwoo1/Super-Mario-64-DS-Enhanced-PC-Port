@@ -1,0 +1,83 @@
+Native Power Star course clear and character eyes -- 2026-10-17
+Status: VERIFIED for the bounded course-clear fixture and tested characters.
+
+Power Star integration
+- Registered native actor178 using the existing complete daStar_c class and
+  original g_profile_STAR metadata at0210aa40: priorities178/64,flags20000002,
+  clip offset32000,radius1f4000,distances1000000/1000000. Original cartridge
+  src/include preserved; no replacement star behavior was written.
+- The original Bob-omb map's Power Star param7 initializes through its normal
+  object table (runtime actor88). Explicit QA-only placement adds a normal
+  param1 star350units ahead of Yoshi at1700 in course6,120units high. It is
+  gated by AUTOMATION_ONLY=1 and TEST_POWER_STAR=1, exact course/tick and a
+  live controllable player. Ordinary play and original ROM/map unchanged.
+- Fixed raw ARM pointers in the six-entry star camera script table020876e4.
+  Confirmed initial crash: ProcessKuppaScript read DS pointer020888f0 at1791.
+  Native link data now preserves all six original script blobs with native
+  pointer bindings. Reward data audit checks the compiled pointers.
+- Fixed OAM::NUMBERS: it is a20-entry array of descriptor pointers, not one
+  pointer variable. Earlier export caused a later course-clear RenderNumber
+  access violation at1987. Overlay1 generator now emits20native pointers to
+  byte-identical8byte glyph descriptors. Audit checks every pointer and byte.
+- Local successful replay-e and installed F: replay each complete3300frames,
+  exit0. Real collision precedes pickup1792; original states4->5->6->7,
+  story-course0 star mask0->2 and total6->7. Course exit to castle(level1)
+  observed1920. Original touchscreen Save & Continue selected2500; slot0 and
+  minigame writes committed. Jump2900 succeeds; final same-castle Wait with
+  no-control0/disabled0. New process save-reload test loads primary slot0 and
+  observes mask2,total7. All other course star masks and character preserved.
+- Scout course20 returned Yoshi to castle without reaching the target. First
+  Bob-omb route was blocked by opening tutorial; later routes dismiss it with
+  actual A presses. Runs-b and-d preserve the two distinct crash traces/maps.
+  Run-c proved collection/exit but intentionally stopped at untouched save UI;
+  only run-e and installed replay count as full successful completion proof.
+
+Eye textures
+- Shared GX command decoder previously stored but never applied its texture
+  matrix to UVs. Implemented hardware modes0(raw),1(TEXCOORD-matrix),
+  2(NORMAL-generated) and3(VTX-generated). Mode1 latches on TEXCOORD; its two
+  implicit matrix inputs are1/16. Normal/vertex generation uses untransformed
+  input, original TEXCOORD offset and fixed-point truncation. All renderers
+  consume these UVs. Original character textures were not edited.
+- Reference checked: primary melonDS GPU3D implementation, texture-generation
+  command handling/SubmitVertex/CalculateLighting:
+  https://github.com/melonDS-emu/melonDS/blob/master/src/GPU3D.cpp
+- Matching1920x1080 frame1040 captures show old Yoshi/Mario with a single
+  central pupil and corrected characters with two separated pupils. Luigi also
+  visually checked. Opt-in temporary material traces confirmed original
+  16x32 eye textures, mirror flags15 and mode1. Instrumentation removed from
+  shipping code; preserved in build/eye-material-trace-instrumentation.txt.
+- Three isolated final installed character replays each finish1450frames,
+  exit0, correct character, normal idle/control. Before/after screenshots and
+  a bounded pupil-component image check are saved. The image check is specific
+  to these exact replay frames, not a general visual correctness test. Visual
+  inspection plus UV/mirror diagnostics and numerical GX tests support result.
+
+Verification / installed build
+- Native build passes.52/52 CTests pass32.42s; smoke_gx_visibility now checks
+  modes0..3, negative UVs, translation, latching and independent position state.
+-5 reward host-generator tests pass. Nine actual-trace negative checks reject
+  crash, missing original actor, no contact/collection, wrong credit, missing
+  persistence/commit, lost control and missing later jump. Strict verifier is
+  port/tools/check_power_star_replay.py. All final reward, Goomba/egg/coin and
+  player-animation binary/resource audits pass.
+- Final EXE757F74D22F0F2D2C26E6526197FAC5FA916DDA0A96B5DF236EE6D20736B2CA25
+  MAPCDD2EAFC29951A255B3E3691FD39BD310A4523DB54A76DBC10B960FD9FEEAFD4
+  Installed on F: and local preview, checked hashes; verified installed replay.
+- Checkpoint F:\AI Games\Mario 64 DS\native-checkpoints\
+  native-checkpoint-2026-10-17-power-star-eyes contains changed source, QA and
+  previous-install rollback (EXE71432172C751CA0E9158662290541A2BF2B5D634BE3E52A441DAF5FF64BC227E).
+  User ROM/save/settings were not edited; only isolated test saves changed.
+- Watch Power Star Course Clear Test.cmd in the F: root runs the labelled
+  course-clear fixture with separate resettable QA saves. Avoid user input
+  during the replay. It shows collection,course-clear UI,save and a later jump.
+
+Limits and next model
+- One normal Power Star param1 and one course return were verified. This does
+  not establish every star type, first-star stay-in-course prompts,100-coin
+  stars, repeat reward behavior or every stage/camera. Full PC port unfinished.
+- It is appropriate to switch down to Luna Medium for bounded regression
+  checks using the existing fixture: collect the same already saved star again
+  and ensure it does not increase the total a second time. Recommend stronger
+  models again before new actor/callback or complex progression integration.
+  Pause the goal for this recommended downgrade per standing user instruction.

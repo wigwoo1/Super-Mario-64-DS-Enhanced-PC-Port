@@ -1,0 +1,28 @@
+Current installed build - Egg throwing and Goomba rewards (2026-10-17)
+Status: VERIFIED for normal Goombas in course6. Full PC port remains incomplete.
+
+Fixed the egg's missing target-position method and restored all four original
+Goomba collision heights. Eggs now hit/defeat normal Goombas. Stomping also
+works, including bounce and coin reward. Egg payout and coin collection verified:
+the real course counter increases0->1. Swallowing remains verified.
+
+Release build succeeds;52/52CTests,19generator checks and5data audits pass.
+Installed F: egg/reward replay2400frames and stomp/reward replay2200frames
+both exit0, with jump/landing and return to idle. Screenshots/logs retained.
+The stomp walk-back test missed its coin; its reward spawn passes. Coin pickup
+is verified by the separate egg route. Physical controller input unverified.
+
+How to check: open Play Goomba Development Preview.cmd. Space / Xbox A catches
+a Goomba, E / Xbox RB swallows sooner, and Space / A throws the resulting egg.
+LeftShift / Xbox B jumps; descend onto a Goomba to stomp it. Walk over coins.
+Preview uses separate saves; the original game-menu launcher is still available.
+
+EXE SHA256 5C3A63970ABED198ED7AEEF7471AB3DB889E7BA214D384BA5D5733DEA5247031
+MAP SHA256 F2D7253D5C8312C9BDA738B37935173E4804843CB54AE761881B3ED263E804DC
+Rollback/evidence: native-checkpoints/native-checkpoint-2026-10-17-egg-rewards
+ROM,user saves/settings preserved. C: workspace remains authoritative source.
+See port/docs/egg-goomba-rewards-checkpoint-2026-10-17.txt.
+
+Keep Sol Medium for bounded gameplay/progression checks; no new model switch
+recommended. Special Goomba rewards, multiple eggs, other actors/courses and
+the remaining requested PC features still need development.

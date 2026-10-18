@@ -1,0 +1,40 @@
+Yoshi Adventure action crash milestone - 2026-10-16
+Status: VERIFIED for three empty tongue attacks and one jump at castle exterior.
+Full native port remains incomplete. Current model Sol Medium; no switch needed.
+
+Fixes (host sources only; original src/include preserved)
+- hostgen.py: original target-query virtual slot18 calls OnTurnIntoEgg under
+  MSVC's merged destructor layout. Use dActor_c::OnYoshiTryEat through its typed
+  declaration. Original failure was Vec3_Sub with stale target023c1a20.
+- overlay_data.py/link_data.py: Yoshi tongue/retract handle table0210a084
+  contains DS addresses0210e6c0/0210eb98. Bind both to canonical live native
+  handles. The first fix exposed this second fault in func_ov002_020d71ec.
+- main.cpp: crash-only guarded frame-pointer diagnostic helps locate callers.
+- check_native_actor_data.py now audits both compiled handle references.
+
+Verification
+Build: build/build-native-file-menu.cmd exits0.
+52/52 CTests pass (17.71s); 14 host-generator unit checks pass.
+Animation audit:736entries/383handles pass. Native actor, Wanted callback and
+Rec Room data audits pass. Both tongue table pointers checked in final PE.
+Exact final replay: original title -> Adventure -> File A; fresh isolated saves.
+Touch450:128:96,1250:128:168,1850:64:70.
+Buttons5300:8,5400:80,5440:1,5600:1,5760:1,5920:2.
+6300frames,1280x720,D3D11,NVIDIA RTX5070Laptop,exit0.
+StateCSV confirms St_YoshiPower_Main at5440/5600/5760, idle recovery after each,
+St_Jump_Main/airborne at5920, grounded by5960, continues to6300.
+Log: build/native-file-menu-original-adventure-action-handles.log
+State: build/port/native-file-menu-original-adventure-action-handles-state.csv
+Screens: same prefix at5420,5480,5640,5800,5960,6280 (.bmp/.png).
+5420 before attack;5480 after the previously crashing attack.
+
+Final EXE SHA256 F2B41A1A8BC818E68B40298505B59E347CC9E0CE89A11F8875C08D8ECA9F8536
+Final MAP SHA256 BC96C10422CA4E337726E8DB5365200FD558D228C81B6064F32AD9FD6BCB2A9E
+
+Limits
+No claim of swallowing enemies/egg creation, other actions/levels/minigames,
+physical controller or full gameplay verification. This replay uses D3D11;
+existing OpenGL CPU smoke test passes, but action replay on GL not repeated.
+F: installation receives byte-identical verified EXE/MAP; actual game replay
+above ran from C:. ROM, user saves, settings and renderer DLLs left in place.
+Keep Sol Medium for the next gameplay ABI/data investigation. Goal active.

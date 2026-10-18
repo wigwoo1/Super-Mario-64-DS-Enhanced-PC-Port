@@ -1,0 +1,73 @@
+Mario 64 DS PC port: source-verified archive texture roles, 2026-10-15
+Status: VERIFIED for29 reviewed archive ownership classifications and their
+registry/runtime checks. Full role/art/game coverage remains incomplete.
+Goal stays active. Keep Sol High for shared draw ownership and remaining assets.
+
+What changed
+- Reclassified29 archive BMDs using resource constructors, source consumers and
+  original user-ROM player tables:15 Character,13 Object,1 Level.
+- All12 slots in the player's body/two-component model tables match original
+  ROM pointers, native table rebasing, resource handles and archive member IDs.
+  Includes Mario, Luigi, Wario and Yoshi. Player wing attachment is Character.
+  Chain Chomp body and links are Character. Their original art stays protected.
+- Source-confirmed doors/keyholes, path-lift platforms/markers, feather/block,
+  mushroom, number/star/cage models become Object; entry-room scenery is Level.
+- Important shared uses remain Unknown: coin models can be enemy daTrs_c body
+  models, and detached caps also load as player cosmetics. These require actual
+  per-draw ownership before enabling replacements. No image-color guesses.
+- Added a machine-readable source evidence manifest and audit tool. The audit
+  reads the user's ROM overlay2 FAT/overlay metadata, BLZ-decodes it, checks the
+  entire extracted overlay byte-for-byte, and validates12 model pointer slots.
+  It also checks archive ranges, constructors/consumers, host rebasing, model
+  SHA256 provenance and deferred shared uses. No retail src or renderer edits.
+
+Build and tests
+- Release/default build and35/35 CTest pass (37.60s). Native-data audit passes.
+  Expanded smoke_texture_assets covers all13 player-related archive models,
+  Chain Chomp parts, known props/scenery and excluded shared coin/cap models.
+- Source audit passes29 changes,12 user-ROM/host table slots and all source gates.
+- Rebuilt inventory:505 models,1574 texture records,1796 initial material bindings,
+  zero errors. Anonymous full-file identity resolves the manifest role for all505
+  models. There are120 Character,285 Object,66 Level,34 Unknown models.
+-854 unique referenced texture keys are currently Level/Object eligible,185 are
+  Character, with zero key overlap between those sets in this inventory. These
+  counts do not prove complete runtime or animated material coverage.
+- No original texture bytes, dimensions, flags, UV data or initial material
+  binding fields changed. Model fingerprints and texture metadata tables match
+  their prior files exactly. The previous1122 exported bound references remain
+  valid. The121 unbound records are now83 Character,24 Object and14 Unknown.
+  Required animation/material variant inventory and exports remain unfinished.
+- Two4200-tick actual3840x2160 replays (Original and private diagnostic4K pack)
+  exit0. Each RGB and raw-bottom capture matches its previous streaming build
+  exactly; Mario/road region is identical between modes. Runtime trace proves
+  Mario's anonymous archive body is now explicitly Character,64x64 original art,
+  despite an existing cyan4K replacement file. Only the diagnostic level texture
+  uploads. Zero material identity scans and cache-budget bounds are preserved.
+  Screenshots were inspected and shown. Pink grass is diagnostic, not AI artwork.
+
+How to check
+Launch F:\AI Games\Mario 64 DS\sm64ds_pc.exe using the existing launcher/ROM.
+Open pause Options -> PC Settings -> Display. Original should look as before,
+including Mario, shadows and minimap. No private diagnostic textures are installed.
+Upscaled still says NO PACK; the production AI art does not exist yet.
+
+Remaining required work
+- Resolve34 remaining models and shared per-draw uses, inventory animated/selected
+  materials including24 unbound Object records, then generate/review the complete
+  level/object AI4K pack with all characters excluded. Verify every course,
+  seams/alpha, memory and performance.29 changes are not complete coverage.
+- Full gameplay/audio/save, independent120/240FPS, physical input and final
+  standalone packaging remain incomplete.
+- Next model: Sol High. Shared model consumers and remaining archive/stage tables
+  need reverse engineering; switching to Luna is not recommended yet.
+
+Executable SHA256:
+53304FC487E4D554668372B640CDB911488C8E435A7216F5F5870E1980B1E007
+
+Installed verification
+- SHA-verified executable/map, source evidence/audit, role table, tests, docs,
+  refreshed inventory and runtime evidence installed with rollback backups.
+  User INI absence preserved. Actual installed executable with the F: user ROM
+  completes1800 TestMap ticks, exit0, one live coin at1750, hardware1280x720.
+  Screenshot inspected. Installed compiled-data audit and ROM hash checks pass.
+- Checkpoint: F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-15-archive-roles

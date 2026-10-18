@@ -1,0 +1,110 @@
+Mario 64 DS PC port: shadow masks and Mario visibility, 2026-10-15
+Status: VERIFIED for the reported castle shadow/obscuration problem in the
+tested native 4K scene and additional camera/pose views. PARTIALLY VERIFIED
+overall: all courses and the complete port remain unfinished. Goal stays active.
+
+Cause established from source and actual geometry
+- The original dExtShadowModel_c::RenderAll submits every shadow twice.
+  func_02046120 selects shadow mode, ID0 and back faces; func_02046088 selects
+  shadow mode, ID1 and front faces. The recorded scene has 32 mask triangles
+  and 32 visible-shadow triangles, all with alpha 15 (half intensity).
+- The host rendered both sets as ordinary opaque surfaces and wrote their
+  depth. That made mask/volume geometry black and covered Mario's own model.
+  Opaque geometry also needed to precede translucent submissions; Mario's
+  opaque polygons can appear later in the submitted list than the shadows.
+
+What changed
+- Native D3D11 now uses a 24-bit depth/eight-bit stencil target. Six stencil
+  bits retain polygon IDs; a separate bit retains the shadow mask.
+- ID0 shadow masks mark only depth-failing fragments and never write visible
+  color or depth. ID>0 rendering excludes matching caster IDs, shades marked
+  receivers with the game's alpha, consumes mask bits and stores the shadow ID.
+  A later mask clears old mask bits while preserving receiver IDs. Same-ID
+  shadows do not darken overlapping regions twice; different IDs can overlap.
+- Opaque pixels render before translucent submissions. Polygon/texture alpha,
+  decal colors and translucent depth-write flags are applied. Partial-alpha
+  textures split opaque and translucent pixels into the appropriate passes.
+- The software diagnostic rasterizer independently implements the same shadow
+  and alpha rules. No retail src files, actor placement or original textures
+  were changed. Native4K presentation and the separate minimap remain in use.
+- Added an opt-in polygon CSV dump for evidence; normal play does not enable it.
+
+Build and tests
+- Release game builds; all 30 CTest tests pass, 23.44 seconds in the final suite.
+- Expanded GPU tests run offscreen on WARP and cover mask-only color behavior,
+  depth-fail marking, missing receivers, opaque-after-shadow submission, matching
+  caster exclusion, same/different-ID overlap, mask reset preserving IDs,
+  partial texture alpha, translucent depth-write flags and native 4K rendering.
+- The scalar reference agrees at 9 interior RGB pixels (27 channel comparisons) per synthetic scene
+  within one channel step; original clipping, UV, viewport, pause/map, resizing
+  and native-edge tests still pass. Compiled native-data audit passes.
+- Baseline and repaired 4200-tick runs exit 0. A final repaired build
+  completes 5100 ticks, exit 0, on RTX 5070 at 3840x2160. Actual screenshots were
+  inspected and shown, including additional stick-driven pose/camera views.
+- Baseline, first repair and final tick 4180 polygon dumps match byte for byte:
+  all 1995 submitted triangles remain, including every shadow triangle. Player
+  and camera state match at the comparison tick. This proves the fix did not
+  remove geometry or change actor positions to hide the problem.
+- At the matched frame, exact-black pixels fall from 204534 to 0. Within the
+  tight Mario region, 26718 previously black pixels now show blue clothing;
+  132403 previously black pixels now show green terrain through ground shadows.
+  Bottom-screen RGB pixels are unchanged.
+- Final replay injects stick X16000 during polls4300..4399. It changes pose,
+  heading and camera, and screenshots retain a visible Mario and ground shadow.
+  World-position telemetry remains fixed: this is NOT evidence of successful
+  walking translation. Inspect telemetry/physics/input as a separate next gate.
+- Native pause Options/PC Settings opens at tick 4820; every sampled menu source RGB
+  pixel matches the scaled 4K capture. Resume at 4950 restores gameplay by 5020.
+  Player X/Z remain fixed while paused. Saved settings are unchanged.
+- First comparison verifier wrongly expected world translation during the
+  synthetic stick sequence. Corrected it to check the observed heading/camera
+  response and explicitly record translation as unverified; no speculative
+  gameplay changes were made to satisfy that test assumption.
+- Executable SHA256:
+  3E6D5DC2D317AFAF32FEB26441250B7C6C741EDA0A3485509EDB25BF9E5C4FC9
+- Installed executable/map/source copies and ROM hashes verify against the
+  tested files. The prior build is backed up in the shadow-masks checkpoint.
+  A separate F: executable/ROM startup completes 1800 Test Map ticks with one
+  live coin, exit 0. Its default native target is 1280x720; tick 1750 captures
+  82 triangles. User settings are preserved. This does not establish full
+  standalone gameplay packaging.
+
+How to check
+1. Launch Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS.
+2. In the castle scene, inspect Mario's blue overalls and the ground shadows.
+   The old opaque black shapes should be gone; shadows should darken the ground
+   while letting its texture show through. Change viewing direction to inspect
+   Mario from other angles. Physical controller testing remains unverified.
+3. Enter/Start pauses. Options > PC Settings still controls resolution through
+   3840x2160; Shift/B backs out, then Continue/Start resumes.
+
+Evidence
+- build/shadow-baseline*, shadow-gpu*, shadow-final*, shadow-reference-build.log,
+  shadow-gpu-regression.log, shadow-verify.log, shadow-evidence.json and
+  verify-shadow-repair.py. Native captures and CSV under build/port/shadow-*.
+- Final script: automatic-only, title Down300/Confirm450, stick X16000 start4300
+  end4400, button pulses4600:8,4650:80,4700:80,4750:1,4800:1,4850:2,4900:2,4950:8.
+  Captures4180,4380,4530,4820,5020; state interval10; max5100. Test copies have
+  their own INI. User's installed settings are not overwritten.
+
+Hardware references (documentation/test observations, no emulator source used)
+- Retail recovered source: src/engine/model/dExtShadowModel_c.cpp and
+  src/unnamed/arm9/0204/func_02046120.c,func_02046088.c.
+- GBATEK polygon attributes, alpha/depth controls and opaque/translucent order:
+  https://mgba-emu.github.io/gbatek/#ds-3d-polygon-attributes
+- Primary hardware-test errata corrects the older shadow-mask description:
+  masks set stencil on depth failure; visible shadows require a set mask and
+  a different stored polygon ID:
+  https://melonds.kuribo64.net/board/thread.php?id=13&page=1
+- Hardware-test notes on clearing masks after a rendered shadow:
+  https://melonds.kuribo64.net/board/thread.php?user=5809
+  The native stencil layout/implementation is project code, tested independently.
+
+Remaining full-goal work / next model
+- Verify other scenes and renderer features; this is not a full retail-fidelity
+  or all-course claim. Walking translation/telemetry needs separate investigation.
+- Texture quality modes and complete eligible AI4K pack remain planned. True
+  independent120/240FPS, performance, complete gameplay, audio/save, physical
+  Xbox checks and standalone packaging remain unfinished.
+- Keep Sol High for the next movement/rendering investigation. The reported
+  shadow repair is verified; no model switch or goal pause is recommended.

@@ -1,0 +1,79 @@
+Mario 64 DS PC port: native pause input foundation, 2026-10-15
+Status: PARTIALLY VERIFIED overall. Original pause/resume is now verified in
+the bounded castle replay. Native PC Settings integration remains unfinished.
+
+What changed
+- Added opt-in button replay pulses (SM64DS_PC_TEST_BUTTONS, poll:hex-key-mask
+  pairs) and optional state sampling interval/pause-state columns. These let
+  tests press/release Start through the real input reader without forcing the
+  pause globals. Normal play does not use these environment variables.
+- The baseline castle test ignored Start at polls 4200 and 4500: pause_active
+  stayed zero despite intro_ready=1. Source and linker map established that
+  data_020a0e58 and data_020a0e5a were separate native arrays, eight bytes apart.
+  They are originally held and pressed halfwords at offsets 0 and 2 in one
+  four-player table. The old 8-byte base array was also too short for the
+  recovered reader's four 4-byte writes.
+- Replaced those separate allocations with input_state.asm: a complete 16-byte
+  allocation, original interior labels, canonical C/C++ aliases and a checked
+  end label. The recovered update/reset routines remain unchanged.
+- Added smoke_input_state, compiling the actual recovered input update/reset
+  routines against this same assembly allocation. It checks all four player
+  records, first-press/held/release behavior, shared pressed labels and reset.
+- Added a simulation-tick screenshot trigger. Earlier capture thresholds
+  counted presentations, so they could capture the intro instead of pause.
+
+Build/tests
+Release game build and compiled-data audit pass. The audit now verifies the
+complete input allocation and shared labels in addition to prior camera,
+actor, resource, callback and control-table checks.
+All smoke targets rebuild; CTest passes 28/28. The input smoke also checks
+timed Start/Back replay pulses and rejects malformed/oversized key masks.
+
+Runtime evidence
+The repaired build completes 4700 simulation frames with exit 0. Isolated
+Down300/A450 selects castle; Start4200 opens the original pause menu and
+Start4500 resumes. Nine samples from tick 4230 through 4470 show actual
+pause_active=1, pause_state=1; samples 4530 and 4680 show pause_active=0.
+No pause flags were forced. Captures at simulation tick 4350 were inspected.
+The game-native Continue / Controller Mode / Options / Quit buttons appear
+in the raw bottom-screen capture. The current PC compositor still shrinks
+them into the minimap corner, and stray graphics obscure parts of the native
+menu. This is NOT a finished pause-menu presentation or PC Settings page.
+
+Evidence paths
+build/pause-baseline* (ignored Start baseline)
+build/pause-input-layout* (build/audit/28-test/runtime/evidence reports)
+build/port/pause-input-layout.bmp and -bottom.bmp (actual paused frame)
+build/port/pause-input-layout-state.csv (pause/resume samples)
+
+How to check
+Run Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS, press S once then Space
+to select castle, wait through the intro, then press Enter (Xbox Start maps
+to the same DS button). Press it again to resume. Physical Xbox hardware is
+not verified; the test used software pulses. The native menu is currently
+small and has rendering faults. PC settings remain in F1, including O/V.
+
+Next concrete work
+1. Present the native bottom-screen pause/options UI at readable size while
+   paused, restoring the ordinary top-screen/minimap layout on resume. Update
+   mouse-to-touch coordinates for the active full menu viewport.
+2. Diagnose the stray graphics before claiming a clean native pause display.
+   Existing PPU diagnostics support SM64DS_PC_SUB_LAYERS and
+   SM64DS_PC_SUB_LAYERS_AFTER=4350. Compare each background and OBJ coverage
+   during actual pause to identify stale sprites versus background/VRAM faults.
+3. Exercise Options and Back through the original PS_Update state flow, then
+   add PC Settings using pc-settings-menu-plan-2026-10-15.txt. That full native
+   settings integration and Xbox menu navigation remain pending.
+
+Recommended next model: keep Sol High for native menu/rendering integration.
+No model switch or pause is recommended. The goal remains active.
+
+Remaining full scope
+Native pause PC settings; complete playable actors/courses/transitions/save/
+audio and physical Xbox verification; native 4K rendering, texture content,
+independent 60/120/240 output and final standalone packaging. Existing output
+resolution/FPS controls retain the limitations documented in the prior report.
+
+Checkpoint target:
+F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-15-native-pause-input
+Preserve previous-installed executable/map/status and previous source files.

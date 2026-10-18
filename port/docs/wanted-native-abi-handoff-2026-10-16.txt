@@ -1,0 +1,49 @@
+Wanted native scene: ABI investigation and model-switch handoff
+2026-10-16. Status: PARTIALLY VERIFIED. Wanted gameplay is not implemented.
+
+Current model selected by user: Sol Medium. Recommended next model: Sol High.
+Pause requested condition: pause whenever a model switch is warranted.
+
+Fresh evidence
+- Ran build/probe-wanted-native-layout.cmd successfully against the actual
+  generated PC header overlays and MSVC x86 compiler. Output:
+  base=18004 wanted=21584 pmf=4 state_controller=28 touch_options=296
+  penalty_offset=18004 state_offset=20332 scene_kind=18002
+- Native dMgState_c is 0x1c versus the source's measured DS layout 0x28.
+  Its three Callback fields are native 4-byte member pointers, versus 8-byte
+  cartridge records. Native dScMgBase_c is 0x4654 versus 0x4660; Wanted is
+  0x5450 versus 0x545c. Wanted mPenalty and mState are each 12 bytes early.
+- src/actors/dMgState_c.cpp has repeated *(W2 *)&mBehavior assignments,
+  including func_ov004_020b8688 and func_ov004_020b853c. W2 holds two ints.
+  These write 8 bytes through a native 4-byte field, overwriting the next field.
+- src/minigames/d_s_mg_base.cpp retains ROM-offset accesses such as 0x4654,
+  0x465c and 0x464c. Merely increasing allocation or appending padding cannot
+  reconcile those accesses with the native typed members and callback copies.
+- port/tools/host_headers.py currently adapts operator-new and destructor
+  declarations; it does not adapt dMgState_c or its callback ABI.
+- Wanted also needs native callback tables initialized by the overlay6 original
+  initializer (__sinit_ov006_02130f64), canonical resource pointers, profile366,
+  and native frame/graph lifecycle verification. No raw ARM callback address
+  may be invoked as native code. Base fake SceneVCall6 fade gates also require
+  review against the already repaired Rec Room typed IsAtStart approach.
+
+Next action
+1. Design a host-only callback representation/dispatch adaptation which preserves
+   required object layout and replaces original pointer-pair initialization and
+   copies coherently. Audit all state-controller consumers before choosing it.
+   Keep ROM-matching src/ and include/ unchanged; use port host generation.
+2. Verify exact sizes/offsets and callback assignment/dispatch with focused tests,
+   including original eight-byte writers and zero/disabled callbacks. Review
+   port/tools/camera_host.py for the existing callback-relocation precedent.
+3. Recover Wanted's native tables/resource ownership; add its real native factory
+   to the closure and profile366 only after dependencies are correctly adapted.
+4. Build and run relevant existing tests/audits. Use isolated saves and the
+   original menu route: touch450:128:96,1250:224:168,1850:88:60. Capture and
+   show screenshots. Prove actual game updates/input, then layout/pause/return.
+
+No production code changed during this investigation. The probe is the only
+new compiled artifact. No full game build, CTest, or game runtime replay was
+performed in this investigation; no new screenshots exist. Previous touch-fix
+build/test/runtime evidence remains in minigame-touch-fix-2026-10-16.txt.
+F: installation was not modified. Preserve the separately observed Adventure
+action crash evidence; this investigation does not diagnose that crash.

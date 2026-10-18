@@ -1,0 +1,19 @@
+PROMOTED after original course-entry verification. See course-entry-checkpoint-2026-10-17.txt.
+
+Native original mission selection preview - 2026-10-17
+
+Status: VERIFIED for the bounded course-picker -> original mission selection -> Bob-omb Battlefield route. Overall PC port remains incomplete.
+
+Original scene4 now constructs dScStarSel_c with its real 0x13c layout and original profile priorities4/7 instead of starting Stage. Original models, messages, progress-based star choices, character icons and input/transition logic are retained. Corrected native fade dispatch; load the original message bank when the development picker has skipped its preload. Use relocated shared overlay1 sprite records. Both screens use existing layout settings. Sub-engine 8bpp OBJ extended palette support fixes Yoshi artwork colors. Native sine-table references share one canonical table. Cartridge source/include unchanged by this milestone.
+
+Release build passes. 52/52 CTests pass (12.06s), including extended palette selection/bank gating; native actor/profile audit and 415 shared-data bindings pass. Controls replay switches mission1/2/1 and exits0 at2800frames. Final touch replay selects mission1, enters level6, jumps after2100, ends normal idle/control at2400 and exits0. The seven-star test save is byte-identical before/after. No reward/mission progress is forced.
+
+EXE SHA256: 58d9a6cbe6352abb1d11e5a7b804c1e61668980f1d0ea064079e2a5f9e9074ec
+
+This is a separate preview; the main installed executable is not replaced. Watch Native Mission Selection Test.cmd runs this build with copied QA saves and closes automatically. Normal saves are untouched.
+
+Next: test original castle/painting course entry and more mission choices/character selection; update historical QA replay schedules for the now-present mission screen before promoting the preview to the main game. Physical Xbox/mouse verification and the broader requested port features remain open. Keep Astra Low for this integration; no model switch or pause recommended now.
+
+The October14 allocation crash handoff was obsolete; heap-ownership-checkpoint-2026-10-14.txt and later gameplay runs prove it was repaired. Historical handoff now marked accordingly.
+
+Installed F: preview replay also passed:2400frames,exit0;mission1/level6,Yoshi jump and final normal control;dedicated save unchanged. Final screenshots/log/state retained under watch-runtime on F: and installed-test in the local checkpoint.

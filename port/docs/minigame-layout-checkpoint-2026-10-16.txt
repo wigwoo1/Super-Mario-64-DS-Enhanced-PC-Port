@@ -1,0 +1,62 @@
+Touchscreen layouts development checkpoint, 2026-10-16
+
+Milestone 1: native presentation, settings and touch layout
+- Shared 75/25 slot allocation, aspect-preserving screen rectangles, output
+  letterboxing on resize, and inverse bottom-screen touch mapping.
+- Top/Bottom, Left/Right, Right/Left; top is 75% of the selected layout axis.
+- D3D11 renders geometry into the appropriate physical screen rectangle and
+  preserves the original minigame projection. Software composes both engines
+  with the same rectangles. POWCNT1 controls which physical screen receives A.
+- Persistent minigame_layout=0/1/2 setting, native pause PC Settings page 7/7,
+  plus F1/L selection so minigames need not use the Adventure pause menu.
+- Host-only constructor/destructor hooks activate dual presentation for the
+  recovered dScMgBase scene lifetime; original retail source is unchanged.
+
+VERIFIED checkpoint executable SHA256:
+6C70470540F18BB4C4A29209045BD483D1E8107AECD75AE38643A8C120BA0019
+Executable/map preserved in build/minigame-layout-checkpoint.
+This is a development checkpoint, not an F: installation.
+
+Verification for that checkpoint:
+- Native executable and all smoke targets built successfully.
+- All46 CTests pass: build/minigame-layout-ctest.log. The new GPU test initially
+  exceeded the x86 test stack with an extra local framebuffer; moving that
+  test-only framebuffer to static storage fixed it. The final full suite passes.
+- Layout tests cover bounds, aspect, touch rejection/center coordinates,
+  composition, scene-state suppression, invalid values and INI persistence.
+- GPU tests compare all three layouts against CPU output with both engine
+  assignments and check 3D remains on the correct physical screen.
+- Native data audit passed: build/minigame-layout-native-data-audit.log.
+- Original title/File A replay: 5400 frames, exit0, level1, Yoshi IDs3. Capture
+  build/port/native-file-menu-original-layout-gameplay-regression-5280.png.
+  Scripted pause occurred during the new-game intro, so it did not open settings.
+- Separate baseline replay: 4900 frames, exit0. Native PC Settings page7/7
+  reached, changed Right/Left to Top/Bottom, and persisted minigame_layout=0.
+  Capture build/port/native-file-menu-baseline-layout-native-settings-4880.png.
+
+Milestone 2: actual Rec Room/minigame runtime verification (IN PROGRESS)
+- First real Rec Room replay: title touch450:128:96 then Rec Room1250:224:168,
+  2600 frames, exit0, but the runtime repeatedly reports native profile5 absent.
+  No minigame was reached; do not call minigame gameplay verified.
+- Source src/actors/dScMiniGm_c.cpp is the recovered native Rec Room scene, but
+  was absent from the host closure. Its ROM profile has factory020c21ec and
+  behavior/render priorities5/8. Added closure root and native profile5.
+- Preserve overlay5 data2250..3020 as one canonical assembly block with all
+  interior data labels and 32 documented self-pointers (30 OAM +2 metadata).
+  New generator port/tools/minigame_menu_data.py and linked-byte checker
+  port/tools/check_minigame_menu_data.py. Exclude those labels from generic
+  link_data.py storage so aliases cannot detach the minigame/OAM tables.
+- Generated Rec Room source activates layouts on allocation and clears them
+  during cleanup. Stage pause flags now only apply while the Stage graph is
+  actually active, avoiding stale pause state affecting other scenes.
+- First link found two mismatched external declarations: SaveData declared
+  as a namespace, and flat SetFaders calls. Generated host source now includes
+  canonical SaveData.h and uses dScene_c::SetFaders directly. Rebuild pending.
+- Original src/ and include/ are unchanged by this work.
+- F: still holds the last installed anisotropic build. Do not install this
+  development version until the real Rec Room/minigame route is verified.
+
+Next: finish build, run linked Rec Room data audit, replay actual Rec Room and
+enter a minigame. Validate all layouts, touch targeting, minigame pause/return,
+software path, and show real screenshots. Keep Sol Medium for this unfinished
+milestone; recommend a stronger model only if observed debugging warrants it.

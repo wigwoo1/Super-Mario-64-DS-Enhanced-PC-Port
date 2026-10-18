@@ -1,0 +1,67 @@
+Bob-omb tutorial message and Yoshi movement checkpoint - 2026-10-16
+Status: VERIFIED for local bounded D3D11 replay. Installed replay pending.
+Current model Sol Medium. Overall native PC port remains incomplete.
+
+Repair
+The first tutorial message page change reached DS function0201adac through
+MSG_GEN_TEXT_FUNCS. This indirect ROM table held cartridge code addresses.
+- port/tools/link_data.py validates all3original targets from local ROM and
+  emits native cdecl function pointers; explicitly includes worker data.
+- port/tools/boot_closure.py includes all3indirect worker implementations.
+- port/tools/check_native_actor_data.py audits the actual compiled table.
+Original src/include unchanged by this milestone.
+
+Build/checks
+build/build-native-file-menu.cmd succeeds (latest: no work required).
+52/52 CTests pass27.60s.14host-generator unit checks pass.
+Four native-data audits pass: actor/message tables, player animation handles,
+Wanted resources/callbacks, Rec Room. All3message callbacks bind native workers.
+EXE SHA256 1DFC14C4351BF4BA8CE7B8E5A28D4B0986CC18A4DA52A4AC5B00A0E8211EFF15
+MAP SHA256 D67BEE81AEFCB6E96C6197DE0A9D0382F86C4BA7902BFDD57E794E4ED4FEC9A0
+
+Runtime evidence
+The earlier fresh-save course-picker run starts the castle intro inside course6;
+that run cannot verify normal course movement. Use isolated introduction-complete
+fixture saves. Those records also contain seeded stars/coin records; this test
+does not prove earning that progress. User saves never used.
+Original fault: native-file-menu-baseline-bobomb-ready.log (aftertick1010).
+First repaired replay: bobomb-message-fixed,3200frames,exit0; tutorial page and
+closing, attacks and jump pass. Small stick12000 produces game magnitude663
+but no translation. Low-magnitude stick response remains a follow-up issue.
+
+Resumed movement replay: native-file-menu-baseline-bobomb-walk-finish,
+3600frames,1280x720,NVIDIA RTX5070Laptop,D3D11,exit0.
+Input: Down300,320,340,360,380,400; confirm450 selects course6.
+A1000/1180/1360 closes tutorial; A1540/1720 attacks; B2000 jumps.
+StickX25000,Y0 from2200to2649; A2800 attack; B3000 jump.
+At2180 idle x=-25497600,y9,z26021888.
+At2400 walking x=-8596794,y473050; ground slope traversal visible.
+At2640 St_OnWall_Main x2875451,y20; release2650, idle2660.
+At2800 St_YoshiPower_Main; recovers by2840.
+At3000 St_Jump_Main/airborne,y138448; grounded/St_Land_Main by3020.
+At3580 idle x2875451,y29. All captures and stateCSV in build/port with
+native-file-menu-baseline-bobomb-walk-finish prefix. Game runtime hash matches
+final EXE. Previous paused run was stopped before movement at1470.
+
+Installation
+F:/AI Games/Mario 64 DS EXE/MAP and development preview now match exact hashes.
+Rollback: native-checkpoints/native-checkpoint-2026-10-16-tutorial-message/
+previous-install. Renderer DLLs, original-menu launcher, ROM and user saves
+remain in place. Actual installed replay uses build/run-installed-bobomb-movement.ps1,
+separate fixture saves, temporary1280x720D3D11 settings restored in finally.
+Installed result will be appended after completion.
+
+Limits/next
+Physical Xbox input and low-magnitude response remain unverified/incomplete.
+No claim of enemy swallowing, coin/star progression, all levels/minigames,
+complete DS rendering fidelity, HD art or full native PC port completion.
+Stay Sol Medium for the analog-response/gameplay follow-up; no pause needed.
+
+Installed verification completed
+Actual F: EXE/ROM replay3600frames,exit0. StateCSV verifies movement at2400,
+attack2800,jump3000,grounded3020,and continuation3600. Player remains Yoshi3.
+End state St_OnWall_Main near the wall; no claim of returning to idle at3600
+in the installed run. Root INI was absent before QA and is absent again.
+ROM SHA256 unchanged. User saves untouched; test saves on C:.
+Screens/logs/state/runner/CTest copied into checkpoint/qa. EXE/MAP hashes
+match the local tested build. Main launcher preserved. Goal active.

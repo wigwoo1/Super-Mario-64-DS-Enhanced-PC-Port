@@ -1,0 +1,70 @@
+Native PC progress save/reload checkpoint (2026-10-15)
+Status: VERIFIED for bounded native FILE 1 progress saving/reloading and failure
+handling. Full file selection and the complete PC port remain unfinished.
+
+What changed
+- Replaced cartridge backup I/O with native checksummed disk records, retaining
+  original SaveData wrapper conventions, progress payloads and three game slots
+  plus minigames. Default folder: saves beside the executable. Native records
+  are not emulator .sav imports. Format/safety details: native-save-format notes.
+- Writes flush and validate a temporary file, atomically replace the primary,
+  and retain a valid previous-save backup. Reads can recover from backup. Invalid
+  unrecoverable records are not overwritten. Exclusive per-file locks fail
+  cleanly when another copy is using a save. No cross-file transaction claim.
+- Pristine course-picker sessions stage FILE 1/minigame reads before committing
+  live data, use retail missing-file defaults (Yoshi), apply the retail minigame
+  mask, and select the saved character. Read errors cancel course launch.
+- PC Settings page5 adds SAVE PROGRESS - FILE 1 using the native pause font,
+  buttons and feedback. Successful saves keep gameplay open. Failure is clearly
+  reported and holding A cannot repeat writes. Existing touch coordinates are
+  supported; physical mouse/Xbox remain untested. Original save-dialog error
+  guards avoid success/quit after failure; full star/quit gameplay unverified.
+- Retail src unchanged; PC adaptations and generated host copies only.
+
+Build and verification
+- Release/default build passed.37/37 CTest passed (31.91s); focused tests pass.
+  Native-data, direct-base-render and shared-texture-consumer audits pass.
+- Actual SaveData/SaveCurrentFile tests cover all three files/minigames, fresh
+  process reload, Unicode paths, checksum/backup recovery, missing primary,
+  corrupt-file preservation, blocked temporary writes and exclusive locks.
+- First CTest fixture failed atomic rename in the sandbox's redirected system
+  temporary folder (Windows access denied). The same code passes with its test
+  fixture in the writable build folder. CTest now explicitly uses that folder.
+  Failure and diagnostic logs retained; no weaker write fallback introduced.
+- Final executable4900-tick4K native-menu replay saves twice and resumes, exit0.
+  Fresh2200-tick run restores Yoshi and the completed-intro flag, exit0. A damaged
+  primary recovers the same progress from backup in another2200 ticks, exit0;
+  damaged files remain byte-identical.4900-tick blocked-write replay reports
+  failure and resumes without creating a game/minigame save, exit0.
+- Both damaged copies cause course launch cancellation in1200-tick replay,
+  exit0, no player spawned, files unchanged. Real success/failure menu, loaded
+  Yoshi and cancelled-title screenshots inspected and shown. All these final
+  runs use the same executable SHA256 as below.
+- Storage/gameplay verification is bounded to these checks. Saving progress is
+  not a position save-state. Full file selection/copy/erase UI, all courses,
+  star/quit save sequences and complete gameplay remain required.
+- Installed executable with the F: ROM saves twice through the native menu in
+  4900 ticks, resumes, exits0; a fresh2200-tick process restores Yoshi/completed
+  intro, exits0. Both1280x720 screenshots inspected/shown. Actual save/backup
+  records on F: validate CRC and remain byte-identical after reload. Installed
+  native-data/render-bridge audits and source/installed ROM hashes match.
+  Exact executable SHA256 matches below; user INI absence and user save files
+  remain unchanged. QA records use an isolated checkpoint folder, not user saves.
+  Installation has verified copies and rollback backups.
+
+How to check
+Launch F:\AI Games\Mario 64 DS\sm64ds_pc.exe, choose Castle, and wait for the
+opening to finish. Enter -> Options -> PC Settings. Press Q from page1 to reach
+page5; select SAVE PROGRESS - FILE 1 with Space. Check PROGRESS SAVED, back out
+with Left Shift, close/reopen and choose Castle. Saved intro/progress is loaded;
+Yoshi remains the starting character. Native saves are in the saves folder.
+
+Remaining goal
+Full file selection/save UI, character/actor/course/animation coverage, remaining
+Unknown/selected/animated texture coverage, complete stylistically accurate AI4K
+level/object art (no characters), independent120/240FPS, audio, physical input
+checks and standalone packaging remain incomplete. Keep Sol High for remaining
+source/engine uncertainty. Goal remains active; no model switch recommended.
+
+Executable SHA256:
+184A4DEB8C6D4FD2151E3CE787C5E8C310D133D9CD0076605800A93D9EEC6143

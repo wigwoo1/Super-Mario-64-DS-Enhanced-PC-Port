@@ -1,0 +1,88 @@
+Mario 64 DS PC port: native texture quality, 2026-10-15
+Status: VERIFIED for the selector, original/reduced/untextured rendering and
+bounded castle menu changes. Upscaled art is NOT COMPLETE. The full goal stays
+active; keep Sol High for asset ownership/character exclusions and core gameplay.
+
+What changed
+- Replaced the earlier texture toggle with Original /75% /50% /25% /No Textures
+  /Upscaled in the game's native pause/options PC Settings Display page. F1 T
+  uses the same cycling function. Both directions wrap and settings save.
+- Percentages scale each original width/height, rounded down with minimum one
+  texel. Deterministic center-sampled nearest resampling retains palette/alpha
+  classes. RGB and alpha are reduced together; fine cutout details can become
+  coarser at lower resolution. This does not change geometry or output resolution.
+- No Textures uses white RGB with every original alpha value unchanged. Lighting,
+  cutouts, partially transparent effects and shadows remain. Decal materials use
+  modulate-white so the original vertex lighting is visible without texture RGB.
+- Texture coordinate scaling retains the original logical texel space when
+  dimensions change, including BMD harness bindings. The VRAM cache separates all
+  six modes; reset clears pixel and dimension records. Original output is unchanged.
+- Saved texture_quality=0..5 has priority over the historical hd_textures toggle
+  regardless of key order. Old files migrate, invalid values fall back to Original.
+  The compatibility toggle is still written for old builds. Diagnostic CSV appends
+  quality without reordering previous columns. The retail src files are unchanged.
+- Added a matching native percent glyph; all text fits the original button rows.
+
+Upscaled scope and remaining work
+- The native row explicitly says UPSCALED - NO PACK. No AI replacement art has
+  been generated or installed in this milestone. Original art remains visible.
+- Added explicit texture ownership roles. The decoder permits replacements only
+  for classified Level/Object textures; Character and Unknown always retain
+  original art even if a matching PNG exists. The actual game bindings remain
+  Unknown until the full model/asset inventory and role propagation are built.
+  This is a guard/foundation, not proof of a complete classified asset pack.
+- Next: inventory model/material/texture ownership, shared/animated palettes and
+  UV behavior; wire roles into runtime bindings and cache identity; generate and
+  review stylistically accurate4K AI art for every eligible level/object; verify
+  complete coverage and zero character replacements. See texture-quality plan.
+- Existing repeated/mirrored/clamped UV behavior and animated VRAM invalidation
+  need wider game coverage. This milestone verifies dimension normalization and
+  current scene caching; it does not establish every material in every course.
+
+Build and verification
+- Release executable builds; compiled-data audit passes.32/32 CTest pass,29.26s.
+  New quality test checks all six modes, exact samples/dimensions, non-square and
+  minimum sizes, original partial alpha, live VRAM cache separation, normalized
+  UVs, decal lighting and unchanged shadow attributes. GPU/scalar comparisons
+  cover transparent/opaque pixels and material color in all six modes.
+- Settings tests round-trip all six choices, old toggle migration, key order,
+  invalid settings, and Character/Unknown rejection even with a matching PNG.
+  Previous native4K, shadow masks, controller, minimap and pause tests still pass.
+-7900-tick hardware4K castle replay exits0, selects all six choices through the
+  original native menu and resumes after each. All paused position samples stay
+  fixed. Six menu captures match147456 raw-bottom RGB samples each. Screenshots
+  are actual3840x2160 GPU output, visually inspected and shown.
+- Original tick4180 matches the previous shadow checkpoint RGB exactly. Static
+  1000x450 terrain area changes130642/187691/256339 pixels at75/50/25%; NoTextures
+  changes450000 pixels. Upscaled fallback differs at zero pixels in that area.
+  Player/coin animations differ between later captures; whole-frame parity is
+  claimed only for the identical-tick original comparison.
+- Evidence: build/verify-texture-quality.py, texture-quality-evidence.json,
+  texture-quality-*.log; build/port/texture-quality*.png and CSVs.
+
+How to check
+- Launch Play Mario64 DS.cmd in the F: game folder. Enter pauses, W/S navigates,
+  Space confirms, LeftShift returns. Choose Options, PC Settings, third row;
+  A/D or controller Left/Right cycles textures. Back out and resume to see it.
+  Close/reopen to retain the setting. F1 then T is the alternate selector.
+- Physical Xbox and mouse testing, complete courses/gameplay/audio/save,
+  independent120/240FPS and final standalone packaging remain unfinished.
+
+Native save and separate startup verified
+- A separate5000-tick castle replay sets25% in the native menu, resumes and
+  exits0. Its saved INI is copied for evidence, then the exact same executable
+  starts again in the same folder without editing that INI. It completes1800
+  TestMap ticks, exit0, with a live coin and mode3 in every captured state row.
+  Captures at4680/4900 and restarted1750 were inspected. The saved INI remains
+  byte-identical after restart. All screenshots are native3840x2160.
+
+Installed-folder verification
+- Installed executable/source changes have SHA256-verified copies and a rollback
+  checkpoint at native-checkpoint-2026-10-15-texture-quality.106 initial copies
+  were verified. Root executable SHA256:
+  6CA6B07CAC3E5AE9E284BA474EEF966FC09405BFDA587CBF0A52C71957162BE1
+- User INI was absent and remains absent. Installed defaults stay1280x720 with
+  Original textures. A separate installed1800-tick TestMap run exits0 with a live
+  coin, native GPU and tick1750 screenshot. Actual image was inspected and shown.
+  Installed executable/map pass the data audit; the user's ROM hash matches the
+  local tested European Rev0 ROM. Goal remains active; keep Sol High.

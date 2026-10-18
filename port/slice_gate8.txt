@@ -1,0 +1,51 @@
+# Gate-8 slice: collision -- dBgW_Kc over a real KCL file, queried
+# through the octree walk. The walk itself is the port's first substantial
+# port/unmatched adoption (see the file header); everything else is matched.
+
+port/unmatched/MeshCollider_DetectClsn_RaycastLine.cpp
+# dBgW_Kc is two production translation units, one per module: the arm9
+# lifecycle/SetFile side and the ITCM query engine. The constructor,
+# SetFile, UpdateFileOffsets, Virtual08, the func_020397* helpers,
+# GetSurfaceInfo, GetNormal and GetTriangleOrigin files this slice used
+# to name separately all live in them.
+src/engine/collision/dBgW_Kc.cpp
+src/engine/collision/dBgW_Kc_itcm.cpp
+src/_ZN7dBgW_Kc8LoadFileER13SharedFilePtr.cpp
+src/engine/collision/dBgPc.cpp
+src/engine/collision/dBgPi.cpp
+src/engine/collision/dBgCh_Lin.cpp
+# dBgW is one production translation unit; the constructor, the shared
+# func_02039624 init and the static ShouldPassThroughImpl this slice used
+# to name separately all live in it.
+src/engine/collision/dBgW.cpp
+src/engine/collision/CLPS_BlockRef.cpp
+src/func_020381cc.c
+src/func_02037eb0.c
+src/Vec3_Dist.c
+src/_ZNK11SurfaceInfo12CopyNormalToER7Vector3.cpp
+src/engine/collision/CLPS_BlockRef.cpp
+src/SurfaceInfo_TestFlag0x20.c
+src/func_020353d4.c
+src/func_02035408.c
+src/func_0203543c.c
+src/func_0203545c.c
+src/func_0203547c.c
+src/func_020354b0.c
+src/func_02037e14.c
+src/func_02037e20.c
+src/func_02037e2c.c
+src/func_02037e38.c
+src/func_02037de8.c
+src/func_02037e9c.c
+
+# Virtuals the host now needs as real methods: migrating a constructor to
+# real C++ makes its TU the vtable's key function on MSVC too, and MSVC
+# emits the vtable there -- which requires every virtual to be defined, not
+# just the ones a gate happens to exercise. These already existed in src/;
+# they were simply never sliced.
+
+# Whole-class slice. Once a constructor is a real C++ constructor its TU
+# becomes the vtable's key function on MSVC as well, and the host emits the
+# vtable there -- which needs EVERY virtual defined, not the subset a gate
+# happens to exercise. A migrated class can no longer be sliced method by
+# method; it comes across whole.

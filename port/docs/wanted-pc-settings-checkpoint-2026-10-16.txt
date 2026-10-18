@@ -1,0 +1,82 @@
+Wanted native PC Settings - 2026-10-16, Sol Medium
+
+Status: VERIFIED with scripted native input in GPU and software replays.
+Supersedes wanted-pc-settings-rendering-handoff-2026-10-16.txt. The original
+ROM-matching src/ and include/ files remain unchanged. Host changes live in port/.
+
+User flow: Rec Room -> Wanted -> Start/Enter -> tap Options. The chooser offers
+PC SETTINGS, GAME OPTIONS, BACK. PC Settings exposes the same seven saved pages
+as Stage. Game Options retains the original Sound/Backlight panel. B or the
+bottom center touch area backs up; L/R shoulders or bottom side touch areas
+change pages; directional controls or tapping the value changes it. Back from
+the chooser returns to Wanted's pause controls. Continue resumes; Quit still
+returns to Rec Room. PC pages temporarily occupy the full view, then restore
+the selected minigame screen layout.
+
+Why the previous trial was black:
+- It reused Stage's BG configuration and existing map/panel buffers. Wanted
+  builds a sprite pause overlay and has a different BG memory layout.
+- The shared graph preparation reset the pause presenter for non-Stage scenes.
+- Retail BeforeBehavior handled pause/resume buttons before the custom menu,
+  interfering with A/B/Start. The previous handoff's claim that repeated scripted
+  B pulses had no release was incorrect: input.cpp emits five-poll pulses.
+
+Implementation:
+- hal/wanted_settings_surface.* owns a temporary engine-B tiled screen: font
+  tiles at4000..5fff, BG0/BG1 maps at8000/8800, panel tiles atc000. It uses the
+  original LoadFont(2) font and the existing pc_pause::draw/menu state. Normal
+  4-bit backgrounds, neutral scroll/blend, gold borders, selection highlight.
+- The surface snapshots/restores all128KB sub BG VRAM,512palette bytes and112
+  display-register bytes. No permanent changes to Wanted art or layout.
+- hal/wanted_pause_settings.* binds input/actions/settings and owns the surface
+  lifecycle. It saves/restores the sub-layer shadow as well as the hardware
+  state, handles Game Options and saves through the existing video settings API.
+- minigame_host.py intercepts active custom input before the retail resume path,
+  makes the original Options action open this chooser only for actor366, hides
+  retail pause sprites while PC pages render, and restores on destruction.
+- stage_graph_state.cpp presents the active menu as the pause screen and applies
+  the surface after the original minigame graph callback. Stage behavior is kept.
+- Existing pc_pause::draw gains an optional touch footer; Stage defaults stay
+  unchanged. Existing settings page/row telemetry now includes Wanted.
+
+Tests:
+- Build succeeds.51/51 CTests pass (34.70seconds).
+- New smoke_wanted_settings_surface renders text/panels through the actual PPU,
+  checks visible pixels, and verifies byte-exact VRAM/palette/register restore.
+-7 Python minigame generator checks pass, including the ordering of the custom
+  input hook before retail pause/resume handling and transform idempotence.
+- All3 linked-data audits pass: Wanted native callbacks/resources/profile,
+  actor/controller data, and Rec Room data/profile.
+
+Exact tested EXE SHA256:
+B13892A7F59C5FDBC9467368A515F20F630054C9BDF7FAB01CCB2349FB8BDD8F
+MAP SHA256:
+31042551B26E09471FC63D50EA59BE24413F38D4E4DDFB6586658ECCAD6C37A9
+
+Real game evidence (BMP and selected PNG under build/port):
+1. native-file-menu-original-wanted-pc-native,4900frames,exit0,GPU1280x720.
+   2500Options,2800PC Settings,3100FPS120,3400Back to chooser,3600Back to pause,
+   3800Continue,4100Start,4300Quit.2650chooser,3250FPS120,3700pause controls,
+   4000poster/gameplay,4800Rec Room. All inspected. Runtime INI savesFPS120.
+2. native-file-menu-original-wanted-pc-software,5000frames,exit0,software.
+   Keyboard A enters PC Settings; R visits all seven pages. Changes AF to2X,
+   opacity190->206 and screen layoutTop/Bottom->Left/Right. B backs to chooser;
+   Down/A opens Game Options. TouchOK closes it, Options reopens the chooser,
+   touchBack returns to pause and Continue resumes.3650page7,4000original
+   options,4400chooser,4800gameplay Left/Right inspected. State records pages1..8
+   (chooser1 plus7PC pages) and returns to0. INI stores all changed values.
+3. build/run-wanted-settings-restart.ps1 copies the INI written by test1, keeps
+   itsFPS120, overrides output to3840x2160 and launches a new process. Initial
+   state confirmsFPS120 loaded.3300frames,exit0.2950screenshot is3840x2160
+   and showsFPS120.3100touches resolution's left half;3250screenshot is
+   2560x1440 withFPS120 unchanged. Both inspected; runtime INI saves2560x1440.
+
+Physical mouse/Xbox interaction is not manually verified. Automated touch/button
+input and the shared mapping tests are the evidence. Original art is scaled;
+this does not create HD textures or independent120/240FPS simulation. Other
+minigames and the full PC-port goal remain unfinished. F: installation unchanged.
+
+Development preview updated with the exact EXE/map hashes above. All game,
+build and test processes finished. Next model: Luna Medium for bounded menu
+polish; Sol Medium remains appropriate for additional minigame integration.
+Goal paused for the recommended step down per the user's model-switch rule.

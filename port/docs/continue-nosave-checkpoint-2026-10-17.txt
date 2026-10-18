@@ -1,0 +1,44 @@
+Continue without saving -- 2026-10-17
+Status: VERIFIED on rebuilt local diagnostic executable 105D9FC1B46B10C6F8B9FE426B87303AD90352386F71598CA9C5DF471E4184E4.
+Read-only state CSV now appends power_star_total,story_course,story_star_mask.
+These fields allow observing credit after the collected actor is destroyed.
+No gameplay/save behavior changed. Existing installed gameplay EXE remains
+BFDAAC31DB0915374D229A2D6C810CE2A2A2C8ADC2A010786E7F9C6F52FB7D45.
+
+Separate unlocked test seed: course0mask0,total6. Near-player param1 QA star:
+real contact1791,pickup1792,states5/6/7,course0mask2,total7. Course return1920.
+Original Continue third row tapped2500:128:135. No save attempts/commits.
+Live count stays7 through3300;castle jump2900 and finalWait/control verified.
+All FOUR save/backup files are byte-for-byte identical to seed after replay
+and subsequent restart. Separate1750-frame process loads primary,total6,
+course mask0,without QA fixture. Both processes exit0. This is expected:
+Continue keeps credit in the running session until a later explicit save.
+
+Build passes;52/52 CTests32.08s. Strict lifecycle verifier and8 negative cases
+pass (crash,changed save,unexpected write,no contact,credit surviving restart,
+lost control,lost live credit,failed restart). Real screenshots inspected.
+Watch Power Star Continue Test.cmd installed with separate resettable QA saves.
+Its route matches verified replay and syntax passes; this new wrapper was not
+itself run from F:. Diagnostic binary is archived, not installed at game root.
+
+Next development milestone: native King Bob-omb actor189,currently absent
+from port/hal/actor_vtables.cpp. Original src/actors/daBombking_c.cpp has its
+factory/profile and recovered boss behavior; resource initializer is
+__sinit_ov078_02126660,original profile g_profile_BOMBKING at02126e28.
+ROM object inventory confirms course6/overlay14/area0:
+mission filter1,param65281,pos1501,4192,-5387 at02113960;
+mission filter4,param65284,pos3000,4192,-4600 at02113c98.
+Its states use overlay78 PMF records(data_ov078_021270*) and player-grab/
+throw callbacks plus other bob-omb actors. Integrate original resources and
+callbacks through PC adaptations,not original src/include edits. Verify map
+spawn and safe behavior first,then actual combat and original Power Star
+reward/course clear; preserve all current actors and save/menu regressions.
+Do not claim boss completion based solely on QA-spawned Power Star.
+
+MODEL UPGRADE RECOMMENDED
+Current model: Luna Medium. Recommended: Sol High.
+Reason: new boss integration crosses native state callbacks,resources and
+player interactions. No boss implementation attempts made in this checkpoint.
+Next action: integrate actor189 using existing host architecture,build,test,
+and show real screenshots. Pause goal for this explicitly recommended switch.
+Full port remains incomplete.

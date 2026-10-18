@@ -1,0 +1,111 @@
+CORRECTION: See native-menu-star-fix-2026-10-15.txt. The GPU-only diagnosis below was disproven by same-tick captures. The shared rotation ABI fault is now repaired.
+
+Native original-menu rendering handoff (2026-10-15)
+
+Status: PARTIALLY VERIFIED. Full port and original file UI remain incomplete.
+Recommend switching from the user's selected Sol High to Astra Low for the
+remaining GPU rendering investigation. Two focused repairs below corrected
+proven faults, but the original menu is still unusable. Further speculative
+repairs stopped under the user's two-attempt rule. Goal pause is requested by
+the user's standing instruction to stop/pause when a model switch is advised.
+
+Working tree (authoritative, no Git repository):
+<USER_HOME>\Documents\Codex\2026-10-10\can-you-compile-this-mario-64\work\source-extracted\sm64ds-decomp-main
+Local final executable SHA256:
+1B5DC0238796FBBF16946F203CA9E36D2AC764A536424072D8EBD92F308BCF9B
+F:\AI Games\Mario 64 DS remains at the previously installed native-save build
+184A4DEB8C6D4FD2151E3CE787C5E8C310D133D9CD0076605800A93D9EEC6143.
+No F: files, user settings, user saves or ROM were changed this milestone.
+
+Completed repairs
+1. port/ntr/runtime.cpp DMAStartTransfer previously ignored fixed sources,
+   transfer width and address modes. DMASyncFillTransfer read onward from the
+   fill register instead of repeating 0xc0, leaving most unused OAM entries zero
+   or unrelated register data. It now handles word/halfword and source/dest
+   address modes while retaining FIFO delivery/completion callbacks. Actual
+   OAM capture confirms the unwanted sprites disappear.
+2. A shared external C symbol inline_fn was coalesced across incompatible
+   inline helper definitions. Original func_ov007_020b58e4 needs to dereference
+   the menu element; the linker instead selected daDemo's integer identity.
+   The menu consequently read quad data as controller state and re-enabled
+   every inactive panel on its second update. COFF disassembly and the map
+   established the wrong callee. hostgen.transform now gives these generic
+   local helpers static inline linkage in generated PC copies (16 eligible
+   original source files). Retail src files remain unchanged. The final map
+   has no external _inline_fn. Menu panels now stay hidden, and submitted
+   triangles drop from roughly 1950 to 78-79 on the title screen.
+
+Tests / final exact executable
+- Full native build succeeds; all 41 CTest tests pass (25.18 seconds).
+- smoke_dma directly checks the mapped fill register/OAM, source-fixed fill,
+  word/halfword copies, increment/decrement/fixed/reload destination modes,
+  bounds, disabled transfers and exact FIFO stream hash.
+- smoke_dsmt_inline compiles the three actual original menu functions through
+  hostgen alongside a conflicting identity helper. It verifies pending -1
+  survives idle updates, signed 64-bit nearest-point math/distance and fade
+  interpolation. Both test_hostgen_inline.py unit tests pass as well.
+- check_dsmt_data.py passes the original ROM/native PE audit and external
+  helper absence check. Native actor-data and direct Model::Render bridge
+  audits pass. These checks do not establish complete original UI behavior.
+- native-file-menu-baseline-repairs-final: 4200 ticks, exit 0, native 4K.
+  Final tick-4180 image is RGB-identical to yoshi-render-original-4180.png
+  (zero changed pixels). Yoshi (3), head/body/shadow and minimap inspected.
+- native-file-menu-seeded: fresh 2200-tick reload, exit 0, native 4K. Real game
+  getters report six course-2 stars and 77 course-5 coins; Yoshi is selected.
+  Private fixture record CRCs validate. These accomplishments were seeded for
+  storage QA, not earned by a completed gameplay test.
+- native-file-menu-original-repairs-native: 600 ticks, exit 0, 3840x2160.
+- native-file-menu-original-repairs-software: 1200 ticks, exit 0, 256x192.
+  Both final runs use the exact executable hash above. Final diagnostic phase
+  logging is read-only; it no longer calls the request-selection function.
+
+New evidence for the next model
+At tick 300 the native and software dumps contain IDENTICAL sampled triangle
+vertices, projected x/y/z/w, UVs, texture dimensions, attributes and perspective
+flags (306 vertex records). The software frame shows a small yellow star in
+the middle; the native GPU frame magnifies it across almost the entire screen.
+The same oversized result remains at native tick 600. This difference isolates
+the remaining size error after common GX geometry assembly, in the GPU path.
+Do not start by changing ModelComponents or the shared camera without stronger
+evidence. Inspect port/ntr/gpu.cpp around native triangle preparation (roughly
+lines 288-306), viewport/aspect handling, clip coordinates and the vertex shader.
+The diagnostic CSV does not include viewport fields, so compare those next.
+
+Other incomplete original-menu behavior
+- A scripted A at poll 450 does not reach gameplay in these bounded runs.
+- The lower screen is still composited as a translucent minimap on the title.
+- Main PPU also scans BG0 as a tile layer despite DISPCNT bit 3 selecting 3D
+  (observed display 0x00011b08). Font graphics leak into uncovered pixels.
+  This is an inspected candidate, NOT an implemented or tested repair.
+- Full title presentation, file selection/copy/erase, active-file pause label,
+  original dialog actions, physical Xbox/mouse input remain unverified.
+Keep SM64DS_PC_ORIGINAL_MENU opt-in; the normal course picker remains default.
+
+Reproduce / inspect
+build/build-native-file-menu.cmd
+build/run-native-file-menu.ps1 -Mode original -Tag unique -Frames 600 -Dump
+build/run-native-file-menu.ps1 -Mode original -Tag unique-software -Frames 1200 -Software -Dump
+build/run-native-file-menu.ps1 -Mode baseline -Tag unique
+build/run-native-file-menu.ps1 -Mode seeded
+Every replay runs from an isolated build/runtime folder. Do not set legacy
+SM64DS_PC_TRACE to '0': some older code tests presence, causing verbose logs.
+-Dump enables per-layer A/B BG and OBJ captures, raw OAM/register snapshots,
+triangle CSV, initial state-phase logs and panel records. It does not enable
+the unfinished menu unless Mode original is used. -Trace enables full tracing.
+Key images in build/port:
+  native-file-menu-baseline-repairs-final-4180.png (good new-game Yoshi)
+  native-file-menu-seeded-2180.png (good loaded Yoshi)
+  native-file-menu-original-repairs-native-300.png / -600.png (oversized)
+  native-file-menu-original-repairs-software-300.png / -1180.png (small star)
+Key CSV prefix: native-file-menu-original-repairs-{native,software}-layers-triangles.csv
+Earlier isolated background contact sheet: dsmt-layers1.png.
+
+Full goal retained
+The complete native PC port, requested native pause settings, minimap behavior,
+all actors/characters/courses, native analog and physical input verification,
+complete stylistically accurate 4K AI level/object textures excluding characters,
+remaining texture coverage, independent 120/240 FPS, audio, saves/file UI and
+standalone F: packaging must still be completed and verified. Higher FPS still
+repeats game states; the full production art pack does not exist yet. Do not
+mark the full goal complete from these bounded checks. Screenshots show Yoshi,
+not Mario. Re-poll live handles on the slow F: drive; do not restart on timeout.

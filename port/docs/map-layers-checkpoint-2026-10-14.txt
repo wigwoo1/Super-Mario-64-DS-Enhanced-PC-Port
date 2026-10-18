@@ -1,0 +1,28 @@
+Mario 64 DS PC port: map-layer diagnosis, 2026-10-14
+Status: PARTIALLY VERIFIED overall. Layer diagnosis completed; visible minimap not fixed.
+
+What changed:
+Added optional diagnostic captures: SM64DS_PC_SUB_CAPTURE writes the composed bottom framebuffer when the normal capture succeeds. SM64DS_PC_SUB_LAYERS is a prefix for four separate sub-background images during mode 3. Added mode-change trace for the four sub-background configurations. These are opt-in diagnostics, with no layer suppression or replacement map imagery.
+
+Verification:
+Release build and affine test target built successfully (map-layers-build.log).
+The relevant affine test passed (map-layers-ctest.log).
+Run resume108 reached simulation frame 1200, shut down normally and returned 0. The composed game frame, bottom screen and separate background captures were inspected.
+The bottom image shows clouds. The separate BG3 image shows loaded castle map geometry, with incorrect colors. This proves loaded map content is covered by other layers; native MAP enrollment and affine sampling alone cannot complete the visible minimap.
+Exact layer trace: BG0 enabled priority0 CNT=d000; BG1 enabled priority0 CNT=d400; BG2 enabled priority0 CNT=1800; BG3 enabled priority2 CNT=1f12, tilemap=0620f800, characters=06210000. DISPCNT=00011f03 has extended palettes disabled. Earlier MAP/affine fixes remain in the executable and are independently tested.
+
+Source evidence and next investigation:
+Native DEMO profile 352 remains unavailable in the game run. Recovered daDemo_c.cpp controls the sub-screen cloud transition: func_ov002_020f5b24 clears BG1/BG2 bits, enables BG3 and invokes the original transition helpers. func_ov002_020f1fcc also completes a background fade. Other DEMO setup code calls SetBankForSubBGExtPltt(0x80), enabling the sub-engine extended palette register bit and uploading palette data to slots2/3. These source operations are present, but the missing actor prevents its normal state machine from running. Treat DEMO as the next dependency to integrate; do not claim its absence is the only possible remaining cause.
+include/daDemo_c.h contains nested render-model class definitions whose virtual destructor layout differs under MSVC. Native integration must respect the existing host model ABI, rebase guest descriptors/resource pointers, preserve all original scene transitions and validate callback conventions. The existing native Player/DOOR patterns provide references. Add extended palette sampling to the PPU when the actual game enables those palettes, using hardware bank/slot evidence. No need to undo verified MAP/affine repairs.
+
+MODEL UPGRADE RECOMMENDED
+Current working assumption: Sol Medium, based on the last switch recommendation; exact selector value is not exposed here.
+Recommended model: Sol High.
+Reason: Native integration now spans the original cutscene state machine, nested model virtual layouts, callback dispatch and palette setup. This has substantial architecture/ABI complexity.
+Already attempted: native MAP factory/profile enrollment and independently tested affine tile addressing/sampling. Both pass; composed map imagery remained wrong. The new layer captures identify the covered map and missing cutscene dependency.
+Next action: integrate native DEMO behavior and its resources/callbacks, then verify real cloud-to-map transition and palette selection. Preserve earlier native actors and original game flow; do not hide background layers as a substitute.
+Goal paused under the user's explicit model-switch rule.
+
+How to check:
+Open bottom-screen.bmp for the composed cloud screen and map-bg3.bmp for the underlying map layer. Open last-render.bmp for the latest game frame. Launch-test.cmd repeats the bounded normal startup test. The saved executable is a development build; gameplay, full minimap, audio, physical Xbox verification, internal 4K, replacement texture assets and delivered FPS remain incomplete/unverified.
+The authoritative source remains in the C: task workspace work/source-extracted/sm64ds-decomp-main; changed-source is a partial snapshot with preceding repairs. Original scope remains unchanged. Previous checkpoints remain available.

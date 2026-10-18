@@ -1,0 +1,80 @@
+Mario 64 DS PC port: camera tracking and minimap settings, 2026-10-15
+Status: PARTIALLY VERIFIED overall. Bounded native camera/input and minimap
+checks pass. The full game/PC feature scope remains unfinished.
+
+What changed
+- The executable previously had a zeroed first camera state record and did not
+  run the original camera state initializer. camera_host.py now reads all 19
+  startup pairs from the original initializer and local ROM descriptors,
+  validates zero this-adjustments, and emits native records of the original
+  16-byte stride. The camera's generated host dispatcher calls native cdecl
+  workers with a real camera argument; three void workers use typed adapters.
+- All 34 40-byte camera mode records share one allocation with original
+  interior labels, preserving index*0x28 selection and address comparisons.
+  These generated data files stay in build/; retail sources are unchanged.
+- Connected existing SaveCameraStateBeforeTalk and PathPtr queries to their
+  recovered methods. Movement then exposed two camera-warning OAM pointers
+  still holding DS addresses. Rebound both to native ROM-matching icon data.
+- F1 Settings now has Map orientation: Upright / Rotate with player (O), and
+  Touch target: hidden / shown (V). Defaults are upright and hidden. Choices
+  save in sm64ds_pc.ini. Rotating mode keeps player-forward up; upright stays
+  fixed during the intro too. Map matrix, marker and other icons share the
+  display angle while the original internal intro-angle state keeps advancing.
+- The touch target belongs to gameplay BG2; the map is on BG3. An overlay-only
+  scanout mask omits BG2 during an active map callback. Raw bottom-screen
+  output, input registers, player marker and other map icons remain available.
+
+Build and tests
+- Release sm64ds_pc build succeeds; all smoke binaries rebuild; CTest 27/27.
+- Compiled audit passes: 19 camera state pairs / 38 native callback targets,
+  original strides, complete 34-record mode bytes/interior labels, two native
+  warning-icon pointers, and all previous actor/resource/callback audits.
+- New checks cover orientation/angle wrap, saved settings round trip, and
+  hiding a visible BG2 while retaining BG3 without changing display registers.
+- First camera replay reaches movement then crashes reading OAM at 0210c3d8;
+  preserved as camera-native-castle*. After icon rebinding, a 6000-frame run
+  exits 0. That exploratory run still had the first orientation convention.
+- Final orientation-corrected build: castle 5400 frames, exit 0, Down300/A450,
+  software stick X=20000 on polls 5000..5119. The camera follows movement:
+  before camera X/Z=(-4915200,31340994), after=(-4892219,16338390).
+  Player X/Z changes from (-4915200,27852800) to (-4887754,13290616).
+  Final camera look-at X/Z=(-4887119,12856799); Mario remains visible in the
+  screenshot. This is bounded camera/software-input evidence, not full play.
+- Final Test Map: 1800 frames, exit 0, yellow_alive=1. Eleven samples verify
+  upright nonrotated matrices even while its intro script is active. Eleven
+  post-intro castle samples match the rotating mode's player-relative angle.
+- Final raw/filtered bottom-screen comparison differs at exactly 1260 pixels,
+  all within x=0..39, y=0..39. Every pixel outside that touch-target corner is
+  identical. Final top/map/raw-bottom images were inspected.
+- build/verify-camera-map-evidence.py and camera-map-final-evidence.json retain
+  the measurement checks. Final logs/screens/CSVs use camera-map-final-*.
+
+How to check
+Run Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS. Press S once then Space
+at course selection to choose castle. Wait through the intro, then move.
+Press F1 for the interim settings menu; O changes map orientation and V
+changes touch-target visibility. Close F1 and resume. The settings persist.
+
+Requested next menu work
+The game's own pause/options menu does NOT yet contain these PC choices.
+The user requested that integration; pc-settings-menu-plan-2026-10-15.txt is
+the saved plan, including original PS_* source entry points, controller
+navigation, safe resume, persistence and screenshot acceptance checks.
+Next: exercise original Start/pause/options/resume flow after the intro, then
+integrate the PC settings into that original menu. Keep F1 until that works.
+
+Remaining full scope
+Native pause-menu integration; complete actors/courses/transitions/save/audio,
+full movement/jumping/collection and physical Xbox verification; native 4K
+rendering, complete upscaled texture content and genuine independent 60/120/240
+output; final standalone packaging. Current high resolutions scale the DS-sized
+framebuffer and high host presentation rates repeat simulation states.
+
+Recommended next model: keep Sol High for native pause/menu/gameplay integration.
+No model switch or pause is recommended. The goal remains active.
+
+Install/checkpoint target:
+F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-15-camera-map-settings
+Retain previous-installed executable/map/status for rollback, changed-source,
+the exact tested executable/map and all evidence. Do not overwrite the user's
+settings file. The current tested build/source lives in the C: workspace.

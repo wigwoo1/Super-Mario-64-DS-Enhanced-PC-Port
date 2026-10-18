@@ -1,0 +1,104 @@
+//cpp
+#include "dBgCh_Lin.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "dBgW.h"
+#define LINE_QUERY(obj, query) (reinterpret_cast<dBgW *>(obj)->DetectClsn(*(query)))
+#else
+#define LINE_QUERY(obj, query) ((C *)(obj))->v7(query)
+#endif
+
+extern "C" {
+int func_020393b4(void *p);
+int func_020393ac(void *p);
+int func_0203939c(void *p);
+int func_0203938c(void *p);
+int func_02035354(void *a, void *b);
+
+int Vec3_Dist(const void *a, const void *b);
+}
+
+extern void *data_020a0c80[];
+
+class C {
+public:
+    virtual int v0();
+    virtual int v1();
+    virtual int v2();
+    virtual int v3();
+    virtual int v4();
+    virtual int v5();
+    virtual int v6();
+    virtual int v7(void *arg);
+};
+
+struct Vec3 { int x, y, z; };
+
+struct Info {
+    char pad0[0x5c];
+    Vec3 pos;
+    char pad1[0xb0 - 0x68];
+    int pB0;
+    int pB4;
+    int pB8;
+};
+
+bool dBgCh_Lin::DetectClsn()
+{
+    bool result = false;
+    int i;
+    C *o;
+    Info *info;
+    int m;
+    char *e;
+    char *base;
+    int threshold;
+    e = (char *)data_020a0c80[0];
+    if (e != 0) {
+        if (func_02035354(this, (void *)func_020393b4(e)) == 0) {
+            int mask = LINE_QUERY(e, this);
+            if (mask != 0) {
+                ((dBgPi *)((char *)this + 0x10))->SetCollider(0, func_020393ac(e), (dActor_c *)func_020393b4(e), (dBgW *)e);
+                result = true;
+            }
+        }
+    }
+
+    char *p64 = (char *)&mBoundSphere;
+    base = p64 + 4;
+    threshold = *(int *)(p64 + 0x10);
+    for (i = 1; i < 0x18; i++) {
+        o = (C *)data_020a0c80[i];
+        if (o == 0) continue;
+        info = (Info *)func_020393b4(o);
+        if (func_02035354(this, info) != 0) continue;
+        if (info != 0) {
+            int active = (info->pB0 & 2) ? 1 : 0;
+            if (active != 0) {
+                Vec3 v;
+                Vec3 *src = (Vec3 *)((char *)info + 0x5c);
+                v.x = src->x;
+                v.y = src->y;
+                v.z = src->z;
+                m = func_0203939c(o);
+                if (m == -0x1000) {
+                    int b4 = info->pB4;
+                    int b8 = info->pB8;
+                    v.y += b4;
+                    m = b8 << 3;
+                } else {
+                    v.y += func_0203938c(o);
+                }
+                if (Vec3_Dist(base, &v) > m + threshold)
+                    continue;
+            }
+        }
+        {
+            int mask = LINE_QUERY(o, this);
+            if (mask != 0) {
+                ((dBgPi *)((char *)this + 0x10))->SetCollider(i, func_020393ac(o), (dActor_c *)func_020393b4(o), (dBgW *)o);
+                result = true;
+            }
+        }
+    }
+    return result;
+}

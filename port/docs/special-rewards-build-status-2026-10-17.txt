@@ -1,0 +1,35 @@
+NATIVE SILVER-STAR / CAP REWARDS — VERIFIED — 2026-10-17 (Sol High)
+The full native PC port remains in development.
+
+Implemented native silver star, star marker and cap actors; adapted their
+resources/state records and the player's20-entry pickup animation table.
+Fixed static-cap animation division by zero and DS-address pickup crashes.
+Original cartridge src/include files remain unchanged.
+
+Verified locally and using the installed F: game/ROM:
+- Silver-carrying Goomba -> swallow -> egg -> silver-star release -> touch /
+  collection pose -> real counter0->1 -> removal / normal control,2800frames.
+- Active capped Goomba -> tongue strips Luigi cap -> mouth / collection ->
+  Luigi disguise -> later attack/jump/idle,2850frames.
+- Placed Mario cap -> pickup -> Mario disguise -> jump/idle,2400frames.
+- Normal egg/Goomba/coin regression passes locally,2400frames,counter0->1.
+- All installed reward replays exit0 and match the final executable hash.
+
+Build passes;52/52CTests,24Python generator checks and6data audits pass.
+Rollback/source snapshots/logs/screenshots saved in:
+native-checkpoints\native-checkpoint-2026-10-17-special-rewards
+
+To watch the verified gameplay paths, double-click:
+Watch Silver-Star Reward Test.cmd
+Watch Goomba Cap Reward Test.cmd
+Watch Cap Transformation Test.cmd
+These use separate test saves/settings and close after their replay.
+Existing Goomba Development Preview remains available for manual play.
+
+EXE SHA256 9533D6D00C9D7CB2E5E1663A646635B00B18930AB6FB6844AFCC04757BE3C7A0
+MAP SHA256 59E3B609815AA01143E9E41DA4082DD679250F8F2F4716C0A60A0F1FE36F3954
+
+Unverified: conditional VS silver rewards, five-silver-star completion/Power
+Star178, other cap variants, large-Goomba blue coins and full progression.
+Recommended next model: Sol Medium for bounded remaining reward checks.
+Pause for the requested model switch; overall goal is not complete.

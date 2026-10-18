@@ -1,0 +1,547 @@
+Native menu artwork checkpoint - 2026-10-16
+
+PARTIALLY VERIFIED. Retain Astra Low for remaining source/render investigation.
+Full port and original menu are incomplete. F: installation unchanged.
+
+Verified functional repairs carried forward:
+- hostgen adapts palette pointer-alias writes in original 020c1404 to NTR_MMIO.
+  Previously palette remained zero although texture/palette uploads were correct.
+- hostgen adapts the third quad TEXCOORD pointer-alias write in 020c4684.
+  Previously the missing UV stretched title background triangles.
+- gpu_set_menu_scene, driven by pc_dsmt_active in stage_graph_state, preserves
+  authored menu projection; gameplay retains widescreen perspective adjustment.
+  This removes the title's white side borders.
+- Retail src remains unchanged. smoke_dsmt_palette exercises actual generated
+  selector and quad functions; smoke_gpu checks menu/gameplay projection.
+
+Prior combined verification retained on disk:
+- build/menu-artwork-ctest.log: 45/45 pass, 32.50 seconds.
+- build/menu-artwork-data-audit.log and hostgen palette tests passed.
+- artwork-final original-menu replay: 6000 frames, captures 1180/1780/5900;
+  selects File A, completes intro, reaches idle Yoshi. Final gameplay RGB equals
+  previous File A checkpoint (build/menu-artwork-gameplay-comparison.json).
+- build/port/native-file-menu-original-artwork-final-1180.png is corrected title.
+
+Latest continuation adds diagnostics only, under SM64DS_PC_DSMT_DUMP:
+- dsmt_scene logs original BG upload lists at existing capture moments; iteration
+  bounded to 64 nodes. Layout sourced from 020b72a0/020b7364/020c03b0/020c076c.
+- Release build passes. build/menu-artwork-bg-list-ctest.log: 45/45, 28.78 sec.
+- run-native-file-menu.ps1 -Mode original -Tag artwork-bg-list -Frames 1800
+  -TouchSchedule '450:128:96,1250:128:168' -CaptureTicks '1780' -Dump
+  exits 0. Current exe SHA256:
+  9CD841B7FEAF566F1F5A6E1E909DF06C0D25D0E0BB384C4DD877E67C71FB523B
+- Actual 4K screenshot converted losslessly to PNG and inspected/shown:
+  build/port/native-file-menu-original-artwork-bg-list-1780.png.
+  File buttons correct, white backdrop still unresolved; no visual repair claimed.
+
+New evidence / next action:
+- build/port/file-select-layer-grid.png contains eight saved per-BG captures.
+  Engine B BG2 contains complete castle artwork. Engine A layers are white.
+  Do not replace the white area with guessed art or assume missing castle assets.
+- At 1780 engine A list has active BG1 (priority1, 32x24) and inactive BG3.
+  Engine B active BG2 castle, BG0 and BG1; two alternate nodes inactive.
+  All active nodes are clean (dirty0). Original scene state5 intentionally omits
+  animated title background draw 020b8fd4 (see 020bcf90); this alone is not a bug.
+- Main BG1 buffer runtime address 0055ea44, B BG1 0055e444 in this binary.
+  Trace constructor 020b6d40 -> 020c95fc/020adc08 and data_020d7ec8 to establish
+  intended BG1 tilemap/character source and compare live source to VRAM next.
+  Static PE bytes alone do NOT prove live buffer contents (writable data).
+- Original graphics mode6 in 020bd648 enables main BG0/BG1/OBJ and sub BG0/1/2/OBJ.
+  02056494 uploads BG1 map via GetBG1ScrPtr and DMA/MultiCopyHalf.
+- Duplicated Mario hat emblem remains unresolved. Both GPU/CPU lack full DS
+  texture wrap/clamp/mirror handling; texture matrix application is also absent.
+  Establish affected TEXIMAGE flags/UV evidence before changing global sampling.
+
+User requirement update: SUPIR ALL-texture HD pack now planned in
+texture-quality-plan-2026-10-15.txt and pc-settings-menu-plan-2026-10-15.txt.
+This supersedes older character exclusion. Existing implementation still blocks
+characters; SUPIR is not installed/run, production pack not generated.
+
+Keep build/pc-game-link-history.log: REQUIRED build input, previously restored
+losslessly from gzip after cleanup. No git; retain existing recovery checkpoint.
+No live process remains from this continuation (sessions 53094/36189 terminal).
+
+2026-10-16 continuation: background root cause identified (repair under test).
+Nintendo official manual, PDF page 6 / printed page 7, embedded Im15.jpg,
+shows blue castle art behind File A/B/C. Source:
+https://www.nintendo.com/eu/media/downloads/games_8/emanuals/nintendo_ds_21/Manual_NintendoDS_SuperMario64DS_EN.pdf
+Local reference: build/nintendo-sm64ds-manual-en.pdf and nintendo-file-select-1.jpg.
+Main BG1 is a text surface initialized by 020b8548/020c0308, not castle art.
+Its live pointer differs from link-map addresses by the process relocation;
+prior static-PE lookup without that adjustment is invalid and must not be used.
+Actual file background: 020bcf90 state5 -> 020bee14 -> 020ca5f0 -> 020caeac.
+The generated 020caeac retained five raw vu32 register macros, so its BEGIN,
+NORMAL, TEXCOORD, VERTEX and END writes never reached GX. Existing 1780 trace
+contains 736 button triangles only, with no background grid.
+Added exact, fail-closed five-macro normalization in hostgen and actual-emitter
+smoke test in smoke_dsmt_palette. Four focused Python adapter tests pass.
+Build session32359 is currently LIVE (CMake regeneration); do not restart while
+that handle is live. Native replay/regression suite still required for this fix.
+Sibling untextured 020ca86c has four analogous macros; outside current tested
+textured file-background path and not changed yet.
+
+Castle-grid repair VERIFIED for missing geometry, appearance PARTIALLY VERIFIED:
+- Build session32359 completed successfully. Generated 020caeac now routes all
+  five macro ports via NTR_MMIO. Original source files remain unchanged.
+- Actual-emitter smoke passes (two triangles, expected screen positions and UVs).
+  Four focused Python tests pass. All 45 CTests pass (72.82 seconds):
+  build/menu-castle-grid-ctest.log. Data audit passes:
+  build/menu-castle-grid-data-audit.log.
+- Native replay castle-grid-fix completes6000 ticks exit0 (session67105 terminal).
+  File A -> intro complete -> Yoshi3 St_Wait_Main. Current executable SHA256:
+  C22E1C9919C94832946DD648ADD486837A2D1249679AA0FF5A93319E291BD4DD
+- build/port/native-file-menu-original-castle-grid-fix-1780.png now shows castle
+  artwork behind the correct file buttons, 1476 triangles (previous736).
+  Background looks upside down and less blue than manual reference; full visual
+  fidelity is NOT established. Investigate texture transform/wrap and lighting.
+- 1180 and5900 PNGs exist and were inspected (5900 shown to user). Screenshot
+  comparison is NOT identical to artwork-final: last state differs only in idle
+  timer1178 vs1176; gameplay image88611 changed pixels. No broad pixel-regression
+  claim. All final camera/player/intro/character fields otherwise agree.
+  build/menu-castle-grid-comparison.json records last state and equality results.
+- No processes remain: 32359/2324/67105/36425 terminal. F: untouched.
+- Continue Astra Low on remaining grid orientation/tint and hat-emblem issues.
+
+2026-10-16 texture addressing repair:
+- gx.cpp snapshots TEXIMAGE bits16..19 into each GxTriangle. Software implements
+  independent S/T clamp, repeat and mirrored repeat (flip ignored without repeat).
+- gpu.cpp creates all16 flag samplers and includes flags in batch grouping, so
+  shared textures can have different address modes. Replacement scaling is kept.
+- GxTriangle stores explicit zero padding after the byte flag, following existing
+  TexturePixelsInfo/TextureReplacementRef convention. Initial byte comparison and
+  animation hash tests exposed uninitialized tail padding; fixed without weakening
+  either test. First failing suite is retained at texture-address-ctest.log.
+- smoke_gpu now checks16 flag combinations x8 positive/negative coordinate pairs
+  against independent expected colors, in software AND hardware. Final build and
+  all45 CTests pass40.57sec (build/texture-address-final-ctest.log).
+- Native texture-address6000 replay exits0, File A completes intro to idle Yoshi.
+  Screenshots1180/1780/5900 PNG inspected and shown. Hat now has one emblem;
+  road no longer displays obvious repeated edge strips. Castle remains inverted.
+- Final padding-only build completes texture-address-final1800 replay exit0.
+  Final1180 PNG inspected/shown; no same-binary6000 replay claimed for padding edit.
+  Current SHA256 A9D0FB42DD931AB06EA7FDE41F658088F7735FC31E8264C6DAC6E947E7BE9D08.
+- All handles terminal:61066,34524,30558,8614,31573,55450. F: unchanged.
+- Next: castle background orientation/tint. Texture matrix transformation is still
+  absent in gx.cpp; investigate actual original matrix commands before changing.
+  Hat duplication is now verified fixed. Keep Astra Low for remaining reverse
+  engineering. Full goal remains incomplete; no pause/model switch recommended.
+- Parameter reference checked: devkitPro libnds videoGL.h texture wrap/flip enum,
+  https://github.com/devkitPro/libnds/blob/master/include/nds/arm9/videoGL.h
+
+2026-10-16 toon/highlight verification completed:
+- gx.cpp and gpu.cpp implement polygon mode 2 with the original 32-color toon
+  table and DISP3DCNT highlight flag. Raw table memory is read because original
+  uploads use MultiCopyHalf. CPU/GPU use normalized 8-bit math; exact DS 6-bit
+  rounding is not claimed. smoke_gpu covers palette endpoints, highlight mode,
+  ignored green/blue intensity channels, and table changes between draws.
+- Build passed; all 45 CTests passed in 22.86 seconds (menu-toon-ctest.log).
+- Same binary completed original-menu toon-shading 6000-tick replay, exit 0.
+  File A enters level 1 with Yoshi (character IDs 3); final state St_Wait_Main.
+  Captures 1780 and 5900 converted to PNG, inspected and shown to user.
+  SHA256 4C33D2238C1D492872819E7B36F0440D6BE6A6F995DCDCFC7C873AD61B75A1CB.
+- Castle now has the blue/lavender shading previously missing. Pale polygon
+  patches remain visible. Upside-down castle may be intended water reflection;
+  orientation correctness is unproven. Do not blindly flip its texture.
+- castle-matrix-trace replay showed identity texture matrices for this background;
+  missing general texture-matrix support does not explain its orientation.
+- Session 63190 confirmed terminal exit 0. F: unchanged. Full goal incomplete.
+- Next: investigate pale background polygons and establish intended reflection
+  appearance against original behavior. Keep Astra Low; no model switch/pause.
+
+2026-10-16 pale-patch diagnostic:
+- Added vertex color to optional DSMT triangle CSV (port/hal/dsmt_scene.cpp).
+  Build succeeded; smoke_gpu and smoke_dsmt_palette both pass (0.30s).
+- background-colors original1800 replay completed exit0, session65290 terminal.
+  1780 PNG inspected/shown. Rendering unchanged; no fix claimed.
+- Background opaque/highlight layer attributes201f08e1 has vertex intensity
+  0x8d..0x9b; translucent foreground1f0f08c1 varies red/green and keeps blue255.
+  At pale areas, triangles771/939/941 contain brightest vertices0x9b/0x99.
+- Captured register table: highlight bit true; entries16..20 are4000,4800,4c00,
+  5084,54c6 (BGR555). Entry18 RGB5=(0,0,19),19=(4,4,20).
+  This sharp palette boundary is a plausible source of pale patches; not proof
+  they are a bug. Current palette selection rounds red*31/255. Next establish
+  DS intensity quantization/index semantics before altering this calculation.
+- Evidence in build/port/native-file-menu-original-background-colors-layers-file-select-
+  triangles.csv and registers.bin. F untouched. Keep Astra Low; goal active.
+
+2026-10-16 highlight precision investigation:
+- Read primary implementation GPU3D.cpp and GPU3D_Soft.cpp from melonDS master:
+  https://raw.githubusercontent.com/melonDS-emu/melonDS/master/src/GPU3D.cpp
+  https://raw.githubusercontent.com/melonDS-emu/melonDS/master/src/GPU3D_Soft.cpp
+  No source copied. Reference lighting produces 5-bit vertex colors; final colors
+  expand to interpolation precision, then RenderPixel receives 6-bit intensity
+  and selects the toon entry using that intensity shifted right one.
+- Our NORMAL path creates smooth 8-bit RGB, and both raster paths round red*31/255.
+  Consequently changing only the final index is insufficient for hardware fidelity.
+  Reference final-color expansion also has a nonzero offset; normalized6bit is
+  only a diagnostic comparison, NOT a validated replacement formula.
+- build/menu-highlight-boundary-analysis.txt quantifies observed affected values.
+  Current red153 chooses19; normalized6bit/shift chooses18. red155 chooses19 in
+  both. Therefore a lookup-only change cannot remove every captured bright patch.
+- Next implementation milestone: preserve DS vertex intensity quantization and
+  interpolation consistently in both renderers; add explicit gradient boundary
+  tests and replay menu/File A. Evaluate full lighting semantics separately
+  (current normalization, missing light-vector transform/specular are known gaps).
+- No renderer code changed this research turn, no new runtime test claimed.
+  Previous background-colors replay remains terminal. F unchanged; goal active.
+
+2026-10-16 toon interpolation correction (verification in progress):
+- GxVertex carries a separate 9-bit toon intensity plus explicit alignment field.
+  COLOR/DIF_AMB track original 5-bit red; NORMAL quantizes its existing float
+  lighting result to 5-bit red. Nonzero values expand to red*16+15. Clipping
+  interpolates this intensity, CPU/GPU rasterization truncates then selects
+  index=intensity>>4; highlight modulation uses (intensity>>3)/63.
+- This corrects the toon precision path without changing other polygon modes.
+  Original fixed-point lighting/specular and exact DS pixel coverage remain
+  incomplete; no hardware-identical renderer claim.
+- New smoke_gpu red18->19 gradient asserts boundary around x72 in both paths.
+  Initial test crashed after adding another large stack framebuffer; reusing
+  existing reference buffer resolved it. Final45/45 tests pass13.32 seconds,
+  build/toon-precision-final-ctest.log. Initial failure log retained.
+- Build passed. Binary SHA B8B65B0081A24DC40217ACE4940F429D725237911738E91D07B08455B160E680.
+- Native toon-precision6000 File A replay session67786 running; poll this handle.
+  Tick1780 PNG inspected/shown: previous two pale polygon patches no longer
+  apparent. Gameplay capture5900 and terminal result still need verification.
+- Test session14964 terminal exit0; build16601 terminal exit0. F unchanged.
+- Verification completed: session67786 terminal exit0. Same-binary6000 replay
+  reached idle Yoshi in level1; screenshot5900 inspected/shown. No current live
+  handles. Previous pending-verification paragraph is superseded by this result.
+- Remaining: establish intended original menu reflection/title appearance, then
+  continue incomplete gameplay/audio/feature/package work. Keep Astra Low for
+  remaining reverse engineering; full goal active, no pause recommended.
+
+2026-10-16 original-menu walking/jumping verification started:
+- Inspected final toon-precision1180 PNG: blue repeating title artwork, single
+  Mario hat emblem. Shown to user. Official saved manual file-select image has
+  same apparent castle orientation, supporting current reflection orientation;
+  no blanket flip justified. Exact animation/color fidelity still not claimed.
+- Extended build/run-native-file-menu.ps1 with optional ButtonSchedule and
+  bounded StickX/Y/Start/End parameters, using existing input replay hooks.
+  Defaults unchanged. Stick bounds/range validated. No game executable edits.
+- Live session45077: original-walk-jump6600, touch450/1250/1850, captures5900,
+  6120/6200/6580. Partial stickX20000 at6000..6179, B pulse6080. Poll same handle.
+  Need inspect state CSV for walking/jump/landing and show screenshots before
+  claiming success. Physical Xbox hardware remains untested. F unchanged.
+
+2026-10-16 original-menu movement replay completed:
+- Session45077 terminal exit0 after6600 ticks, native3840x2160. Same B8B65B... build.
+- 6040 St_Walk_Main, stickX20000, speed20852, X moved from-4915200 to-4540980.
+- B pulse6080 enters St_Jump_Main, airborne1, Y1183503, vertical speed143119;
+  6090 still airborne, Y1604628, descending speed-61679.
+- 6120 returns St_Walk_Main, airborne0, Y1040429; after release6180,6200 reaches
+  St_Wait_Main and speed0. Final6600 idle atX-941362,Y1040429,Z27852800.
+- State evidence confirms walk/jump/landing/stop through original File A path.
+  PNG6120 (walking after landing) and6580 (idle) inspected/shown. Capture schedule
+  missed the brief airborne interval; do not describe6120 screenshot as jumping.
+- Summary build/original-walk-jump-summary.json retains5900..6600 selected fields.
+  Physical Xbox input and broader gameplay remain untested. F unchanged.
+- No processes remain from this replay. Next: test native pause settings after
+  original File A entry, then continue full original file-management/gameplay work.
+
+2026-10-16 native settings through original File A:
+- original-pause-settings6700 replay session30305 completed exit0 on B8B65B build.
+  6020 paused;6240 Display page;6360 row2 texture_quality1 (75%);6680 unpaused
+  retaining75%. Isolated runtime INI contains texture_quality=1. Paused player
+  XYZ had exactly one unique value. Screenshots6360/6680 inspected/shown.
+- NEW VISUAL DEFECT: map sprites (player/icons/clouds/arrows) overlap PC settings
+  text/buttons/footer. Functional settings pass, menu presentation does not.
+  Next inspect sub-engine OBJ/map-layer handling while pc_pause_settings active,
+  hide only obstructing map sprites during custom menu and restore on exit.
+- Corrected hardcoded SAVE PROGRESS - FILE 1 label to SAVE CURRENT FILE. Actual
+  SaveCurrentFile uses data_0209caa0[0x328], so old label misrepresented File B/C.
+  Added label assertion; final build and45/45 tests pass29.51s in
+  build/current-file-label-ctest.log. Label-only SHA:
+  1B0A095AEB0BD70F0E0629D3998DA4949D1236EAB707E3B24E448285850018F5.
+  No full game replay of label-only binary claimed; isolated replay used prior.
+- Sessions30305 and24301 terminal. F unchanged. Keep Astra Low for presentation
+  integration investigation. Full goal remains active.
+
+2026-10-16 custom settings sprite filtering (runtime verification pending):
+- video_set_pause_screen gains optional custom_settings flag. Bottom-engine
+  OBJ scanout is skipped only when both paused and custom settings are active.
+  stage_graph_state supplies pc_pause_settings_page()!=0 for game target.
+  Original pause/game options and gameplay retain sprites. No OAM/register
+  modification; map background retained. Test covers all four flag combinations.
+- Build passed;45/45 CTests pass31.25s (pause-sprite-filter-ctest.log).
+- Binary A234142043C7EC1C08879C91BB3BF4830463275D5120057A7F1EB5F409CA0C11.
+- Live session8507: pause-sprite-filter original6700, same settings schedule as
+  previous run, captures6020/6240/6360/6680. Poll existing handle; do not restart.
+  Need inspect6360 for unobstructed text and6680 for gameplay sprite restoration.
+- Test28375 and build72022 terminal. F unchanged. Keep Astra Low pending visual
+  verification; no completed visual-fix claim yet.
+- Runtime verification completed: session8507 exit0 after6700 ticks. PNG6360
+  shows unobstructed PC Settings rows and footer; map sprites/clouds removed.
+  PNG6680 shows gameplay/minimap sprites restored. Both inspected/shown.
+  State6360 paused/page2/texture1,6680 unpaused/page0/texture1. Goal incomplete.
+- Next: verify native save action and File B/C routing through original menu;
+  full file-management UI and gameplay progression remain unverified. Keep
+  Astra Low for original-menu integration. All current handles terminal.
+
+2026-10-16 original File B save verified; reload pending:
+- file-b-save6600 session58006 exit0. Original touch1850:128:96 selects File B.
+  Native PC Settings page5 SAVE CURRENT FILE commits slot1 (human File B) and
+  shared minigames. Screenshot6360 inspected/shown, PROGRESS SAVED visible.
+- Isolated saves: slot2.sav header slot1/payload68, minigames.sav slot3/payload740;
+  both CRC32 independently checked. No slot1.sav or slot3.sav created.
+  This verifies default progress save routing, not collected-star progression.
+- Replay runner now has optional SaveDirectory parameter, resolving an existing
+  path into SM64DS_PC_SAVE_DIRECTORY, for restart tests with separate logs.
+- LIVE reload session recorded in following tool result: file-b-reload6000 uses
+  file-b-save-runtime/saves, captures1780/5900, same File B touch schedule.
+  Poll existing session; inspect loaded-slot logs, final state and screenshots.
+- Build unchanged A234142...; no new code build/test required this turn. Save
+  format documentation now names SAVE CURRENT FILE. F remains untouched.
+- Reload session is6031; retain/poll it until terminal.
+- RELOAD FAILED: session6031 terminal exit-1073741819 (access violation), last
+  state tick540. Save backend loaded slot1 primary68 and minigames primary740;
+  no corruption/read failure. Menu crashes before file selection screenshot.
+- Same A234142 build map resolves RVA0xd4f62 to func_ov007_020c2acc+0x42;
+  caller RVA0xd9436 to func_ov007_020c6784+0xb6. Invalid object pointer EAX=0x9c.
+- Strong source lead: 020c2acc declares/calls 020c2b9c returning void*, but the
+  compiled original 020c2b9c.c defines void, allocates object r and never returns
+  it. Caller then dereferences o->p24. Verify original ARM return behavior and
+  implement a port-only return-value adaptation plus constructor regression test.
+  This function currently compiles directly from src (build.ninja confirms), so
+  add it to source-generation/override routing; merely editing hostgen is not enough.
+- Save files preserved in file-b-save-runtime/saves. No repair attempt made yet;
+  do not repeat unchanged reload. All sessions terminal. Keep Astra Low.
+
+2026-10-16 loaded-save constructor repair under build:
+- Original overlay7 base020ad660 bytes020c2b9c..020c2bf4 verify allocator return
+  stays inr0: after BL020c2c68 only other registers change; STRH count,[r0,#8],
+  POP{r4-r6,lr}, BXlr (e12fff1e). Recovered C void definition drops pointer.
+- hostgen transform now specifically converts020c2b9c tovoid* and returnsr,
+  with checked tail anchor and idempotence. Counted rewrites route production
+  boot closure through generated source; src/ remains unchanged.
+- Added actual generated constructor to smoke_dsmt_constructor with controlled
+  allocation fixture, count0..4 and source present/absent, pointer/count/copied
+  values/canaries asserted. Source-adapter5/5 tests pass.
+- LIVE build session97864: CMake regeneration. Retain/poll handle. After build,
+  run45CTest and retry File B reload using existing verified save fixture,
+  capture1780/5900 and verify actual generated object in build.ninja without
+  printing enormous link lines (use rg --max-columns or Python filtered lines).
+- No runtime fix claim yet; no failed repair attempt established. Keep Astra Low.
+- Build97864 completed0; verified production build.ninja now uses pc-boot-src
+  generated020c2b9c.cpp, test uses host-src generated counterpart.
+-45/45CTest pass22.74s, session95480 terminal (file-b-constructor-ctest.log).
+  New SHA8C34E93C08A8FBD59F7C28C87D3AA3589AE1C997E301AC51F780616A7A9C39DC.
+- LIVE fixed reload session91987 passed previous tick540 crash, reached2810.
+  Screenshot1780 inspected/shown: DRAWING screen with Yoshi and pencil buttons,
+  not file selection. Old empty-save touch timing is unsuitable for loaded save.
+  Need let current bounded run finish and adjust navigation (capture earlier
+  title states or use B to leave drawing) before claiming saved File B gameplay.
+  Do not mislabel drawing screenshot as file-selection success.
+- Existing File B save untouched; no source changes outside port/. Keep Astra Low.
+
+2026-10-16 saved-startup navigation identified:
+- Fixed reload91987 completed6000 exit0 in drawing mode; constructor crash fixed,
+  no gameplay claim. No-input observe4875 completed1200 exit0, PNG1180 shown:
+  normal Adventure menu already present. Loaded saves skip the empty-save startup
+  touch gate; old450 center touch/A enters drawing mode. Not a new game defect.
+- Runner now optional AutoConfirmPoll (default450,0 disables), enabling exact
+  no-input observation and loaded-save navigation. Observation showed Adventure
+  at128:168. File B resume now uses only1250 Adventure and1850:128:96 File B.
+- New LIVE session follows: file-b-resume6000, existing save folder, captures
+ 1780/5900. Verify file-menu and gameplay then record terminal result.
+- No new renderer/game edits; current8C34E93... build. F unchanged.
+- Active File B resume session61935: retain/poll. Earlier91987 and4875 terminal0.
+
+2026-10-16 File B save/reload milestone completed:
+- Session61935 file-b-resume6000 terminal exit0, current8C34E93... binary.
+  AutoConfirmPoll0, touches1250:128:168 and1850:128:96. Screenshot1780 shows
+  File B star0 while A/C NEW;5900 shows Yoshi in castle grounds. Both shown.
+- Final6000 level1, script_active0, intro_ready1, disabled0/no_control0,
+  character/model3 and St_Wait_Main. No post-load movement input tested here.
+- Confirms native pause save to correct File B disk slot, checksum validation,
+  fresh-process load, original file-menu recognition and level entry. Default
+  zero-star progress only; collected stars/course progression not covered.
+- Screenshot5900 includes TOUCH TO START below minimap, whereas fresh-game
+  captures had clouds. Possible stale menu OBJ/UI remains in gameplay overlay;
+  inspect provenance before claiming minimap presentation complete.
+- All current sessions terminal. Next isolated File Options/copy/erase testing
+  and remaining gameplay progression, then audio/features/package work. F unchanged.
+
+2026-10-16 original File Options copy investigation:
+- file-options-fixture contains only copied File B/minigames test saves, never user saves.
+- file-copy-select2700 and file-copy-source3100 both exit0, screenshots2580/2980
+  inspected and shown. Original Copy opens; selecting B raises B as source with
+  A/C empty destinations. Native3840x2160, current8C34E93 build unchanged.
+- file-copy-destination3500 crashes after destination A selection, before3380
+  capture and before destination save exists. Session70492 terminal; no live runs.
+  Inputs AutoConfirmPoll0; touches1250:128:168,1850:80:160,2250:128:115,
+  2700:128:90,3100:44:90. SaveDirectory build/file-options-fixture.
+- Crash RVA c940f maps func_ov007_020b8b80+0x3f (text byte dereference).
+  Caller c81c9 maps func_ov007_020b7a78+0xb9 (dialog initialization).
+  Message pointer fe88e066 is invalid; inspect message bank lookup/ID mapping.
+  func020c94a0 looks up offsets via INF1 stride, then DAT1 base; raw ARM confirms
+  halfword+0xA, masked16bit ID multiply, offset load LSR3, add DAT1 base.
+  Do not speculate that shift3 is wrong; it matches ROM.
+- File B SHA256 remains74681914652A101E01F34B04AA4EDCFA90AB9B06AD5F96474E5B15BED77F846B.
+  No slot1.sav created; source preserved. No fixes attempted yet; no new build/tests.
+- Next inspect func020b8ec0 mapping, message IDs/table and020c951c initialization
+  against original ARM, add focused source adapter/test after identifying cause.
+  Keep Astra for reverse engineering. Full goal active; F installation unchanged.
+
+2026-10-16 original Copy crash fixed and B-to-A copy verified:
+- Root cause: generic link_data split interleaved ARM9 message ID table at
+  internal labels0208eeee/0208f021. First generated array was only4bytes; lookup
+  read unrelated storage, produced invalid dialog pointer before save operation.
+- dsmt_host.py now owns canonical original392-byte table0208eeec..0208f074,
+  all interior labels included; validates increasing keys and endpoints(0,0),
+  (8000,630). link_data automatically binds owned labels to canonical storage.
+- check_dsmt_data.py verifies full table bytes in executable, interior aliases,
+  and menu message ID mapping. Original src/ untouched. First focused fix passed.
+- Build70395 exit0;45/45CTest92461 passed35.92s (message-table-ctest.log).
+  Compiled original-data audit passed including new table checks.
+- Replay98277 file-copy-table-fix3500 exit0, same formerly crashing inputs.
+  Original menu committed slot0 (File A). PNG3380 shown: A/B star0,C NEW.
+  build/file-copy-table-fix-validation.json confirms correct header slot IDs,
+  CRCs, identical68-byte payloads, unchanged B SHA74681914652A101E01F34B04AA4EDCFA90AB9B06AD5F96474E5B15BED77F846B.
+- New binary SHA817D5B94D10D0EC54E2D537CB3813377D48767529154D35B5FC954E60C2C389F.
+- No user saves touched; only build/file-options-fixture now contains copied A.
+  Actual text during transient confirmation not captured; completed copy is
+  verified. Fresh-process copied-A load, overwrite/cancel and erase remain next.
+  All current sessions terminal. F unchanged; full goal active. Keep Astra for
+  remaining original-menu investigation; evaluate downgrade after this flow.
+
+2026-10-16 copied File A reload/movement verified:
+- Replay8876 copied-a-resume6300 exit0, same817D5B94 binary. Isolated
+  build/file-options-fixture; AutoConfirmPoll0, touches1250:128:168,1850:64:70.
+  StickX20000 polls6000..6179. Captures1780/6040/6280 inspected/shown.
+- Fresh process reads slots0/1, original menu recognizes A/B. Level1,Yoshi3,
+  controls enabled.6040/6170 St_Walk_Main;6280 St_Wait_Main afterrelease.
+  X moves-4915200 to-1745696. Save A/B hashes unchanged. Validation JSON
+  build/copied-a-resume-validation.json. Physical controller still unverified.
+- Minimap still visibly contains stale TOUCH TO START text/arrows; camera at
+ 6280 faces nearby hillside. No claim of camera/minimap correctness.
+- No code changes/build needed this turn; previous45/45 applies samebinary.
+- Next LIVE replay70989 erase-a-prompt3100, testfixture only, captures2980.
+  Touches1250:128:168,1850:80:160,2250:204:115,2700:44:90. Inspect prompt before
+  proceeding; do not infer erase success. No F writes.
+- Erase prompt70989 completed3100 exit0. PNG2980 inspected/shown: File A raised,
+  translucent box and YES/NO buttons visible, but explanatory text is absent.
+  No confirmation input sent, no write logged, A/B hashes unchanged. Treat this
+  as missing dialog text defect, not complete erase verification.
+- Text renderer path020b8b80 ->020b8d48 writes glyph pixels into02103478[a],
+  glyph source0210345c, tile base02103458, palette mask020d7ac4[pal], font widths
+ 02102df8. Next investigate pixel generation/upload/scanout and original ARM;
+  do not blanket-hide objects or substitute custom dialog. Canonical message-ID
+  fix resolved crash but does not establish rendered dialog text.
+- All sessions now terminal; keep Astra for remaining menu text repair. Full
+  goal remains active; copied-A load/movement milestone verified, menu incomplete.
+
+2026-10-16 original dialog text foreground repaired:
+- Diagnostic68503 erase-text-layer3100 exit0: BG1 has288 opaque pixels spelling
+  Really erase it? DISPCNT00011308,BG0priority2,BG1priority1. Glyphs valid but
+  existing renderer drew every2D layer before3D, covering the text.
+- ppu_backgrounds_above_3d derives enabled strictly-front BG1..3 from main
+  registers; BG0 wins equal priority. GPU optional foreground draws after3D,
+  before minimap, nearest sampling/alpha; pause skips it. Software composites
+  same foreground after gx_render. Original src unchanged. OBJ priority and
+  blend/window accuracy remain separate limitations, not claimed fixed.
+- Files: port/ntr/ppu.cpp,include/ntr/ppu.h,gpu.cpp,include/ntr/gpu.h,video.cpp;
+  smoke_gpu.cpp covers priorities,equal/behind/disabled/forcedblank,transparent
+  foreground pixels,3D occlusion and pause suppression. dsmt_scene.cpp optional
+  dump at2980 retains layer BMP/reg diagnostics for reproduction.
+- Build82354 exit0;45/45CTest87930 passed24.09s,dialog-foreground-ctest.log.
+- Replay73481 erase-text-fixed3500 exit0. Capture2980 clearly shows prompt;
+ 3100:165:128 selects NO,3380 returns file list. Both screenshots inspected/shown.
+  A/B fileSHA unchanged; no write logged. Actual Yes/erase and overwrite remain.
+- BinarySHAABFD65CC4D8475B7ED57ED792FD36B81445A0C142275C99D2EDD73A9ED1B068C. No live sessions. Full goal active; F unchanged.
+- Next verify erase YES on copied test A, unchanged B, fresh startup A NEW;
+  then overwrite/cancel and gameplay regression of new foreground composition.
+  Keep Astra through remaining rendering/menu integration checks.
+
+2026-10-16 erase YES/persistence and post-compositor gameplay verified:
+- Current binary ABFD65CC unchanged; no source edits or rebuild this turn.
+- erase-a-confirm3500 session99274 exit0; fixture only. Same prompt navigation
+  then3100:90:128 YES. Commit slot0 only. PNG3380 shown A NEW,Bstar0,CNEW.
+  CRC/slot header verified;68byte payload equals SetDefaultValues exactly
+  (magic8000,flags8 at+8,Yoshi3 at+65,all remaining zero). B SHA unchanged.
+  Evidence build/erase-a-confirm-validation.json.
+- Fresh process erase-persist-b-play3100 session5998 exit0:1250Adventure,
+ 1850:128:96 FileB; stickX20000 polls2600..2779. PNG1780 shows A stillNEW;
+ 2640 shows Yoshi walking, inspected/shown.2980 returns St_Wait_Main afterrelease.
+  X-4915200 ->-1537176;level1,character3,disabled/no_control0. SaveB unchanged.
+  Evidence build/erase-persist-b-play-validation.json andPNG1780/2640/2980.
+- Confirms bounded castle gameplay after foreground compositor fix; existing
+  stale minimap TOUCH TO START remains. No claim of complete rendering or
+  physical controller validation. Original user saves and F installation untouched.
+- Remaining file flow: overwrite existing destination/cancel, distinct source
+  and destination fixture values needed to prove correct overwrite direction.
+  All sessions terminal. Keep Astra for remaining minimap/rendering investigation;
+  full goal active. Previous45/45 tests apply same unchanged binary.
+
+2026-10-16 original overwrite/cancel verified with distinct records:
+- Created build/file-overwrite-fixture (new directory) from original test B.
+  Synthetic A has course5 coinrecord17 (payload0x37); B has0. Bothused/Yoshi3,
+  proper slotheaders/CRC. baseline.json records original fixture hashes.
+- overwrite-cancel3900 session41999 exit0; touches1250Adventure1850Options,
+ 2250Copy2700B3100A3500:165:128 NO. PNG3380 shows OK to overwrite? correctly;
+  all three sav files byte-identical to baseline afterward. Screenshot shown.
+- overwrite-confirm3900 session98491 exit0; same inputs except3500:90:128 YES.
+  Commit slot0 only;PNG3780 file list shown. Complete A68bytepayload nowequalsB,
+  coin17->0;correct destination slot0/header/CRC. B/minigames hashesunchanged.
+  Evidence build/overwrite-confirm-validation.json. No live sessions.
+- No code change/build this turn; currentABFD65CC and previous45/45 remain.
+  Original user saves/F untouched. Both new testfiles retainzero stars;
+  not proof of earned courseprogression. Full goal active.
+- Basic original filecopy/erase/load/cancel/overwrite now bounded-verified.
+  Next resolve stale TOUCH TO START/arrows in gameplay minimap; inspect menu
+  teardown and main/sub OBJ allocation/OAM lifecycle before filtering or wiping.
+  Physical controller/audio/courseactors/HDpack/true120/240/packaging outstanding.
+
+2026-10-16 stale minimap menu sprites fixed:
+- Diagnostic20244 minimap-oam-origin2500 exit0. BG-only capture clean; adding
+  OBJ introduces TOUCH TO START/arrows. At2400 suppress=1,shadow main current,
+  hardware sub stale400400a9. OriginalARM9 symbol0209e660 is BSS, initial0.
+- Root cause HAL oam_state.cpp initialized suppressflag1 (old direct-fill test
+  default). DSMT boot bypasses old title EnableSubOAM; gameplay kept sub disabled.
+- Restored original default0, keeping explicit single-buffer scene selections.
+  smoke_oam asserts default0 then explicitly selects1 for single-buffer tests;
+  existing two-buffer reset/upload tests remain. Original src untouched.
+- stage_graph_state.cpp optional DSMT_DUMP diagnostics at2400 capture BG/OBJ
+  and shadow/hardware OAM; no state mutation. Initial callback/OAM tests2/2 pass.
+- Build passed;45/45CTest64649 pass21.24s,minimap-oam-default-ctest.log.
+- Replay11357 minimap-oam-default2900 exit0,loadedB,stick2500..2679. Capture1780
+  menu intact;2480/2880 clean minimap with Yoshi icon/direction, no title text.
+  All shown.2540Walk,2880Wait,position changed;controls enabled/Yoshi3.
+  At2400 suppress0,fill0/2,hardware sub80630070 equalscurrent subshadow.
+- Binary BBF216EC9AF7901F4050C7B8777DE5B71DBC5AD80973646DDA45F431C9D55410.
+  All sessions terminal; F unchanged. No blanket sprite hiding/clearing added.
+- Next bounded regression checks appropriate for Luna Medium: native pause/
+  settings and minimap upright/rotate/target toggle after restored sub sprites,
+  including File A freshstart. Escalate for newly discovered reverseengineering.
+  User requested pause at model-switch opportunities; recommend Luna Medium now.
+  Full goal incomplete: courseprogression/actors/audio/physicalcontroller/HDpack/
+  true120/240/standalone F package still pending.
+
+2026-10-16 corrected native minimap/pause settings regression:
+- Same binary BBF216EC9AF7901F4050C7B8777DE5B71DBC5AD80973646DDA45F431C9D55410;
+  no source or build changes. 7200-tick File B fixture replay exits0 and visits
+  Display, Visual and Map in original pause Options; then returns to Yoshi play.
+- Corrected scripted masks are hexadecimal (runner uses strtoul base16):
+  Rotate with player state changes0->1 at6380; Hide Touch changes1->0 at6540.
+  Isolated runtime INI saves both. Captures6240/6380/6540/6780 show page flow,
+  unobstructed menu, and restored gameplay/minimap. Screenshot paths are
+  build/port/native-file-menu-original-minimap-pause-controls-verified-{6240,
+  6380,6540,6780}.png. This confirms menu/state/save behavior; physical Xbox
+  input and controlled same-heading visual comparison of hidden/visible BG2 are
+  still pending. Test fixture only; F unchanged.
+- An earlier failed replay used decimal-looking button masks, which the runner
+  interpreted as hexadecimal and which exited settings early. It is not valid
+  evidence; corrected replay completed. Next continue original menu background/
+  title artwork investigation and test gameplay/menu regressions. Full goal is
+  active and incomplete.
+
+2026-10-16 current title/file-select artwork regression:
+- Same executable BBF216EC9AF7901F4050C7B8777DE5B71DBC5AD80973646DDA45F431C9D55410;
+  original title/file-select replay1900 ticks exits0. Captures1180/1780 inspected:
+  build/port/native-file-menu-original-artwork-current-check-1180.png and
+  build/port/native-file-menu-original-artwork-current-check-1780.png.
+- Current title retains repeated blue castle art, single Mario hat emblem and
+  no white side borders. File select renders all three file panels and recovered
+  castle geometry. The current images do not establish exact DS color/animation
+  fidelity; do not change reflection/orientation without stronger reference.
+  No source/build change. Prior 45/45 CTest evidence is for this same executable.
+  F remains untouched; full goal active.

@@ -1,0 +1,271 @@
+Camera controls request (2026-10-17): PLANNED, not implemented.
+Add a saved Camera Mode choice to the native pause PC Settings menu:
+- Preset Angles: right-stick left/right turns the camera by the same fixed
+  increments and obeys the same restrictions as the original touchscreen
+  camera buttons. Use a deadzone and repeat delay for deliberate steps.
+- Free Camera: continuous camera orbit around the player using either the
+  right analog stick or mouse, with horizontal and vertical movement.
+  Provide sensitivity and invert-Y settings; capture/release the mouse safely
+  when entering/leaving gameplay, pause, menus or window focus.
+Keep camera movement separate from left-stick movement and touchscreen taps.
+Respect original dialogue, boss and Star cutscenes, then restore the chosen
+camera mode afterward. Test collision/occlusion, angle limits, both input
+methods, settings persistence, pause/resume and normal gameplay screenshots.
+
+Native progress-save update (2026-10-15): PC Settings now has five pages.
+Page5 adds SAVE PROGRESS - FILE 1, with PROGRESS SAVED or SAVE FAILED feedback.
+This saves original progress records, not player position.37/37 CTest and bounded
+native4K menu/save/restart/failure checks pass. FILE 1 is loaded by the current
+course picker; full file-select/copy/erase UI remains pending. See native-save
+checkpoint/format notes. Earlier four-page statements below record history.
+
+Graphics settings update (2026-10-16): PC Settings now has a sixth Graphics page
+with Off/2x/4x/8x/16x anisotropic filtering for native D3D11 3D textures. The
+choice is saved in sm64ds_pc.ini; automated menu, GPU sampler, and persistence
+checks pass. A bounded native game replay did not produce a completion record or
+screenshot after GPU startup, so full-game runtime behavior remains unverified
+and the change has not been installed to F:.
+
+PC settings in the game's pause/options menu
+Texture-quality update (2026-10-15): the six-choice selector now replaces the
+previous toggle: Original /75% /50% /25% /No Textures /Upscaled. Original/reduced/
+untextured rendering and native live changes are implemented and verified.
+Upscaled explicitly reports NO PACK and uses original art; full level/object
+inventory, remaining ownership classification, AI generation and complete coverage remain
+pending in texture-quality-plan-2026-10-15.txt. Character/Unknown decoder roles
+cannot receive replacement PNGs. See native-texture-quality-checkpoint-2026-10-15.txt.
+
+Requested 2026-10-15. Status: IMPLEMENTED, with bounded native runtime and
+save/restart verification. Physical Xbox and mouse navigation remain unverified.
+
+Completed milestone: the original pause Options entry now opens an OPTIONS
+chooser containing PC SETTINGS, GAME OPTIONS and BACK. PC Settings uses the
+game's own font, golden button artwork, sub-screen tilemaps and pause lifecycle.
+Its four pages expose all 12 existing saved PC settings. GAME OPTIONS retains
+the original Sound/Backlight screen. F1 remains available as an alternate menu.
+
+Controls: Start/Enter opens pause; D-pad/left stick or W/S selects a row;
+A/Space confirms; B/Left Shift backs out. L/R shoulder or Q/E changes settings
+pages; Left/Right or A/D changes the selected value. Options are saved when
+changed. The custom rows also accept native touch coordinates, pending mouse
+and physical controller checks.
+
+Verification: Release build and compiled-data audit pass; all 29 CTest tests
+pass. A 6250-tick castle replay changes every setting, exercises 60/120/240,
+opens the original Options screen, backs out, revisits the saved PC settings,
+and resumes gameplay; exit 0. Player X/Z remain fixed while paused. Eight
+paused main-view captures match the raw bottom menu pixel for pixel. A separate
+1800-tick Test Map run after application restart loads all 12 saved values and
+exits 0. Actual screenshots were inspected and shown.
+
+The numbered plan below records the original scope. Steps 1-5 are implemented
+and verified with automated input, except for the stated physical-input limits.
+
+1. Verify the original pause flow on the native build.
+   Progress 2026-10-15: native held/pressed input layout repaired; a bounded
+   castle replay opens the original menu with Start and resumes with Start,
+   exit 0. A subsequent native pause-display milestone fixes the sprite-buffer
+   reset and presents the clean original menu as the main view. Pause/resume,
+   viewport switching and full-frame menu pixels are verified in the bounded
+   castle replay. Options/Back and native PC choices are now also verified;
+   physical Xbox and mouse menu interaction remain unverified.
+   Start/menu button must pause after the intro and resume safely. Inspect
+   dScStage_c::Behavior, PS_Init, PS_Update, PS_Render, PS_Cleanup and
+   PS_UpdateOptionsMenu before adding a new page. The native source already
+   contains these routines; use them and the existing Message/OAM renderer.
+   Do not substitute an always-active desktop overlay for this milestone.
+
+2. Add a PC Settings entry to the game's own pause Options menu.
+   Keep the game's visual style and clear selection/back indicators. Use
+   additional pages or scrolling if needed to keep all text readable. Keep
+   resolution/frame-rate/texture settings in a Display page and minimap choices
+   in a Minimap page if one page becomes crowded. The exact row layout can
+   follow the recovered original menu rather than inventing a separate UI.
+
+3. Connect each option to the existing native settings state.
+   - Resolution presets through 3840x2160, including supported aspect ratios.
+   - 60 / 120 / 240 FPS selection.
+   - 4K replacement texture toggle and 2D/HUD scaling.
+   - Minimap on/off, Upright / Rotate with player, opacity, size and position.
+   - Hide/show the minimap touch-control target (hide by default).
+   Upright must remain fixed; rotating mode must keep player-forward upward.
+   Map geometry and every useful icon must use the same orientation.
+   Use the same saved settings file as the current F1 interface.
+
+4. Support ordinary game controls throughout the menu.
+   Xbox Start opens pause; D-pad/left stick selects; A confirms; B backs out.
+   Provide equivalent keyboard controls. Apply a deadzone and repeat delay to
+   avoid unwanted multiple changes. Opening a menu, selecting an option and
+   backing out must not move/jump Mario or send touch input to the game.
+
+5. Verify and capture the actual game menu.
+   Build, run the relevant automated checks, then capture screenshots while
+   opening the pause menu, entering PC Settings, changing each option and
+   resuming gameplay. Verify settings persist after a full application restart.
+   Test physical Xbox navigation when a controller is available; software input
+   replay alone does not establish physical controller verification.
+
+Completion limits to retain:
+The native D3D11 renderer now rasterizes 3D at the selected resolution through
+3840x2160; this is verified by GPU tests and actual full-resolution game captures.
+Retail 2D layers remain scaled separately. The optional software diagnostic
+renderer still uses 256x192. Higher FPS options currently repeat simulation states.
+New 4K texture content and independent 120/240 FPS remain separate work. The new
+six-choice texture-quality menu is implemented; the complete eligible
+replacement art pack and remaining ownership classification above remain pending. The full port goal is not complete.
+
+Code starting points:
+src/_ZN10dScStage_c8BehaviorEv.cpp (pause entry)
+src/_ZN10dScStage_c7PS_InitEv.cpp (pause initialization)
+src/actors/dScStage_c.cpp (PS_Update, PS_Render, PS_Cleanup, options flow)
+src/_ZN7Message22DisplayOptionsMenuTextEt.cpp (original options text)
+port/ntr/include/ntr/video.h and port/ntr/video.cpp (current saved PC settings)
+Texture options plan update (2026-10-16): keep Original, 75%, 50%, 25%, and No
+Textures, then provide two distinct HD choices. “Upscaled” uses SUPIR-upscaled
+source textures, including character textures. “AI Generated
+4K” uses newly generated 4K replacements for eligible level and object textures,
+guided closely by each source texture's appearance. Do not AI-generate character
+textures for this option; characters must use only their SUPIR-upscaled source
+textures in this mode.
+Preserve the originals as the source/reference set, review generated assets for
+visual fidelity and seams, and keep UI/effects/character exclusions explicit in
+the asset manifest. See texture-quality-plan-2026-10-15.txt for SUPIR workflow
+milestones; that document records the inventory, model, and validation work for
+both options.
+
+Implementation sequence for these two HD options: inventory and classify texture
+owners first; establish separate Upscaled and AI Generated 4K pack manifests;
+generate only eligible non-character level/object assets for AI Generated 4K;
+add runtime selection/fallback and coverage reporting; then compare representative
+gameplay screenshots against the original and SUPIR-upscaled options.
+
+## Additional requested PC Settings (2026-10-16)
+
+These are planned additions; they are not implemented or verified yet.
+
+- Minimap size and opacity: add independent saved controls to the Minimap page.
+  Keep the map within the visible viewport at every size and preserve the
+  existing upright/rotate, position, and touch-target options. Verify the
+  smallest/largest sizes, opacity endpoints, persistence, and gameplay legibility.
+- Clothing submenu: add a Clothing page/submenu with model choices to change
+  Luigi to his casino model and Toad to his casino model. Leave other characters
+  unchanged. First identify the correct ROM models/materials and preserve the
+  original defaults; verify both substitutions in-game, transitions, and save
+  reload. Do not fabricate replacement character art if the casino models are
+  unavailable in the supplied game data.
+- Render distance: add Minimum, Low, Medium, and Entire Map choices. Define each
+  level against the game's actual visibility/culling system, with Entire Map
+  retaining all supported distant geometry. Verify representative near/far
+  objects and course-specific behavior; avoid changing collision or actor logic.
+- Anisotropic filtering: offer Off/2x/4x/8x/16x where supported by the native
+  renderer and device. Apply it to eligible 3D texture samplers, preserve the
+  selected value across restart, and verify distant ground/oblique surfaces and
+  graceful fallback on unsupported devices.
+- FSR 3: add native-renderer options for upscaling and anti-aliasing, with
+  explicit Off/native-resolution behavior and only the modes the selected FSR
+  3 integration actually supports. Determine compatible API/backend, licensing,
+  device requirements, frame-generation behavior and input latency before
+  integration. Do not label frame generation as true game simulation FPS;
+  verify image quality, pacing, latency, settings persistence, and fallback.
+- Motion blur: add an Off/On option only after identifying a suitable native
+  post-processing path. Keep it off by default, avoid blurring UI/minimap, save
+  the preference, and verify motion, pause/menu clarity and frame-time impact.
+
+Organize these controls into the existing Display, Minimap and other settings
+pages (or add a Clothing submenu) without crowding the readable native menu.
+Add automated coverage for defaults, value bounds, persistence and unsupported
+renderer fallbacks, then capture matching in-game screenshots for visual checks.
+
+
+- Renderer selection: add an OpenGL software-rendering option alongside the current native D3D11 path and diagnostic software renderer. Define whether the OpenGL path must force a CPU software driver (for example Mesa llvmpipe) or simply offer OpenGL with driver selection; keep these distinct in labels because OpenGL may use the GPU. Investigate Windows availability, context creation, shader/raster parity, texture sampling, native resolutions, minimap/menu composition, screenshots, fallback, performance, and licensing/distribution before implementation. Do not report OpenGL as software rendering unless the selected context/driver is verified as software. Preserve D3D11 as the default and make the chosen renderer persistent only after the alternate path is verified.
+
+- Touchscreen minigame layout: let players change the two DS screens while a
+  stylus/touchscreen minigame is active. Offer Top over Bottom, Left/Right, and
+  Right/Left layouts. Allocate 75% of the available display area to the top
+  gameplay screen and 25% to the bottom touch screen in each layout; preserve
+  touch-coordinate mapping, aspect ratios, stylus input, and pause/menu behavior.
+  Save the selection, provide a quick in-game toggle or settings entry, and verify
+  each layout with representative touch minigames and screenshots.
+
+Touchscreen dual-screen layout implementation assessment (2026-10-16)
+
+The current presenter composes one main 256x192 screen (top during gameplay,
+bottom during pause), then optionally overlays the bottom-screen map. It captures
+the bottom screen separately but does not display both screens together during
+play. Window mouse input currently maps the whole client rectangle linearly to the
+DS 256x192 touch coordinates, so changing the screen placement without changing
+that mapping would make minigame taps land in the wrong place.
+
+A correct implementation needs a shared layout transform used by both rendering
+and touch input. It must place each 4:3 DS screen inside a 75%/25% allocation
+without distorting it, support Top/Bottom, Left/Right, and Right/Left, and use the
+same result in both D3D11 and software presentation. It also needs a reliable
+minigame-active signal so ordinary gameplay keeps its minimap/presentation. The
+video layer currently has no such scene signal; the game scene/registry layer
+contains separate dScMg* minigame scenes and is the likely place to expose one.
+
+Implementation should first trace the minigame scene lifecycle and establish the
+active-state signal, then add persisted layout selection to the native settings
+page, a shared aspect-preserving screen/touch transform, and matching automated
+checks plus screenshots for all three orientations. This crosses scene lifecycle,
+GPU/CPU composition, input mapping, and native settings; do it as one integrated
+Sol Medium milestone rather than shipping a menu choice without working layout.
+
+Development update (2026-10-16): the shared screen/touch transform, both rendering
+paths, engine swap handling, persistence, native PC Settings page7/7 and F1/L
+selection are implemented. Automated checks and a real stacked Rec Room capture
+pass. Rec Room itself needed its previously missing native profile5 and canonical
+ROM/OAM table storage; those are now connected. See
+minigame-layout-checkpoint-2026-10-16.txt for exact tested binaries and remaining
+runtime work. This feature is still under development until actual minigame
+selection/gameplay, orientations, touch, pause/return and installation are verified.
+
+VS multiplayer request (2026-10-16): add two connection choices in the game's VS
+menu: native P2P for players who own the game, and Download Play. Download Play
+launches a hosted browser build, gives the host a shareable URL (address/port
+where supported), and serves a VS-only browser client/data package from the host
+PC to up to three guests. Guests can load and play VS in their browser without
+their own native copy or ROM. The complete requested flow, technical feasibility
+milestones, and four-player acceptance checks are recorded in
+vs-multiplayer-download-play-plan-2026-10-16.txt. Status: PLANNED, not implemented.
+
+Wanted runtime update (2026-10-16): native scene366 and the shared callback
+layout are now repaired. Scripted original-menu tests enter play, accept a
+correct tap, award time, start another round and pause/resume. DS window-mask
+composition still hides the normal-play target poster and affects pause/curtain
+visuals, so do not mark minigame gameplay/layout validation complete. Actual
+touch return to Rec Room, the other layouts, software and4K checks remain.
+See wanted-native-callback-checkpoint-2026-10-16.txt. Astra Low is recommended
+for the window renderer; preview is separate from the installed F: build.
+
+Wanted pause flow update (2026-10-16): original Continue/Quit/Options buttons,
+options/OK hit areas,Play Again,and Quit to Rec Room are now VERIFIED using
+scripted native input. GPU/software/all3layouts have real screenshots; the
+window milestone checked4K. Physical controller/mouse and other minigames still
+need validation. The original sound/backlight panel is working as UI; the
+planned custom PC Settings entry is not added to Wanted by this repair.
+See wanted-pause-flow-checkpoint-2026-10-16.txt. Preview updated; F: unchanged.
+
+Wanted PC Settings rendering investigation (2026-10-16, Luna Medium): NOT
+implemented. An experimental pause hook reached the shared Display page and
+changed FPS in scripted state, but screenshots were black in Wanted's separate
+screen setup. The experimental hooks and display changes were removed to keep
+the existing pause/options flow safe. Build,50/50 CTests and6 generator checks
+pass after restore. See wanted-pc-settings-rendering-handoff-2026-10-16.txt.
+Sol Medium recommended for a targeted BG/VRAM/palette comparison before retry.
+
+Completed follow-up (2026-10-16,Sol Medium): Wanted's pause Options now opens
+PC SETTINGS / GAME OPTIONS / BACK. All seven existing PC pages are connected;
+Game Options retains Sound/Backlight. Native touch and scripted keyboard input,
+GPU/software, settings persistence,4K display,live resolution change,Back,
+Continue and Quit to Rec Room are verified.51/51 CTests,7generator checks and
+3linked-data audits pass. See wanted-pc-settings-checkpoint-2026-10-16.txt.
+Physical input and other minigames remain unverified. Preview updated;F: unchanged.
+
+OpenGL software renderer completed (2026-10-16,Sol Medium): Graphics page3/7
+now offers D3D11/OPENGL CPU with live switching/persistence. App-local Mesa
+llvmpipe is verified, including native4K geometry, scene/menu/minimap and the
+shared dual-screen tests. Runtime absence falls back to D3D11 with a visible
+message.52/52 tests,3audits,real Wanted switching/restart and Yoshi4K pass;
+installed F: build also runs OpenGL successfully. CPU4K performance is slow.
+See native-opengl-cpu-checkpoint-2026-10-16.txt for full evidence and limits.

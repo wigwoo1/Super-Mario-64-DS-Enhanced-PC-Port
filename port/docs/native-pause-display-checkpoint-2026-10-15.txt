@@ -1,0 +1,85 @@
+Mario 64 DS PC port: readable native pause display and sprite reset, 2026-10-15
+Status: PARTIALLY VERIFIED overall. The bounded original pause menu is clean,
+readable and restores gameplay presentation on resume. PC Settings integration
+into the original Options flow is still pending.
+
+What changed
+- Native pause state now selects the original bottom-screen interface as the
+  main PC view. Gameplay resumes with the top-screen/minimap layout. This uses
+  the actual game pause flag, independent of whether a minimap callback exists.
+  The existing full-window mouse-to-touch coordinates match this full viewport;
+  physical mouse interaction has not yet been exercised. F1 suppresses mouse
+  touch input while its interim host settings panel is open.
+- Paused Stage now enables menu stick-to-direction conversion; normal Stage
+  retains the separate analog gameplay path. Physical Xbox navigation and
+  confirm/back interaction still require verification.
+- Original background-only pause captures were clean (text on BG0, button
+  panels on BG1, map on BG3). OBJ trace showed about 95-97 onscreen objects
+  during the broken pause view, including leftover cutscene graphics.
+- The recovered OAM::Reset double-buffer path uses labels at buffer+8 and
+  buffer+32. The HAL had separate arrays there, so it never cleared most of
+  the live sprite buffer. Replaced them with one assembly allocation holding
+  both original 1024-byte buffers and the interior labels. All C/C++ references
+  bind to that same storage.
+- The original ARM word/block-copy primitives deliberately copy forward even
+  when buffers overlap: Reset expands one blank entry to four, then all 128.
+  Restored that behavior in the existing HAL copy helpers, including eight-word
+  loads before each block store. The original OAM source remains unchanged.
+
+Build and tests
+Release game and focused builds pass. Compiled-data audit verifies the shared
+OAM offsets plus previous input, camera, actor, callback and resource checks.
+All smoke binaries rebuild. Final CTest recheck: 28/28 passed.
+The expanded OAM smoke dirties both buffers and checks the actual two-buffer
+reset, original attr0/1 and attr2 widths, preserved affine filler halfword,
+shared labels and a separate overlapping 32-byte-block copy example.
+The initial expanded fixture incorrectly required the filler to become zero
+and allowed C++ to fold comparisons of separately declared assembly aliases.
+Corrected the fixture to the recovered reset's halfword writes, explicitly
+checked copied filler values and measured aliases through volatile addresses.
+Failed fixture logs are retained; final tests pass without altering the reset
+requirements. Existing sprite render/upload/scanout checks also remain intact.
+Stage/video tests verify pause view toggling, including a paused state with no
+minimap callback, and restoration on resume.
+
+Runtime evidence
+- Diagnostic original build: 4400 castle frames, exit 0; Start4200; capture and
+  separate background layers at actual simulation tick 4350.
+- Final build: 4800 castle frames, exit 0; Start4200 pauses, Start4500 resumes.
+  Nine samples at ticks 4230..4470 show pause/fullscreen both 1. Samples 4530,
+  4560 and 4800 show both cleared. No pause flags were forced.
+- The main paused image matches all 49152 RGB pixels of the raw bottom-screen
+  menu. Both were inspected: no cloud-like sprite patches obscure the native
+  Continue / Controller Modes / Options / Quit text or button panels.
+- Test Map regression: 1800 frames, exit 0, selected yellow coin alive, pause
+  fullscreen false. Its normal top/minimap capture was inspected.
+- build/verify-pause-display.py and pause-display-final-evidence.json preserve
+  the assertions. Final test summary is pause-display-final-ctest-recheck.log.
+  pause-layers-original* retains the diagnostic comparison and layer captures.
+
+How to check
+Run Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS. Press S once then Space
+to select castle, wait through the intro, then press Enter to pause. The
+original choices should fill the PC view with no stray cloud patches. Press
+Enter again to resume. Physical Xbox Start maps to that same DS input, but
+physical hardware has not been tested. PC choices remain in F1 for now.
+
+Next concrete work
+Exercise original Options and Back through the recovered PS_Update states.
+Then add PC Settings within that original menu flow. The plan remains
+pc-settings-menu-plan-2026-10-15.txt. Message::AddChar and the existing
+Message font/line routines provide starting points for native custom labels;
+inspect their character encoding and buffer ownership before reusing them.
+
+Recommended next model: keep Sol High for native Options/settings integration.
+No model switch or goal pause is recommended. The goal remains active.
+
+Remaining full scope
+Native PC Settings, complete actors/courses/transitions/save/audio and physical
+Xbox verification; native 4K rendering, texture content and independent high
+frame rates; final standalone packaging. Existing high-resolution output scales
+the DS framebuffer and higher host rates repeat simulation states.
+
+Checkpoint target:
+F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-15-native-pause-display
+Preserve the previous executable/map/status and changed source for rollback.

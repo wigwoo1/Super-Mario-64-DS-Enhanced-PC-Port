@@ -1,0 +1,36 @@
+Save & Quit title return -- 2026-10-17
+Status: VERIFIED locally and from the installed F: replay launcher.
+
+The original course-clear Save & Quit path calls StartSceneFade(1,0,0).
+Native profile1 (dScDSMT original menu) was registered only when the ORIGINAL_MENU
+startup option was set. Course-picker sessions therefore destroyed the stage
+and had no native scene to create; captures2700/3000/3600 were solid green.
+Save writes had already succeeded. This was a title return bug, not save loss.
+
+Fix: register existing native DSMT profile1 for every game session. Boot chooses
+its destination separately, so development course-picker startup is preserved.
+Original src/include untouched. Only port/hal/actor_vtables.cpp gameplay change.
+
+Local and installed controller replays use separate QA saves, actual player
+contact1791, collection1792, original celebration/course clear and touch of
+Save & Quit at2500:128:96. Primary save CRC and course masks checked: total6->7,
+course0mask0->2, other29 course masks unchanged. Title reloads primary file0.
+Final stage/player actors absent (DSMT is a scene, not a dActor); active 3D title
+renders and actual screenshots show Mario head,Adventure,VS,Rec Room. This
+establishes return to title, not subsequent File A re-entry or all menu flows.
+Both runs finish3800 frames,exit0; finalizer passed and actual installed title screenshots were inspected.
+
+Build passes;52/52 CTests27.46s. Strict verifier checks contact,collection,
+live and disk credit,commit,reload,stage teardown and post-quit rendering.
+8 negative checks include the actual old blank-screen failure; all reject.
+Manual screenshot inspection establishes correct title artwork; triangle counts
+alone are not treated as proof of title fidelity.
+
+Installed EXE BFDAAC31DB0915374D229A2D6C810CE2A2A2C8ADC2A010786E7F9C6F52FB7D45
+MAP461EEBED34915E66B6CAEA00F3C75C30FDEE4E0BC5B3DFF62F59323DF65605E5.
+Previous verified EXE757F74D22F0F2D2C26E6526197FAC5FA916DDA0A96B5DF236EE6D20736B2CA25
+preserved under previous-install. Watch Power Star Save and Quit Test.cmd runs
+the same labelled near-player Power Star fixture with resettable isolated saves.
+User ROM,real saves and root settings unchanged. Full port remains incomplete.
+Next bounded regression: course-clear Continue without saving. Luna Medium
+remains suitable, with no model switch currently recommended.

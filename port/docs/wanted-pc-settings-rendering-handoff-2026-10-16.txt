@@ -1,0 +1,61 @@
+Wanted PC Settings rendering investigation - 2026-10-16
+
+SUPERSEDED: Sol Medium completed this feature. See
+wanted-pc-settings-checkpoint-2026-10-16.txt for verified GPU/software/4K
+screenshots, restored original options, input fixes and the packaged build.
+The remaining text below records the earlier failed trial.
+
+Status: BLOCKED / PARTIALLY VERIFIED. The requested PC Settings entry is not
+implemented in the shipped/safe build. The existing Wanted pause and Options
+flow has been restored after the experimental integration made the PC view
+black. Do not claim the settings page is usable from Wanted.
+
+Current model: Luna Medium. Recommend Sol Medium for the next attempt. The
+remaining issue is specific to displaying the shared native settings UI in
+Wanted's separate DS engine setup; it needs focused PPU/display-layer work.
+Per the user's model-switch rule, the goal is paused for this switch.
+
+What the experiment established:
+- The existing shared settings state/menu can be reached from the Wanted pause
+  Options route using scripted stylus input.
+- State capture reached PC Settings Display page and row; changing FPS updated
+  the runtime setting from 60 to 120. This proves input/state binding only.
+- Captures showed the screen black while the PC menu state was active. Enabling
+  Wanted's touch-screen presentation did not make the UI visible.
+- The existing Stage settings renderer assumes a different BG register/setup
+  than Wanted's minigame pause overlay. It is unsafe to make more speculative
+  BG/control-register edits without first identifying the active BG0/BG1
+  character/map bases and palette state.
+- The temporary Wanted hooks, presenter changes and register experiments were
+  removed from source. Existing Wanted Options still uses the original
+  Sound/Backlight panel. The last build was rebuilt from this safe source state.
+
+Exact evidence from final rendering trial, before reverting the experiment:
+build/port/native-file-menu-original-wanted-pc-settings-layers-2650.bmp
+build/port/native-file-menu-original-wanted-pc-settings-layers-2950.bmp
+build/port/native-file-menu-original-wanted-pc-settings-layers-3250.bmp
+build/port/native-file-menu-original-wanted-pc-settings-layers-3750.bmp
+build/port/native-file-menu-original-wanted-pc-settings-layers-state.csv
+The 3250 capture is black. State CSV records Display page, row 1 and FPS 120.
+The 3750 capture is also black because the trial's scripted B inputs lacked a
+release between presses; no return-to-pause claim is made from that run.
+
+Implementation files restored to safe behavior:
+- port/hal/pc_pause_settings.cpp
+- port/hal/stage_graph_state.cpp
+- port/tools/minigame_host.py
+- port/tests/test_minigame_host.py
+
+Last safe source build: build/port/sm64ds_pc.exe, linked successfully.
+Validation after restore: 50/50 CTests passed; 6 minigame-host Python checks
+passed. F: installation remains untouched. The long-running PC-port goal is
+not complete.
+
+Recommended next step for Sol Medium: inspect Wanted's BG0CNT/BG1CNT,
+DISPCNT, BG palette and VRAM bank layout immediately before/after its pause
+overlay, then compare with the already working Stage PC Settings page. First
+produce a minimal isolated text-only BG0 diagnostic screenshot on the correct
+engine. Only then reconnect the settings input/render hooks, preserving all
+original register, palette, screen-map and character data and restoring them
+on exit. Verify Options -> PC Settings -> change a value -> Back to pause and
+capture every state. Do not install to F: until the menu is visibly verified.

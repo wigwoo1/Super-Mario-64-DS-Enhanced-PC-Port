@@ -1,0 +1,103 @@
+Minigame touch and scene-state repair, 2026-10-16
+Status: touch navigation and scene-state tests VERIFIED; actual minigame launch
+and the full PC port remain incomplete. Keep the full goal active.
+
+Final Release executable SHA256:
+58D32BE5220602A2196C0CBDF1B79197A7CB83FB83A371826E270E31AB71123C
+Matching map SHA256:
+6329E9849B41196349AF3E4B3FE7A72E04814B83B280205F1248A17FFE775D0C
+Build: build/build-native-file-menu.cmd, final build exits0.
+Preview/checkpoint: build/touch-fix-preview (exe, matching map, INI, own saves,
+Play Touch Preview.cmd and Readme.txt). The launcher uses the local workspace
+ROM and original title; F: remains the prior installed build.
+
+Repairs
+1. gTouchHeld/gTouchEdge/gTouchX/gTouchY previously occupied separate four-byte
+   minimum allocations. The original layout is four adjacent byte lanes per
+   player, with four players total. hal/touch_state.asm now supplies canonical
+   offsets0/1/2/3 and a16-byte extent; link_data.py binds every spelling there.
+2. The generated host copy of func_0203bb60 now uses the real native stylus
+   sample for local player0 and retains the wireless reader for players1..3.
+   ntr_input_touch_sample exports the original x/y/pressed halfword sample ABI.
+3. Rec Room still used cartridge fader slot5 and a six-slot stand-in class.
+   MSVC's single destructor slot shifts that call to IsAtEnd; it must call
+   IsAtStart. All six input/save/page gates now use the canonical typed native
+   fader method in the host-generated copy. Original retail source is unchanged.
+4. The failing smoke_stage_graph expected stale Stage pause flags to display a
+   pause screen while its graph was inactive. It now checks stale-pause isolation
+   for another scene/minigame and separately verifies actual active-Stage pause.
+5. Once selection started responding, SetFaders exposed an unconstructed wipe
+   singleton. The copied ROM BSS had a null vtable. A real native dWipe_c now
+   owns the canonical C symbol and all C++ aliases. A compiled layout probe
+   measured48 bytes, state offset20, type offset24, cleanup offset17; native
+   tail padding differs from the44-byte cartridge object. A compile-time size
+   assertion guards the native extent. Its constructor only initializes fields.
+
+Verification
+- Final full suite:48/48 CTests pass in14.19s, including new smoke_touch_state,
+  smoke_rec_room_touch and the corrected smoke_stage_graph.
+  Log build/minigame-touch-wipe-ctest.log.
+-14 Python hostgen tests pass; real source transformation, exact named gates,
+  idempotence and unrelated declarations are checked.
+  Log build/minigame-touch-hostgen-tests.log.
+- smoke_touch_state exercises the actual generated four-record writer, native
+  press/hold/drag/release, shared labels and independent wireless records.
+- smoke_rec_room_touch compiles the actual transformed production Back function
+  through rec_room_touch_fixture.py, not a substitute handler. A native fader
+  whose start/end answers differ catches the original wrong-slot call. It checks
+  edges, holding, bounds, inactive fade endpoint and page-transition suppression.
+  An initial attempt to link the whole scene into this isolated test pulled the
+  full game dependency graph; the fixture now extracts the exact function body.
+- Both compiled native-data audits pass on the final executable:
+  build/minigame-touch-final-data-audit.log. Touch offsets and all Rec Room
+  data bytes,32 self-pointers,48 interior labels and profile5 are checked.
+
+Actual runtime evidence
+- First touch-record-only repair passed47 tests but did not respond in Rec Room.
+  The real replay exposed the additional native fader-slot mismatch; this was
+  fixed using the canonical method, not timing changes or synthetic button actions.
+- After the gate repair: native-file-menu-original-touch-gates-navigation,
+  3200frames, exit0. Touch450:128:96 opens title,1250:224:168 opens Rec Room,
+  1850:24:110 selects Luigi,2250:232:160 activates Back. Captures1780/2080 show
+  the Yoshi-to-Luigi game-tab change;3180 shows return to the original title.
+  Layout1 is Left/Right. Images/state/logs use that prefix under build/port and
+  build. This replay preceded only the wipe-singleton construction repair.
+- Baseline Adventure regression with the touch/fader repairs:
+  native-file-menu-baseline-touch-pause-regression,4900frames, exit0. Entered
+  level1 as Yoshi, opened native PC Settings, changed minigame layout and resumed
+  gameplay. Captures4180/4500/4880. Separate workspace saves were used. This
+  replay also preceded only the wipe-singleton construction repair.
+- Selection initially crashed in dScene_c::SetFaders at RVA3ce5e because the wipe
+  singleton vtable was null. This crash is superseded by the final replay below.
+- FINAL executable: native-file-menu-original-touch-wipe-select,2700frames,
+  exit0. The same Wanted tap1850:88:60 now processes without an exception,
+  cleans up Rec Room (dual-screen active clears at1890), and requests native
+  profile366 (0x16e, MG_LUIGI/Wanted). That profile is missing; the screen remains
+  on old Rec Room artwork and no game is running. Capture1950/2680 must NOT be
+  described as successful minigame gameplay. No minigame has been played yet.
+- Scripted taps feed the same native stylus API used by mouse input, but physical
+  mouse/controller testing was not performed. Shared viewport/touch transforms
+  have automated coverage; no physical-input claim is made.
+
+Separate observed issue / next work
+- An original-menu Adventure replay, touch-gameplay-regression, crashed after
+  the scripted Start5300 arrived during St_OpeningWakeUp_Main and was ignored.
+  Later Down5400 moved Yoshi and A5440 initiated an ordinary gameplay action.
+  Exception RVAe25f1, near Vec3_Sub, at~5440. Executable SHA256 at that time:
+  84D35EB3B2BF94C5DFAD471001AD26C5305C4A589655B165236C4A051F2EEF1E.
+  No causal link to this repair has been established; preserve that replay/log
+  and compare against an earlier binary before claiming a regression or fix.
+- Next minigame milestone is actual Wanted scene profile/factory, original
+  overlay initializers, member-function callback tables and resource ownership,
+  then real gameplay/input/layout/pause/return verification. Wanted's source is
+  src/actors/dScMgLuigi_c.cpp; its callback initializer is
+  src/unnamed/ov006/__sinit_ov006_02130f64.c. Do not register a ROM factory address
+  as native code or copy its raw member-function pointers into native dispatch.
+- No installation to F: was done. Do not treat the preview as a finished port.
+- Keep Sol Medium for the next focused native-scene investigation; no model
+  switch/pause is currently recommended. Reassess if evidence warrants escalation.
+
+Scope addition during this repair
+- Native P2P VS and browser Download Play (host+3 guests, VS-only client/data
+  sent from host PC) are saved in vs-multiplayer-download-play-plan-2026-10-16.txt
+  and linked from the PC settings plan. They are PLANNED, not implemented.

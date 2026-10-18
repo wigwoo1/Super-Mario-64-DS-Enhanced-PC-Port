@@ -1,0 +1,220 @@
+//cpp
+/* daIDonketu_c -- the Chill Bully, on the ice bridge in Snowman's Land.
+ *
+ * A thin child of daOts_c, the shared Bully base in ov064: this class brings
+ * its own resources, its own run and death states, and otherwise wraps the
+ * base's common workers. ov027 is a mixed overlay (sliding-ice spawner,
+ * sliding ice, Chill Bully, Bubba, Snowman's breath); this file is only the
+ * bully. The cartridge's RTTI names the class daIDonketu_c, the debug table
+ * names it ICE_DONKETU, and the project calls the actor CHILL_BULLY. The
+ * measurement that settles the name is at the top of include/daIDonketu_c.h;
+ * the tree used to call it `ChillBully`, which is coined.
+ *
+ * Two things here will look wrong and are not:
+ *
+ *   Function order is the REVERSE of the ROM's -- the highest-address ROM
+ *   function is written first. mwccarm 2004/b56 emits one .text section per
+ *   function in reverse source order. Do not reorder. The one exception is a
+ *   destructor's D0/D1/D2 group, whose order the compiler picks
+ *   (notes/tu-reconstruction-pilot-report.md sec 3).
+ *
+ *   UpdateRunState reads its own timer as `*(u16 *)&mStateTimer`. The member
+ *   is s16 and the ROM compares unsigned (blo, not blt); the cast is what
+ *   reproduces it.
+ *
+ * Reconstruction notes -- the file stem follows the snake_case scheme in
+ * notes/tu-naming-and-swallowers.md sec 1 (tools/tu_names.py). The TU is one
+ * `complete` delinks span covering seven functions and claims .text only, so
+ * the file-table handle data_ov027_021138f4 and g_profile_ICE_DONKETU stay
+ * outside it. Two ov064 helpers it calls, func_ov064_02116110 (run) and
+ * func_ov064_0211616c (death), are unmatched daOts_c workers with no name
+ * evidence yet. ROM order of the seven, for reference:
+ *
+ *   [0] 0x021115c4  _ZN12daIDonketu_cD1Ev
+ *   [1] 0x02111618  _ZN12daIDonketu_cD0Ev
+ *   [2] 0x02111680  _ZN12daIDonketu_c14UpdateRunStateEv
+ *   [3] 0x021116f0  _ZN12daIDonketu_c16UpdateDeathStateEv
+ *   [4] 0x02111770  _ZN12daIDonketu_c8BehaviorEv
+ *   [5] 0x0211181c  _ZN12daIDonketu_c13InitResourcesEv
+ *   [6] 0x0211186c  daIDonketu_c_classInit
+ */
+
+#include "daIDonketu_c.h"
+#include "SharedFilePtr.h"
+
+/* File-scope resource handles: the ctor/dtor are the ROM's SharedFilePtr
+ * veneer pairs (func_02017acc / func_02017ab4 for the model,
+ * SharedFilePtr::Construct / SharedFilePtr_Destruct_Anim for the four
+ * animation handles), spelled through declared-only subclasses so the
+ * static initializer names the real entry points. The code reaches them
+ * through the data_ov027_021138f4 pointer table. */
+struct IDonketuModelFilePtr : SharedFilePtr {
+    u32 words[2];
+    IDonketuModelFilePtr(u32 fileID);
+    ~IDonketuModelFilePtr();
+};
+struct IDonketuAnimationFileHandle : SharedFilePtr {
+    u32 words[2];
+    IDonketuAnimationFileHandle(u32 fileID);
+    ~IDonketuAnimationFileHandle();
+};
+
+extern "C" {
+extern int data_ov027_021138f4[];
+}
+
+/* -------------------------------------------------------------------------- */
+// @symbol daIDonketu_c_classInit
+/* Reconstructed source-style name: SM64DS proves daIDonketu_c through RTTI,
+ * allocation size, vtable identity, and the ICE_DONKETU registry profile;
+ * later EAD lineage supplies classInit. Exact original spelling is not
+ * preserved. Historical alias: daIDonketu_c_Spawn.
+ *
+ * Every instruction the cartridge has here falls out of the one `new`.
+ * 0x02111870 loads 1020 = 0x3fc -- the class's own size -- into the header's
+ * leaf operator new; 0x02111880 calls dEnemyBase_c's C2; the store at
+ * 0x0211188c lays down daOts_c's vptr; the four member C1s at 0x110 / 0x174 /
+ * 0x33c / 0x370 run between the two vptr stores; the store at 0x021118bc lays
+ * down this class's vptr at &[2] because this TU defines the table. The null
+ * check is the one `new` itself emits. The implicit constructor keeps the
+ * intervening daOts_c construction inlined; declaring a constructor of our
+ * own would emit a `bl` the factory does not have. */
+extern "C" daIDonketu_c *daIDonketu_c_classInit(void)
+{
+    return new daIDonketu_c();
+}
+
+/* -------------------------------------------------------------------------- */
+// @symbol _ZN12daIDonketu_c13InitResourcesEv
+/* daIDonketu_c::InitResources -- vtable slot 0, ov027 0x0211181c.
+ *
+ * daOts_c leaves slot 0 pure virtual (the word in its vtable is a literal zero), so
+ * every one of its three children has to supply this. This one points the shared
+ * file table at its own list and then claims a star slot. */
+int daIDonketu_c::InitResources()
+{
+    mFileTable = (int)data_ov027_021138f4;
+    int r = InitResourcesCommon();
+    mStarIdx = param1 & 0xf;
+    mStarSlot = TrackStar(mStarIdx, 2);
+    return r;
+}
+
+/* -------------------------------------------------------------------------- */
+// @symbol _ZN12daIDonketu_c8BehaviorEv
+/* daIDonketu_c::Behavior -- vtable slot 6, ov027 0x02111770, and THE KEY FUNCTION
+ * of this class: the destructor is inline in the header, so the first declared
+ * non-inline virtual is what makes this TU emit the _ZTV/_ZTI/_ZTS group.
+ *
+ * daOts_c leaves slot 6 pure virtual, so each of its three children supplies its
+ * own. This one is the star-carrying one: if an invincible character killed it, it
+ * poofs, drops its star a little above itself, and marks itself for destruction;
+ * otherwise it falls through to the shared behaviour in ov064.
+ *
+ * Every call below is a real method, so the compiler mangles the names and the
+ * signatures become falsifiable -- including UntrackAndSpawnStar's `s8 &`, which is
+ * why mStarSlot is signed. See the long note on that symbol in dActor_c.h. */
+int daIDonketu_c::Behavior()
+{
+    int r = UpdateKillByInvincibleChar(mWithMeshClsn, mModelAnim, 0);
+    if (r != 0) {
+        if (r == 2) {
+            Vector3 v;
+            TriplePoofDust();
+            v.x = mPosX;
+            v.y = mPosY;
+            v.z = mPosZ;
+            v.y = v.y + 0x64000;
+            UntrackAndSpawnStar(mStarSlot, (mStarIdx | 0x40) & 0xff, v, 4);
+            MarkForDestruction();
+        }
+        return 1;
+    }
+    return BehaviorCommon();
+}
+
+/* size 0x80                                                                   */
+// @symbol _ZN12daIDonketu_c16UpdateDeathStateEv
+/* daIDonketu_c::UpdateDeathState -- vtable slot 32, daOts_c's state-4 hook. The
+ * same star drop as Behavior's kill path without the invincible-character test: by
+ * the time state 4 runs the death is already decided. */
+void daIDonketu_c::UpdateDeathState()
+{
+    int result = func_ov064_0211616c();
+    if (result == 0)
+        return;
+    TriplePoofDust();
+    Vector3 pos;
+    pos.x = mPosX;
+    pos.y = mPosY;
+    pos.z = mPosZ;
+    pos.y += 0x64000;
+    UntrackAndSpawnStar(mStarSlot, (mStarIdx | 0x40) & 0xff, pos, 4);
+}
+
+/* -------------------------------------------------------------------------- */
+// @symbol _ZN12daIDonketu_c14UpdateRunStateEv
+/* daIDonketu_c::UpdateRunState -- vtable slot 31, daOts_c's state-1 hook. The
+ * charge: hold still while the wind-up plays out over the first ten frames, then
+ * run at 0x14000. The pointer returned from the first arm is the cartridge's own
+ * shape, not a meaningful value -- r0 is simply left holding the timer address.
+ *
+ * MATCH wall: mStateTimer is s16 in dEnemyBase_c.h. A named halfword compare
+ * is signed (blt); the ROM's first arm is unsigned (blo). Keep the u16*
+ * addressing. */
+int daIDonketu_c::UpdateRunState()
+{
+    if (*(u16 *)&mStateTimer < 0xa) {
+        mHorzSpeed = 0;
+        int result = func_ov064_02116110(0x700);
+        if (result != 0)
+            return result;
+        u16 *timer = (u16 *)&mStateTimer;
+        if (*timer == 9)
+            *timer = 0;
+        return (int)timer;
+    }
+    mHorzSpeed = 0x14000;
+    u16 *timer = (u16 *)&mStateTimer;
+    u32 value = *timer;
+    if (value > 0x23) {
+        value = 0;
+        *timer = 0;
+    }
+    return value;
+}
+// @symbol _ZN12daIDonketu_cD1Ev
+// @symbol _ZN12daIDonketu_cD0Ev
+/* -------------------------------------------------------------------------- */
+/* _ZN12daIDonketu_cD0Ev 0x02111618 size 0x68 -- are NOT written here.         */
+/*                                                                            */
+/* The destructor is defined INLINE in include/daIDonketu_c.h. Written         */
+/* out-of-line here the real destructor makes mwccarm emit D0 BEFORE D1, the   */
+/* reverse of the cartridge's order, which objisolate refuses for the whole    */
+/* translation unit, and it emits a third D2 body with no ROM home. This       */
+/* entry's own pre-promotion verification block recorded both, as `ordinal     */
+/* pair(s) not in ROM order: [(0, 1)]` and an unhandled _ZN12daIDonketu_cD2Ev  */
+/* in compilerOnlyOutput. The inline definition gives the retail D1/D0 pair in */
+/* ROM order and no D2, while Behavior -- declared out-of-line and first in    */
+/* the class body -- keeps this TU as the class's key-function TU, so it still */
+/* owns the complete _ZTV/_ZTI/_ZTS group declared in this entry's             */
+/* compiler_only_output.                                                      */
+/*                                                                            */
+/* TWO vptr stores and four member destructor calls come out of that one empty */
+/* body: its own vptr, then daOts_c's -- inlined, because that destructor is   */
+/* defined in its class body -- then dExtShadowModel_c 0x370, dCcAc_c 0x33c,         */
+/* dBgCh_Actr 0x174 and ModelAnim 0x110 in reverse declaration order, then     */
+/* dEnemyBase_c. daIDonketu_c adds no member with a destructor of its own,     */
+/* only two bytes. D0 is that plus the inherited inline `operator delete`;     */
+/* slot 17 is the deleting variant. Byte-for-byte the same shape as            */
+/* daDonketu_c's and daBDonketu_c's, which is what three siblings sharing a    */
+/* base look like.                                                             */
+/* -------------------------------------------------------------------------- */
+
+/* The Chill Bully's model and animation handles, in the sinit call order the
+ * data_ov027_021138f4 file table repeats. */
+IDonketuModelFilePtr data_ov027_02113c10(0x2e4);
+IDonketuAnimationFileHandle data_ov027_02113c18(0x2e5);
+IDonketuAnimationFileHandle data_ov027_02113c08(0x2e6);
+IDonketuAnimationFileHandle data_ov027_02113c20(0x2e7);
+IDonketuAnimationFileHandle data_ov027_02113c28(0x2e8);

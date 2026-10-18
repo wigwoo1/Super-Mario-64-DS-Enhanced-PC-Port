@@ -1,0 +1,68 @@
+Mario 64 DS PC port: processed controller records, 2026-10-15
+Status: VERIFIED for native partial/full analog walking and release in the
+bounded castle replays. PARTIALLY VERIFIED overall; complete gameplay and a
+physical Xbox controller remain unverified. Goal stays active; keep Sol High.
+
+Cause and repair
+- The original processed input has four 24-byte records. Independently allocated
+  native halfword/byte labels had four-byte padding between them. CheckInput
+  wrote the correct record offsets, but some player readers used displaced
+  labels. Pressed buttons read stick strength; strength read the Y axis.
+- Added one canonical 96-byte assembly allocation with all 12 original labels.
+  Native link-data generation binds every reader/writer to that storage.
+  The original retail source and gameplay rules are unchanged.
+- Added a fixture compiling the production CheckInput writer against the real
+  controller storage and stick normalization. It checks all four key lanes,
+  signed/partial/full/neutral input, release, intro gating and phantom presses.
+  The executable audit independently checks every interior address and extent.
+- Added opt-in state names, player motion/control diagnostics and actual reader
+  values to CSV capture. No diagnostic inputs are enabled in normal play.
+
+Build and tests
+- Release executable builds. All 31 CTest checks pass (30.41 seconds), including
+  the new controller test and previous shadows, native4K, input, minimap and menu
+  checks. The compiled native-data audit passes.
+- Before repair, a late X20000 replay triggered SideFlip without requested jump.
+  The original native map proves pressed/magnitude labels were displaced.
+- After repair, separate 6000-tick partial X20000 and full X32767 castle replays
+  both exit0 at native3840x2160 on the RTX5070. Reader strength equals writer
+  strength throughout. No held/pressed bits or flip states occur after4980.
+- Both runs enter the actual St_Walk_Main state and change world position.
+  Same flat-ground ticks5040/5050/5060 give median speed20852 vs122880 in game
+  units. Magnitudes1989 vs4096 preserve gradual stick input. Full travel later
+  reaches sloped ground; no claim of a constant full-route speed ratio is made.
+- Release at5120 returns both runs to Wait with zero speed and stable position
+  by5400 through5900. Five actual4K screenshots per run were captured; walking
+  screenshots were inspected and shown, with Mario and translucent shadows clear.
+- The first fixture observation failed because MSVC assumes distinct extern
+  arrays cannot alias. Runtime noinline address/volatile byte observations fix
+  that test assumption; map addresses and production block were already correct.
+  Initial failed fixture logs are retained alongside passing final results.
+
+Evidence and checking
+- build/verify-controller-records.py, controller-evidence.json, controller-*.log,
+  controller-layout-before.map, and build/port/controller-*-state.csv and PNGs.
+- In the installed game, use a gentle left-stick tilt and then full travel;
+  Mario should move without spontaneous flips and stop when released.
+- Enter pauses, W/S navigates, Space confirms, LeftShift returns. Open Options,
+  PC Settings, then return and resume. Physical controller operation still needs
+  a user check; replay inputs use the same normalization/CheckInput path.
+- Shadow repair remains included. Previous checkpoint documentation is retained.
+  All courses, full gameplay/audio/save, texture modes/art, independent120/240FPS
+  and final standalone packaging remain unfinished. Keep Sol High for further
+  core gameplay investigation; no model-switch or goal pause is recommended.
+
+Installed-folder verification
+- Installed on F: with SHA256-verified copies and previous executable/source
+  backups in native-checkpoint-2026-10-15-controller-records. User settings
+  were preserved. Installed executable SHA256:
+  D68F806A320870372BE57D198619E80AB6979E7F8694901008291786C231AFA8
+- A separate installed4800-tick castle run exits0 at the preserved default
+  1280x720, opens Options/PC Settings and resumes. All paused position samples
+  stay fixed. Installed executable/map pass the native-data audit.
+- Both menu captures match an independent bilinear RGB scaling reference over
+  2764800 channel samples each, maximum error1.414/255 including GPU sampler
+  rounding. Gameplay returns at4650 with665 triangles; screenshots inspected.
+- The first menu verifier assumed pixel-crisp scaling, while installed defaults
+  are smooth. Its retained failure was corrected to test the actual saved mode;
+  no game renderer/input change was made to satisfy that assertion.

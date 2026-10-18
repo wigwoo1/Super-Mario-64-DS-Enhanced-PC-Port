@@ -1,0 +1,80 @@
+VS multiplayer and browser Download Play
+Requested 2026-10-16. Status: PLANNED; networking/browser play is not implemented.
+This extends the full native PC port goal. Keep the existing VS game rules and
+support a host plus up to three other players, for four players total.
+
+Connection path 1: native peer-to-peer VS
+- People with their own game/PC port can host or join a VS session.
+- Put Host/Join, connection details, player slots, ready state, and Start in the
+  game's own VS menu. Preserve original VS courses, character rules, items,
+  scoring, match results, and return-to-lobby behavior.
+- Use a shared network protocol and version/asset compatibility checks. Determine
+  which original wireless game state needs replacing; preserve separate local
+  player input, camera, render, save, and session state.
+- Verify two, three, and four actual native players over LAN and remote networks.
+
+Connection path 2: Download Play from the VS menu
+- Add a second connection choice named Download Play.
+- Choosing to host starts a service on the host PC, launches a browser build for
+  the host, and displays a shareable URL. Support an address-and-port form where
+  the network permits it, and explain how to join in ordinary language.
+- The host sends that URL to up to three guests. Opening it downloads the browser
+  client and the necessary VS data from the host PC, loads the game, and joins
+  the same VS lobby in the guest's browser window.
+- Guests do not need their own native installation, ROM, preinstalled game data,
+  or browser plugin. Loading, download progress, connection errors, controller
+  selection, ready state, and match launch must be usable within the browser.
+- Send only the code and assets needed for VS. Inventory VS courses, characters,
+  objects, animations, UI, fonts, audio, and dependencies. Build a dedicated
+  manifest/package from the host's supplied assets; do not transfer the full ROM
+  or unrelated Adventure/minigame content as a shortcut.
+- The host is player one; opening its browser must not reserve a duplicate player
+  slot. Tie the service/lobby lifetime to the visible hosting session and provide
+  Stop Hosting. Keep the guest count capped at three.
+
+Ordered implementation milestones
+1. Recover the original VS scene/session lifecycle and wireless responsibilities.
+   Identify match state, player ownership, shared RNG/timing, actor synchronization,
+   course loading, and game rules. Establish a playable local VS baseline first.
+2. Define and test the common multiplayer protocol. Compare an authoritative host
+   with lockstep/snapshot/rollback approaches against the actual game loop. Choose
+   from measured correctness and latency rather than guessing from the DS APIs.
+3. Implement native host/join, lobbies, player ownership, and complete matches.
+   Verify independent controls/cameras, synchronized results, and disconnects.
+4. Create a browser build from this port's game code. Audit the native x86 pointer
+   assumptions, fibers, platform APIs, rendering, audio, filesystem, and input for
+   a WebAssembly/browser runtime. Investigate a browser graphics backend and
+   workers, secure contexts, certificates, and cross-origin isolation requirements.
+   A browser build that only displays a menu is not completion.
+5. Produce the VS-only data manifest and measure download size. Check completeness
+   from a clean browser with no game files, and verify unrelated data is excluded.
+6. Add the host service and Download Play flow. Evaluate browser-compatible
+   transports such as WebSocket/WebRTC, including native interoperability,
+   signaling, port reachability, NAT, relay fallback, and HTTPS constraints.
+   An IP:port link must be tested for the advertised LAN/remote use; do not promise
+   that a private/local address will reach arbitrary internet guests.
+7. Connect host and three guest browser clients to the real VS runtime. Share
+   gameplay protocol/rules with native VS where practical. Verify keyboard and
+   Xbox-compatible gamepad input, focus, audio activation, layout, and performance.
+8. Finish native VS menu integration and packaging. Serve only the session's
+   intended client/assets through a constrained manifest; protect filesystem
+   paths, use room/session tokens, and stop serving when hosting ends. Keep
+   downloads/session data separate from the player's Adventure saves.
+
+Acceptance evidence
+- Two-, three-, and four-player complete VS matches, including host + three clean
+  guest browsers with no native copy, with real input, synchronized scores/results,
+  screenshots, and measured session/download behavior.
+- Real LAN and remote joining through the displayed URLs; document any required
+  reachability setup or supported relay option with actionable UI feedback.
+- Clean browser first load, correct VS-only asset coverage, session capacity,
+  refresh/rejoin behavior, latency/jitter/packet-loss handling, guest drop, host
+  shutdown, return to lobby, and safe save separation.
+- Native owner-to-owner P2P remains a separate working connection choice.
+- No networking/browser milestone is complete on the basis of a mock lobby,
+  synthetic single-process clients, or a full-ROM download disguised as VS data.
+
+Model planning: keep small UI/documentation tasks separate from protocol design,
+browser-runtime adaptation, and original VS reverse engineering. Reassess model
+choice from the evidence when those milestones begin. No model switch is needed
+just to record this requested plan; the active touch-input repair continues.

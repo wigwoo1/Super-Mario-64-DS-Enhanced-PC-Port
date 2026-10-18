@@ -1,0 +1,57 @@
+#include "types.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include <stdio.h>
+#include <stdlib.h>
+#define PC_GFX_TRACE(label) do { \
+    const char *trace = getenv("SM64DS_PC_TRACE"); \
+    if (trace && trace[0] && trace[0] != '0') { \
+        fprintf(stderr, "[sm64ds] gfx init: %s\\n", label); \
+        fflush(stderr); \
+    } \
+} while (0)
+#else
+#define PC_GFX_TRACE(label) ((void)0)
+#endif
+extern int data_0209d4a8;
+extern int data_0209d4ac;
+extern int data_0209d4b0;
+
+extern void func_0203bd24(void);
+extern int func_02053be0(int enable);
+extern void func_02054430(int a);
+extern void MultiStore32Bytes(unsigned val, int *dst, int len);
+extern void func_02053f58(void);
+extern void func_0200f4f4(void);
+extern void func_0200f46c(void);
+
+void func_02019440(void)
+{
+    volatile int b;
+    volatile int a;
+    volatile int c;
+    PC_GFX_TRACE("begin");
+    func_0203bd24();
+    *(volatile u16 *)0x4000304 = (*(volatile u16 *)0x4000304 & 0xfffffdf1) | 0x20e;
+    func_02053be0(1);
+    PC_GFX_TRACE("3D power enabled");
+    func_02054430(0x1ff);
+    PC_GFX_TRACE("VRAM banks assigned");
+    a = 0;
+    MultiStore32Bytes(a, (int *)0x6800000, 0xa4000);
+    PC_GFX_TRACE("texture VRAM cleared");
+    func_02053f58();
+    PC_GFX_TRACE("GX buffers initialized");
+    b = 0xc0;
+    MultiStore32Bytes(b, (int *)0x7000000, 0x400);
+    PC_GFX_TRACE("OAM cleared");
+    c = 0;
+    MultiStore32Bytes(c, (int *)0x5000000, 0x400);
+    PC_GFX_TRACE("palettes cleared");
+    data_0209d4a8 = 0;
+    data_0209d4ac = 0;
+    data_0209d4b0 = 0;
+    func_0200f4f4();
+    PC_GFX_TRACE("3D graphics initialized");
+    func_0200f46c();
+    PC_GFX_TRACE("complete");
+}

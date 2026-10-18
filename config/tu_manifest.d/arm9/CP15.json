@@ -1,0 +1,89 @@
+{
+  "id": "arm9/CP15",
+  "module": "arm9",
+  "source": "src/engine/cp15/CP15.cpp",
+  "promoted_source": "src/engine/cp15/CP15.cpp",
+  "status": "promoted",
+  "boundary_confidence": "high",
+  "boundary_evidence": "Contiguous .text span 0x02058bb0..0x02058c84: seven functions tile the span exactly with no hole and no tail (recomputed from config/arm9/symbols.txt), and every one carries the _ZN4CP15* label -- the coprocessor-15 cache primitives: whole-cache FlushDataCache/FlushAndInvalidateDataCache, the four range ops over an MVA window (InvalidateDataCache, FlushDataCache, FlushAndInvalidateDataCache, InvalidateInstructionCache), and DrainWriteBuffer. Both neighbours are unlabeled free functions: func_02058b9c ends at 0x02058bb0 below and func_02058c84 begins at 0x02058c84 above, so the boundary is a class change on both edges. The remaining CP15 members live in the 0x020593a8 band and are deliberately out of scope -- the linker places one object's .text contiguously, so this run is its own TU.",
+  "sections": [
+    {
+      "name": ".text",
+      "start": "0x02058bb0",
+      "end": "0x02058c84"
+    }
+  ],
+  "functions": [
+    {
+      "symbol": "_ZN4CP1514FlushDataCacheEv",
+      "address": "0x02058bb0",
+      "size": "0x2c",
+      "ordinal": 0,
+      "legacy_source": "src/_ZN4CP1514FlushDataCacheEv.cpp"
+    },
+    {
+      "symbol": "_ZN4CP1527FlushAndInvalidateDataCacheEv",
+      "address": "0x02058bdc",
+      "size": "0x2c",
+      "ordinal": 1,
+      "legacy_source": "src/_ZN4CP1527FlushAndInvalidateDataCacheEv.cpp"
+    },
+    {
+      "symbol": "_ZN4CP1519InvalidateDataCacheEjj",
+      "address": "0x02058c08",
+      "size": "0x1c",
+      "ordinal": 2,
+      "legacy_source": "src/_ZN4CP1519InvalidateDataCacheEjj.cpp"
+    },
+    {
+      "symbol": "_ZN4CP1514FlushDataCacheEjj",
+      "address": "0x02058c24",
+      "size": "0x1c",
+      "ordinal": 3,
+      "legacy_source": "src/_ZN4CP1514FlushDataCacheEjj.cpp"
+    },
+    {
+      "symbol": "_ZN4CP1527FlushAndInvalidateDataCacheEjj",
+      "address": "0x02058c40",
+      "size": "0x1c",
+      "ordinal": 4,
+      "legacy_source": "src/_ZN4CP1527FlushAndInvalidateDataCacheEjj.cpp"
+    },
+    {
+      "symbol": "_ZN4CP1516DrainWriteBufferEv",
+      "address": "0x02058c5c",
+      "size": "0xc",
+      "ordinal": 5,
+      "legacy_source": "src/_ZN4CP1516DrainWriteBufferEv.cpp"
+    },
+    {
+      "symbol": "_ZN4CP1526InvalidateInstructionCacheEjj",
+      "address": "0x02058c68",
+      "size": "0x1c",
+      "ordinal": 6,
+      "legacy_source": "src/_ZN4CP1526InvalidateInstructionCacheEjj.cpp"
+    }
+  ],
+  "verification": {
+    "round": "tools/tubuild.py verify -- text-only, whole shadow TU compiled once",
+    "toolchain": "tools/mwccarm/2004/b56/mwccarm.exe",
+    "flags": "-O4,p -enum int -lang c++ -char signed -interworking -proc arm946e -gccext,on -msgstyle gcc -Cpp_exceptions off",
+    "object": "build/tu/arm9-CP15/CP15.o (gitignored)",
+    "comparison": "tools/match.py extract_func+compare (bytes/relocs) AND tools/objisolate.py plan() (relocation type/addend) AND tools/reloc_audit.py check_destinations() (relocation target identity)",
+    "functions_matched": 7,
+    "functions_declared": 7,
+    "compilerOnlyOutput": {
+      "requested": [],
+      "deadstripped": [],
+      "data": [],
+      "dataExternalized": []
+    },
+    "criteria": {
+      "every_declared_function_defined": "PASS",
+      "every_declared_function_bytes_match": "PASS",
+      "declared_function_set_equals_defined_function_set": "PASS",
+      "functions_occur_in_expected_order": "PASS",
+      "relocation_destinations_verified": "PASS"
+    }
+  }
+}

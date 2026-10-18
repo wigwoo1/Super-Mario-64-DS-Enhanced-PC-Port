@@ -1,0 +1,51 @@
+Native PC save storage
+
+Game progress is stored in saves beside sm64ds_pc.exe. FILE 1 uses slot1.sav,
+FILE 2 slot2.sav, FILE 3 slot3.sav; minigames.sav is shared. The current PC
+course picker loads FILE 1. A full file-selection/copy/erase interface remains
+required. SM64DS_PC_SAVE_DIRECTORY redirects storage for isolated QA; it is
+unset during normal play. The original ROM remains read-only.
+
+These are native PC records, not raw DS/emulator backup images. Do not rename
+an emulator .sav into this folder. A future importer must validate and translate
+the original primary/mirror records explicitly before claiming compatibility.
+
+Format: all integer fields are little endian, followed by the exact original
+payload (0x44 bytes for each game file; 0x2e4 for minigames).
+  byte0..7: ASCII SM64PC01 (format version1)
+  byte8..11: cartridge slot0..3 (human FILE 1 maps to0, minigames maps to3)
+  byte12..15: payload length
+  byte16..19: CRC32, polynomial0xedb88320, initial/final xor0xffffffff;
+              covers entire header+payload with these four CRC bytes zero
+  byte20..23: reserved zero
+Payload magic is 8000 for game files and5000 for minigames. Current-character
+values0..3 are accepted. Wrong sizes, identity, CRC, magic or character are
+rejected. Header/CRC integrity checks are not a cryptographic security claim.
+
+Writes use a per-file Windows exclusive handle on .lock, write a complete .tmp,
+flush it, close/read/validate it, then atomically move/replace the primary.
+Normal replacement keeps the previous valid primary in .bak. If primary is
+invalid but backup is valid, reads recover from backup without changing disk;
+a later save repairs primary while retaining that valid backup. If neither
+existing copy is recoverable, writing refuses to overwrite it. Missing files
+use original game defaults. Windows releases locks after a process ends; empty
+.lock filenames may remain. They are not proof that a game is still running.
+
+Read convention:0=valid payload,1=I/O/invalid/busy,2=no primary or backup.
+Write convention:0=committed,1=failed. The original SaveData wrappers retain
+their inverted1=success result. SaveCurrentFile stores game and minigame records
+sequentially, as the original source does; they are not a cross-file atomic
+transaction. Backup is the previous save, not a separate full save history.
+
+Startup stages both file/minigame reads before changing live data, applies the
+original minigame mask, sets active slot0 and copies the saved character to
+spawn selection. Errors cancel course launch and preserve files/live state.
+Existing valid in-memory progress is not reloaded/reset between courses.
+
+Native pause Options -> PC Settings page5 offers SAVE CURRENT FILE. Its
+own font/button renderer reports PROGRESS SAVED or SAVE FAILED - TRY AGAIN;
+holding A cannot repeat writes. This saves the game's original progress flags,
+records and character, not the exact player position or an emulator save-state.
+Generated adaptations of the original star/quit save dialogs also avoid their
+success/quit path when writing fails. Their complete course gameplay remains
+separate verification work. Retail src files are unchanged.

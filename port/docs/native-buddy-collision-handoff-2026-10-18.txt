@@ -1,0 +1,71 @@
+Native Bob-omb Buddy / cannon shutter diagnostic handoff - 2026-10-18
+Status: PARTIALLY VERIFIED; NOT PROMOTED. Goal paused for recommended Sol High.
+Current user-selected model: Sol Medium. Original ROM/user saves preserved.
+
+Implemented in PC adaptations only:
+- Original Bob-omb Buddy actor181, profile ROM ov084:02130a14: priorities181/46,
+  flags3, ranges0x40000/0x80000/0x1000000/0x1000000. Three original enter/update
+  pairs now use typed native wrappers with16-byte state stride.
+- Two canonical8-byte model/animation handles, constructed after file registry.
+- Original cannon shutter actor14/profile from recovered source and exact ROM
+  ov002:02109d14; model0x45f and KCL0x460 handles deferred until registry ready.
+- Host header removes redundant pad_31e: MSVC cannot reuse base tail padding.
+  Layouts verified: Buddy1f0,state1e4; shutter330,home320,opening32c;
+  dBgW_Kc50, dBgW_KcMbg1c8,mat54,invScaledMat168,actor collider124.
+- IsCannonOpenInCurLevel's generated PC wrapper explicitly returns its result;
+  recovered source declares void although callers consume an int.
+- New read-only SM64DS_PC_BUDDY_CAPTURE, plus opt-in MOVING_TRACE diagnostics.
+  TEST_NO_SHUTTER=1 suppresses only profile14 when AUTOMATION_ONLY=1. Normal
+  candidate startup currently enables shutters and therefore HAS THE REGRESSION.
+- Unchanged original cartridge src/include. Source C: remains authoritative.
+
+Verification:
+Release sm64ds_pc/all builds.52/52 CTests pass27.12s; five Buddy adapter tests
+pass; native profile/callback/resource data audit and standalone layout compile
+pass. However runtime acceptance FAILS with shutters: Yoshi floats hundreds of
+units above ground, repeatedly landing/falling, preventing Buddy contact.
+Two pink Buddies render, original first-course Buddy tutorial appears; actual
+Buddy conversation and cannon opening are NOT verified. Cannon207 not enrolled.
+
+Focused investigation/evidence:
+1) Read-only sphere/ground tracing added to native moving collider workers.
+   No moving ground/sphere trace hits were emitted in the bad route.
+2) Controlled same-route comparison with only shutters disabled:
+   native-buddy-ground-trace-20261018: exit0, ticks3600..4700 Yoshi y397.75..655.5.
+   native-buddy-no-shutter-20261018: exit0, same interval Yoshi y0 throughout;
+   both native Buddies render; first Buddy has player contact flags0x08400008.
+   Talk remains idle because this route did not press A during contact.
+   build/check-buddy-isolation.py and buddy-isolation-results.json verify this.
+Final read-only dispatch capture native-buddy-dispatch-20261018 exits0 at6500,
+reaches original menu/castle/mission1/Battlefield; same floating regression.
+Live collider vptr00295238 matches native MSVC table00545238 with ASLR delta
+-0x2b0000. Slots5/6/7 map to actual Mbg sphere/line/ground, not old synthetic
+base table. First captured collider is disabled(slot24), scale409; mat and
+inverse translations logged. No native moving ground/sphere hits recorded.
+Need trace actual collision registry and Player position/floor updates; do not
+assume vtable, class layout, or a floor hit was proved wrong.
+
+Test harness cautions:
+- Use build/replay-buddy-dispatch.ps1 (original A4200/4400/4600... schedule).
+- Earlier replay-buddy-vtable.ps1 uses A3000 too early: it makes Yoshi dive
+  during lobby movement and stalls. INVALID course/dispatch test, exit0 only.
+- replay-buddy-instance.ps1 with ORIGINAL_MENU=0 starts castle exterior, not
+  Battlefield. INVALID moving-collider test; no fixture bypass was added.
+- The successful isolation ground/no-shutter cases used the shorter A3000
+  schedule and happened to enter the course before it; retained actual traces
+  prove their comparison, but prefer the established later schedule next.
+- Test saves are copies of the zero-star rabbit-earned key save; all isolated.
+
+Latest diagnostic EXE SHA256:
+896837105ADE7D23473821B245712123510F676D345575C487101720EBF75CCD
+F: installed executable remains previous VERIFIED build:
+9C6CEE49C75876977FC361F331AEBBBAAAED5DD46A955A202BE3F88DFF7A1B1A
+No candidate executable or shortcut promoted. Continue normal Play for existing
+verified gameplay. Diagnostic checkpoint is evidence only, not a playable release.
+
+MODEL UPGRADE RECOMMENDED: Sol Medium -> Sol High. Reason: the new actor exposes
+an unexplained native collision/position regression after two focused diagnostic
+branches; continuing speculative changes would risk working movement. Next:
+trace first wrong Player Y/floor update with shutters enabled versus disabled,
+repair the proven cause, then verify Buddy A conversation, cannon cutscene,
+control return and first-course regression before promotion. Full goal unfinished.

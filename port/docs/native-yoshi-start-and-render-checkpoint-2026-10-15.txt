@@ -1,0 +1,94 @@
+Mario 64 DS PC port: correct Yoshi startup and model rendering, 2026-10-15
+Status: VERIFIED for new-game character selection and the tested head-transform,
+walking and texture-exclusion paths. Complete port remains unfinished.
+Goal stays active. Keep Sol High for remaining gameplay/renderer source work.
+
+Correction to earlier reports
+The user correctly identified that the opening should show Yoshi. Earlier Mario
+screenshots verified matching pixels and particular rendering regressions, but
+missed that the wrong character was selected. They did not establish faithful
+starting-character behavior. The new checks inspect character/model IDs as well
+as actual gameplay images.
+
+What changed
+- PC course picker bypassed file selection/StartFile. The live save block was
+  zero and selected-character slot was zero (Mario), rather than the original
+  new-file Yoshi default3. A PC-only generated title adaptation now initializes
+  only a pristine live file block through retail SaveData::SetDefaultValues and
+  copies the valid current character into the level-start slot. All four valid
+  existing character choices/progress remain intact; nonempty invalid data is
+  not silently reset. Complete file-select/disk save/load remains future work.
+- Diagnostic CSV appends saved/selected/actor/body/hat character values without
+  changing existing columns. Actual fresh startup logs all-zero state before
+  defaults, character3 afterwards, packed spawn0x1b, active player/model3.
+- Yoshi then exposed a missing-head/pose issue. The recovered Model::Render C
+  bridge incorrectly used virtual dispatch, rerunning ModelAnim::UpdateVerts
+  after the player had prepared its special head/bone transforms. It now calls
+  self->Model::Render explicitly, matching the direct named retail call.
+  Original and corrected captures use identical player/camera state; the new
+  head region regains56360 green pixels (79202 total changed RGB pixels).
+  Before bytecode ff5014 dispatched slot5; new e8 targets the base renderer.
+- Continued the authorized shared-texture milestone with a per-draw consumer
+  scope. Character draws retain original art. Explicit Object scopes may promote
+  nine source-reviewed shared coin/cap models from Unknown for that draw only.
+  File roles stay unchanged. Unclassified callers/models stay conservative and
+  Object cannot override known Character assets. Nested scopes/early returns
+  restore caller context. GPU guard and role-separated caches remain in use.
+- PC-generated Player/Coin render scopes are native-linked. Four exact source
+  transforms also cover daTrs enemy-disguise and detached cap draws when those
+  actors join the native closure; their gameplay is not exercised here.
+- Retail src and original textures are unchanged. Native title/Player copies are
+  generated in build; PC HAL/renderer bridges carry the adaptations.
+
+Build and tests
+- Release/default builds succeed;36/36 CTest pass (16.78s final run). New session
+  test uses the actual retail default routine, checks fresh Yoshi, all four valid
+  saved characters, progress preservation and invalid nonempty-state safety.
+  Expanded texture tests cover nine shared paths, nested Character/Object draws,
+  no unknown promotion, known-character exclusion and native GPU metadata.
+- Native-data audit passes. Consumer audit verifies nine resource constructors,
+  six coin-table slots decoded from the user ROM, four strict source transforms
+  and linked native Player/Coin wrappers. Bridge byte audit passes final build
+  and rejects the old virtual-dispatch executable.
+- Fresh-state diagnostic4200-tick runs establish the initialization cause and
+  original missing-head capture. After the base-render correction, final4200-
+  tick Original and private-fixture native3840x2160 runs exit0. Three matching
+  cyan4K Yoshi PNGs are rejected, all source texels remain original, only the
+  diagnostic grass replacement uploads. Matched Yoshi/road ROI and bottom RGB
+  agree across modes. Screenshots inspected/shown; no production AI art exists.
+- Final6000-tick native4K stick replay exits0: actual Yoshi enters St_Walk_Main,
+  moves under partial stick input without phantom buttons, and returns to zero-
+  speed St_Wait_Main with fixed position after release. Head stays attached in
+  inspected walking/standing screenshots. Physical Xbox remains untested.
+-1800-tick native TestMap shared-coin diagnostic exits0, shows Object consumer/
+  effective role for archive coin5 and uploads its matching4K replacement once.
+  This establishes draw/load behavior, not complete enemy/cap gameplay coverage.
+- Initial new-test build setup failures (early CMake root variable and missing
+  unrelated cartridge-I/O link stubs) were repaired; failed logs are retained.
+  No repeated speculative gameplay repair was made. Logs are gzip-compressed
+  in the checkpoint; raw originals remain in the working build directory.
+
+How to check
+Launch F:\AI Games\Mario 64 DS\sm64ds_pc.exe and choose Castle. The opening
+now uses Yoshi, with a Yoshi minimap icon and attached head during movement.
+Enter opens pause; Options -> PC Settings -> Display retains resolution/texture
+choices. No diagnostic textures are installed. Upscaled still says NO PACK.
+
+Remaining required work
+Full file selection/save-load, character/actor/course/animation coverage, remaining
+34 base Unknown model roles and selected/animated variants, complete AI4K level/
+object art with no characters, independent120/240FPS, audio, physical input and
+standalone packaging remain unfinished. Shared-consumer pack inventory still
+needs expansion; source-reviewed transforms are not full runtime coverage.
+Next model: Sol High. Keep this model for the remaining source-level gameplay
+and rendering uncertainty; no switch/pause is recommended.
+
+Executable SHA256:
+8822ECA2C0A6B343D80E18DE1F494491AFE0BAFA9C17B2D972EC0095AC16647C
+
+Installed verification: the executable in F:\AI Games\Mario 64 DS completed
+4200 Castle ticks and exited0 at1280x720. Saved character, selected character
+and active body model all remain Yoshi3. Installed screenshot inspected: head
+and Yoshi minimap icon are correct. Native-data/direct-render bridge audits and
+ROM hashes pass; installed executable matches the SHA256 above. User INI absence
+was preserved. This verifies this correction, not completion of the full port.

@@ -1,0 +1,65 @@
+SUPERSEDED: Core Goomba integration is now installed and partially verified.
+Read native-goomba-checkpoint-2026-10-16.txt for current hashes, evidence,
+remaining Yoshi interaction investigation and Astra Low handoff.
+The following is the original pre-integration diagnosis, retained for context.
+
+Next milestone: native Goomba integration - 2026-10-16
+Status: DIAGNOSED / NOT IMPLEMENTED. Current installed analog build is preserved.
+Model switch recommendation: Sol Medium -> Sol High, before integration.
+
+Evidence
+- port/hal/actor_vtables.cpp pc_actor_spawn_table_init registers Player191,
+  coins288/289/290, camera332 and a small set of scene/door/demo actors.
+  Goomba profile IDs200/201/202 are absent.
+- Bob-omb course6 replay initially has79actors, then69stable:60yellowcoins,
+  8redcoins and Yoshi. The runtime does not establish working native enemies.
+- Recovered full Goomba source: src/actors/daKrb_c.cpp, include/daKrb_c.h.
+  Class daKrb_c derives from dCapEnemy_c. Three factories:
+  daKrb_c_classInit_KURIBO (200), _KURIBO_S (201), _KURIBO_L (202).
+  Source includes original profile metadata near the factories at end of TU.
+- Source StateHandler is void (daKrb_c::*)(); data_ov084_02130d74[5] is a
+  DS-owned callback table. Behavior dispatches this table. Four handlers
+  target free stubs via KrbFreeHandler. DS member descriptors occupy8bytes;
+  current Windows native member-pointer layout differs. Preserve original
+  storage strides through port-only typed/adapted records, as with Wanted,
+  DOOR, Lakitu and Player. Do not simply copy cartridge function addresses.
+- Overlay84 is mixed (Bob-omb Buddy / Goomba / Piranha), so do not blindly run
+  its full initializer before auditing all referenced resource/state tables.
+  Goomba's BMD handle02130cf8; animation table02130278[7]; other per-type and
+  resource handles documented in the source header. Init routine is
+  __sinit_ov084_0213035c. Inspect its source before selecting initialization.
+
+Next actions for Sol High
+1. Derive the exact three native profiles from local overlay84 metadata.
+2. Enroll factories/callback workers in boot_closure; keep original src/include
+   unchanged. Use port host transforms/canonical data and existing bridge tools.
+3. Audit dCapEnemy/dEnemyBase inheritance, native layouts, resource constructors,
+   five state callback records and global/alias ownership. Only implement paths
+   supported by recovered source/local ROM evidence.
+4. Build and run focused tests plus full CTest/native-data audits.
+5. Replay course6 using the isolated intro-complete fixture and course picker.
+   Verify actual Goombas spawn/render/move; add telemetry as needed. Then test
+   contact/stomp/Yoshi swallowing/egg through real actions, not fabricated state.
+   Show screenshots for every meaningful game test. Stop after two distinct
+   focused failed fixes to the same blocking issue, then report escalation.
+6. Install verified changes to F: with rollback; preserve saves/settings/ROM.
+
+Known-good baseline
+EXE SHA256 2A3F2A05ACF44AFD419BC2E41C6162FA9B723DDF70AEB1D15B7D2DBFDA6AFB07
+MAP SHA256 07F90AB4399BA59A6B7F07010DB57CED6A68C1B7424820230650668043D79F19
+Installed F:/AI Games/Mario 64 DS and build/wanted-callback-preview match.
+See port/docs/native-analog-range-checkpoint-2026-10-16.txt.
+Current build52/52tests; small and tiny diagonal native movement replays3000frames
+exit0,release-to-idle verified. Tutorial-message and empty Yoshi attack repaired.
+No new code/build/runtime changes made during this diagnosis turn; no failed
+Goomba fix attempts yet. All previous test processes terminal. Full goal incomplete.
+
+Reproduction helper
+build/run-native-file-menu.ps1 -Mode baseline with six Down pulses at
+300,320,340,360,380,400 (mask80 hexadecimal), AutoConfirmPoll450 selects course6.
+Use a COPY of build/native-file-menu-seeded-runtime/saves in a fresh QA directory:
+fixture has introduction-complete flag, plus seeded star/coin records (not earned).
+Fresh defaults trigger castle intro in the development course picker, even when
+selecting other courses, so that is not normal course-play verification.
+Previous fixed walk runs used tutorial A1000/1180/1360, optional attacks1540/1720,
+jump2000, stick2200..2649, attack2800. Copy EXE and MAP together to QA runtime.

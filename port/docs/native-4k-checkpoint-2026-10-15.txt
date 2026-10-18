@@ -1,0 +1,94 @@
+Mario 64 DS PC port: native 4K GPU rendering, 2026-10-15
+Status: PARTIALLY VERIFIED overall. Native 3D rasterization through 3840x2160,
+live resolution changes, native Options and pause/resume pass focused tests and
+bounded game verification. Full rendering fidelity and the complete port remain
+unfinished. User selected Sol High and authorized resuming work.
+
+What changed
+- Added a D3D11 renderer. The recovered game still supplies geometry commands,
+  matrices, lighting, vertices and textures. Polygons now rasterize directly into
+  the selected full-resolution color/depth buffers; ordinary presentation stays
+  on the GPU. Screenshot readback captures that actual target, not the window.
+- Shared homogeneous clipping, culling, completed-frame geometry and viewport
+  data with the software reference. Preserved perspective UVs and affine vertex
+  colors. Cached GPU textures by decoded content, with a bounded retention policy.
+- Perspective views preserve original proportions/vertical field of view while
+  widening the horizontal frustum before clipping. Orthographic UI is unchanged.
+- Original 2D backgrounds, native pause/settings and minimap are separate layers.
+  The main pause layer retains backdrop RGB even when raw map alpha is zero.
+  The minimap retains its independent transparency and touch-target filtering.
+- Hardware D3D11 is default; WARP is a fallback for device creation. Explicit
+  SM64DS_PC_SOFTWARE_VIDEO=1 uses the old 256x192 diagnostic path. Fixed the
+  legacy GDI bitmap-header dimensions to match that path's actual source buffer.
+- Retail src files were not edited. The native menu uses the existing saved
+  resolution options; no extra menu control is required to enable native detail.
+- Added the requested texture-quality/art plan. Future menu choices: Original,
+  75%, 50%, 25%, No Textures, Upscaled. Upscaled will replace all level/object
+  textures with stylistically accurate 4K AI art and preserve all characters.
+  Those new modes and art pack are PLANNED, not implemented by this milestone.
+
+Build and tests
+- Final Release game and all smoke targets build with MSVC x86.
+- CTest 30/30 pass. New smoke_gpu uses offscreen D3D11 WARP and covers software
+  reference parity, native 4K edges, perspective UV, depth/transparent cutouts,
+  face/frustum clipping, viewport offsets, completed-frame selection, widescreen
+  expansion, pause backdrop RGB, minimap composition and repeated resizing.
+- The 4K triangle test finds 275 logical DS pixel blocks containing both edge
+  and background pixels. This establishes native subpixel rasterization rather
+  than replication of a 256x192 image. Widescreen testing confirms geometry
+  outside the original horizontal frustum becomes visible.
+- Final compiled native actor/input/OAM/camera/control/profile data audit passes.
+- Final hardware castle replay completes 4800 simulation ticks, exit 0, on
+  NVIDIA GeForce RTX 5070 Laptop GPU. Native capture tick4180 contains 665
+  clipped/rendered triangles at 3840x2160; tick4700 contains 668 after resume.
+- Scripted native pause Options opens PC Settings, changes 3840x2160 to1280x800
+  and back to3840x2160, backs out and resumes. CSV verifies actual saved sizes,
+  menu states and unchanged player X/Z while paused. No GPU failure/fallback.
+- Five actual target screenshots were captured and inspected; PNG copies are
+  lossless. Three menu captures match every raw bottom-screen RGB source pixel
+  at its scaled sample center (147456 comparisons), including green backdrop.
+- The first GPU screenshot exposed black pause backdrop from raw zero-alpha
+  pixels. Corrected base-layer opacity and added a regression test. Earlier
+  pilot logs/captures remain local; only the final corrected build is installed.
+- Final executable SHA256:
+  45DC02FCB2109D51F36C39E1506B127C459D130C3753DB79C93F0470BAF51C90
+- F: installation verifies executable/map/source copy hashes and matching ROM;
+  previous files are backed up in native-checkpoint-2026-10-15-native-4k.
+  A separate launch of the installed executable with the F: ROM completes1800
+  Test Map startup ticks, one live yellow coin, exit0. Its actual default GPU
+  target is1280x720 (user INI preserved); tick1750 captures82 triangles. This
+  installed-location check does not claim an independently packaged full game.
+
+How to check
+1. Open Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS.
+2. After the intro, Enter/Start opens pause. W/S or D-pad selects Options;
+   Space/A confirms. Choose PC SETTINGS, select Resolution, use A/D or Left/Right
+   until 3840x2160 appears. The selected value applies and saves immediately.
+3. Shift/B backs out; Continue or Start at the main pause menu resumes gameplay.
+4. 3D polygon edges use native 4K pixels. Original low-resolution textures and
+   2D menu/minimap art remain visibly low resolution until their separate work.
+   Your existing installed INI is preserved; installation does not force 4K.
+
+Evidence
+- build/native-4k-verified.log, exit-code, -ctest.log, -audit.log;
+  native-4k-verify.log, native-4k-evidence.json and verify-native-4k.py.
+- build/port/native-4k-verified-state.csv and target/bottom captures for
+  ticks4180,4380,4470,4520,4700. F: checkpoint stores lossless target PNGs.
+- Tests use their own copied executable/INI and do not overwrite user settings.
+- Native button script tick:hex DS mask:
+  4200:8,4250:80,4300:80,4350:1,4400:1,4450:10,4500:20,4550:2,4600:2,4650:8.
+  Automation-only, title Down poll300 and Confirm450, max4800, state interval10.
+
+Remaining work and next model
+- Opaque black shadow shapes and partial character obscuration remain visible.
+  Investigate polygon/texel alpha, shadow mode and depth behavior next; this
+  checkpoint does not establish full retail rendering fidelity or all courses.
+- Sustained 60/120/240 performance was not benchmarked. Higher presentation
+  settings still repeat simulation states; independent high-FPS motion remains.
+- Original textures remain in use. Texture modes, classification, complete AI
+  replacement pack and zero-character-replacement coverage must be implemented
+  and verified according to texture-quality-plan-2026-10-15.txt.
+- Full gameplay actors/courses, audio, save, physical Xbox checks and standalone
+  packaging remain part of the larger unfinished goal.
+- Recommended next model: Sol High for transparency/shadow/native rendering
+  investigation. No pause or model switch is recommended at this milestone.

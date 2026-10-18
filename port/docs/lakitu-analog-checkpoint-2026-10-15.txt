@@ -1,0 +1,34 @@
+Mario 64 DS PC port: native Lakitu intro and software analog movement, 2026-10-15
+Status: PARTIALLY VERIFIED. Lakitu's intro handoff and analog-driven horizontal movement pass the bounded replay. The fixed camera still prevents normal play, physical Xbox hardware is untested, and the full port remains incomplete.
+
+Changes:
+- Enrolled the recovered Lakitu actor factory and registered actor 235 (0xeb) using the original C_JUGEM profile at ov085:0x02130320. The native object remains 0x2e8 bytes, with state and timer offsets checked at compile time.
+- The host source transform reads the local ROM's 22 callback constants, validates zero adjustments and function identities, then emits eleven native member-function pairs. It uses the existing actor state code; it does not force the intro-ready flag.
+- Lakitu and DEMO share one canonical set of eight-byte file handles, initialized once. The host adaptation removes duplicate wrapper-owned handles and uses the original home/approach vector values.
+- After intro completion exposed a raw key-map pointer crash, rebound all three control-mode maps to native storage and verified every original key entry. Title stick navigation is now kept out of Stage digital directions, so gameplay retains the stick's partial magnitude. Keyboard/controller D-pad keys remain available.
+- Added optional CSV samples of Lakitu state/timer/actor status for the integration replay. Normal play does not write these diagnostic files.
+
+Build/tests:
+Release build succeeds. All default smoke targets rebuild and CTest passes 27/27.
+Compiled-data audit passes ten native profiles, eleven Lakitu state pairs (22 native targets), three native control-mode map pointers and all 48 original key halfwords, plus prior resource/callback checks.
+Input smoke verifies title navigation, independent gameplay analog input and retained digital D-pad directions alongside the prior deadzone/timed-input tests.
+
+Runtime evidence:
+First replay: Lakitu waits during the movie, advances his original intro state machine afterward and sets the ready flag. Input then faults reading a DS key-map address; the initial crash trace and screenshots are preserved as lakitu-native-castle*.
+Final castle replay: isolated Down300/A450, 6000 simulation frames, partial stick X=20000 at polls 5000-5119, exit 0. First sampled intro_ready=1 at tick 3960. Tick 5040 reports game magnitude 1989 of 4096. Horizontal position changes from (-4915200,27852800) before input to (-4887754,13290616) after input; X/Z settles after release. Lakitu remains alive in his hidden state. This establishes software-delivered analog travel reaching game movement, not physical controller verification or complete movement/direction fidelity.
+Test Map regression: isolated A450/no Down, 1800 frames, exit 0. The selected yellow coin reaches/remains alive (yellow_total=1, yellow_alive=1).
+All top/bottom screenshot pairs were inspected. The final castle view remains fixed after player movement and the character leaves view, while the minimap updates. That camera issue remains unresolved; do not describe this as fully playable.
+
+Next concrete work:
+Investigate camera state initialization and native callback targets. src/unnamed/arm9/0207/__sinit_02073a24.c initializes nineteen state pairs at data_0209b008..data_0209b128. The initializer is absent from the executable map; Camera::InitResources calls ChangeState on the first record. Inspect src/engine/view/dCamera_c.cpp, especially ChangeState, func_0200cae4, func_0200ca50 and the state callback dispatch. Verify runtime state fields and camera positions before changing behavior. The absent initializer is a concrete lead, not a tested root cause yet.
+Preserve the real Lakitu completion path and canonical controller tables. Do not replace camera tracking with a fixed view or force save/progress flags to claim gameplay.
+
+How to check:
+Run Play Mario 64 DS.cmd in F:\AI Games\Mario 64 DS. On the course list press S once, then Space, to select castle. Wait through the intro, then try the left stick or movement keys. Camera tracking is unfinished and can allow Mario to leave view. The checkpoint contains screenshots, CSV measurements, logs, exact source changes, and the previous executable/map for rollback.
+
+Recommended next model: Sol High for camera callback initialization/tracking and subsequent gameplay integration. Keep it if already selected. The goal remains active; no model-switch pause is requested.
+
+Remaining full scope:
+Camera tracking and complete native actors; playable courses/transitions/audio, jumping/collection and save flow; physical Xbox gameplay; internal 4K rendering and upscaled replacement texture content; verified 60/120/240 output; final standalone packaging. Current resolution presets scale DS-sized output and higher presentation rates repeat simulation states.
+
+Source: <USER_HOME>\Documents\Codex\2026-10-10\can-you-compile-this-mario-64\work\source-extracted\sm64ds-decomp-main. The F: checkpoint retains prior executable/map and copied source/evidence when installed.

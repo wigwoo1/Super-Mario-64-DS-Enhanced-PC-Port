@@ -1,0 +1,17 @@
+Restored source build verified -- 2026-10-17
+The earlier reconfiguration stall was not reproduced. A fresh normal build
+completed: configure102.2s,generate16.4s,star/main compile and final link exit0.
+No source-generation or gameplay workaround was required. Allow quiet source
+closure regeneration to finish and poll its actual process handle.
+52/52 CTests pass78.26s. Native reward and player-animation data audits pass.
+Rebuilt EXE AC713BAB3F364D8C33D135D77ED185987587EBDDB48DE725AC58AC9D3188553D.
+Fresh3300-frame replay: contact1791,pickup1792,castle1920,save commit,castle
+jump2900,finalWait/control,exit0. Same-star credit remains7->7,course0mask2;
+all course star masks unchanged on disk. Strict repeat verifier passes.
+Main source text equals the installed Power Star/eyes checkpoint. Original
+star collection logic restored; no duplicate-credit workaround is present.
+This binary is archived for continued development; installed EXE remains the
+already verified757F74D22F0F2D2C26E6526197FAC5FA916DDA0A96B5DF236EE6D20736B2CA25.
+Full game/remaining actors,HD textures and other planned features remain open.
+Next bounded check: original course-clear Save & Quit path and title return.
+Luna Medium remains appropriate; no model switch is currently recommended.

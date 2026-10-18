@@ -1,0 +1,83 @@
+SPECIAL GOOMBA REWARDS — PARTIALLY VERIFIED — 2026-10-17
+Current model: Sol Medium. Recommended next model: Sol High.
+
+Completed investigation
+- Read original object tables from all 52 course overlays. Inventory and scanner:
+  build/special-goomba-object-inventory.json, .log and build/scan-special-goombas.py.
+  The scanner is read-only; it does not change original data or runtime actors.
+- Extended optional reward/Yoshi telemetry in port/main.cpp to observe Goomba
+  actor IDs 200..202. Previously these observers only included normal ID200.
+- Added -NoAutoDown to build/run-goomba-file-menu.ps1 to select course0 in QA.
+- No gameplay fix was made. Installed F: build remains the verified egg-rewards
+  checkpoint. New local EXE differs only because of the broader observers.
+
+Build and tests
+- build/build-native-file-menu.cmd succeeds; native-file-menu-build.log.
+- 52/52 CTest checks PASS,19.01s: build/special-goomba-full-ctest.log.
+- Focused input checks 3/3 PASS; native Goomba/egg data audit PASS:
+  build/special-goomba-focused-ctest.log, special-goomba-data-audit.log.
+- Castle scout course0,1600frames,exit0: special-goomba-castle.
+- Large Goomba scout course24,1600frames,exit0: special-goomba-large.
+- First ground-pound route,2000frames,exit0: large-blue-first.
+  B1582,R1588; stick1550..1600 (+25000,-8000). Landed far short.
+- Second ground-pound route,2200frames,exit0: large-blue-second.
+  B1610,R1624; stick1550..1625 (+25000,-8000). At1630 player
+  (-6353,-2731,7600); landed beside Goomba12 instead of hitting its top.
+  Ground-pounded to ground, recovered to Wait, then suffered ordinary contact
+  damage from1685 onward. Eventually left course24 after repeated damage;
+  final2200 sample is LevelEnter in course1. This is NOT an idle-continuation
+  pass or a reward pass. No Goomba death or blue actor290 observed.
+  Two bounded routes stopped; no third timing guess or gameplay alteration.
+- All inputs are ordinary controller automation; no position/enemy injection.
+- Replays use separate copied intro-complete test saves; user saves unchanged.
+- Screenshots: build/port/native-file-menu-baseline-large-blue-first-1595.png
+  and native-file-menu-baseline-large-blue-second-1640.png shown in chat.
+  BMPs at other ticks, CSV telemetry and logs retained with matching prefixes.
+
+Confirmed prerequisite blocking silver-star/cap rewards
+- port/hal/actor_vtables.cpp registers no actor179(SILVER_STAR),180(STARBASE),
+  or269(OBJ_MARIO_CAP). Goomba payout calls these original actors.
+- daKrb_c.cpp func_ov084_021296cc handles reward1(unconditional silver) and
+  reward2(only matching current star). It checks both spawned actors for null
+  in reward1, then clears reward bits. Do not describe this as a proven crash.
+- dCapEnemy_c::ReleaseCap spawns269 with0x1012|(capID<<8).
+- Integrating these needs native callback/member-pointer layout, resources,
+  profile and virtual-method audits before registration, then real pickups.
+  Merely putting recovered profiles into the registry is not a sufficient fix.
+
+Next work for Sol High
+1. Integrate silver star + marker: src/actors/daStar_c.cpp, factories
+   daStar_c_classInit_SILVER_STAR and daStarBase_c_classInit; profiles
+   g_profile_SILVER_STAR(ov0020210aa5c),g_profile_STARBASE(0210aa78).
+   Audit 14-state table data_ov002_021109d8 and seven resource handles.
+2. Integrate cap: src/actors/daObjMarioCap_c.cpp, daObjMarioCap_c_classInit,
+   g_profile_OBJ_MARIO_CAP(ov002021095cc); nine enter/execute state records,
+   PMF stand-ins CapStateSelf/CapEnterSelf and original +0x3bc callback pointer.
+   Preserve recovered src/include; add native adaptations through port tools.
+3. Test carried silver rewards after stomp and swallow/egg, matching-current
+   conditional silver, cap release and pickup; inspect correct actor linking.
+4. Establish an actual large-Goomba ground-pound contact before concluding
+   anything about blue payouts. Original HIT_SPIN_OR_POUND sets death1 and
+   unk108=3(COIN_BLUE); original coin actor table maps index2 to290 and
+   values table is[1,2,5]. These data were inspected, not gameplay verified.
+5. Full regression/build/data audits, then install exact verified fix on F:
+   with rollback and test installed copy/screenshots. Request F: write access
+   only when needed; drive can be slow. Preserve ROM/settings/user saves.
+
+Original encounter locations
+- Large202: course24 overlay32, common objects. Entrance(-7300,-1200,7300)
+  lands(-7300,-2900,7300). Nearby12 initially(-6000,-2900,6900), wanders
+  toward z7700. Nine large Goombas loaded/rendered in scout.
+- Silver reward1: course0 filter3 at(2500,0,5450),(2000,0,5450),
+  (1500,0,5450),(950,0,5450),(400,0,5450),paramff1f;
+  course6 filter3 at(6850,1941,-5250),(-4195,750,2256),paramff1f;
+  course42 filter1 at(2850,400,1950),(0,0,-50),paramff1f.
+- Conditional reward2: course0 filter1(-1482,0,2724),paramf12f;
+  compare mStarID to data_0209f344[data_0209f208[0]] before choosing test star.
+- Caps course0 common:(5016,0,2123)f0f1,(1724,0,5988)f0f1,
+  (-2486,0,7102)f1f1. Full inventory has other courses/variants.
+
+Goal tracker already reported paused on entry despite resume requests; tool
+supports only paused/complete/blocked, not resume. Do not replace goal.
+Standing human instruction authorizes pause when model switch recommended.
+Overall port and special rewards remain incomplete; never mark complete.

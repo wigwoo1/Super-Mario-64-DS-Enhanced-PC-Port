@@ -1,0 +1,32 @@
+    .text       start:0x020aa420 end:0x020ab5f8 kind:code align:32
+    .rodata     start:0x020ab5f8 end:0x020ab7e4 kind:rodata align:4
+    .ctor       start:0x020ab7e4 end:0x020ab7e4 kind:rodata align:4
+    .data       start:0x020ab800 end:0x020ad620 kind:data align:32
+    .bss        start:0x020ad620 end:0x020ad660 kind:bss align:32
+src/actors/CapIconMgr.cpp:
+    complete
+    .text start:0x020aa420 end:0x020ab110
+
+src/actors/dCapIcon_c.cpp:
+    complete
+    .text start:0x020ab110 end:0x020ab3f0
+
+src/unnamed/ov001/func_ov001_020ab3f0.c:
+    complete
+    .text start:0x020ab3f0 end:0x020ab41c
+
+src/unnamed/ov001/func_ov001_020ab41c.c:
+    complete
+    .text start:0x020ab41c end:0x020ab450
+
+src/TouchArea_Update.c:
+    complete
+    .text start:0x020ab450 end:0x020ab54c
+
+src/actors/dThIcon_c.cpp:
+    complete
+    .text start:0x020ab54c end:0x020ab5b0
+
+src/unnamed/ov001/func_ov001_020ab5b0.c:
+    complete
+    .text start:0x020ab5b0 end:0x020ab5f8

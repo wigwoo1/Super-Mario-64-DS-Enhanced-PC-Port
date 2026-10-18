@@ -1,0 +1,78 @@
+Original file-menu development checkpoint (local build only)
+
+Superseded by native-menu-render-handoff-2026-10-15.txt: two verified repairs,
+41 passing tests and final native/software comparison now isolate the remaining
+size error to the GPU path. See that handoff for the current hash/model advice.
+
+Status: PARTIALLY VERIFIED. Original menu rendering remains unfinished.
+The normal course-picker route remains the default. Original menu requires
+the explicit development environment variable SM64DS_PC_ORIGINAL_MENU=1.
+Do not enable this route for ordinary users or describe the file UI as ready.
+
+Local executable SHA256:
+FB6550FBAF7507B583CB7DFFB63C9F46C961A9C51B89C5E2BC2BA8ED786FB8A4
+F: still contains the previously verified native-save checkpoint executable:
+184A4DEB8C6D4FD2151E3CE787C5E8C310D133D9CD0076605800A93D9EEC6143
+No installation performed for this development milestone.
+
+Changes
+- Linked original DSMT scene through native factories/callbacks, and adapted
+  synchronous boot to load the message bank before the original UI uses it.
+- Canonical overlay-7 storage preserves 728 interior labels, eight reviewed
+  callback fields and 675 self references declared by the source relocation
+  table. Twenty exact ARM tail-jump veneers now preserve native arguments.
+- Replaced the original firmware owner-info access and fixed-address heap
+  arena with native equivalents. Retail src remains unchanged.
+- Canonical live save storage now aliases star flags, coin records and shared
+  minigame data at their actual offsets. Previously, independently allocated
+  labels could disagree even after the parent save payload was loaded.
+- Added matrix/division/owner-info and actual generated-storage tests, and
+  coverage for original save-copy/select/erase helpers. These helper checks
+  do not establish usable file-copy/erase UI.
+
+Evidence
+- Native build succeeds. CTest: 39/39 passed, 18.82 seconds.
+- Actual user-ROM/PE audit validates the canonical image and native jumps.
+  Unreviewed foreign embedded pointers remain original; this is not a full
+  original-menu correctness audit.
+- Original-menu native run completed 1200 ticks, exit 0, with captures.
+  Both D3D11 and software captures show scrambled graphics/texture atlases.
+  This places the visible problem in shared menu/display state or rendering;
+  it does not identify a particular register, upload or renderer as faulty.
+- Earlier menu crashes were individually traced to firmware access, missing
+  message-bank initialization and argument loss in ARM tail-jump adapters.
+- Local 4900-tick native 4K pause-save replay with this exact executable saves
+  twice and resumes, exit 0. Real game getters retain six course-2 stars and
+  77 course-5 coins in a private fixture; active character is Yoshi (3).
+  These fixture accomplishments were seeded for storage verification.
+- A fresh 2200-tick process using the same executable reloads both records,
+  exits 0 and reports Yoshi (3), six stars and 77 coins through actual game
+  getters. Native record checksums validate; FILE 1 remains byte-identical to
+  the seeded fixture after save/reload. The 3840x2160 capture at tick 2180 was
+  inspected: Yoshi is visible with head/body and the translucent minimap.
+- Final same-executable default-route replay completed 4200 ticks, exit 0,
+  native 3840x2160. Its tick-4180 screenshot is RGB-identical (zero changed
+  pixels) to yoshi-render-original-4180.png from the earlier verified Yoshi
+  rendering checkpoint. No normal-route visual regression observed here.
+
+Reproduction
+build/run-native-file-menu.ps1 -Mode original -Tag unique
+  Original UI; development-only, currently scrambled.
+build/run-native-file-menu.ps1 -Mode baseline -Tag unique
+  Ordinary default course-picker and Yoshi scene, native 4K.
+build/run-native-file-menu.ps1 -Mode seeded
+  Reload private seeded progress fixture.
+build/run-native-file-menu.ps1 -Mode save
+  Save through ordinary pause PC Settings into that private fixture.
+Each run writes a log, CSV, executable hash, exit code and frame captures.
+
+Next work
+Inspect shared PPU/VRAM/OAM/upload and original UI graphics state using the
+software-vs-native captures; neither path displays the menu correctly yet.
+No focused display repair has been attempted at this checkpoint. Keep the
+development gate. Finish visual correctness, input/file selection, copy,
+erase and active-file pause label before enabling the original menu.
+The existing minimap compositor also needs a menu presentation policy.
+The latest user correction is authoritative: the captured new-game character
+is Yoshi, not Mario. Inspect his head/body/shadow in future captures.
+Keep Sol High for the remaining reverse engineering. Goal stays active.

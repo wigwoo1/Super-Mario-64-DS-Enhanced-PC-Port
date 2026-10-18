@@ -1,0 +1,73 @@
+Native rabbit, castle key, controller menus - 2026-10-17
+
+Status: VERIFIED in automated runtime replays. A physical Xbox controller
+has not been operated during this milestone.
+
+Native integration:
+- Registered original MIP actor187 and OBJ_MIP_KEY actor229 with ROM-matching
+  priorities, flags and clipping ranges. Eight rabbit state pairs and two
+  key callback pairs now call the recovered native functions. Resources are
+  constructed after the native file registry is ready and shared canonically
+  between rabbit/key code. Native layouts compile at0x474 and0x1a0 bytes.
+- Adaptations live in port/tools/rabbit_host.py and generated host headers;
+  the original rabbit/key source is unchanged. Normal game input is unchanged.
+- Opt-in input replay follows a collision-derived maze grid, extends Yoshi's
+  tongue, advances the original conversations and saves. It does not write
+  actor positions, capture state, progress flags, or rewards.
+
+Controller menus:
+- A or Start dismisses the animated title and confirms an item.
+- D-pad or left stick moves a gold focus border among the original active
+  menu buttons. B uses the original Back/Cancel item. Mouse/touch still work.
+- Controller choices become stable five-frame samples for the original
+  touch handler. Handled keys are consumed so DSMT does not also run its
+  separate keyboard cursor logic, which crashed in the palette worker after
+  a raw Right input. File Options uses original Return item20; item21 is the
+  File Options button, not Return. The file/copy/erase/save logic is unchanged.
+
+Verification:
+- Explicit Release sm64ds_pc build passed. CTest52/52 passed (18.16s).
+- Three rabbit adapter tests passed. Native executable data audit verifies
+  the two new profiles, all eight rabbit/two key callback pairs, and canonical
+  handles against the extracted cartridge.
+- Fresh native capture: rabbit caught at7000, its key spawned at7170 with
+  source uniqueID52, castle-key flag awarded at7230. Original saving prompt
+  committed File A and minigame data. Returned Yoshi control; clean exit0
+  after14000 frames. Saved File A CRC valid and flags1=0x41 (castle key set).
+- Controller-only combined replay repeats title -> File A -> Lakitu -> rabbit
+  -> key -> save -> normal control. Clean exit0 at10500; strict evidence check
+  passes. It used B4D90FA76C5659ED04E16870464340034D4DB9118E4E53E32F3484CEFFFF6AB1.
+- Reloading that key-bearing QA save through the original menu loaded the
+  native save successfully, retained the key and opened the original castle
+  front door. Entered castle interior at2331; clean exit0 at6500.
+- Final controller replay: Start -> Adventure -> right/left across files ->
+  File Options -> B to files -> B to title -> Adventure -> File B -> game.
+  Clean exit0 at4000; checker PASS. This validates the final Back-item fix.
+- Latest executable: 9C6CEE49C75876977FC361F331AEBBBAAAED5DD46A955A202BE3F88DFF7A1B1A.
+  The last change after the combined capture was the menu Back-item mapping;
+  native rabbit/gameplay code is identical. Final focused input tests and the
+  full52-test suite pass on this build.
+
+Evidence under build/port:
+  rabbit-controller-final-20261017
+  rabbit-nav-catch-20261017
+  rabbit-key-reload-20261017
+  controller-menu-back-fixed-20261017
+Strict verifiers: port/tools/check_rabbit_capture.py and check_controller_menu.py.
+
+F: temporarily disappeared from Windows during development, then returned.
+Runtime testing used build/assets/user-europe-rev0.nds, SHA256
+CE5829AAA79F06C67140ED1F45CBCA738B0A9D0180538C8C1498472D859DB032,
+matching the previously verified user ROM on F:. All test saves were isolated
+on C:. Installation records confirm the final installed hash and preservation
+of the real user saves and ROM.
+
+How to check: launch Play Mario 64 DS.cmd. Press Xbox A/Start at the title,
+use the D-pad or left stick on Adventure and File A/B/C, A to select and B
+to return. Use an empty file to play the original rabbit/key sequence.
+Watch Rabbit Castle Key Test.cmd provides an isolated automated demonstration.
+
+Next unresolved work includes fresh-file painting/course progression and the
+remaining native actors/game features. Audible native audio and the broader
+requested settings, texture, minigame and networking roadmap remain incomplete.
+Keep Sol Medium for the next gameplay integration milestone; full goal unfinished.

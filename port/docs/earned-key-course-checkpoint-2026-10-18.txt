@@ -1,0 +1,40 @@
+Earned castle key -> first course regression, 2026-10-18
+Status: VERIFIED in automated runtime replay (Sol Medium).
+
+Closed the remaining fresh-file course-entry verification gap. The seed is
+copied without edits from rabbit-nav-catch-20261017, where original Yoshi
+capture/key/save code earned the castle key with zero stars. This replay
+reloaded it through original title/File A, walked through the original front
+door and lobby/room doors, jumped into Bob-omb painting, confirmed original
+mission1 using controller A and entered Battlefield. No forced positions,
+progress flags or scene transitions; real input replay only. User saves were
+not used. This is a reload continuation, not a single uninterrupted new game.
+
+Exterior playable1320; castle2170; Battlefield4450. Normal Yoshi jump after5800,
+final idle/control at6500; clean exit0. Zero stars throughout; native save CRC
+valid and File A bytes unchanged. Screenshots2600,3500,5200,5810 inspected.
+Installed and replay executable SHA256 both:
+9C6CEE49C75876977FC361F331AEBBBAAAED5DD46A955A202BE3F88DFF7A1B1A
+No game code or installed executable change was needed for this path.
+
+Build: explicit Release sm64ds_pc/all succeeds (no work required).
+CTest52/52 pass in40.04s with replay also running (not a speed benchmark).
+New strict verifier check_earned_key_course.py passes actual runtime evidence.
+Five negative checks reject failed exit, missing mission confirmation, altered
+star count, locked controls and corrupt saved data.
+Replay: build/replay-earned-key-first-course.ps1
+Evidence: build/port/earned-key-first-course-20261017 (case name retained).
+Verifier: port/tools/check_earned_key_course.py
+Seed provenance: native-rabbit-controller-checkpoint-2026-10-17.txt.
+
+How to check: normal Play Mario 64 DS.cmd, continue the file with the rabbit
+key, enter castle, go upstairs left through the Bob-omb room door, jump into
+the painting and press A on mission1. Physical controller remains a user check.
+
+Next: original first-course interactions with remaining native actors and
+progression beyond this route. The course screenshots also retain a rendering
+artifact along the bridge railing; it has not been diagnosed or fixed here.
+Audible audio, other actors/courses/minigames and broader settings/HD/network
+requirements remain unfinished. Keep Sol Medium for next gameplay integration;
+no model switch or new goal pause recommended. Goal tool still reports paused
+and provides no resume operation; user has authorized continued work in chat.

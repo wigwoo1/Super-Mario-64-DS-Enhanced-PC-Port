@@ -1,0 +1,33 @@
+Mario 64 DS native PC port: minimap sprite crash repair, 2026-10-15
+Status: VERIFIED for the reported minimap sprite crash in the bounded integration replay. Overall PC-port status remains PARTIALLY VERIFIED/incomplete.
+
+Changes:
+- Seven minimap sprite pointer tables now bind to canonical native OAM descriptor storage: 17 player icons, 8 star markers, 16 VS player icons, 16 small VS player icons, two three-entry cap tables, and two star-key icons (65 entries total).
+- Player/cap sprites are explicitly resolved in overlay 1. Overlay 0 reuses those DS addresses for unrelated data. The first player entry previously held raw 020ab800, matching the original fault.
+- The 17-entry player-icon table is separated from the following native-vtable prefix. Generation checks its original trailing zero/RTTI words before cutting that prefix off the pointer table.
+- Overlay 1's player/cap sprite exports now contain actual OAM descriptor bytes. They formerly defined pointer variables containing DS addresses, so merely relocating the table to those symbols still supplied incorrect sprite bytes. The audit caught this before integration testing.
+- Added a compiled-data audit checking all 65 pointers against their canonical native symbols and every target's bytes against the extracted ROM. It fails on the original executable at MM_PLAYER_ICONS[0]=020ab800 and passes on the final executable.
+- Added optional SM64DS_PC_AUTOMATION_ONLY=1 for test replays. It neutralizes live keyboard/controller/touch input before applying synthetic input. Normal play leaves this unset. The input smoke test checks touch neutralization, neutral keys, and a synthetic A press.
+
+Build/tests:
+Release executable builds successfully. Final build log: minimap-replay-build.log.
+Three rebuilt CTest checks pass: smoke_input, smoke_oam, smoke_ppu_affine (minimap-replay-ctest.log).
+Final minimap audit passes: seven tables/65 native pointers and matching sprite bytes (minimap-sprite-final-audit.log).
+Existing actor-data audit passes, including six profiles, DOOR callbacks/data, jump callbacks, animation lists, DEMO sprites and Stage preload handles (minimap-actor-final-audit.log).
+
+Runtime evidence:
+Run131 had the sprite repair but live desktop input interfered with startup. The title log shows held/pressed 0081 at Down polls 300-304: a live A press selected Test Map slot 0 before automated A450. That run failed loading test-map level 0 before the requested minimap path. It is not a passing integration test or evidence that the minimap repair failed.
+Run132 uses isolated automation, Down300/A450 with no repeats, and a 6000-simulation-frame bound. It selects title slot 1/course 1, runs the intro, reloads Stage, renders Mario in castle grounds, logs completed simulation frame 6000 and shuts down normally with exit 0. The final progress line reaches presentation 10440 with script=0, pending_level=-1, current_level=1. No unhandled exception, fatal allocation, or previous minimap pointer crash occurs. This is a bounded no-movement-after-start replay; full gameplay and physical Xbox input are not verified. Presentation counts do not measure delivered FPS.
+Top and bottom screenshots for both runs were viewed. The final top screen shows Mario in castle grounds. The bottom map still occupies only part of the image with a green remainder; sprite/layout/palette appearance is not claimed correct.
+
+How to check:
+Open last-render.bmp and bottom-screen.bmp. Launch-test.cmd repeats the isolated startup and exits after 6000 simulation frames; it writes manual-run logs/screenshots. Launch-game.cmd clears automation and runs with normal controls, without a frame bound. Launchers use the European ROM two directories above this checkpoint on F:.
+
+Next task/model:
+Recommended next model: Sol Medium (keep the current model). The reported pointer crash is repaired and verified. Remaining minimap graphics, palette/layout and other native rendering paths still require code/ROM investigation. No model switch is recommended at this checkpoint, and no new pause is requested. The goal tracker was already reporting paused when the user asked to resume; its available update tool cannot set active. User may need the goal card's Resume control for automatic continuation.
+
+Remaining full-port work:
+Correct minimap appearance and other overlay graphics; real scene-4 star selection; complete gameplay, missing actors, course/door transitions and audio; physical Xbox gameplay; internal 4K rendering and complete replacement textures; measured 60/120/240 FPS behavior. Existing resolution choices stretch DS-sized output. This checkpoint is a development build, not a completed PC release.
+
+Source:
+Authoritative full tree remains C: work/source-extracted/sm64ds-decomp-main. changed-source contains this milestone's five files only. Logs/maps and build-inputs preserve evidence. Earlier heap-ownership and stage-transition checkpoints remain available.

@@ -1,0 +1,28 @@
+Mario 64 DS native PC port: shadow-rendering repair, 2026-10-14
+
+Status: PARTIALLY VERIFIED overall. The captured shadow-rendering crash is resolved in the 1,200-frame automated startup run.
+
+Cause and change:
+The ARM tail-jump wrapper func_0203c178 was compiled as void(void) on PC and called func_020527e8 without forwarding its destination and three scales. On ARM, the original jump preserves the argument registers. A normal PC C call requires explicit arguments. The PC-only branch now forwards all four; the original DS branch is retained. This matches the scale primitive's existing implementation and original ARM assembly.
+
+Verification:
+Release game build passed (shadow-veneer-build.log).
+Actor smoke build passed (shadow-veneer-smoke-build.log).
+Three CTest checks passed: smoke_actor, smoke_camera_matrix, smoke_modelanim. The actor test now calls the production wrapper with unequal signed scales, checks all 12 matrix values, and checks sentinels on both sides.
+Game run resume103 used the same automatic input and 1,200 simulation-frame target as the failing resume102. It reached 'completed simulation frame 1200', shut down normally, and returned exit code 0. The elapsed 39.8023742 seconds includes startup, tracing and capture; it is not a measured gameplay frame rate.
+Latest captured frame shows the castle scene and a dark character silhouette. Character appearance, overlays, full gameplay and transitions remain unverified/incomplete. This is a development checkpoint, not a playable-release claim.
+
+Files changed for this repair:
+src/unnamed/arm9/0203/func_0203c178.c
+port/tests/smoke_actor.cpp
+
+Previous actor integration is included in the executable. See the prior EXIT/DOOR diagnostic checkpoint for those changes and tests. Its crashing executable remains available separately.
+
+Next work:
+Inspect character lighting/material rendering and incomplete overlays; integrate remaining native actor profiles and verify real gameplay/door transitions. Audio, physical Xbox input, internal 4K rendering, replacement texture assets and requested delivered frame rates still need completion/verification. Earlier requested feature scope remains intact.
+Recommended next model: Sol Medium. The difficult crash now has a concrete repaired cause and a successful bounded run. Continue from this checkpoint; use the two-attempt escalation rule if a new fault cannot be explained. Luna is not recommended for the remaining native rendering investigation yet.
+
+How to check:
+Open last-render.bmp to see the final game frame. Launch-test.cmd repeats the bounded startup test using the ROM in the main Mario 64 DS folder; it writes manual-run logs and a screenshot beside the executable.
+
+Authoritative source remains in the C: task workspace's work/source-extracted/sm64ds-decomp-main directory. changed-source is only a partial snapshot; build-inputs preserves the learned source-enrollment input.

@@ -1,0 +1,90 @@
+{
+  "id": "arm9/GXS",
+  "module": "arm9",
+  "source": "src/engine/gx/GXS.cpp",
+  "promoted_source": "src/engine/gx/GXS.cpp",
+  "status": "promoted",
+  "boundary_confidence": "medium",
+  "boundary_evidence": [
+    "contiguous linker run: 0x02055dec..0x02055fb4, 6 function(s), gapless in config/arm9/delinks.txt (each entry's end is the next entry's start).",
+    "TOP EDGE: src/engine/gx/G3i.cpp ends at 0x02055dec exactly where the run begins -- G3i's TU ends here (see G3i.json); that is a delinks-run boundary, not independent proof of where the GXS TU starts.",
+    "BOTTOM EDGE: func_02055fb4 (0x02055fb4) starts exactly where the run ends -- its own header (src/unnamed/arm9/0205/func_02055fb4.c) calls it \"likely _ZN3GXS11LoadBG3CharEPKvjj\", so the original TU may extend past this run; the run end is a delinks-run boundary, not proof of the original TU edge.",
+    "GXS is a namespace (Nitro SDK sub-screen family), not a class: no this, no vtable, no layout -- plain static functions only."
+  ],
+  "sections": [
+    {
+      "name": ".text",
+      "start": "0x02055dec",
+      "end": "0x02055fb4"
+    }
+  ],
+  "functions": [
+    {
+      "symbol": "_ZN3GXS17EndLoadOBJExtPlttEv",
+      "address": "0x02055dec",
+      "size": "0x0000004c",
+      "legacy_source": "src/_ZN3GXS17EndLoadOBJExtPlttEv.cpp",
+      "ordinal": 0
+    },
+    {
+      "symbol": "_ZN3GXS14LoadOBJExtPlttEPKvjj",
+      "address": "0x02055e38",
+      "size": "0x00000074",
+      "legacy_source": "src/_ZN3GXS14LoadOBJExtPlttEPKvjj.cpp",
+      "ordinal": 1
+    },
+    {
+      "symbol": "_ZN3GXS19BeginLoadOBJExtPlttEv",
+      "address": "0x02055eac",
+      "size": "0x00000024",
+      "legacy_source": "src/_ZN3GXS19BeginLoadOBJExtPlttEv.cpp",
+      "ordinal": 2
+    },
+    {
+      "symbol": "_ZN3GXS16EndLoadBGExtPlttEv",
+      "address": "0x02055ed0",
+      "size": "0x0000004c",
+      "legacy_source": "src/_ZN3GXS16EndLoadBGExtPlttEv.cpp",
+      "ordinal": 3
+    },
+    {
+      "symbol": "_ZN3GXS13LoadBGExtPlttEPKvjj",
+      "address": "0x02055f1c",
+      "size": "0x00000074",
+      "legacy_source": "src/_ZN3GXS13LoadBGExtPlttEPKvjj.cpp",
+      "ordinal": 4
+    },
+    {
+      "symbol": "_ZN3GXS18BeginLoadBGExtPlttEv",
+      "address": "0x02055f90",
+      "size": "0x00000024",
+      "legacy_source": "src/_ZN3GXS18BeginLoadBGExtPlttEv.cpp",
+      "ordinal": 5
+    }
+  ],
+  "data": [],
+  "bss": [],
+  "compiler_only_output": [],
+  "verification": {
+    "round": "tools/tubuild.py verify -- text-only, whole shadow TU compiled once",
+    "toolchain": "tools/mwccarm/2004/b56/mwccarm.exe",
+    "flags": "-O4,p -enum int -lang c99 -char signed -interworking -proc arm946e -gccext,on -msgstyle gcc -Cpp_exceptions off",
+    "object": "build/tu/arm9-GXS/GXS.o (gitignored)",
+    "comparison": "tools/match.py extract_func+compare (bytes/relocs) AND tools/objisolate.py plan() (relocation type/addend) AND tools/reloc_audit.py check_destinations() (relocation target identity)",
+    "functions_matched": 6,
+    "functions_declared": 6,
+    "compilerOnlyOutput": {
+      "requested": [],
+      "deadstripped": [],
+      "data": [],
+      "dataExternalized": []
+    },
+    "criteria": {
+      "every_declared_function_defined": "PASS",
+      "every_declared_function_bytes_match": "PASS",
+      "declared_function_set_equals_defined_function_set": "PASS",
+      "functions_occur_in_expected_order": "PASS",
+      "relocation_destinations_verified": "PASS"
+    }
+  }
+}

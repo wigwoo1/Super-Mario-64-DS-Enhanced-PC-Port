@@ -1,0 +1,43 @@
+Wanted PC Settings menu polish - 2026-10-16 (Luna Medium)
+
+Status: VERIFIED. This is a small presentation update to the verified Wanted
+settings menu. ROM-matching src/ and include/ remain unchanged.
+
+Visible wording changes in port/hal/pc_pause_settings_state.cpp:
+- FPS LIMIT -> FRAME RATE, with the FPS unit shown.
+- ANISO FILTER -> ANISOTROPIC.
+- Minimap rotation now says MAP ROTATION FOLLOW/UPRIGHT.
+- Opacity and map size now display percentages. Map size uses the same
+  tenths-of-a-percent conversion as the renderer; opacity is rounded to a
+  whole percentage.
+- Minimap position uses X/Y percentages, matching the normalized output
+  coordinates used by the renderer.
+- HIDE TOUCH now reads HIDE TOUCH TARGET.
+- MG SCREENS now reads MINIGAME VIEW.
+
+Build and verification:
+- Native build succeeds.
+- 51/51 CTests pass. The existing wording assertion was updated for the longer
+  anisotropic label, and the pause settings test now checks the new map
+  percentage and touch-target labels.
+- A 3800-frame software replay of the Wanted route exits 0 and captures all
+  settings pages. All edited labels fit on the 256x192 settings surface.
+- Preview EXE and MAP are byte-identical to the tested build.
+
+Screenshot PNGs under build/port:
+- wanted-pc-polish-2750.png: Display, FRAME RATE label
+- wanted-pc-polish-2850.png: Visual, MAP ROTATION
+- wanted-pc-polish-3150.png / 3250.png: Map percentages and touch-target label
+- wanted-pc-polish-3350.png: map position percentages
+- wanted-pc-polish-3650.png: minigame view label
+
+Exact preview EXE SHA256:
+3266812E5F3A10E248D4BC0FBC699E93E959459A59B4F79A68B6EFA81BA444D2
+Exact preview MAP SHA256:
+4F675ADAED2761E28D2F772143E07545D33B4D34F2AF59F44C3CF9CE3ABD4FF7
+
+How to check: open build/wanted-callback-preview/Play Wanted Development
+Preview.cmd, enter Wanted, open pause Options, then PC Settings. F: install is
+unchanged. The full PC port goal remains incomplete. Luna Low is fine for
+another bounded menu task; Sol Medium is appropriate for further minigame
+integration.

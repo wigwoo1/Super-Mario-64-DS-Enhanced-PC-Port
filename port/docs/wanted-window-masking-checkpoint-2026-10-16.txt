@@ -1,0 +1,87 @@
+Wanted window masking - Astra Low milestone, 2026-10-16
+
+Task: render Wanted's target poster during normal play using the original
+DS window rules, keeping screenshots from real game tests.
+
+Implementation (host port only; original src/ and include/ unchanged)
+- ppu.cpp now shares OBJ tile/affine rasterization between visible sprite
+  colors and mode2 object-window coverage. Transparent index0 remains a hole.
+- Both engines apply WIN0/WIN1/WINOUT layer bits. WIN0 wins overlaps, then
+  WIN1, then OBJ-window, then outside. DISPCNT master layer/window flags remain
+  authoritative. Half-open/wrapped bounds and equal/empty bounds are tested.
+- Mode2 objects contribute coverage without drawing color. Normal objects
+  obey window visibility and 2D priorities: lower value wins; OBJ beats BG
+  ties; OAM index resolves equal-priority OBJ ties. Background mask filters
+  used by the minimap remain respected by the subsequent OBJ pass.
+- rt.cpp delivers HBlank IRQs with VCOUNT/DISPSTAT set and captures window
+  registers before each visible line. Handler writes affect the next line;
+  repeated 120/240Hz host presentations reuse the same simulation snapshots.
+  VBlank callbacks run before graph upload and the scanline snapshots.
+- No Wanted-specific layer disabling or replacement assets. Original curtains,
+  iris tables and game HBlank callbacks are executing on the native host.
+- New smoke_ppu_windows checks both engines, overlap/bounds, transparent OBJ
+  windows, sprite/BG priority, captured per-line boundaries, and actual native
+  HBlank dispatch with 263 calls and alternating line colors.
+- smoke_oam's fixture now enables display/OBJ master bits. Its former setup
+  enabled only 1D mapping and relied on the old renderer ignoring OBJ enable.
+
+Verification so far
+- Build passes. Focused PPU/runtime tests 4/4 passed.
+- Full CTest first run 49/50 (old smoke_oam invalid fixture as described above).
+  After correcting fixture:50/50 PASS,13.78seconds, build/wanted-windows-ctest.log.
+- Original/GPU left-right replay wanted-windows-first:3350frames,exit0.
+  Touch450:128:96,1250:224:168,1850:88:60,2320:112:80.
+  At2200 Mario poster is visible BEFORE any face tap, time8.
+  Correct tap2320 finds Mario, reward+5 (time6->11), then next round.
+  At2750 Wario poster is visible during play with16 candidates, time8.
+  At3240 second round reaches timeout/catch. Captures1950,2050,2200,2380,
+  2500,2750,3300. Screenshots inspected2200,2380,2750.
+- Original/software top-bottom replay wanted-windows-software:3700frames,exit0.
+  Same navigation, wrong face tap2320:144:80. Mario target visible2200,time8.
+  Penalty brings time to0. Capture2360 shows expanding circular iris (per-line
+  masks),2500 full poster. Results/high-score UI visible3650,controller18.
+  No retry/return input sent. Screenshots inspected2200,2360,2500,3650.
+- Original/GPU right-left4K replay wanted-windows-4k:2950frames,exit0.
+  3840x2160 captures2200/2500/2790/2920. Poster visible2200. Start2450 pauses
+  (menu1,time4),Start2700 resumes(menu0,time3). Poster remains visible2790.
+  Pause help text appears, but touch-screen controls remain blank/incomplete.
+  Screenshots inspected2200,2500,2790. Original2D art is scaled at4K output.
+- Final build50/50 CTests PASS in24.40seconds (wanted-windows-final-ctest.log).
+  All3 linked-data audits PASS (wanted-windows-native/actor/menu-audit.log).
+- Final baseline Yoshi regression wanted-windows-stage-regression:4900frames,
+  exit0. At4180 level1,Yoshi(character3),unpaused. At4500 PC Settings page8
+  open;4880 back in gameplay with Yoshi/minimap visible. Screenshots4500/4880
+  inspected. This is the same baseline route as the previous milestone, not
+  a diagnosis of the independent original-menu Adventure action crash.
+
+Scope/remaining limitations
+This repairs the 2D window masking used by Wanted. It does not implement
+bitmap sprites/backgrounds, mosaic, color blending/brightness effects, or
+window clipping of the separate native3D geometry pass. Those existing
+renderer limitations remain. Physical mouse/controller use is untested;
+scripted taps exercise the native stylus sample path. Wanted pause touch
+selection/retry/return-to-Rec-Room and other minigames still need focused tests.
+Separate original-menu Adventure action crash remains undiagnosed (see prior
+minigame-touch-fix handoff). Full PC port goal is still incomplete.
+
+Reference consulted for window register semantics:
+https://oafc.anod.cc/man (GBATEK LCD I/O Window Feature).
+
+Build identity
+sm64ds_pc.exe SHA256 FDAE7F5C12358C714C16F6146214EFE5D724D3130BEABD2EC6C1669E003BE23E
+sm64ds_pc.map SHA256 F6864FC49B4570C005A9E6B0D3D581023573FC16E12C53225879C6B8A5974EAF
+The three Wanted replays used EXE9EA7ED1D8BF1C96755CE3A835D3484779C7491491A928D55AAA8CC2E8A7F11E2.
+Final rebuild only corrected source comments about scanline behavior. Its
+native.text section is byte-identical to the replay build (checked with PE
+section SHA256; build/wanted-windows-code-comparison.txt). Final tests/audits
+and Stage replay use the final EXE. Updated development preview contains the
+final EXE/map, preserving its launcher/settings/saves. F: install unchanged.
+
+Milestone status: VERIFIED for Wanted normal-play poster/window masking.
+Overall Wanted/port status: PARTIALLY VERIFIED; pause touch controls, retry,
+return and other minigames remain. All running replay/build sessions finished.
+Recommended next model: Sol Medium (step down from Astra Low). Window rendering
+architecture is repaired; next bounded task is trace the missing pause touch
+controls, then test retry and return to Rec Room with screenshots. If that
+exposes a new difficult ABI/reverse-engineering issue, apply the two-attempt
+escalation rule. Goal paused for this specifically recommended model switch.

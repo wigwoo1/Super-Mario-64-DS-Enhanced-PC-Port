@@ -1,0 +1,79 @@
+Current native build installation and launch check - 2026-10-16
+
+Status: PARTIALLY VERIFIED. The current Release executable and map are installed
+in the requested F: folder, and the installed title/file-select route completed
+the bounded automated run. The complete PC port and standalone release remain
+unfinished.
+
+Build and tests
+- `cmake --build build/port --target sm64ds_pc --parallel 4` reports no work to
+  do; the existing Release executable is current for the configured build.
+- CTest passes45/45 tests in25.01s. Full record:
+  `build/port/Testing/Temporary/LastTest.log`.
+- The ROM in the checkout and `F:\AI Games\Mario 64 DS` have matching SHA256
+  `CE5829AAA79F06C67140ED1F45CBCA738B0A9D0180538C8C1498472D859DB032`.
+
+Install and runtime check
+- Installed `sm64ds_pc.exe` SHA256:
+  `BBF216EC9AF7901F4050C7B8777DE5B71DBC5AD80973646DDA45F431C9D55410`.
+- Installed `sm64ds_pc.map` SHA256:
+  `B595BD514B385134F61E01069F85DE7B8F062898C38D0B276CD4E4DF7BAD0D94`.
+- Both copies match the current build. Earlier installed exe/map were saved in
+  `native-checkpoints/native-checkpoint-2026-10-16-current-build/previous-installed`.
+- `sm64ds_pc.ini` was absent before and after. The user ROM, launcher, and user
+  saves were not modified. QA save locks were written to an isolated C: folder.
+- Launching the installed executable with the matching ROM completes1900
+  simulation frames and reports process exit0. Captures at1180 and1780 show the
+  title and File A/B/C at1280x720, the default because the user INI is absent.
+  The title/file-select path is verified; the file-select castle background is
+  still visually imperfect, and gameplay from this particular run is not tested.
+- A second direct PowerShell launch independently captured the executable exit
+  code as0 and reached both capture ticks. QA saves remain isolated under
+  `build/port/installed-current-test-saves`.
+- A separate installed File A replay ran6000 ticks and exited0. The captured
+  final state confirms level1, intro complete, `St_Wait_Main`, and save,
+  selected, and active player character IDs all3 (Yoshi). The tick5900 capture
+  visibly shows Yoshi and the minimap. This covers File A through idle gameplay
+  at1280x720; it does not test movement or every course.
+- The installed File A stick replay also completed6000 ticks and exited0. At
+  tick5480 Yoshi is idle at X=-4915200; partial stick magnitude1989/4096 enters
+  `St_Walk_Main` and moves him to X=-2247260 by tick5750. After release the
+  magnitude returns to0, he reaches X=965064, and returns to `St_Wait_Main` by
+  tick5990. Character ID remains3. This verifies simulated analog input on the
+  installed build, but not a physical Xbox controller.
+
+Evidence: `build/installed-current-direct.log`,
+`build/installed-current-direct.exit-code.txt`,
+`build/port/installed-current-direct-state.csv`, and
+`build/port/installed-current-direct-{1180,1780}.png`; initial run logs remain
+in `build/installed-current-menu.stdout.log` and
+`build/installed-current-menu.stderr.log`. File A gameplay evidence:
+`build/installed-file-a.exit-code.txt`,
+`build/port/installed-file-a-state.csv`, and
+`build/port/installed-file-a-5900.png` with its bottom-screen capture. Stick
+evidence: `build/installed-file-a-stick.exit-code.txt`,
+`build/port/installed-file-a-stick-state.csv`, and
+`build/port/installed-file-a-stick-5750.png` with its bottom-screen capture.
+
+Next: continue gameplay/course and actor coverage; investigate original menu
+background fidelity; implement remaining requested rendering and clothing
+options; generate the reviewed SUPIR all-texture pack; verify higher-rate
+presentation; and finish standalone packaging. Do not claim the full goal is
+complete from this bounded install check.
+
+### Later superseding update — 2026-10-16 F: touch-driven menu verification
+
+This update supersedes the earlier executable/map hashes above. Current installed
+executable SHA-256 is
+`DD65386CCA34B2A20694C4BF9C97C2ADB8BE5B849F421BCB39819222E91F2CEC`; map hash is
+`715935C0559E95EC3F67DB8257576D1C56F4F614388826FE211C7787084207C1`, both matching
+`build/port`. The original title/file menu is touch-driven. Keyboard-only automated
+runs stayed on the animated star because they did not send the needed touch taps.
+
+From the actual F: working directory, a 6000-frame run used touches
+`450:128:96` (start title), `1250:128:168` (Adventure), and `1850:64:70` (File A),
+with auto-confirm disabled. It exited 0. Frame 1780 shows File A/B/C, and final
+state at frame 6000 is level 1, idle Yoshi (IDs 3), at 1280x720. The frame 5900
+screenshot shows Yoshi and the minimap. QA saves were redirected to the workspace;
+F: save data was preserved. The exact binary’s recorded CTest result is 45/45
+passed at 04:14. The full port remains unfinished.

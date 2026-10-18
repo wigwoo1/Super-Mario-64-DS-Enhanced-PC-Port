@@ -1,0 +1,46 @@
+Native menu star scaling repair, 2026-10-15
+
+Supersedes the GPU-size diagnosis in native-menu-render-handoff-2026-10-15.txt.
+That handoff compared native tick600 against software tick300/1180. Fresh
+same-tick captures prove both renderers had the fault. Before repair, all306
+projected/homogeneous vertex records and viewport fields match exactly at
+300,600,1180. See build/menu-star-before-comparison.json and astra-trace dumps.
+
+Cause and repair
+The original menu func_ov007_020c39f8 declares three rotation helpers with
+short sin/cos arguments. Native HAL implementations consume int, matching
+the original ARM assembly's full registers. MSVC leaves upper argument bits
+zero/undefined under the short contract. A cosine of -113 reached the native
+helper as65423, scaling the star about16x. At tick600 the traced root matrix
+was [65423,4094,0,-4094,65423,0,0,0,4096,0,-604,0].
+Hostgen now changes only these three specific declarations to int in the
+PC-generated source. Original src files and GPU projection are unchanged.
+The corrected root is [-113,4094,0,-4094,-113,0,0,0,4096,0,-604,0].
+
+Read-only opt-in DSMT_DUMP diagnostics now capture geometry/viewports and
+menu animation state at300,600,1180. The star model callback remains active,
+frame0/157 and scale6000 in these observations. Full menu state completion
+is not established by fixing its matrix.
+
+Build: build/build-native-file-menu.cmd passed.
+Executable SHA256 D9A7F1421CB8FA22E31F242392F3CCC0335D0ED0AFAD321B33D146BE267EF169
+42/42 CTest passed,36.03s (build/menu-star-signed-rotation-ctest.log).
+Four hostgen Python unit tests passed.
+New smoke_dsmt_rotation compiles the actual generated menu caller and checks
+all4096 angles on all3 axes against the full-width native argument contract.
+An independently compiled ORIGINAL caller fails the same regression:
+got4096,65530 expected4096,-6 (build/menu-star-abi-before/result.log).
+The corrected caller passes12288 calls. This is an ABI test, not a replacement
+of the game's matrix calculations.
+ROM/native data audit passes (build/menu-star-data-audit.log).
+Native original-menu1200ticks exit0. At600 the normal-sized star is verified:
+build/port/native-file-menu-original-signed-rotation-600.png.
+
+Remaining original-menu work: tile-font leakage at screen sides, top/bottom
+screen presentation, original title/file-select states and inputs. Keep
+SM64DS_PC_ORIGINAL_MENU opt-in. Full port requirements remain as before;
+this milestone does not finish the menu or the game. F: was not changed.
+User selected Astra Low; no further model escalation needed for this repair.
+Continue Astra Low for remaining reverse engineering, goal stays active.
+
+Final verification: software original-menu1200ticks exit0. Corrected geometry and viewport CSVs match GPU exactly at300/600/1180. Default native4K Yoshi gameplay4200ticks exit0. Tick4180 is RGB pixel-identical to the previous verified Yoshi baseline (zero changed pixels). See build/menu-star-after-comparison.json. All process handles completed.

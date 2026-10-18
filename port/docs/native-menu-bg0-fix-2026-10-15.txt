@@ -1,0 +1,36 @@
+Native menu BG0 selection repair, 2026-10-15
+
+Previous goal turn: verified progress (signed rotation ABI repair).
+Current repair: main engine BG0 is not scanned as a tile background when
+DISPCNT bit3 selects the geometry engine. Its tile data is unrelated font
+storage in the original menu. Respecting this selector removes the leaked
+font strips. Engine B and main BG0 in 2D mode continue normal tile scanout.
+
+Changed port/ntr/ppu.cpp, extended existing smoke_ppu_affine test with main
+and sub BG0, selector on/off, opaque/transparent backdrop and return to2D.
+Build passed; all42 native CTests passed25.64s. Log:
+build/menu-bg0-selection-ctest.log
+Executable SHA256:
+064A7EC02E2777F92AF6ECE246B471DB67B434B56A81EFD6ADC894E0A41F4163
+Original-menu600ticks native3840x2160 exit0; screenshot inspected:
+build/port/native-file-menu-original-bg0-selection-600.png
+Font characters are gone. White side borders, sky/minimap overlay and original
+menu progression/presentation remain unfinished. Keep original menu opt-in.
+F: files untouched.
+
+Evidence for next input milestone (not yet repaired):
+- Original menu func_ov007_020b0da0 waits for a touch in x96..160,y64..128
+  during the first-time star sequence. Earlier replay only supplied A.
+- dScDSMT_c.cpp lines351..356 calls func_0203da9c() but discards its result,
+  then calls func_0203dabc()/func_0203dae4() without an index.
+- Actual linked definitions in src/unnamed/arm9/0203 require int idx and
+  access indexed records. include/decl_common.h declares these as void args.
+  Need an explicit typed native adapter/generated caller correction, preserving
+  original source. Do not infer that touch input works before fixing/testing
+  this boundary. Current logs only establish that the intro remains waiting.
+- Opt-in touch replay does not exist. Automation-only intentionally clears
+  real mouse input. Add bounded touch samples through the existing latch path
+  and test start/release/malformed coordinates before end-to-end menu replay.
+Continue Astra Low for original UI/input integration; goal remains active.
+
+Final gameplay regression:4200ticks exit0, native3840x2160. Yoshi tick4180 RGB pixels identical to previous signed-rotation baseline. Image build/port/native-file-menu-baseline-bg0-selection-4180.png. All live test handles completed.

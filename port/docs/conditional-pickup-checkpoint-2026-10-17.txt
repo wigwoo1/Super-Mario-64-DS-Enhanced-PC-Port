@@ -1,0 +1,56 @@
+Conditional silver-star pickup / VS sequence checkpoint -- 2026-10-17
+Status: VERIFIED for the bounded, isolated matching QA encounter.
+
+Result
+- Real controller inputs ground-pound Goomba16 at1722, release star21 and
+  marker20 at1737, and collect the star at1778. Original star states proceed
+  9(wait marker),8(bounce),5(begin),6(hold),7(talk). Live sequence index0->1
+  and active ID0->1 change at1778. Silver-star credit0->1 occurs at1846;
+  the collected star is then removed. Later jump2300 and final idle/control
+  in course0 pass. Local and installed F: replays each exit0 after2500frames.
+- This is the existing explicitly labelled automation-only fixture: Goomba
+  placeholder ID15 becomes valid VS ID0. The game's actual sequence, pickup,
+  actor positions and counter are not injected. Story mission is separate.
+- Ordinary launch, original ROM, user saves and original src/include unchanged.
+  Full multiplayer VS, subsequent star spawning and course completion are NOT
+  verified by this isolated story-mode test of the original VS-style reward.
+
+Changes
+- No native gameplay fix or executable change needed. Two initial pursuit
+  routes missed the bouncing star. Movement/jump timing made real contact.
+- New check_conditional_star_pickup.py composes the confirmed release checks
+  with contact, collection states, exactly one sequence advance, next valid
+  VS row ID, exactly one credit, star removal, pose and later control checks.
+- Watch Conditional Silver-Star.ps1 adds Pickup mode; the new Watch
+  Conditional Silver-Star Pickup Test.cmd launches it with separate QA saves.
+  Existing Match/Original/Mismatch routes retain their original behavior.
+
+Build and evidence
+- Build up to date: ninja no work to do.52/52 CTests pass20.35s.
+-10 standalone replay-checker unit tests pass. Seven negative checks against
+  actual traces reject missing contact/collection/credit/sequence changes and
+  the two genuinely missed pickup runs. Synthetic unit fixtures do not count
+  as gameplay verification; the two successful native replays do.
+- Local prefix build/port/native-file-menu-baseline-conditional-pickup-c.
+  Installed prefix build/port/installed-conditional-pickup. CSVs/logs/screenshots
+  preserved; actual collection screenshot1810 shown during testing.
+- EXE71432172C751CA0E9158662290541A2BF2B5D634BE3E52A441DAF5FF64BC227E
+  MAP9718B07F6E96D321DDABA81375607B746726B7C0DF4BC5A878405E6FF6BA8D27
+  unchanged and matched on F: before replay. Launcher copied from port/launchers.
+- F: native-checkpoints/native-checkpoint-2026-10-17-conditional-pickup contains
+  source,QA,README and previous launcher. Existing conditional-reward checkpoint
+  retains verified binary and earlier binary rollback; avoid duplicating them.
+
+User check
+- Double-click Watch Conditional Silver-Star Pickup Test.cmd in
+  F:\AI Games\Mario 64 DS. Avoid controller/keyboard input during the replay.
+  It shows the labelled test map, Yoshi defeating the Goomba and collecting
+  the star, a later jump, then closes automatically. Test saves are separate.
+
+Next bounded work / model handoff
+- Conditional release, pickup and one live VS sequence advance are verified.
+- Power Star actor178 is still absent from native actor profiles. Integrating
+  its resource/state callbacks and testing full collection/course completion
+  is a separate actor/progression task with reverse-engineering complexity.
+  Sol High recommended before beginning that work; pause for that model switch
+  under the user's standing instruction. The overall PC-port goal is unfinished.

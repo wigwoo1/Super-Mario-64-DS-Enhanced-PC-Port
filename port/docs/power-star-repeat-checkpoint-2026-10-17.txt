@@ -1,0 +1,34 @@
+Repeat Power Star collection -- 2026-10-17
+Status: VERIFIED with the exact installed EXE 757F74D22F0F2D2C26E6526197FAC5FA916DDA0A96B5DF236EE6D20736B2CA25.
+
+Correction to the previous turn: there was no duplicate-credit bug. Save star
+IDs are zero-based bit positions. ID1 is mask2; ID7 is mask128. The first
+repeat run correctly retained mask2,total7. The second run changed the QA
+fixture to ID7, a DIFFERENT uncollected reward, and correctly produced
+mask130,total8. It must not be used as evidence of duplicate credit.
+The speculative daStar_c.cpp guard was removed and the original param1 QA
+fixture restored. Production src logic and installed EXE remain unchanged.
+CollectStar uses bitwise OR, which already makes repeated credit idempotent.
+
+Fresh exact-installed-build replay native-file-menu-baseline-power-star-repeat-verified:
+- Immutable seed copied from the previous genuine course-clear save: course0
+  mask2,total7. Separate mutable saves start with primary+backup both mask2.
+- QA star actor93,param1,star_id1 recognizes prior collection (payload bit4).
+- Actual player-owner3 contact 1791 (hit0x400008), collection1792, states5/6/7.
+- All live telemetry retains total7,course mask2. Castle level1 at1920.
+- Save & Continue2500 commits slot0; saved checksum verified. All30 course
+  star masks and saved character unchanged. Later castle jump2900 works;
+  final3300 normal idle, control enabled, process exit0.
+- Strict repeat verifier passes;9 meaningful negative checks reject altered
+  traces with crash,no contact,no celebration,extra live credit,uncollected
+  fixture,no save commit,lost control,no jump or changed saved star progress.
+- No C++ change is required, so no replacement game build is installed.
+  Prior interrupted CMake reconfigure remains a separate future build concern;
+  fresh verification uses the existing installed executable directly.
+- Repeat launcher uses isolated QA saves; its seed is preserved under this
+  checkpoint/repeat-seed and its automation uses the same verified route.
+- Source: port/tools/check_power_star_repeat_replay.py. Full evidence JSON:
+  build/power-star-repeat-verification.json; original traces/PNGs preserved.
+
+Full native PC port remains unfinished. Luna Medium remains suitable for
+bounded regression checks; no model switch is needed for this completed test.

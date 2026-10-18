@@ -1,0 +1,203 @@
+Fresh-save startup investigation - 2026-10-17
+
+Status: fresh File A startup verified through the castle exterior; first
+course entry and fresh-save key acquisition remain unverified.
+
+The current Release executable was already up to date. Build completed with no
+work required and CTest passed 52/52 (37.59 seconds).
+
+The first two empty-save probes were invalid: they sent A/confirm at poll 450,
+but this original menu requires a touch at 450 to leave the animated star.
+Those runs exited on the star screen and do not show a game startup defect.
+
+Corrected runtime test:
+- Current C: candidate build D59575ED2B1B45CD3ADBCEBA36D5E7AFBC9637151BAD05FBE8782FB4FCF3F7CE;
+  F: ROM mounted successfully; no change to the installed F: executable.
+- Fresh, isolated save folder; original menu touches at polls 450 (start),
+  1250 (Adventure), and 1850 (File A). No auto-confirm was enabled.
+- Process exited 0 after 6000 frames. Screenshots show the original title,
+  File A/B/C, and Yoshi in the castle exterior. State trace confirms character
+  ID 3, level 1, idle control, zero stars, and zero progress flags.
+- An input-only route reached the castle entrance/interior and was still
+  approaching a keyhole door at the last capture. This does not verify entry
+  into the Bob-omb Battlefield painting or collection of the first star.
+- A separate 6500-frame fresh-save replay pressed A at the door. It stayed
+  closed; the trace shows Yoshi's ability state during those presses, zero
+  stars, and no save progress. The door's runtime variant 12 maps to key index
+  5 in the recovered door table, so this is the expected missing-key gate.
+- The isolated save folder contains only lock files; no progress was saved.
+  User saves and the installed F: executable remain untouched.
+
+Corrected evidence is in build/port/fresh-save-corrected-20261017-201254;
+captures include fresh-start-corrected-1180.bmp (title),
+fresh-start-corrected-1780.bmp (File A/B/C),
+fresh-start-corrected-5250.bmp (Yoshi outside the castle), and
+fresh-start-corrected-5980.bmp (Yoshi at the castle door). Logs and the state
+CSV are beside the images.
+
+The opening key is acquired by catching the rabbit in the hedge maze outside
+the castle. The door probe is in build/port/fresh-save-door-probe-20261017-201805,
+with screenshots, state CSV and logs beside it.
+
+Next: locate the rabbit actor in the fresh-file castle exterior, follow normal
+Yoshi controls through the hedge maze, and verify that the key unlocks the
+front door. Then verify first-course entry and broader progression. The full
+PC port remains unfinished.
+
+2026-10-17 follow-up:
+- Rebuilt Release through port/build-pc-game.cmd; build exit 0. CTest passed
+  52/52 (8.73 seconds).
+- Corrected the opt-in actor census to walk the live list with dActor_c::Next,
+  matching existing runtime telemetry. The census currently fires in the
+  presentation-frame callback; scene timing appears offset from the
+  simulation-frame count. At tick 2000 the title/save state had reached the
+  exterior transition, but the scene actor query still returned zero. Thus the
+  census has not yet identified the rabbit and must not be treated as a result.
+- Diagnostic replays and captures are in
+  build/port/fresh-save-actor-census-20261017 and
+  build/port/fresh-save-census-valid-20261017. They use isolated C: save data.
+- No change was installed to F:. Latest Release source remains on C:.
+
+2026-10-18 rabbit-scene census:
+- Fixed the diagnostic trigger to use ntr::rt_frame() simulation ticks; the
+  callback argument is presentation frames and can repeat while the guest is
+  parked. This removes the earlier timing ambiguity.
+- Release build succeeded and CTest passed 52/52 (8.19 seconds).
+- Fresh empty-save replay with the corrected title/File A touches exited 0 at
+  6100 simulation ticks. Screenshot at 5250 shows Yoshi on the castle front
+  lawn; at 5500 the actor census reports nine live actors: player 191, three
+  doors 353, four objects 349, and C_JUGEM (Lakitu) 235. Rabbit MIP (187) is
+  absent from this particular lawn snapshot. The player is controllable and
+  save progress remains zero. Capture, census log and CSV are in
+  build/port/fresh-save-rabbit-scan-20261018.
+- Rabbit behavior/profile source exists in src/actors/daMip_c.cpp, but the
+  fresh lawn census does not prove it is spawned or registered in this scene.
+  Next: follow a normal input-only path to the hedge maze, capture a census
+  there, and determine whether MIP is absent from retail stage placement or
+  missing from native integration before changing game behavior.
+- F: executable, ROM, and user saves remain untouched.
+
+2026-10-18 follow-up: collision-guided route and Lakitu flag trace
+- Replayed Yoshi through five castle-ground waypoints using ordinary input.
+  The trace confirms the points were reached, but the 6500/7600/8500/9000
+  screenshots show a broad stone path beside castle walls, not the hedge maze.
+  At tick8500 the live census still contains nine actors and no MIP (ID187).
+  This is not a valid rabbit-spawn test. Evidence is in
+  build/port/fresh-save-hedge-outer-route-20261018; run exited 0.
+- Source trace confirms daC_Jugem_c::StateTalkInit sets SaveData flags2 bit
+  0x20000; daMip_c keeps its ordinary-mode disabled bit set while that flag is
+  absent. Earlier A presses only reached Yoshi's tongue state, so this talk
+  transition has not yet been observed in a replay.
+- The tick6080..6100 state capture from the first fresh-file run shows the
+  native Lakitu alive with param1=1 and state record 0x021307e0 (post-intro
+  hidden/wait state), timer0; the intro-ready bit is set. The route that day
+  left Yoshi at z=6800 (world units), inside the hidden-state z threshold, but
+  did not satisfy the rest of the hidden-state trigger or start the guide.
+  This proves the native variant-1 intro reached its waiting state, but does
+  not prove the Lakitu talk or rabbit gate completed.
+- Next: identify the actual Lakitu NPC/talk prompt location and interaction
+  from the recovered scene placement and talk-state checks, then replay to it.
+  Only after observing the talk-init flag should MIP spawn/catch/key behavior
+  be tested. No game source, F: install, ROM, or user save changed in this
+  follow-up. Existing Release build and 52/52 CTests remain the last verified
+  source build.
+
+2026-10-18 input-only hedge-maze approach:
+- Replayed the empty-save menu, then used the ordinary virtual stick route
+  harness across the courtyard. The player reached waypoint 0 (-2500,3000)
+  at tick 5565. Attempting the next waypoint (-3500,0) pushed Yoshi into the
+  castle-side fence; the position then remained near (-2880,1818) through
+  tick 9000 in St_OnWall_Main. No coordinates or actor/save state were forced.
+- The tick-8500 census again showed nine live actors, no MIP (187). The
+  screenshot hedge-route-8200.bmp shows Yoshi against the fence; the planned
+  second waypoint did not reach the hedge maze. Run exited 0 and saved only to
+  its isolated C: folder build/port/fresh-save-hedge-route-20261018.
+- This confirms the current route geometry/waypoints are wrong for passing the
+  fence; it does not establish that rabbit placement or native MIP integration
+  is broken. Next route along the path to find the gate/opening, then census
+  once Yoshi is actually in the hedge maze. F: assets and user saves unchanged.
+
+2026-10-18 follow-up route and intro input:
+- A fresh replay sent A during the wake-up/courtyard period. The trace shows
+  St_YoshiPower_Main, so these presses activated Yoshi's tongue instead of
+  starting a conversation. The 6150 census still had nine actors and no MIP.
+  That test did not establish a Lakitu conversation.
+- A second normal-input path went toward the fence's visible left end. It
+  reached waypoint 0 (-2500,3000) at tick 5565, then stalled around
+  (-1986,1997) in St_ButtSlide_Main while targeting (-1500,1000). At tick
+  8200, the census again showed the same nine actors and no MIP. Screenshot
+  hedge-gate-7000.bmp shows the fence and path; the run and captures are in
+  build/port/fresh-save-hedge-gate-route-20261018. It exited 0.
+- The second waypoint still did not enter the maze, so no inference about MIP
+  placement is warranted. Next work needs a geometry-guided path/actual
+  courtyard gate or the correct scripted Lakitu interaction. All runs used
+  isolated saves on C:; F: remains unchanged.
+
+2026-10-17 follow-up: opt-in Lakitu gate trace added and built
+- Added a separate read-only `SM64DS_PC_LAKITU_CAPTURE` CSV in port/main.cpp.
+  It records flags2, Lakitu state/position/hidden/variant, and player state;
+  existing state CSV schema and gameplay are unchanged when the option is off.
+- Release build succeeded; CTest passed 52/52 (8.67s).
+- Fresh isolated File A replay reached Yoshi gameplay, completed the native
+  variant-1 intro, and entered Lakitu's hidden/wait state. At tick5550 flags2
+  was 0x88 (intro-ready set, 0x10000 and 0x20000 clear). It therefore did not
+  start the guide/talk. Ordinary route input reached the same stone path
+  outside the maze; the bounded investigation process was stopped at tick7540
+  after the relevant state and screenshots were captured. This is not evidence
+  of rabbit spawn behavior. Captures are in
+  build/port/fresh-save-lakitu-gate-20261017; F: saves/install untouched.
+
+2026-10-17 follow-up: course re-entry evidence rechecked
+- Reran the evidence checker against the retained F: 10,800-frame replay.
+  PASS: two Battlefield visits, two painting-cache resets, six painting actors
+  recreated on both castle loads, second visit returns Yoshi to normal control,
+  clean exit, and QA save identical to seed. Screenshots at 7100/9800/10400;
+  frame7100 shows the original Bomb-omb painting after texture reload and
+  before course cleanup (908 rendered triangles).
+- Checker result is retained in
+  F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-17-course-entry\qa-reentry-20261017-105246\verification.json.
+  No gameplay change was needed for this regression.
+
+2026-10-17 source cross-reference: exact Lakitu/rabbit gate chain
+- Door table data_ov100_02148204 has 19 16-byte rows. Variant12 is keyIndex5
+  with message0x18. daDoor_c::func_ov100_02144cf8 writes flags2 bit0x10000
+  only after the locked-key-door message successfully opens for a keyIndex5
+  door (the no-key branch). With the key present, the path takes
+  TryTalkToKeyDoor and does not set this bit.
+- The already-spawned variant1 Lakitu's StateHiddenMain waits for bit0x10000
+  plus the player z trigger; StateTalkInit writes bit0x20000. Ordinary-mode
+  rabbit MIP then clears mIsDisabled after observing bit0x20000.
+- This explains why fresh File A courtyard paths cannot trigger the conversation:
+  the script requires first reaching and interacting with variant12/keyIndex5.
+  Next replay should use an isolated QA save with enough stars to reach that
+  door but without key5, show its original locked-door message, then return to
+  the Lakitu trigger and verify both flag transitions before testing MIP.
+  This is source-derived; the complete natural sequence has not yet been
+  runtime-verified. No user save, ROM, or F: installation was edited.
+
+2026-10-17 follow-up: locked-door blocker identified at the audio boundary
+- Added nearest-door relative coordinates/facing/state and audio volumes to
+  the opt-in Lakitu CSV. The game executable is EXCLUDE_FROM_ALL; explicitly
+  build target sm64ds_pc (build/build-native-file-menu.cmd includes it).
+- Baseline build/port/fresh-save-door-state-20261017 exited 0 at frame6500.
+  At frame5960 Yoshi was inside the door box (dx=-104129, dy=1823,
+  dz=374252 in Fix12), facing31793 against door heading0, and the shared
+  countdown was0. Music volume was520192 (=127<<12), but message volume was
+  stuck at127. The closed-door sound-ready predicate therefore never passed;
+  flags2 stayed0x88 and Lakitu stayed hidden. This is an audio-state blocker,
+  not a missed door interaction. Screenshots at5900/6000/6200/6400.
+- PC startup intentionally leaves the DS sound driver disabled. PlaySub still
+  stored a nonzero message volume, while the main loop skips the disabled
+  driver's update. Added a PC-only disabled-driver branch to PlaySub and
+  ChangeMusicVolume: absent sequences complete, music requests settle, and
+  no stale message volume/active sequence remains. The original enabled-driver
+  path is retained. This does not implement audible music or effects; the
+  native audio backend remains unfinished.
+- Candidate build succeeded and the existing 52/52 CTests passed (20.34s).
+  Runtime validation PASS in fresh-save-door-fixed-20261017: door message at
+  frame5960 (flags2=0x10088), native Lakitu talk at6140 (0x30088), Lakitu
+  departed and normal Yoshi control at8500, clean exit0. Screenshot6200 shows
+  the original map-guidance dialogue. The launcher evidence verifier passes.
+  course-entry-audio-regression-20261017 also passed: existing original-menu
+  entry route reaches Battlefield with Yoshi control/jump, clean exit0 at6000
+  and byte-identical QA save. See locked-door-audio-checkpoint-2026-10-17.txt.

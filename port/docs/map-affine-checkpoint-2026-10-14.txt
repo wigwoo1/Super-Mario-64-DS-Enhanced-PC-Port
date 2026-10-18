@@ -1,0 +1,23 @@
+Mario 64 DS PC port: native MAP actor and affine tile sampling, 2026-10-14
+Status: PARTIALLY VERIFIED. Native MAP integration and affine command sampling pass their checks; the actual minimap image remains incorrect.
+
+Changes:
+Enrolled the recovered dMap_c factory and source in the native actor closure. Actor ID 335 now uses the original eight-byte dBase_c profile (factory plus priorities 335/335), independently audited against overlay 2 at 0x0210c160. The actor's host size is asserted at 0x258. Its fader virtual call uses the native MSVC thiscall convention.
+The screen renderer now samples legacy affine eight-bit tile maps and extended affine sixteen-bit tile maps using signed 28-bit origins, 8.8 matrices, linear tile maps, original wrap/transparent overflow and map sizes. Character-base addressing reads all four DS bits, fixing the observed MAP char base from 0x06200000 to 0x06210000. Text background handling retains its existing map organization. Bitmap backgrounds and complete extended palette behavior remain open.
+Added bounded trace of sub-screen mode/map registers when configuration changes.
+Reference: https://mgba-emu.github.io/gbatek/#ds-video-bg-modes-control
+
+Verification:
+Release build passed; smoke_ppu_affine, smoke_oam and smoke_actor passed (3/3).
+The independent affine test checks mode 3 MAP-format tiles, char base 4, 128-pixel boundaries, translation, signed negative origins, overflow wrapping, axis exchange and legacy one-byte map entries.
+Native profile audit passes four profiles and prior DOOR callback/resource checks. Shared-data audit checks 217 C/C++ bindings with zero divergent addresses.
+Runs resume105, resume106 and resume107 each reached simulation frame 1200 and exited 0. Each game test produced an inspected screenshot. Latest exact trace: MAP init present; DISPCNT=00011f03, BG3CNT=1f12, matrix=256,0,0,256, origin=0,0, screen=0620f800, chars=06210000. The original missing MAP-profile warning is absent.
+
+Visual limitation and next step:
+The final screenshot still shows incorrect cloud-like content in the overlay instead of a verified map. Successful actor initialization and the synthetic sampling test do not prove game map correctness. Capture the bottom framebuffer separately and inspect enabled BG0/BG1/BG2/BG3 layers, their priority, loaded map/character bytes and palettes to identify which layer generates that image. Preserve the original map and actor behavior; do not fabricate map art or hide the fault.
+
+How to check:
+Open last-render.bmp. Launch-test.cmd repeats the 1,200-frame startup test using the existing ROM in the main Mario 64 DS folder and writes manual-run logs and screenshot. This remains a development build, with full gameplay, door/exit transitions, audio, physical Xbox input, internal 4K, replacement textures and requested delivered FPS incomplete or unverified.
+Recommended model: continue Sol Medium. No model switch recommended at this milestone; goal remains active.
+
+The complete source remains in the C: task workspace work/source-extracted/sm64ds-decomp-main. changed-source is a partial snapshot including the prior actor/shadow/lighting changes. build-inputs preserves source enrollment history. Previous checkpoints remain separately available.
