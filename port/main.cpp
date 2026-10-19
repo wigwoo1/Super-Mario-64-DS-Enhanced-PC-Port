@@ -300,13 +300,58 @@ static bool replay_rabbit_controls() {
 static bool replay_buddy_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_BUDDY_TALK");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    if(!mode || !automation || std::strcmp(automation,"1") || data_0209f2f8!=6)return false;
-    auto *p=static_cast<Player *>(data_0209f394[0]);
-    if(!p || p->aliveState!=1)return false;
-    const bool cannon=!std::strcmp(mode,"cannon");
-    static unsigned target=0;
-    static bool started=false,completed=false;
+    if(!mode || !automation || std::strcmp(automation,"1"))return false;
+    const bool persistence=!std::strcmp(mode,"cannon-persistence");
+    const bool repeat=persistence || !std::strcmp(mode,"cannon-repeat");
+    const bool cannon=repeat || !std::strcmp(mode,"cannon");
+    static unsigned target=0,rounds=0,visit=0,phase=0;
+    static bool started=false,completed=false,in_course=false,saw_save=false;
+    static uint64_t completed_tick=0;
     static int start_x=0,start_z=0;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    const auto tick=ntr::rt_frame();
+    const bool pulse=tick%45<3;
+    if(data_0209f2f8!=6 && in_course) {
+        target=rounds=0;started=completed=in_course=false;
+    }
+    // Input only: Exit Course, then castle pause -> Save & Quit.
+    if(persistence && phase>=1) {
+        if(phase==4) {ntr::input_test_controls(true,0,0,0);return true;}
+        uint16_t buttons=0;
+        if(phase==1 && data_0209f2f8==2 && p && p->aliveState==1) {
+            phase=2;
+            std::fprintf(stderr,"[native Buddy persistence] castle returned tick=%llu\n",static_cast<unsigned long long>(tick));
+        }
+        if(phase==1 || phase==2) {
+            if(!data_0209f2c4) {
+                if(p && !p->mIsNoControl && !p->mIsControlDisabled && pulse)buttons=8;
+            } else if((phase==1 && data_0209f248==3) || (phase==2 && data_0209f248==1)) {
+                if(pulse)buttons=data_0209f2e0==3?1:0x80;
+            } else if(phase==2 && data_0209f248==13) {
+                if(pulse)buttons=data_0209f2e0==1?1:0x80;
+            } else if(phase==2 && data_0209f248==15) {
+                saw_save=true;phase=3;
+                std::fprintf(stderr,"[native Buddy persistence] original save dialog tick=%llu\n",static_cast<unsigned long long>(tick));
+            }
+        } else if(phase==3 && saw_save && !data_0209f2c4) {
+            phase=4;
+            std::fprintf(stderr,"[native Buddy persistence] saved; awaiting fresh-process reload tick=%llu\n",static_cast<unsigned long long>(tick));
+        }
+        ntr::input_test_controls(true,buttons,0,0);return true;
+    }
+    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
+    if(!in_course) {in_course=true;++visit;}
+    if(repeat && completed &&
+       std::hypot(double(start_x)-p->mPosX,double(start_z)-p->mPosZ)<=60*4096.0 && tick>completed_tick+150) {
+        if(rounds>=2) {
+            if(persistence) {
+                phase=1;
+                std::fprintf(stderr,"[native Buddy persistence] visit=%u repeated interactions done tick=%llu\n",visit,static_cast<unsigned long long>(tick));
+            }
+            return false;
+        }
+        started=completed=false;
+    }
     daRedBombhei_c *buddy=nullptr;
     if(target)buddy=static_cast<daRedBombhei_c *>(dActor_c::FindWithID(target));
     if(!target) {
@@ -327,7 +372,8 @@ static bool replay_buddy_controls() {
     if(buddy->mState!=0)started=true;
     if(started && !completed && buddy->mState==0 && (!cannon || buddy->mCannonOpened) &&
        !data_0209d660 && !p->mIsNoControl && !p->mIsControlDisabled) {
-        completed=true;
+        completed=true;completed_tick=tick;++rounds;
+        if(repeat)std::fprintf(stderr,"[native Buddy repeat] visit=%u interaction=%u complete tick=%llu\n",visit,rounds,static_cast<unsigned long long>(tick));
         std::fprintf(stderr,"[native Buddy replay] completed tick=%llu target=%u cannon=%u\n",
             static_cast<unsigned long long>(ntr::rt_frame()),target,buddy->mCannonOpened);
     }

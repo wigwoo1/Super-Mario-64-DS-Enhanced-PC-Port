@@ -1,0 +1,54 @@
+VERIFIED 2026-10-18: grounded Yoshi, native Buddy dialogue and cannon opening.
+
+Supersedes the unresolved collision findings in the two earlier Buddy handoffs.
+The apparent shutter-induced floating was a C-linkage return ABI mismatch:
+_ZN9dBgCh_Lin10DetectClsnEv returned bool (AL only), while original callers
+read int (EAX). Nonzero upper bytes made misses look like hits and repeatedly
+raised Yoshi. The bridge now returns a normalized int, matching its callers.
+The static line-query helper3859c now uses typed native virtual dispatch,
+as dynamic3842c already does. This also fixes the castle-door route regression.
+
+The cannon then opened but stalled in Buddy cutscene step2. Disassembly proved
+the existing Buddy object read shutter+0x332, although the current native
+shutter flag is +0x32e. Recompiling Buddy with explicit shutter sizeof/offsetof
+assertions fixed this stale header-layout consumer. Current disassembly reads
++0x32e. Original cartridge src/include remain unchanged this turn.
+
+Verification:
+- Release build passed; 52/52 CTests passed after the return fix; 8/8 Buddy
+  adapter checks passed after the final layout assertions.
+- native-buddy-int-return-20261018: 6000 frames, exit0, original File A/castle/
+  painting/mission1 route. Player Y stays0 from tick4500 through6000, real
+  Buddy dialogue completes4882, retreat and controls restored.
+- check_buddy_grounded_replay.py passes that case and rejects the pre-fix
+  native-buddy-static-dispatch-20261018 floating case.
+- native-buddy-cannon-layout-fixed-20261018: 7500 frames, exit0, original
+  mission2 confirmed, cannon Buddy178 variant1, shutter92 descends and slides
+  clear. Steps0..4 complete, camera returns, live cannon flags0->1, completion
+  tick5016, Yoshi finishes grounded with controls. check_buddy_cannon_replay.py
+  passes. Screenshots4000/4700/5000/5500/6000/6500/7000/7400 retained locally.
+- QA seed copies rabbit-earned-key slot1 and adds ONLY course0 mission1 bit
+  (payload0x14=2), recomputing the native CRC. It is a labelled test fixture,
+  not evidence that this run earned the preceding star. User saves untouched.
+- Old seven-star original-course-entry-key-seed stalled at a castle door;
+  native-buddy-cannon-int-return-20261018 is INVALID cannon acceptance.
+- native-buddy-cannon-earned-key-20261018 exposed the step2 layout stall and
+  is superseded by the layout-fixed replay, not a successful completion.
+
+Final EXE SHA256:
+1C4BB94CC485EA40EEF2210C0BD64440C16CBBE96AF13CCD8D89039A1FC03C4E
+Previous verified EXE rollback SHA256:
+9C6CEE49C75876977FC361F331AEBBBAAAED5DD46A955A202BE3F88DFF7A1B1A
+Local checkpoint: build/native-checkpoint-2026-10-18-buddy-cannon.
+
+Scope limits: cannon actor207 aiming/firing remains unintegrated. This verifies
+opening and live progression, not cannon firing or persistence after quitting.
+Next bounded task: repeat Buddy interaction and verify cannon state through
+the original save/reentry flow. Sol Medium is appropriate for this follow-up;
+the difficult floating/layout investigation is resolved. Broader goal unfinished.
+The initial public dev-2026-10-18 build kit predates these fixes; it remains
+diagnostic. A future kit needs fresh reconstruction and runtime verification.
+
+Deployment confirmed: F:\AI Games\Mario 64 DS\sm64ds_pc.exe matches the final SHA256 above. Previous EXE and verification summary retained in F: native-checkpoints\native-checkpoint-2026-10-18-buddy-cannon. Normal launcher unchanged; user saves and ROM untouched.
+
+FOLLOW-UP VERIFIED: repeat interactions and Save/Quit/reload persistence now pass. Read native-buddy-persistence-verified-2026-10-18.txt. Next unresolved gameplay milestone is native cannon actor207 aiming/firing.

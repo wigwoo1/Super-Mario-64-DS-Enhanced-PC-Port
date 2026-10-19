@@ -527,8 +527,10 @@ int _ZN9dBgCh_Gnd10DetectClsnEv(void *self)
 void _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(
     void *self, const Vector3 *start, const Vector3 *end, dActor_c *actor)
 { ((dBgCh_Lin *)self)->dBgCh_Lin::SetObjAndLine(*start, *end, actor); }
-bool _ZN9dBgCh_Lin10DetectClsnEv(void *self)
-{ return ((dBgCh_Lin *)self)->dBgCh_Lin::DetectClsn(); }
+// Original C-linkage callers read an int. A bool return only defines AL on
+// x86, so a miss can leave a pointer in EAX's upper bytes and become a hit.
+int _ZN9dBgCh_Lin10DetectClsnEv(void *self)
+{ return ((dBgCh_Lin *)self)->dBgCh_Lin::DetectClsn() ? 1 : 0; }
 void _ZN5dBgPiD1Ev(void *self)
 { ((dBgPi *)self)->~dBgPi(); }
 void _ZN5dBgPiC1Ev(void *self)

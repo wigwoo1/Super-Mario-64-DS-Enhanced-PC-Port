@@ -37,16 +37,15 @@ class BuddyHostTests(unittest.TestCase):
         self.assertEqual(buddy_host.transform(ROOT,'unchanged','other.cpp'),'unchanged')
 
     def test_line_registry_dispatch(self):
-        for name in ('func_0203842c.cpp',):
+        for name in ('func_0203842c.cpp','func_0203859c.cpp'):
             text=(ROOT/'src/unnamed/arm9/0203'/name).read_text()
             native=buddy_host.transform(ROOT,text,name)
             self.assertNotIn('->v7(',native)
             self.assertIn('->DetectClsn(*reinterpret_cast<dBgCh_Lin *>',native)
 
     def test_static_queries_unchanged(self):
-        # Scope this fix to dynamic actors; keep the established static-stage
-        # collision path until its separate regression coverage is expanded.
-        for name in ('func_0203859c.cpp','func_02038ea4.cpp'):
+        # The unused ground-only shard has no production consumer yet.
+        for name in ('func_02038ea4.cpp',):
             original=(ROOT/'src/unnamed/arm9/0203'/name).read_text()
             self.assertEqual(buddy_host.transform(ROOT,original,name),original)
 

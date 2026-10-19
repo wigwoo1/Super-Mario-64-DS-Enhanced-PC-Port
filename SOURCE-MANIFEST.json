@@ -6459,14 +6459,24 @@
       "bytes": 4852
     },
     {
+      "path": "port/docs/native-buddy-cannon-verified-2026-10-18.txt",
+      "sha256": "4af836cc0b536c61f9195bc57ad30c6049739edb4e6ee0ef344b704256d69c17",
+      "bytes": 3700
+    },
+    {
       "path": "port/docs/native-buddy-collision-handoff-2026-10-18.txt",
       "sha256": "2e1e39f3b4ce85aca422a462f6b0102c0475b8e762d0a3a71d7a6d205d178820",
       "bytes": 4697
     },
     {
+      "path": "port/docs/native-buddy-persistence-verified-2026-10-18.txt",
+      "sha256": "4faf6f78c275d4f032577f3ca1fabafdea19bb5eb92419bcb7b01a0b05918537",
+      "bytes": 3496
+    },
+    {
       "path": "port/docs/native-buddy-sol-high-handoff-2026-10-18.txt",
-      "sha256": "7c41d2d5ea866642178697673f27d3e49c3a88e57617c0cf81abf9270309c346",
-      "bytes": 3492
+      "sha256": "245f1e0d8e54d29bd8ce0e1ef5329afd9711f379b0a79be4287b83a4f37d80c4",
+      "bytes": 3662
     },
     {
       "path": "port/docs/native-coins-input-gate-checkpoint-2026-10-15.txt",
@@ -6635,8 +6645,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "5fe3d93a549fea4ae74cd2728e6bd6b9f2b188597219236ad707d3f54d868dd8",
-      "bytes": 3492
+      "sha256": "3881bc6c25a936e09f36aa12f32504b0d4c0ccb50d4f98c2b227c63a04091f43",
+      "bytes": 4081
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -6825,8 +6835,8 @@
     },
     {
       "path": "port/hal/cxxname_bridge.cpp",
-      "sha256": "85819fcdc12cd2ed93758dc5cbea75389a17d3da70e2b7a002d9035d9658acd4",
-      "bytes": 33889
+      "sha256": "c915ea7ad6710166d931dba1765d61391bd6d1b6148ea1577dd884055361730f",
+      "bytes": 34049
     },
     {
       "path": "port/hal/demo_callbacks.inc",
@@ -7105,8 +7115,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "49aeb9732156bbead380b7ef7993f1fc18fb7d7cbe09f43e8c9faba42f43c5fb",
-      "bytes": 64861
+      "sha256": "1e3afca373e2dc20cd338b8bb154401fb7968c9ce588629ac3c47c93a260940d",
+      "bytes": 67383
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7675,8 +7685,8 @@
     },
     {
       "path": "port/tools/buddy_host.py",
-      "sha256": "08e1daa55acec594bc85ce63981eaad03702a14a278dd583b18589488b15ec9a",
-      "bytes": 5704
+      "sha256": "8127295d741f657741d02b5248b6882941d65c78a3d60e96cf02cd3cbbae4b63",
+      "bytes": 6455
     },
     {
       "path": "port/tools/camera_host.py",
@@ -7697,6 +7707,21 @@
       "path": "port/tools/check_bombking_replay.py",
       "sha256": "11407dfe308088da7eeeb70904888514998dc88b61a79ca25aaf62256efd5310",
       "bytes": 5374
+    },
+    {
+      "path": "port/tools/check_buddy_cannon_replay.py",
+      "sha256": "4bcc82cd684e9248fa99af7b8d4ce7e0a2162b820e2049b2ab3b498532aff1d5",
+      "bytes": 1923
+    },
+    {
+      "path": "port/tools/check_buddy_grounded_replay.py",
+      "sha256": "98e9cf2c61bb0296106dd1e497e7ba4d0130367f18ec4130b1cb1713e452d188",
+      "bytes": 1225
+    },
+    {
+      "path": "port/tools/check_buddy_persistence_replay.py",
+      "sha256": "d405a5fb00216268033dd474b4c2fceb957bc1ecbdb6778ab6cc37fc54cb0657",
+      "bytes": 3780
     },
     {
       "path": "port/tools/check_conditional_goomba_replay.py",
@@ -7925,8 +7950,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "0cd32dd1204530e597cfb52432c3f00a1bc918b8c20be979aa0c4a4f7693b4a8",
-      "bytes": 5827
+      "sha256": "b28addda8e74798f2780899b0542799d95ae7a56919d5b48878a1d2cd152e1df",
+      "bytes": 5905
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -8015,8 +8040,8 @@
     },
     {
       "path": "port/tools/test_buddy_host.py",
-      "sha256": "47bb6dfb7e6943c48c98deb7abce30885a351bc8773a4b243db3cf2309c0fcb6",
-      "bytes": 2508
+      "sha256": "a66a9c230ad4a5c05634eb6b39c9be5a01a48bfd357154fc50938dee9179d989",
+      "bytes": 2424
     },
     {
       "path": "port/tools/test_rabbit_host.py",

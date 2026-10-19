@@ -1,0 +1,59 @@
+VERIFIED 2026-10-18: repeat Buddy conversations and saved cannon persistence.
+
+Two original-menu replays used isolated QA saves. No gameplay defect was
+found. The production Buddy, shutter and save code required no changes.
+port/main.cpp adds opt-in input-only cannon-repeat/cannon-persistence modes:
+normal movement and A/Start/D-pad input drive conversations and original menus.
+No actor fields, positions, progression flags or disk saves are set by these
+helpers. The seed is the prior labelled rabbit-key/mission1-complete QA copy.
+
+First replay: build/port/native-buddy-save-quit-20261018
+- 7800 frames, exit0; original File A -> castle -> painting -> mission2.
+- Cannon initially closed; opening conversation completes5016. Repeat
+  conversation uses the already-open response and completes5466.
+- Both restore normal control; shutter stays open and live cannon flag is1.
+- Original Exit Course returns to castle5805. Castle pause -> Save menu ->
+  Save commits slot0/68 bytes and slot3/740 bytes, then returns to title.
+- Saved slot1 CRC validates; cannon mask0->1, star progress and Yoshi preserved.
+
+Second replay: build/port/native-buddy-saved-reload-20261018
+- Fresh process using only the actual saved slot1 from the first replay.
+- 7500 frames, exit0; original File A/castle/painting/mission2 again.
+- First course capture4450 already has shutter92 open and cannon mask1,
+  before Buddy conversation. No cannon-opening state2 occurs on this visit.
+- Conversations complete4702 and5151. Controls return, Yoshi stays grounded,
+  and talking again does not alter the saved progress.
+
+Build and verification:
+- Release build passed. 52/52 CTests passed (39.58s), 8/8 Buddy adapter checks.
+- tools/check_buddy_persistence_replay.py validates both runs, original save
+  commit, CRC, unchanged star/character progress, open-on-load shutter,
+  repeat dialogue completion and restored grounded controls.
+- Run from source with the project Python:
+  port/tools/check_buddy_persistence_replay.py
+  build/port/native-buddy-save-quit-20261018
+  build/port/native-buddy-saved-reload-20261018
+  build/buddy-earned-key-mission2-seed.sav
+  (Pass these paths on one command line.)
+- Screenshots shown in chat: second conversation5300, original save menu6000,
+  and reload conversation4700. More frames remain in each private case folder.
+
+Replay correction: native-buddy-persistence-20261018 selected Continue in the
+original save menu, so it correctly did not save. This is INVALID persistence
+acceptance and is superseded by the two successful replays above.
+
+Current source test EXE SHA256:
+36C8315D7715C277651FD616F482D23A167BD7EB6E56266291125F31022E7837
+The normal F: game remains the already verified Buddy/cannon build SHA256:
+1C4BB94CC485EA40EEF2210C0BD64440C16CBBE96AF13CCD8D89039A1FC03C4E
+Only opt-in QA controls differ in the new executable. User ROM/saves untouched.
+
+Manual check: enter Battlefield mission2, open cannon via Buddy, talk again,
+Exit Course, open castle pause menu -> Save -> Save. Load File A again, enter
+mission2 and inspect the open shutter; Buddy should give the ready-to-blast-off
+message rather than reopen it. Native cannon aiming/firing is still missing.
+
+Next milestone: native cannon actor207 and Player cannon entry/aim/fire/exit.
+No recovered cannon actor source is currently present in src/. Recommend
+Sol High before that reverse engineering and camera/player integration work.
+This bounded persistence task is complete; the full PC-port goal is unfinished.

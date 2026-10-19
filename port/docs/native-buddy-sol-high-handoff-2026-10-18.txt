@@ -50,3 +50,5 @@ and a no-shutter baseline. Stop speculative ABI changes. Full project unfinished
 Public repository now exists at wigwoo1/Super-Mario-64-DS-Enhanced-PC-Port.
 Daily publication heartbeat runs9AM America/Indianapolis. Read the local
 work/GITHUB_PUBLICATION.txt for source/build publishing constraints and tooling.
+
+RESOLVED by the later native-buddy-cannon-verified-2026-10-18.txt checkpoint. Read that report before resuming; floating and cannon opening now pass runtime acceptance.

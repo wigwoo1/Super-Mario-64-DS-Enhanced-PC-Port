@@ -15,8 +15,12 @@ game assets, personal saves, or proprietary compiler is included here.
 - Native rendering with resolution settings up to 3840x2160, controller input,
   a minimap, and PC settings work already present in the source.
 - Wanted minigame and pause/settings work; the remaining game is incomplete.
-- The newest Buddy/cannon-shutter integration is diagnostic: **Yoshi can still
-  rise above the ground incorrectly**. The cannon-opening sequence is unverified.
+- Current source fixes Yoshi's false collision hits and verifies native Buddy
+  dialogue, cannon-shutter opening, camera return and restored controls.
+  Repeat conversations and the open cannon flag also survive the original
+  Save/Quit flow and a fresh-process reload.
+  Cannon aiming/firing remains unintegrated. The initial `dev-2026-10-18`
+  build kit predates these fixes and retains its documented collision bug.
 - Browser Download Play, complete multiplayer, and the requested AI texture
   packs remain development plans. See the detailed plans in `port/docs/`.
 
@@ -47,8 +51,13 @@ published source hashes. Each build kit records its exact source commit,
 precompiled-object hashes, and generated-data hashes.
 
 The October 18 development checkpoint compiled and passed 52/52 CTest checks
-and 8/8 Buddy adapter checks. Runtime checks found the collision bug above;
-passing component tests does not establish complete gameplay compatibility.
+and 8/8 Buddy adapter checks. The later Buddy checkpoint also passed a
+6,000-frame grounded conversation replay and a 7,500-frame mission-2 cannon
+opening replay. See `port/docs/native-buddy-cannon-verified-2026-10-18.txt`.
+The persistence checkpoint additionally verified repeat conversations and
+Save/Quit/reload across 7,800- and 7,500-frame replays; see
+`port/docs/native-buddy-persistence-verified-2026-10-18.txt`.
+These checks do not establish complete gameplay compatibility.
 
 For a full source build, prepare your local ROM extraction and asset catalog,
 then use `port/build-port.cmd` for the component checks and build the explicit

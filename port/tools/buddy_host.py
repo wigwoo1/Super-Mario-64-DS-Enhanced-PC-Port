@@ -21,6 +21,7 @@ def inventory(root):
 def transform(root,text,name):
     queries={
         'func_0203842c.cpp':('o->v7(self)', 'dBgCh_Lin', 'o', 'self'),
+        'func_0203859c.cpp':('e->v7(obj)', 'dBgCh_Lin', 'e', 'obj'),
     }
     if name in queries:
         old,kind,collider,query=queries[name]
@@ -34,6 +35,16 @@ def transform(root,text,name):
         *static_cast<dBgPi *>(arg), reinterpret_cast<dActor_c *>(func_020393b4(data_020a0c80[idx])),
         *reinterpret_cast<Vector3 *>(b), reinterpret_cast<Vector3_16 *>(c), reinterpret_cast<Vector3_16 *>(d));''')
     if name=='dBgW_KcMbg.cpp':
+        for kind in ('Gnd', 'Lin'):
+            signature=f'int dBgW_KcMbg::DetectClsn(dBgCh_{kind} &ray)\n{{'
+            assert text.count(signature)==1
+            text=text.replace(signature,signature+f'''
+    if(std::getenv("SM64DS_PC_MOVING_TRACE")) {{
+        static unsigned calls=0;
+        if(calls++<200)std::fprintf(stderr,"[moving entry {kind}] tick=%llu this=%p query=%p\\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),this,&ray);
+    }}
+''')
         anchor='    r = dBgW_Kc::DetectClsn(loc);'
         assert text.count(anchor)==1
         text=text.replace('        ray.clsnY = worldPos.y;', '''
@@ -69,6 +80,8 @@ def transform(root,text,name):
         text=text.replace('extern SharedFilePtr data_ov084_02130d9c;',
             'extern "C" PcBuddyFile data_ov084_02130d9c;')
         suffix=['\nstatic_assert(sizeof(daRedBombhei_c)==0x1f0,"native Buddy layout");',
+                'static_assert(sizeof(daObjCannonShutter_c)==0x330,"Buddy shutter layout");',
+                'static_assert(offsetof(daObjCannonShutter_c,mCannonOpen)==0x32e,"Buddy shutter flag offset");',
                 'static_assert(sizeof(RedBombheiState)==16,"native Buddy callback stride");']
         for target in targets:
             suffix.append(f'static void pc_buddy_{target:08x}(daRedBombhei_c *self) {{ self->func_ov084_{target:08x}(); }}')
