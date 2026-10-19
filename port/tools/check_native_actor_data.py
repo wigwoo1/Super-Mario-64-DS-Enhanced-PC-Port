@@ -64,6 +64,9 @@ def main():
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
 
     from buddy_host import inventory as buddy_inventory
+    base98, rom98 = overlay(98)
+    if pe_bytes(args.exe, named('data_ov098_0213bf90'), 10) != rom98[0x0213bf90-base98:0x0213bf90-base98+10]:
+        raise ValueError('Water-bomb fragment angle table is not five complete original entries')
     from cannon_host import inventory as cannon_inventory
     for table,bomb in (('data_ov098_0213c8fc',False),('data_ov098_0213c930',True)):
         targets=cannon_inventory(ROOT,bomb)
@@ -288,7 +291,7 @@ def main():
           'all 4 processed-controller records share the original 24-byte layout and interior labels; '
           'all 4 touch records share their original held/edge/x/y byte lanes; '
           'paired OAM buffers retain +8/+32/+1024 reset labels; '
-          'native profiles match ROM metadata/factories; 7 cannon/water-bomb callbacks and shared raw/history input labels verified; '
+          'native profiles match ROM metadata/factories; 7 cannon/water-bomb callbacks, 5 fragment angles and shared raw/history input labels verified; '
           '3 Buddy state pairs and 4 shared handles verified; 8 rabbit state pairs and 2 key callback pairs verified; 11 Lakitu state '
           'pairs bind to 22 ROM-identified native methods; shared Lakitu handles '
           'have canonical storage; 19 camera state pairs bind to 38 native targets '

@@ -6619,6 +6619,11 @@
       "bytes": 5983
     },
     {
+      "path": "port/docs/native-waterbomb-combat-2026-10-19.txt",
+      "sha256": "6715ca12e7a10db5a5f36a0b3bb8935681fd8b4f67d9106d7dd344fbf7a7d190",
+      "bytes": 3870
+    },
+    {
       "path": "port/docs/native-yoshi-start-and-render-checkpoint-2026-10-15.txt",
       "sha256": "bf48857757be832d115a64e1b226693c75aaf9383fe1c60dd87d3853b739b5e1",
       "bytes": 6341
@@ -6630,8 +6635,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "776e3d32dd61223f01832e65ff1094ca704d6b31d528380f14812db1e7de006d",
-      "bytes": 219927
+      "sha256": "c7257c5faf638395b2e763de39a27f7b271fdb7d8d8ce61d0c85f60c43178e80",
+      "bytes": 220847
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -6660,8 +6665,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "cce1aaf304524ebf4827040ef20aa6fde098eed512030d234c1b8c65f08153b9",
-      "bytes": 4887
+      "sha256": "1187a89c100c8a395ebaa57751318eef7deb13d2bffa99fae2afc4c087753e50",
+      "bytes": 5052
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7130,8 +7135,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "1de44b4863ad076047c13370789901d8b461d88b0749c6751f8f82eec1799643",
-      "bytes": 79593
+      "sha256": "8a7d3a24bf5283ee88c53df9f08949b776db5a6ba0579e79ee920968fdb46e0f",
+      "bytes": 85571
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7830,8 +7835,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "23cdb97321c52121c80c0f871242ecbb04cdd365b0aaf0c37753acbb83a9cbee",
-      "bytes": 19949
+      "sha256": "bb5a2b2ffa68f6953b33e730e1be35d3501977221bbf24175aad937cd9e4bf9a",
+      "bytes": 20208
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -7902,6 +7907,11 @@
       "path": "port/tools/check_texture_source_roles.py",
       "sha256": "cc48e1683a19a624701b00351ee7f90f5beb83c1bb22cdaf40ef61d3b3a0da30",
       "bytes": 6480
+    },
+    {
+      "path": "port/tools/check_waterbomb_replay.py",
+      "sha256": "0a216ba91cbc704128b357522b07568d1354dea82945006857b31c86be3f211c",
+      "bytes": 7673
     },
     {
       "path": "port/tools/check_yoshi_swallow_replay.py",
@@ -7990,8 +8000,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "2fbab10be927ea755092e940c1e18dfa8ad266d7b84e26a1d2ce92c97b1ec7db",
-      "bytes": 6046
+      "sha256": "f2c6a68ddcb55b9462fe000ae91c9197cff78b7a58c70ae2acfac9a58a216780",
+      "bytes": 6112
     },
     {
       "path": "port/tools/native_save_hooks.py",

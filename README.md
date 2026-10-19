@@ -25,7 +25,9 @@ game assets, personal saves, or proprietary compiler is included here.
   have also been checked.
   A second Battlefield cannon has since passed entry, aiming, firing and landing.
   Its approach exposed a first Mario-cap intro crash, now repaired in the current
-  source. Remaining cannons, water-bomb combat and the sound emitter/audio backend
+  source. An original mission-1 water-bomb encounter now verifies cannon launches,
+  repeated drops, bouncing, body/fragment damage and safe recovery. Other placements,
+  projectile cleanup across course changes and the sound emitter/audio backend
   remain unfinished or unverified.
   The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
   cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.

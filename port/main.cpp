@@ -192,6 +192,17 @@ static bool replay_course_route() {
         const double dx=x*4096.0-player->mPosX,dz=z*4096.0-player->mPosZ;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        const char *dodge=std::getenv("SM64DS_PC_TEST_ROUTE_DODGE_GOOMBAS");
+        if(dodge && !std::strcmp(dodge,"1") && !player->mIsAirborne && tick>=next_jump &&
+           (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+            bool close=false;
+            for(unsigned kind:{200u,201u,202u})
+                for(auto *a=dActor_c::FindWithActorID(kind,nullptr);a;a=dActor_c::FindWithActorID(kind,a)) {
+                    if(a->aliveState==1 && std::abs(a->mPosY-player->mPosY)<200*4096 &&
+                       std::hypot(double(a->mPosX)-player->mPosX,double(a->mPosZ)-player->mPosZ)<360*4096.0)close=true;
+                }
+            if(close) {jump_until=tick+12;next_jump=tick+60;}
+        }
         if(jump && std::hypot(dx,dz)<320*4096.0 && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
             jump_until=tick+12;next_jump=tick+75;
@@ -307,6 +318,93 @@ static bool replay_rabbit_controls() {
     }
     ntr::input_test_controls(true,buttons,sx,sy);
     return true;
+}
+
+// Observe an original mission1 dropper, take a hit, then leave its range.
+static bool replay_waterbomb_controls() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_WATERBOMB");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!mode || std::strcmp(mode,"1") || !automation || std::strcmp(automation,"1"))return false;
+    const char *route=std::getenv("SM64DS_PC_TEST_WATERBOMB_ROUTE");
+    int observe_x=0,observe_z=0,retreat_x=0,retreat_z=0;
+    if(!route || std::sscanf(route,"%d:%d:%d:%d",&observe_x,&observe_z,&retreat_x,&retreat_z)!=4)return false;
+    if(observe_x< -32768 || observe_x>32767 || observe_z< -32768 || observe_z>32767 ||
+       retreat_x< -32768 || retreat_x>32767 || retreat_z< -32768 || retreat_z>32767)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
+    enum {APPROACH,OBSERVE,RETREAT,DRAIN,COMPLETE};
+    static int phase=APPROACH,initial_health=0,retreat_leg=0;
+    static bool fragments_seen=false;
+    const auto tick=ntr::rt_frame();
+    const char *state=pc_player_state_name(p);
+    const bool free=!p->mIsNoControl && !p->mIsControlDisabled;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto event=[&](const char *name) {
+        std::fprintf(stderr,"[native waterbomb replay] event=%s tick=%llu health=%d pos=%d,%d,%d\n",
+            name,static_cast<unsigned long long>(tick),p->GetHealth(),p->mPosX,p->mPosY,p->mPosZ);
+    };
+    if(phase==APPROACH) {
+        if(!free || std::hypot(p->mPosX-observe_x*4096.0,p->mPosZ-observe_z*4096.0)>60*4096.0 ||
+           (std::strcmp(state,"St_Wait_Main") && std::strcmp(state,"St_Walk_Main")))return false;
+        initial_health=p->GetHealth();phase=OBSERVE;event("observe");
+    }
+    unsigned moving=0;
+    for(auto *a=dActor_c::FindWithActorID(208,nullptr);a;a=dActor_c::FindWithActorID(208,a)) {
+        if(a->aliveState!=1)continue;
+        auto *bomb=static_cast<daWbm_c *>(a);
+        if(bomb->mVariant!=0)++moving;
+        if(phase==OBSERVE && bomb->mVariant==2)fragments_seen=true;
+    }
+    if(phase==OBSERVE && fragments_seen && p->GetHealth()<initial_health) {
+        phase=RETREAT;event("damage-and-fragments");
+    }
+    if(phase==RETREAT && free) {
+        const double dx=retreat_x*4096.0-p->mPosX,dz=(retreat_leg?retreat_z:observe_z)*4096.0-p->mPosZ;
+        if(std::hypot(dx,dz)<60*4096.0) {
+            if(retreat_leg==0){retreat_leg=1;event("retreat-corner");}
+            else {phase=DRAIN;event("outside-dropper-range");}
+        }
+        else if(!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main")) {
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(angle)*22000);sy=static_cast<int16_t>(-std::cos(angle)*22000);
+        } else if(!std::strcmp(state,"St_StomachSlide_Main") && tick%75<3)buttons=2;
+    }
+    if(phase==DRAIN && moving==0 && free && !p->mIsAirborne && !std::strcmp(state,"St_Wait_Main")) {
+        phase=COMPLETE;event("complete");
+    }
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
+
+static void capture_waterbomb_state() {
+    const char *path=std::getenv("SM64DS_PC_WATERBOMB_CAPTURE");
+    if(!path || !*path)return;
+    static FILE *file=nullptr;static uint64_t previous=~uint64_t(0);
+    const auto tick=ntr::rt_frame();if(tick==previous)return;previous=tick;
+    if(!file) {
+        file=std::fopen(path,"w");if(!file)return;
+        std::fputs("tick,level,id,kind,variant,state,phase,timer,bounces,x,y,z,vertical_speed,horizontal_speed,hit,other,player_id,px,py,pz,player_state,player_step,health,hurt_damage,airborne,disabled,no_control\n",file);
+    }
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    const int health=p?p->GetHealth():-1;
+    auto emit=[&](dActor_c *a,int variant,int state,int phase,int timer,int bounces,unsigned hit,unsigned other) {
+        std::fprintf(file,"%llu,%d,%u,%u,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u,%u,%u,%d,%d,%d,%s,%u,%d,%d,%u,%u,%u\n",
+            static_cast<unsigned long long>(tick),data_0209f2f8,a->uniqueID,unsigned(a->actorID),variant,state,phase,timer,bounces,
+            a->mPosX,a->mPosY,a->mPosZ,a->mVertSpeed,a->mHorzSpeed,hit,other,p?p->uniqueID:0,
+            p?p->mPosX:0,p?p->mPosY:0,p?p->mPosZ:0,pc_player_state_name(p),p?p->mStateStep:0,
+            health,p?p->mHurtDamage:0,p?p->mIsAirborne:0,p?p->mIsControlDisabled:0,p?p->mIsNoControl:0);
+    };
+    if(p && p->aliveState==1)emit(p,p->mCharacter,-1,p->mStatePhase,p->mStateTimer,0,0,0);
+    for(unsigned kind:{207u,208u})for(auto *a=dActor_c::FindWithActorID(kind,nullptr);a;a=dActor_c::FindWithActorID(kind,a)) {
+        if(a->aliveState!=1)continue;
+        if(kind==207) {
+            auto *c=static_cast<daCnn_c *>(a);
+            if(c->mVariant!=2)emit(c,c->mVariant,c->mState,c->mLoadStep,c->mTimer,0,c->mdCcAc_c.hitFlags,c->mdCcAc_c.otherOwner);
+        } else {
+            auto *b=static_cast<daWbm_c *>(a);
+            emit(b,b->mVariant,b->mState,b->mBouncePhase,b->mStateTimer,b->mBounceCount,b->mdCcAc_c.hitFlags,b->mdCcAc_c.otherOwner);
+        }
+    }
+    std::fflush(file);
 }
 
 // Input-only repeated cannon/course-lifecycle replay. All travel is ordinary
@@ -737,7 +835,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
+        if(!replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -991,6 +1089,7 @@ static bool trace_script_progress(uint64_t frame)
             if(file)std::fflush(file);
         }
     }
+    capture_waterbomb_state();
     if (const char *path = std::getenv("SM64DS_PC_BUDDY_CAPTURE")) {
         static FILE *file=nullptr;
         static uint64_t previous=~uint64_t(0);

@@ -1,0 +1,60 @@
+Native Battlefield water-bomb combat verification - 2026-10-19
+
+Status VERIFIED for one original mission1 encounter; full port incomplete.
+No gameplay repair was required. Original src/ and include/ remain unchanged.
+Added opt-in input-only QA navigation/retreat and read-only actor telemetry in
+port/main.cpp, an evidence checker and an independent ROM comparison of all five
+fragment launch angles (10 bytes) in check_native_actor_data.py.
+
+Placement investigation corrected the earlier handoff: mission1 contains two
+variant0 firing cannons and two variant0 water-bomb droppers. Mission2's variant1
+cannon is static and does not execute the firing states. Variant2 is rideable.
+Original placements and mission filtering are preserved.
+
+Accepted local case: native-waterbomb-safe-route-20261019;9500 frames,exit0.
+Original title/FileA/painting/mission1 selection, normal walking and jump inputs.
+QA uses isolated seed saves; it never writes player health, actor spawns, scene
+state or saved progression. Observe near3500,2900; retreat via2900,2900 to2900,6800.
+All replay controls require explicit test environment variables and are off in
+normal play. Other enemies remain active.
+
+Evidence from real Player75 and native actor207/208 telemetry:
+- Cannon projectile195 (variant3) launches upward4558 and disappears4633.
+- Both original droppers183/184 exist. Falling bombs197/205/211/217 spawn at
+  6122/6272/6422/6572:150-tick intervals, above Yoshi, then fall under gravity.
+- Bomb205 contacts Player6302; health7->6 at6303; original hurt state runs.
+  Exactly five fragments206..210 launch. Splash immunity prevents immediate
+  repeated damage for the checked20 ticks.
+- Bomb211 executes squash/stretch/hop, homes toward the player and bursts after
+  its third landing without actor contact; fragments212..216 appear6540.
+- Fragment216 contacts Player6543/6544; health6->5 at6544 during observation.
+- Retreat exits dropper range6777. All moving bombs/fragments are removed and
+  grounded free control returns6806. Final9500 remains Battlefield, idle,health5.
+- Earlier health8->7 at6177 is an unrelated enemy encounter; it is not counted
+  as water-bomb damage. First bomb contact while invulnerable also adds no damage.
+
+Release build passes.53/53 CTests pass27.18s. Native data audit passes including
+five ROM-matching fragment angles. check_waterbomb_replay.py passes exact contact,
+damage, five-fragment bursts, natural third landing, recovery and unchanged saves.
+Seven negative probes reject wrong mission, absent body contact, four fragments,
+missing health loss, missing cleanup, changed save and the earlier fatal route.
+Slot container bytes/validated progression CRC and minigame save bytes match seeds.
+Screenshots6500 (Yoshi beside bomb) and7000 (recovered) shown in chat.
+
+Rejected diagnostics: mission1 used an incorrect hex button mask and selected
+mission2; mission1-lefthex ran through enemy hazards and died; dodge was canceled
+before the encounter. None counts as recovery acceptance. The accepted safer route
+uses normal input and preserves all original enemies and damage behavior.
+
+QA candidate SHA256:
+1F64B98236DFFF21293292BED7831FE41D2C535FD0F8B73DC81B52BE4566AAC8
+Normal installed F: build remains unchanged:
+691DD3029EC05CA6228FF319C8BEDD81AC852FE12C4E8E4B1F3DB9B2A0E98770
+It already contains this native gameplay code; new changes are gated QA only.
+Private images/telemetry/generated routes and full EXE stay local, never GitHub.
+Existing dev-2026-10-19 kit remains the earlier Buddy checkpoint, unchanged.
+
+Remaining: water-bomb resource cleanup across course exit/reentry, other placements,
+water-bomb contact with Bob-ombs, sound actor359/audio and broader roadmap.
+Next bounded check: leave and reenter after water-bomb combat using original menus.
+Luna Medium is suitable for that regression; escalate on a difficult new failure.
