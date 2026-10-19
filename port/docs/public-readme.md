@@ -19,8 +19,11 @@ game assets, personal saves, or proprietary compiler is included here.
   dialogue, cannon-shutter opening, camera return and restored controls.
   Repeat conversations and the open cannon flag also survive the original
   Save/Quit flow and a fresh-process reload.
-  Cannon aiming/firing remains unintegrated. The initial `dev-2026-10-18`
-  build kit predates these fixes and retains its documented collision bug.
+  Current source also integrates the first Battlefield cannon: Yoshi can enter,
+  aim horizontally/vertically, fire along the chosen direction and regain control.
+  Repeat rides, other cannons and water-bomb combat still need runtime checks.
+  The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
+  cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.
 - Browser Download Play, complete multiplayer, and the requested AI texture
   packs remain development plans. See the detailed plans in `port/docs/`.
 
@@ -58,6 +61,9 @@ The persistence checkpoint additionally verified repeat conversations and
 Save/Quit/reload across 7,800- and 7,500-frame replays; see
 `port/docs/native-buddy-persistence-verified-2026-10-18.txt`.
 These checks do not establish complete gameplay compatibility.
+The cannon checkpoint additionally passed 53/53 CTests, four cannon adapter
+checks and a 7,500-frame original-menu/Buddy opening/cannon aim-and-fire replay.
+See `port/docs/native-cannon-integration-2026-10-19.txt` for exact scope and limits.
 
 For a full source build, prepare your local ROM extraction and asset catalog,
 then use `port/build-port.cmd` for the component checks and build the explicit

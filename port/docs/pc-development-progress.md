@@ -1475,3 +1475,7 @@ triangles). Screenshots at frames 7100, 9800 and 10400 plus the state trace and
 logs are saved in the F: course-entry checkpoint. Build and 52/52 CTests passed;
 painting transform tests passed 3/3. Full project remains in development.
 
+
+## 2026-10-19: Native cannon entry, aiming and firing verified
+
+Registered the original cannon and water-bomb actors. Corrected canonical raw/input-history memory and the PC offline publication step, so the shot follows the selected camera heading. A7500-frame original-menu replay opens the shutter through Buddy, rides the cannon, aims in both axes, launches, lands and returns normal control without changing the isolated disk save. Release,53 CTests,4 cannon and8 Buddy adapter tests and native-data audit pass. Installed F: EXE BFB57A03... with previous1C4BB94C... retained for rollback; original ROM and saves hash-identical. See native-cannon-integration-2026-10-19.txt. Other cannons, repeat use and projectile combat remain unverified; full port and broader roadmap unfinished.

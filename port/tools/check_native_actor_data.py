@@ -47,6 +47,8 @@ def main():
             ('pc_demo_profile', 'daDemo_c_classInit', 2, 0x0210ba60),
             ('pc_lakitu_profile', 'daC_Jugem_c_classInit', 85, 0x02130320),
             ('pc_buddy_profile', 'daRedBombhei_c_classInit', 84, 0x02130a14),
+            ('pc_cannon_profile', 'daCnn_c_classInit', 98, 0x0213c67c),
+            ('pc_waterbomb_profile', 'daWbm_c_classInit', 98, 0x0213c74c),
             ('g_profile_CANNON_SHUTTER', 'daObjCannonShutter_c_classInit', 2, 0x02109d14),
             ('pc_rabbit_profile', 'daMip_c_classInit', 85, 0x021300d4),
             ('pc_rabbit_key_profile', 'daObj_Mip_Key_c_classInit', 85, 0x021301b4),
@@ -62,6 +64,12 @@ def main():
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
 
     from buddy_host import inventory as buddy_inventory
+    from cannon_host import inventory as cannon_inventory
+    for table,bomb in (('data_ov098_0213c8fc',False),('data_ov098_0213c930',True)):
+        targets=cannon_inventory(ROOT,bomb)
+        actual=struct.unpack('<'+str(len(targets)*2)+'I',pe_bytes(args.exe,named(table),len(targets)*8))
+        expected=tuple(word for target in targets for word in (named(f'pc_cannon_{target:08x}'),0))
+        if actual!=expected:raise ValueError('Cannon callback target/stride mismatch: '+table)
     buddy_targets=buddy_inventory(ROOT)
     buddy_callbacks=struct.unpack('<12I',pe_bytes(args.exe,named('data_ov084_02130dc4'),48))
     expected=tuple(value for target in buddy_targets for value in (named(f'pc_buddy_{target:08x}'),0))
@@ -103,6 +111,14 @@ def main():
         if named(name)!=touch_base+offset:
             raise ValueError('Native touch labels do not share the four original byte records: '+name)
     input_base = named('data_020a0e58')
+    raw_base=named('data_020a1040')
+    for suffix,offset in (('1044',4),('1046',6),('1048',8),('104c',12),('104e',14),('1050',16),('1052',18)):
+        if named('data_020a'+suffix)!=raw_base+offset:raise ValueError('raw input interior label diverged: '+suffix)
+    if named('pc_raw_input_end')!=raw_base+0x24:raise ValueError('raw input record extent')
+    history_base=named('data_020a1154')
+    for suffix,offset in (('1160',12),('1162',14),('1164',16),('1166',18),('1178',36),('117c',40),('11a0',76),('11c4',112)):
+        if named('data_020a'+suffix)!=history_base+offset:raise ValueError('input history interior label diverged: '+suffix)
+    if named('pc_input_history_end')!=history_base+4*0x24:raise ValueError('four input history record extents')
     if named('data_020a0e5a') != input_base + 2 or named('pc_input_state_end') != input_base + 16:
         raise ValueError('Native held/pressed input labels do not share the complete four-player record')
     controller_base = named('data_0209f498')
@@ -272,7 +288,8 @@ def main():
           'all 4 processed-controller records share the original 24-byte layout and interior labels; '
           'all 4 touch records share their original held/edge/x/y byte lanes; '
           'paired OAM buffers retain +8/+32/+1024 reset labels; '
-          'native profiles match ROM metadata/factories; 3 Buddy state pairs and 4 shared handles verified; 8 rabbit state pairs and 2 key callback pairs verified; 11 Lakitu state '
+          'native profiles match ROM metadata/factories; 7 cannon/water-bomb callbacks and shared raw/history input labels verified; '
+          '3 Buddy state pairs and 4 shared handles verified; 8 rabbit state pairs and 2 key callback pairs verified; 11 Lakitu state '
           'pairs bind to 22 ROM-identified native methods; shared Lakitu handles '
           'have canonical storage; 19 camera state pairs bind to 38 native targets '
           'with original record strides; 34 camera mode records retain complete '

@@ -25,6 +25,12 @@ FILE_BACKED_AFTER_BSS = ((0x020994D4, 0x02099CE4),
 # production linker map showed C++ references landing in separate generated
 # ROM/BSS copies. Bind every recovered spelling to the live HAL object.
 HAL_OWNED_DATA = {
+    "data_020a1040", "data_020a1044", "data_020a1046", "data_020a1048",
+    "data_020a104c", "data_020a104e", "data_020a1050", "data_020a1052",
+    "data_020a1154", "data_020a1160", "data_020a1162", "data_020a1164",
+    "data_020a1166", "data_020a1178", "data_020a117c", "data_020a11a0", "data_020a11c4",
+    "data_ov098_0213c8e8", "data_ov098_0213c91c",
+    "data_ov098_0213c8fc", "data_ov098_0213c930",
     "data_ov084_02130da4", "data_ov084_02130d9c", "data_ov084_02130dc4",
     "data_ov002_0210e12c", "data_ov002_0210e124",
     "data_0209b3ec",  # shared camera/view matrix, also read by native paintings

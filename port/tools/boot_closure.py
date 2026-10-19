@@ -14,6 +14,7 @@ import sys
 
 
 DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
+                 "daCnn_c_classInit", "daWbm_c_classInit",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
                  "daChScene_c_classInit", "daDoor_c_classInit", "dMap_c_classInit",
@@ -445,6 +446,10 @@ def main() -> int:
                 if path.name in ('daMip_c.cpp','daObj_Mip_Key_c.cpp'):
                     import rabbit_host
                     transformed = rabbit_host.transform(root, transformed, path.name)
+                    rewrites += 1
+                if path.name in ('d_a_cnn.cpp','daWbm_c.cpp','func_0201ffcc.c'):
+                    import cannon_host
+                    transformed = cannon_host.transform(root, transformed, path.name)
                     rewrites += 1
                 if path.name in ('d_a_red_bombhei.cpp','d_a_obj_cannon_shutter.cpp','dBgW_KcMbg.cpp',
                                  'func_02038324.cpp','func_0203842c.cpp','func_0203859c.cpp','func_02038ea4.cpp'):

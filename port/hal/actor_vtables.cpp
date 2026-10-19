@@ -268,6 +268,8 @@ extern "C" void pc_goomba_init_resources();
 extern "C" void pc_bombking_init_resources();
 extern "C" void pc_buddy_init_resources(), pc_shutter_init_resources();
 extern "C" void *daRedBombhei_c_classInit();
+extern "C" void *daCnn_c_classInit(), *daWbm_c_classInit();
+extern "C" void pc_cannon_init_resources(), pc_waterbomb_init_resources();
 extern "C" unsigned char g_profile_CANNON_SHUTTER[];
 extern "C" unsigned char g_profile_BOMBKING[];
 extern "C" unsigned char g_profile_BOMBHEI[];
@@ -284,6 +286,9 @@ struct PcNativeActorProfile {
 };
 static_assert(sizeof(PcNativeActorProfile) == 0x1c, "native actor descriptor");
 static PcNativeActorProfile pc_buddy_profile = { (void *)&daRedBombhei_c_classInit,181,46,3,0x40000,0x80000,0x1000000,0x1000000 };
+// ov098 descriptors 0213c67c/0213c74c, with native constructor pointers.
+static PcNativeActorProfile pc_cannon_profile = { (void *)&daCnn_c_classInit,207,47,3,0xc8000,0xc8000,0x1000000,0 };
+static PcNativeActorProfile pc_waterbomb_profile = { (void *)&daWbm_c_classInit,208,48,2,0x64000,0x64000,0x1000000,0x640000 };
 static void *pc_power_star_factory() { return new daStar_c(); }
 static void *pc_silver_star_factory() { return new daStar_c(); }
 static void *pc_star_marker_factory() { return new daStarBase_c(); }
@@ -394,6 +399,9 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[229] = &pc_rabbit_key_profile;
     pc_rabbit_init_resources();
     pc_buddy_init_resources();pc_shutter_init_resources();
+    pc_cannon_init_resources();pc_waterbomb_init_resources();
+    data_020a4bb8_storage[207] = &pc_cannon_profile;
+    data_020a4bb8_storage[208] = &pc_waterbomb_profile;
     data_020a4bb8_storage[181] = &pc_buddy_profile;
     const char *qa_no_shutter=getenv("SM64DS_PC_TEST_NO_SHUTTER");
     const char *qa_only=getenv("SM64DS_PC_AUTOMATION_ONLY");

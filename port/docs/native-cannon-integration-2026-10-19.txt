@@ -1,0 +1,70 @@
+VERIFIED 2026-10-19: native cannon entry, aiming, launch and control return.
+
+The native CANNON actor207 and its WATERBOMB208 dependency now use their recovered
+source, original descriptor metadata and native callback tables. All original
+src/ and include/ files are unchanged. port/tools/cannon_host.py adapts generated
+host copies and defers shared resources until the game's allocator is ready.
+The prior handoff had overlooked src/game/actors/d_a_cnn.cpp; it already exists.
+
+Fixed camera-to-shot heading publication:
+- Raw input0x020a1040 is one0x24-byte record; history0x020a1154 is four such records.
+  Canonical MASM interior labels replace separate undersized generated blocks.
+- PC startup skips the DS mailbox initializer. A generated-only offline branch
+  of func_0201ffcc now invokes the original func_0203e0ac publication routine.
+  This retains the original camera setter, record-copy, barrel and flight code.
+- Before repair, the camera turned but GetAngleToCamera kept reading zero,
+  so the cannon fired along its original heading. No angle/velocity workaround
+  or test teleport is used in the repair or final acceptance run.
+
+Build and tests:
+- MSVC x86 Release build PASS;53/53 CTests PASS24.50s.
+- Four cannon adapter and eight Buddy adapter tests PASS.
+- Original camera setter/copy/readers pass signed-angle, four-player-stride,
+  key and flag-byte checks in smoke_input_history. Native PE metadata audit
+  verifies both actor descriptors, seven callbacks and every input interior label.
+- Existing symbol-only build-support metadata exactly matches the successful
+  build cache (5239 aliases); no metadata refresh is needed for this closure.
+
+End-to-end acceptance: build/port/native-cannon-offline-20261019
+-7500 simulation frames, exit0,1280x720 D3D11, isolated earned-key/mission2 QA save.
+- Original FileA -> castle -> painting -> mission2; no course/player teleport.
+- Native Buddy185 runs all opening steps0..4; shutter changes closed->open.
+- Cannon91 approached5016, load steps0..4, aiming5159, launch5280.
+- Horizontal and vertical analog input alter the first-person camera. At5270,
+  camera yaw=-18705, cannon yaw=-2321 (camera+0x4000), pitch3672.
+  The measured flight direction matches camera+0x8000 within the verifier's
+  tolerance. Yoshi flies across the course, lands5351, and resumes normal idle.
+- Cannon sinks, straightens and returns to waiting. Normal control is restored.
+- Isolated disk-save payload/CRC unchanged. No user save or ROM was modified.
+- check_cannon_replay.py PASS, including Buddy opening, aim/trajectory and landing.
+  Earlier diagnostic heading runs are rejected by this verifier.
+- Screenshots of rising cannon, original circular aiming view, flight and control
+  return were shown in chat. Local evidence remains private.
+
+Candidate EXE SHA256:
+BFB57A03B5E0225629592AF93639FF4C195FF36E9274ED86449131049BE04C33
+Previous installed EXE SHA256:
+1C4BB94CC485EA40EEF2210C0BD64440C16CBBE96AF13CCD8D89039A1FC03C4E
+
+Manual check: start Play Mario 64 DS.cmd, select FileA, enter Battlefield mission2,
+talk to the cannon Buddy if it is closed, then move into the cannon hole. Aim
+with the movement stick/direction keys and press jump/action to fire.
+Physical Xbox hardware was not available for this software-input replay.
+
+Limits: this acceptance covers the first Battlefield rideable cannon. Other
+cannons, repeat rides, reentry/cleanup and water-bomb combat still need dedicated
+runtime checks. Full native game, audio and the broader settings/VS/texture
+roadmap remain unfinished. Next bounded task: repeat cannon rides and course
+exit/reentry regression; Sol Medium is appropriate after this integration.
+
+Public dev-2026-10-19 build kit at source bc782c00... predates this cannon work.
+It verifies the prior Buddy opening/persistence checkpoint only. The full native
+EXE embeds ROM-derived data and stays local. Keep daily publication ROM-free.
+
+Installed on F: with matching SHA256; ROM and every user save hash unchanged.
+Rollback: native-checkpoints\native-checkpoint-2026-10-19-cannon\previous-verified-sm64ds_pc.exe.
+Direct installed-EXE check:1500frames exit0, original FileA reaches grounded
+Yoshi outside the castle; screenshot1400 displayed. Isolated saves; normal user
+saves unchanged. Evidence build/port/native-cannon-installed-20261019.
+Next model: Sol Medium for repeat cannon use and course exit/reentry checks.
+

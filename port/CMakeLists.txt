@@ -177,6 +177,13 @@ target_include_directories(smoke_input_state PRIVATE "${CMAKE_CURRENT_SOURCE_DIR
 target_compile_definitions(smoke_input_state PRIVATE SM64DS_PLATFORM_PC)
 target_link_libraries(smoke_input_state PRIVATE ntr)
 add_test(NAME smoke_input_state COMMAND smoke_input_state)
+add_executable(smoke_input_history tests/smoke_input_history.cpp hal/input_state.asm
+    "${CMAKE_CURRENT_SOURCE_DIR}/../src/unnamed/arm9/0203/func_0203dafc.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../src/unnamed/arm9/0203/func_0203e0ac.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../src/GetAngleToCamera.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../src/GetPlayerFlagByte.c")
+target_include_directories(smoke_input_history PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+add_test(NAME smoke_input_history COMMAND smoke_input_history)
 
 add_executable(smoke_video tests/smoke_video.cpp)
 target_link_libraries(smoke_video PRIVATE ntr)
@@ -902,6 +909,7 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/boot_closure.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/buddy_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/native_save_hooks.py"
@@ -937,6 +945,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR NOT EXISTS "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/boot_closure.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/buddy_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/native_save_hooks.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"

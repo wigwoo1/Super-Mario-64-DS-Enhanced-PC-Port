@@ -20,6 +20,8 @@
 #include "daObj_Mip_Key_c.h"
 #include "daRedBombhei_c.h"
 #include "daObjCannonShutter_c.h"
+#include "daCnn_c.h"
+#include "daWbm_c.h"
 #include "SaveData.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
@@ -297,6 +299,54 @@ static bool replay_rabbit_controls() {
 }
 
 // Input-only Buddy acceptance replay. Never changes an actor or save record.
+static bool replay_cannon_controls() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_CANNON");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!mode || std::strcmp(mode,"fire") || !automation || std::strcmp(automation,"1"))return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
+    static unsigned target=0;
+    static bool shot=false,done=false;
+    static uint64_t aim_tick=0;
+    unsigned cannon_flags=0;std::memcpy(&cannon_flags,data_0209caa0+0x10,4);
+    // Let original entry/dialogue and the Buddy opening finish before riding.
+    if(!target && (!(cannon_flags&1) || data_0209d660 || p->mIsNoControl || p->mIsControlDisabled))return false;
+    const auto tick=ntr::rt_frame();
+    daCnn_c *c=nullptr;double best=1e100;
+    for(auto *a=dActor_c::FindWithActorID(207,nullptr);a;a=dActor_c::FindWithActorID(207,a)) {
+        auto *candidate=static_cast<daCnn_c *>(a);
+        if(a->aliveState!=1 || candidate->mVariant!=2 || (target && a->uniqueID!=target))continue;
+        const double distance=std::hypot(double(a->mPosX)-p->mPosX,double(a->mPosZ)-p->mPosZ);
+        if(distance<best){c=candidate;best=distance;}
+    }
+    if(!c || (!target && best>1200*4096.0))return false;
+    if(!target) {
+        target=c->uniqueID;
+        std::fprintf(stderr,"[native cannon replay] target=%u pos=%d,%d,%d tick=%llu\n",target,c->mPosX,c->mPosY,c->mPosZ,static_cast<unsigned long long>(tick));
+    }
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    if(c->mState==3 && c->mLoadStep==3 && !shot) {
+        if(!aim_tick){aim_tick=tick;std::fprintf(stderr,"[native cannon replay] aiming tick=%llu\n",static_cast<unsigned long long>(tick));}
+        const auto elapsed=tick-aim_tick;
+        if(elapsed<60) {
+            short camera_pitch=0;if(data_0209f318)std::memcpy(&camera_pitch,reinterpret_cast<const char *>(data_0209f318)+0x17e,2);
+            if(camera_pitch>0x1000)sy=24000;
+            if(elapsed<20)sx=18000;
+        }
+        if(elapsed>=120 && elapsed<123)buttons=1;
+    } else if(c->mState==3 && c->mLoadStep==4) {
+        if(!shot)std::fprintf(stderr,"[native cannon replay] launched tick=%llu\n",static_cast<unsigned long long>(tick));
+        shot=true;
+    } else if(!shot && !p->mIsNoControl && !p->mIsControlDisabled) {
+        const double angle=std::atan2(double(c->mPosX)-p->mPosX,double(c->mPosZ)-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(best>15*4096.0){sx=static_cast<int16_t>(std::sin(angle)*18000);sy=static_cast<int16_t>(-std::cos(angle)*18000);}
+    }
+    if(shot && !done && !p->mIsAirborne && !p->mIsControlDisabled && !p->mIsNoControl && std::strcmp(pc_player_state_name(p),"St_Cannon_Main")) {
+        done=true;std::fprintf(stderr,"[native cannon replay] landed tick=%llu state=%s\n",static_cast<unsigned long long>(tick),pc_player_state_name(p));
+    }
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
+
 static bool replay_buddy_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_BUDDY_TALK");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -557,7 +607,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
+        if(!replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -787,6 +837,28 @@ static bool trace_script_progress(uint64_t frame)
 
                 std::fflush(state_file);
             }
+        }
+    }
+    if(const char *path=std::getenv("SM64DS_PC_CANNON_CAPTURE")) {
+        static FILE *file=nullptr;static uint64_t previous=~uint64_t(0);
+        const auto tick=ntr::rt_frame();
+        if(tick!=previous && tick%10==0) {
+            previous=tick;
+            if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,level,id,kind,variant,state,step,x,y,z,pitch,yaw,hit,other,player_state,player_step,px,py,pz,vy,speed,airborne,control_disabled,camera_state,camera_yaw,camera_pitch\n",file);}
+            auto *p=static_cast<Player *>(data_0209f394[0]);
+            for(unsigned kind:{207u,208u})for(auto *a=dActor_c::FindWithActorID(kind,nullptr);file && a;a=dActor_c::FindWithActorID(kind,a)) {
+                if(a->aliveState!=1)continue;
+                auto *c=kind==207?static_cast<daCnn_c *>(a):nullptr;
+                auto *b=kind==208?static_cast<daWbm_c *>(a):nullptr;
+                const auto *cam=reinterpret_cast<const char *>(data_0209f318);
+                short pitch=0;if(cam)std::memcpy(&pitch,cam+0x17e,2);
+                std::fprintf(file,"%llu,%d,%u,%u,%u,%d,%u,%d,%d,%d,%d,%d,%u,%u,%s,%u,%d,%d,%d,%d,%d,%u,%u,%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),data_0209f2f8,a->uniqueID,kind,c?unsigned(c->mVariant):unsigned(b->mVariant),c?c->mState:b->mState,c?c->mLoadStep:0,
+                    a->mPosX,a->mPosY,a->mPosZ,a->mAngleX,a->mAngleY,c?c->mdCcAc_c.hitFlags:b->mdCcAc_c.hitFlags,c?c->mdCcAc_c.otherOwner:b->mdCcAc_c.otherOwner,
+                    pc_player_state_name(p),p?p->mStateStep:0,p?p->mPosX:0,p?p->mPosY:0,p?p->mPosZ:0,p?p->mVertSpeed:0,p?p->mHorzSpeed:0,p?p->mIsAirborne:0,p?p->mIsControlDisabled:0,
+                    pc_camera_state_id(data_0209f318),cam?reinterpret_cast<const dCamera_c *>(cam)->mAngleY:0,pitch);
+            }
+            if(file)std::fflush(file);
         }
     }
     if (const char *path = std::getenv("SM64DS_PC_BUDDY_CAPTURE")) {
