@@ -1,0 +1,50 @@
+Native cannon repeat and course-reentry regression, 2026-10-19.
+
+Scope: first rideable Battlefield cannon, original File A / mission 2 route,
+two rides in one visit, original pause Exit Course, castle painting / original
+mission selection, and one ride after reentry. Isolated already-open-cannon save.
+The existing gameplay implementation required no repair for this sequence.
+
+Added opt-in input-only QA mode SM64DS_PC_TEST_CANNON=repeat-reentry (also
+requires AUTOMATION_ONLY=1). It uses normal movement, aiming, firing and pause
+buttons. It does not move actors, inject progress flags or replace scene state.
+check_cannon_cycle.py audits all three rise/turn/aim/fire/reset sequences,
+camera/barrel/travel headings, grounded control, original transitions, actor
+cleanup/recreation, persistent open shutter and unchanged validated save payload.
+
+First diagnostic: native-cannon-cycle-20261019, 11000 frames, exit0. Its return
+waypoint landed inside the pink Buddy's collision body; only one ride completed.
+The checker rejects it. Corrected the waypoint arrival radius from70 to180 at
+that landmark, so the replay turns toward the cannon outside the Buddy's body.
+This was a test-navigation correction; the Buddy's collision is expected.
+
+Acceptance evidence: build/port/native-cannon-cycle-clear-20261019 (private).
+- 11000 frames, exit0; check_cannon_cycle.py passes all three rides and lifecycle.
+  Five damaged-evidence probes are rejected: absent load step, wrong barrel
+  heading, missing castle visit, closed shutter and changed save progress.
+  Slot1 payload/CRC and the entire minigame save match their isolated seeds.
+- Cannon91: aim4674, launch4795, grounded idle4897.
+- Same cannon91 again: aim5458, launch5579, grounded idle5681.
+- Original Exit Course -> castle5895; painting cache reset, six painting actors
+  recreated and cleaned up; original mission2 confirmed a second time.
+- Course reentry6470; new cannon256, old cannon91 removed.
+- Cannon256: aim6695, launch6816, grounded idle6918; final neutral-input soak.
+- Screenshots4700 aiming,5900 castle and7100 final landing shown in chat.
+  Diagnostic5900 shows the blocked Buddy waypoint and is not acceptance evidence.
+
+Candidate SHA256:88DD47E0967B986D51A96E22D9970010D997B94157F382F6E70E30F70D44E1F0.
+Release rebuild passes. All53 CTests pass22.80s after the waypoint correction;
+native actor/input-history data audit passes. Original src/ and include/ unchanged.
+Installed F: gameplay build BFB57A03... remains the verified cannon build: this
+candidate changes only opt-in QA input, with the same normal gameplay path.
+No ROM or user save was written. Full EXE/data/logs/screenshots remain private.
+
+How to check: launch Play Mario 64 DS.cmd, enter Battlefield mission2, use the
+first cannon twice, choose Exit Course, return through the painting, then ride
+again. Aim with movement input and press action/jump to fire.
+
+Limits: one cannon position, one saved-open mission and software analog input.
+Physical Xbox hardware, other cannons and water-bomb combat remain unverified.
+The full port, settings/texture/VS roadmap and native release remain unfinished.
+Next bounded regression: another existing Battlefield cannon; Luna Medium is
+appropriate for this input replay work. New actor integration merits reassessment.

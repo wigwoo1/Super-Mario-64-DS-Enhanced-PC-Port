@@ -298,7 +298,110 @@ static bool replay_rabbit_controls() {
     return true;
 }
 
-// Input-only Buddy acceptance replay. Never changes an actor or save record.
+// Input-only repeated cannon/course-lifecycle replay. All travel is ordinary
+// stick/button input; pointers, actors, camera fields and saves are only read.
+static bool replay_cannon_cycle_controls() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_CANNON");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!mode || std::strcmp(mode,"repeat-reentry") || !automation || std::strcmp(automation,"1"))return false;
+    enum {RIDE,RETURN,EXIT,CASTLE,FINISHED};
+    static int phase=RIDE,visit=1,rides=0,waypoint=0;
+    static unsigned target=0;
+    static bool shot=false;
+    static uint64_t aim_tick=0,land_tick=0,jump_until=0,next_jump=0;
+    const auto tick=ntr::rt_frame();
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto controls=[&]() {ntr::input_test_controls(true,buttons,sx,sy);return true;};
+    auto event=[&](const char *name) {
+        std::fprintf(stderr,"[native cannon cycle] visit=%d ride=%d event=%s tick=%llu id=%u\n",
+            visit,rides+1,name,static_cast<unsigned long long>(tick),target);
+    };
+    auto ready=[&]() {return p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;};
+    auto move=[&](double x,double z,int radius) {
+        const double dx=x*4096-p->mPosX,dz=z*4096-p->mPosZ;
+        if(std::hypot(dx,dz)<=radius*4096.0)return true;
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(angle)*22000);sy=static_cast<int16_t>(-std::cos(angle)*22000);
+        return false;
+    };
+    if(phase==FINISHED)return controls();
+    if(phase==EXIT) {
+        if(data_0209f2f8==2 && p && p->aliveState==1) {
+            event("castle-return");phase=CASTLE;waypoint=0;target=0;
+        } else {
+            if(!data_0209f2c4) {if(ready() && tick%45<3)buttons=8;}
+            else if(data_0209f248==3 && tick%45<3)buttons=data_0209f2e0==3?1:0x80;
+            return controls();
+        }
+    }
+    if(phase==CASTLE) {
+        if(data_0209f2f8==6 && p && p->aliveState==1) {
+            visit=2;rides=0;phase=RIDE;shot=false;aim_tick=0;target=0;event("course-reentry");
+        } else {
+            // Original mission selection accepts confirm after its own fade.
+            if(!p || p->aliveState!=1) {if(tick%60<3)buttons=1;return controls();}
+            if(data_0209d660) {if(tick%45<3)buttons=1;return controls();}
+            if(!ready())return controls();
+            const int route[][3]={{-1000,1400,60},{-2100,600,50},{-2300,500,40},
+                {-2750,50,40},{-2800,-700,50},{-3400,-700,50},{-3700,-450,40},{-5200,-450,40}};
+            const int last=int(sizeof(route)/sizeof(route[0]))-1;
+            const int index=waypoint>last?last:waypoint;
+            if(index==last && std::hypot(route[index][0]*4096.0-p->mPosX,route[index][1]*4096.0-p->mPosZ)<320*4096.0 &&
+               tick>=next_jump && (!std::strcmp(pc_player_state_name(p),"St_Wait_Main") || !std::strcmp(pc_player_state_name(p),"St_Walk_Main"))) {
+                jump_until=tick+12;next_jump=tick+75;
+            }
+            if(tick<jump_until)buttons=2;
+            if(move(route[index][0],route[index][1],route[index][2]) && waypoint<=last) {
+                std::fprintf(stderr,"[native cannon cycle] castle-waypoint=%d tick=%llu\n",waypoint,static_cast<unsigned long long>(tick));++waypoint;
+            }
+            return controls();
+        }
+    }
+    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
+    unsigned cannon_flags=0;std::memcpy(&cannon_flags,data_0209caa0+0x10,4);
+    if(!target && (!(cannon_flags&1) || !ready() || data_0209d660))return false;
+    daCnn_c *c=nullptr;double best=1e100;
+    for(auto *a=dActor_c::FindWithActorID(207,nullptr);a;a=dActor_c::FindWithActorID(207,a)) {
+        auto *candidate=static_cast<daCnn_c *>(a);
+        if(a->aliveState!=1 || candidate->mVariant!=2 || (target && a->uniqueID!=target))continue;
+        const double distance=std::hypot(double(a->mPosX)-p->mPosX,double(a->mPosZ)-p->mPosZ);
+        if(distance<best){c=candidate;best=distance;}
+    }
+    if(!c || (!target && best>1200*4096.0))return false;
+    if(!target) {target=c->uniqueID;event("approach");}
+    if(phase==RETURN) {
+        if(tick<land_tick+90 || !ready())return controls();
+        const int route[][2]={{0,6500},{-5950,6500}};
+        if(waypoint<2) {
+            // The second landmark is the Buddy's position; stop outside his
+            // collision body before turning toward the nearby cannon hole.
+            if(move(route[waypoint][0],route[waypoint][1],waypoint==1?180:70)) {++waypoint;event("return-waypoint");}
+        } else {phase=RIDE;shot=false;aim_tick=0;event("repeat-ready");}
+        return controls();
+    }
+    if(c->mState==3 && c->mLoadStep==3 && !shot) {
+        if(!aim_tick){aim_tick=tick;event("aim");}
+        const auto elapsed=tick-aim_tick;
+        if(elapsed<60) {
+            short pitch=0;if(data_0209f318)std::memcpy(&pitch,reinterpret_cast<const char *>(data_0209f318)+0x17e,2);
+            if(pitch>0x1000)sy=24000;
+            if(elapsed<20)sx=18000;
+        }
+        if(elapsed>=120 && elapsed<123)buttons=1;
+    } else if(c->mState==3 && c->mLoadStep==4) {
+        if(!shot)event("launch");shot=true;
+    } else if(!shot && ready())move(c->mPosX/4096.0,c->mPosZ/4096.0,15);
+    if(shot && ready() && !p->mIsAirborne && !std::strcmp(pc_player_state_name(p),"St_Wait_Main")) {
+        event("grounded-idle");++rides;land_tick=tick;
+        if(visit==2) {phase=FINISHED;event("complete");}
+        else if(rides==2) {phase=EXIT;event("exit-request");}
+        else {phase=RETURN;waypoint=0;}
+    }
+    return controls();
+}
+
+// Input-only single-cannon acceptance replay. Never changes an actor or save.
 static bool replay_cannon_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_CANNON");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -607,7 +710,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
+        if(!replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

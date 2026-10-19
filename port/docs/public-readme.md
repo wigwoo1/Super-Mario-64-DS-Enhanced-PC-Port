@@ -21,7 +21,8 @@ game assets, personal saves, or proprietary compiler is included here.
   Save/Quit flow and a fresh-process reload.
   Current source also integrates the first Battlefield cannon: Yoshi can enter,
   aim horizontally/vertically, fire along the chosen direction and regain control.
-  Repeat rides, other cannons and water-bomb combat still need runtime checks.
+  Two consecutive rides and a third after the original course exit/re-entry
+  have also been checked. Other cannons and water-bomb combat remain unverified.
   The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
   cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.
 - Browser Download Play, complete multiplayer, and the requested AI texture

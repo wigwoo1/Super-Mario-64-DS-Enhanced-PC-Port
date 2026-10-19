@@ -6484,6 +6484,11 @@
       "bytes": 4391
     },
     {
+      "path": "port/docs/native-cannon-repeat-2026-10-19.txt",
+      "sha256": "85393d5194b3f71a152a2b37ec7e9a560036ec969edda8b1ec7e27eb6cf98219",
+      "bytes": 3294
+    },
+    {
       "path": "port/docs/native-coins-input-gate-checkpoint-2026-10-15.txt",
       "sha256": "002bf3dcd35b3fc4bcf7865b58997f97e406e5c371382a5c30ac313afd903e3f",
       "bytes": 4675
@@ -6620,8 +6625,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "3bcdb1ffb13bb365289f2a6ff151b4117b22e414801d391f2e582360cdd62234",
-      "bytes": 217819
+      "sha256": "a5b44286b3d5db0f3b507432e161363b94ca30bc90e84bfa2b524ddaf7d2f3c5",
+      "bytes": 218791
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -6650,8 +6655,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "5c35333fcb1a9490bf825eed8a8ec7d78cdb1c3557736338388aa683c93edc00",
-      "bytes": 4582
+      "sha256": "9bfada3d067db7cb82467d496b12f7809deef4dd38bea99992817aec7e23870f",
+      "bytes": 4660
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7120,8 +7125,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "bc3d5b86777a6b3dc3d51cc8f0dcfc10021b70d8590aa770b49be3938c8d6fd7",
-      "bytes": 72296
+      "sha256": "eaa75362b7c427a6ecb7faf2b131ca0ecb1690f5a059d7c57882687443f87e96",
+      "bytes": 78035
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7737,6 +7742,11 @@
       "path": "port/tools/check_buddy_persistence_replay.py",
       "sha256": "d405a5fb00216268033dd474b4c2fceb957bc1ecbdb6778ab6cc37fc54cb0657",
       "bytes": 3780
+    },
+    {
+      "path": "port/tools/check_cannon_cycle.py",
+      "sha256": "2ddd4c839771587a2cba0437b10d10bf9effb27add49208793dc80832e1c1686",
+      "bytes": 5534
     },
     {
       "path": "port/tools/check_cannon_replay.py",
