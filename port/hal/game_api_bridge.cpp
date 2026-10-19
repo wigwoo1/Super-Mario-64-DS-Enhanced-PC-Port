@@ -353,8 +353,14 @@ void _ZN8dActor_c11UntrackStarERa(dActor_c *self, signed char *star)
 void _ZN9dCamera_c9SetFlag_3Ev(dCamera_c *self) { self->SetFlag_3(); }
 dActor_c *_ZN8dActor_c15FindWithActorIDEjPS_(unsigned int actorID, dActor_c *after)
 { return dActor_c::FindWithActorID(actorID, after); }
-void _ZN8dActor_c13SpawnSoundObjEj(dActor_c *self, unsigned int param)
-{ self->SpawnSoundObj(param); }
+dActor_c *_ZN8dActor_c13SpawnSoundObjEj(dActor_c *self, unsigned int param)
+{
+    // Recovered callers retain the sound actor (for example the cap intro).
+    // The cartridge wrapper's last Spawn call returns it in r0, although its
+    // reconstructed void declaration would discard that value on the host.
+    return dActor_c::Spawn(0x167,param,
+        *reinterpret_cast<const Vector3 *>(&self->mPosX),nullptr,self->mAreaId,-1);
+}
 dActor_c *_ZN8dActor_c4NextEPKS_(const dActor_c *after)
 { return dActor_c::Next(after); }
 Player *_ZN8dActor_c14FarthestPlayerEv(dActor_c *self)

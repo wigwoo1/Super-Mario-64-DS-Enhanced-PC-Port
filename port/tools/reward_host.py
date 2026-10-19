@@ -24,6 +24,14 @@ NO_CONTROL_FREE = {0x020c9de4,0x020c9b7c,0x020c9998,0x020c990c}
 
 
 def transform(text):
+    if 'int Player::func_ov002_020c4188()' in text:
+        old='if (obj[0x35] == 0x2a)'
+        guarded='if (obj && obj[0x35] == 0x2a)'
+        if guarded not in text:
+            assert text.count(old)==1, 'Cap intro sound-object release hook changed'
+            # Sound emitters can be unavailable on PC, or fail to allocate.
+            # Keep original release behavior whenever Spawn returned an actor.
+            text=text.replace(old,guarded)
     if any(marker in text for marker in ('native cap callback stride',
             'native silver-star layout','native no-control initialization')):
         return text

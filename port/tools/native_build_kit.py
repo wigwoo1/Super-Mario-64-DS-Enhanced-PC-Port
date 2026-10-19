@@ -80,7 +80,7 @@ def main():
     libraries = re.search(r'  LINK_LIBRARIES = (.+)', link_block)[1].split()
     libraries = [x for x in libraries if x.lower() != 'ntr.lib']
     assert all(re.fullmatch(r'[A-Za-z0-9_]+\.lib', x) for x in libraries)
-    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete port; Buddy opening/persistence and first Battlefield cannon entry/aim/fire verified; repeat rides, other cannons and water-bomb combat unverified',
+    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete port; Buddy opening/persistence, repeated first-cannon rides/course reentry, a second Battlefield cannon ride and first Mario-cap intro crash repair verified; remaining cannons, water-bomb combat and native audio remain unverified or incomplete',
                 'prebuilt': prebuilt, 'local_objects': local, 'generators': generators,
                 'system_libraries': libraries, 'root_fallback': 'Compiled local checkout paths replaced with dot; launcher sets SM64DS_ASSET_ROOT.'}
     (kit / 'manifest.json').write_text(json.dumps(metadata, indent=2) + '\n')

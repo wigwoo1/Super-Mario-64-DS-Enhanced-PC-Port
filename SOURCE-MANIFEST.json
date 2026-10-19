@@ -6589,6 +6589,11 @@
       "bytes": 3161
     },
     {
+      "path": "port/docs/native-second-cannon-2026-10-19.txt",
+      "sha256": "35669978b89e0d36149555ff92e1da66a1353e210345f0505be4d0e84c29fcc6",
+      "bytes": 5142
+    },
+    {
       "path": "port/docs/native-shadow-masks-checkpoint-2026-10-15.txt",
       "sha256": "2017dbd983cde5bb737902355b524ae908788ac0ecffdd06500b613dd5342980",
       "bytes": 7294
@@ -6625,8 +6630,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "a5b44286b3d5db0f3b507432e161363b94ca30bc90e84bfa2b524ddaf7d2f3c5",
-      "bytes": 218791
+      "sha256": "776e3d32dd61223f01832e65ff1094ca704d6b31d528380f14812db1e7de006d",
+      "bytes": 219927
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -6655,8 +6660,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "9bfada3d067db7cb82467d496b12f7809deef4dd38bea99992817aec7e23870f",
-      "bytes": 4660
+      "sha256": "cce1aaf304524ebf4827040ef20aa6fde098eed512030d234c1b8c65f08153b9",
+      "bytes": 4887
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -6895,8 +6900,8 @@
     },
     {
       "path": "port/hal/game_api_bridge.cpp",
-      "sha256": "dbe255aa524209b9afa8036b4eab7e8bb8d9d319648522f46dff7d11ded332ee",
-      "bytes": 37467
+      "sha256": "5d06258ed9ebadefa06a687e24590d1b2c40ecbc64852e915f489a5ad1d5b6f3",
+      "bytes": 37799
     },
     {
       "path": "port/hal/gx_bank_state.asm",
@@ -7125,8 +7130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "eaa75362b7c427a6ecb7faf2b131ca0ecb1690f5a059d7c57882687443f87e96",
-      "bytes": 78035
+      "sha256": "1de44b4863ad076047c13370789901d8b461d88b0749c6751f8f82eec1799643",
+      "bytes": 79593
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7754,6 +7759,11 @@
       "bytes": 3931
     },
     {
+      "path": "port/tools/check_cannon_target_replay.py",
+      "sha256": "ad77aa6cbb607c649dc972525e0d266cd8842effbac11d4841fd8ef3b278a23e",
+      "bytes": 4736
+    },
+    {
       "path": "port/tools/check_conditional_goomba_replay.py",
       "sha256": "55d7d943375bce9e07ab028a42627a2c19dd30a16305ab95162be67c3a8d714f",
       "bytes": 4565
@@ -7980,8 +7990,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "4bfc7a061c0f75b38722d9faacdaada9f5e911c409da712343adc0ae84b4d788",
-      "bytes": 5948
+      "sha256": "2fbab10be927ea755092e940c1e18dfa8ad266d7b84e26a1d2ce92c97b1ec7db",
+      "bytes": 6046
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -8040,8 +8050,8 @@
     },
     {
       "path": "port/tools/reward_host.py",
-      "sha256": "de40be7b4d5b19189bdf3fab3add154bc8e25e9de28a09b7f64aa15214655d32",
-      "bytes": 5594
+      "sha256": "37f1269941903e0802052ebadc561b718999618648cb406d6cb50e391b9abac0",
+      "bytes": 6046
     },
     {
       "path": "port/tools/romdata.py",

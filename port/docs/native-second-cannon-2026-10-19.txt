@@ -1,0 +1,78 @@
+VERIFIED 2026-10-19: another Battlefield cannon and Mario-cap intro crash repair.
+
+Acceptance: build/port/native-cannon92-capfix-20261019,9500frames,exit0.
+Original FileA -> castle door/painting -> mission2 -> normal walking across the
+course -> Mario-cap pickup -> cannon92 -> aiming/firing/landing -> idle soak.
+This is a different cannon from the previously verified cannon91 by the Buddy.
+All travel, cap collection and cannon input use normal stick/buttons. No actor
+teleport, scene injection, save/progress change or invulnerability fixture.
+
+Repaired the input-only QA navigation controller: optional
+SM64DS_PC_TEST_ROUTE_SETTLE=1 slows near waypoints and pauses20ticks at corners.
+This removes full-speed turn drift that missed the castle door's narrow trigger.
+The original door code and collision remain unchanged. A walking path computed
+from the local collision mesh reaches the cannon platform by its ramp, passing
+the bridge support that blocked the earlier straight route. The generated path,
+collision images and replay launchers stay private in build/.
+SM64DS_PC_TEST_CANNON=other-cannon selects SM64DS_PC_TEST_CANNON_TARGET only
+near that live cannon; the course-route controller handles the earlier travel.
+It jumps onto the mound, rides once, aims in both axes, fires and stops at idle.
+
+Actual gameplay crash found and repaired:
+- The first successful approach collected a Mario cap. The original cap-intro
+  sequence then dereferenced a null sound-object pointer at7029,exit c0000005.
+  Evidence native-cannon92-precise-20261019 is diagnostic, never acceptance.
+- game_api_bridge.cpp now returns the actual Spawn result from the literal
+  SpawnSoundObj ABI bridge. Its previous void wrapper discarded that result.
+- reward_host.py guards the cap intro's optional sound-object release when
+  spawning failed. The original release runs when an object exists. Camera,
+  message, cap transformation and normal control timing still use original code.
+  This handles unavailable emitters/allocation failure; it does not implement
+  native sound-emitter actor359 or claim that the audio backend is complete.
+- Original src/ and include/ are unchanged; only host-generated Player is guarded.
+
+Runtime evidence:
+- Centered castle-door waypoints pass2386/2507 (approximately; +/-1tick at boot).
+- The real first Mario-cap intro completes, returning control before boarding.
+  Save/original character remains3 (Yoshi); active form/body/hat are0 (Mario).
+  The screenshots showing Mario therefore show Yoshi wearing a Mario cap.
+- Cannon92: aiming7513,launch7634,grounded idle7793. All original load steps0..4,
+  camera/barrel heading, vertical/horizontal aiming, initial flight direction,
+  reset-to-wait and normal grounded control pass the replay verifier.
+- Final state remains grounded St_Wait_Main at9500 with controls enabled.
+- Slot1 bytes/validated payload and minigames bytes match their isolated seeds.
+- Screenshots of the route, cap intro, cannon-loading view and landing shown in
+  chat. Local evidence is private; it must never enter public release archives.
+
+Validation: Release build passes;53/53 CTests26.93s;5 reward-host tests pass;
+native actor/input data audit passes. check_cannon_target_replay.py with92 and
+--cap-intro passes the complete runtime. Earlier target/route probes were stopped
+as diagnostics; none proves cannon acceptance. The pre-fix cap crash is rejected.
+
+Candidate EXE SHA256:
+691DD3029EC05CA6228FF319C8BEDD81AC852FE12C4E8E4B1F3DB9B2A0E98770
+Previous installed verified EXE:
+BFB57A03B5E0225629592AF93639FF4C195FF36E9274ED86449131049BE04C33
+
+Manual check: launch Play Mario 64 DS.cmd, FileA, Battlefield mission2. Follow
+the ramp to the raised platform across the course from the starting cannon.
+Collect a Mario cap if desired; the first-cap message must finish without a
+crash. Jump onto the cannon mound, enter its opening, aim and press action to
+fire. Normal movement returns after landing. Physical Xbox hardware not tested.
+
+Limits: one ride in the second cannon; other cannons and water-bomb combat still
+need runtime checks. First-cap message/3D text overlap still needs visual polish.
+Full game/audio, broader settings, textures, high-FPS and VS roadmap remain open.
+Public dev-2026-10-19 kit predates cannon riding and this fix; no new kit is
+claimed here. Full EXE embeds ROM-derived data and remains local.
+
+Installation verified on F: with matching691DD302... SHA256. The previous
+BFB57A03... executable is retained under native-checkpoints/
+native-checkpoint-2026-10-19-second-cannon-cap/previous-verified-sm64ds_pc.exe.
+Installer hashes confirm the original ROM and every user save remain unchanged.
+Direct installed-EXE test uses F: ROM and isolated C: saves,1500frames,exit0;
+FileA reaches grounded Yoshi outside the castle. Screenshot1400 shown in chat.
+Six negative verifier probes reject missing load steps, bad barrel heading,
+missing cap pickup, changed save data, a wrong cannon and the original crash.
+Next bounded regression: existing water-bomb combat; Luna Medium is suitable to
+start, reassessing if it uncovers a new difficult failure. Goal remains unfinished.

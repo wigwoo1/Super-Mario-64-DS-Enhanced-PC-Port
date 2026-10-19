@@ -179,6 +179,12 @@ static bool replay_course_route() {
                 a->param1,a->mPosX,a->mPosY,a->mPosZ,a->mAngleY);
     }
     static uint64_t jump_until=0,next_jump=0;
+    static uint64_t settle_until=0;
+    const char *settle=std::getenv("SM64DS_PC_TEST_ROUTE_SETTLE");
+    const bool precise=settle && !std::strcmp(settle,"1");
+    if(precise && ntr::rt_frame()<settle_until) {
+        ntr::input_test_controls(true,0,0,0);return true;
+    }
     uint16_t buttons=0;int16_t sx=0,sy=0;
     if(data_0209d660) {
         if(ntr::rt_frame()%45<3)buttons=1;
@@ -195,10 +201,15 @@ static bool replay_course_route() {
             std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d tick=%llu\n",
                 waypoint,level,x,z,static_cast<unsigned long long>(ntr::rt_frame()));
             ++waypoint;
+            if(precise)settle_until=tick+20;
         } else {
             const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-            sx=static_cast<int16_t>(std::sin(angle)*22000);
-            sy=static_cast<int16_t>(-std::cos(angle)*22000);
+            double magnitude=precise?std::hypot(dx,dz)/(180*4096.0)*22000:22000.0;
+            // Keep low-speed travel above the controller's radial deadzone.
+            if(magnitude<12000)magnitude=12000;
+            if(magnitude>22000)magnitude=22000;
+            sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+            sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
         }
     }
     ntr::input_test_controls(true,buttons,sx,sy);
@@ -303,13 +314,18 @@ static bool replay_rabbit_controls() {
 static bool replay_cannon_cycle_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_CANNON");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    if(!mode || std::strcmp(mode,"repeat-reentry") || !automation || std::strcmp(automation,"1"))return false;
+    if(!mode || (std::strcmp(mode,"repeat-reentry") && std::strcmp(mode,"other-cannon")) || !automation || std::strcmp(automation,"1"))return false;
+    const bool other_cannon=!std::strcmp(mode,"other-cannon");
     enum {RIDE,RETURN,EXIT,CASTLE,FINISHED};
     static int phase=RIDE,visit=1,rides=0,waypoint=0;
     static unsigned target=0;
+    static unsigned selected_target=0;
     static bool shot=false;
     static uint64_t aim_tick=0,land_tick=0,jump_until=0,next_jump=0;
     const auto tick=ntr::rt_frame();
+    if(other_cannon && !selected_target) {
+        if(const char *value=std::getenv("SM64DS_PC_TEST_CANNON_TARGET"))selected_target=static_cast<unsigned>(std::strtoul(value,nullptr,10));
+    }
     auto *p=static_cast<Player *>(data_0209f394[0]);
     uint16_t buttons=0;int16_t sx=0,sy=0;
     auto controls=[&]() {ntr::input_test_controls(true,buttons,sx,sy);return true;};
@@ -364,11 +380,13 @@ static bool replay_cannon_cycle_controls() {
     daCnn_c *c=nullptr;double best=1e100;
     for(auto *a=dActor_c::FindWithActorID(207,nullptr);a;a=dActor_c::FindWithActorID(207,a)) {
         auto *candidate=static_cast<daCnn_c *>(a);
-        if(a->aliveState!=1 || candidate->mVariant!=2 || (target && a->uniqueID!=target))continue;
+        if(a->aliveState!=1 || candidate->mVariant!=2 || (target && a->uniqueID!=target) ||
+           (other_cannon && selected_target && a->uniqueID!=selected_target))continue;
         const double distance=std::hypot(double(a->mPosX)-p->mPosX,double(a->mPosZ)-p->mPosZ);
         if(distance<best){c=candidate;best=distance;}
     }
-    if(!c || (!target && best>1200*4096.0))return false;
+    // Let the input-only course route reach this cannon before taking over.
+    if(!c || (!target && best>(other_cannon?650:1200)*4096.0))return false;
     if(!target) {target=c->uniqueID;event("approach");}
     if(phase==RETURN) {
         if(tick<land_tick+90 || !ready())return controls();
@@ -391,10 +409,19 @@ static bool replay_cannon_cycle_controls() {
         if(elapsed>=120 && elapsed<123)buttons=1;
     } else if(c->mState==3 && c->mLoadStep==4) {
         if(!shot)event("launch");shot=true;
-    } else if(!shot && ready())move(c->mPosX/4096.0,c->mPosZ/4096.0,15);
+    } else if(!shot && ready()) {
+        // The second cannon's mound has steep sides; jump into its opening.
+        if(other_cannon && !p->mIsAirborne && tick>=next_jump &&
+           (!std::strcmp(pc_player_state_name(p),"St_Wait_Main") || !std::strcmp(pc_player_state_name(p),"St_Walk_Main"))) {
+            jump_until=tick+12;next_jump=tick+75;
+        }
+        if(other_cannon && tick<jump_until)buttons=2;
+        move(c->mPosX/4096.0,c->mPosZ/4096.0,15);
+    }
     if(shot && ready() && !p->mIsAirborne && !std::strcmp(pc_player_state_name(p),"St_Wait_Main")) {
         event("grounded-idle");++rides;land_tick=tick;
-        if(visit==2) {phase=FINISHED;event("complete");}
+        if(other_cannon) {phase=FINISHED;event("complete");}
+        else if(visit==2) {phase=FINISHED;event("complete");}
         else if(rides==2) {phase=EXIT;event("exit-request");}
         else {phase=RETURN;waypoint=0;}
     }
