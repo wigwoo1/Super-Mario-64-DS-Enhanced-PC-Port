@@ -1,0 +1,53 @@
+Water-bomb course lifecycle investigation - 2026-10-19
+
+Status PARTIALLY VERIFIED. This is diagnostic QA work, not a gameplay acceptance
+or a new installed build. Original src/include and normal gameplay are unchanged.
+
+Added gated SM64DS_PC_TEST_WATERBOMB=reentry input-only replay: repeats original
+mission1 encounter, requests original pause Exit Course, walks through the castle
+painting and attempts mission1 again. check_waterbomb_reentry.py deliberately
+requires both real mission1 confirmations, active-projectile exit, no old actors
+in the castle, fresh droppers/cannons and firing after reentry, original menu and
+painting lifecycle, restored control and unchanged isolated saves.
+
+Attempt1: native-waterbomb-reentry-20261019. Paused during St_Hurt_Main; original
+pause initialization intentionally falls back to full-screen map (state11) when
+func_02029408 -> Player::CanPause is false. Replay only navigated normal state3,
+so it stopped making progress. Canceled by Ctrl+C. No acceptance or clean exit.
+
+Focused replay repair: wait for original func_02029408 eligibility before Start;
+send Back if state11 occurs. No gameplay state is written. Added a delayed Left/A
+sequence for original mission selection, but it has NOT selected the right mission.
+
+Attempt2: native-waterbomb-reentry-eligible-20261019,11000frames,exit0.
+- Original mission1, same body/fragment hits as accepted combat replay.
+- Observe6427 health6; fragment hit6544 health5; Exit requested6544 with5fragments.
+- Pause input6615 while native falling water bomb217 exists.
+- Original pause selection3 (Exit Course) runs, castle return6795.
+- Neither actor207 nor208 remains in castle samples6795/6800.
+- Castle paintings reset/recreate; original painting route returns to Battlefield.
+- Mission selection CONFIRMS MISSION2, not mission1. Course reentry7508, grounded
+  control7560; final11000 grounded idle health5. These control events alone are
+  not evidence of mission1 resource reload.
+- check_waterbomb_reentry.py rejects this case: 'mission1 not confirmed twice'.
+  Its later mission1-specific assertions have no positive case yet.
+- Original slot/minigame seed bytes unchanged. Screenshots6800 (castle) and7800
+  (returned Battlefield mission2) shown. Initial map screenshot is diagnostic.
+
+Final Release build passes;53/53 CTests22.84s; native-data audit passes. These
+tests do not override the failed mission1 lifecycle acceptance. Two focused runs
+are preserved, no third guess/run. No new gameplay repair or stable installation.
+QA EXE1E0854E5520587EE48F450D4E08AC214427261227BDF2E5243BDF40D341AC953.
+Normal F: EXE remains691DD3029EC05CA6228FF319C8BEDD81AC852FE12C4E8E4B1F3DB9B2A0E98770.
+Prior water-bomb combat and second-cannon/cap-crash acceptances remain valid.
+No new release kit; dev-2026-10-19 still predates the cannon gameplay integration.
+
+MODEL UPGRADE RECOMMENDED: Luna Medium -> Sol Medium.
+Next: inspect actual original mission-selection scene readiness and input routing.
+Determine why the replay's Left sequence is bypassed or ineffective; select mission1
+using ordinary input based on scene feedback, not saved-progress writes. Then run
+the strict checker with new private evidence, show screenshots, and validate its
+rejections. Do not relax it to accept mission2 or label the current case passed.
+Possible area to inspect: CASTLE phase branches on player pointer/dialogue state
+before the delayed mission-select branch; do not assume those identify the scene.
+Stop after two new focused failed attempts rather than guessing.

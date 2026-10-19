@@ -29,6 +29,8 @@ game assets, personal saves, or proprietary compiler is included here.
   repeated drops, bouncing, body/fragment damage and safe recovery. Other placements,
   projectile cleanup across course changes and the sound emitter/audio backend
   remain unfinished or unverified.
+  A diagnostic exit/re-entry replay reaches the castle safely but currently selects
+  mission 2 on return; mission-1 water-bomb reload acceptance is still failing.
   The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
   cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.
 - Browser Download Play, complete multiplayer, and the requested AI texture

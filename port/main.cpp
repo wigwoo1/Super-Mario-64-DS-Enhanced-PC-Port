@@ -135,6 +135,7 @@ static unsigned observed_boss_state(const daBombking_c *boss) {
 // Local extern: the camera-relative joystick uses this original angle helper.
 extern "C" short GetAngleToCamera(int player);
 extern "C" unsigned char data_0209f2d4;
+extern "C" int func_02029408(void);
 // Input-only course-route QA: decimal level:x:z:radius waypoints in world
 // units, with optional :1 to jump near the waypoint. Never writes player
 // positions, save flags, actors or scene state.
@@ -324,25 +325,82 @@ static bool replay_rabbit_controls() {
 static bool replay_waterbomb_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_WATERBOMB");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    if(!mode || std::strcmp(mode,"1") || !automation || std::strcmp(automation,"1"))return false;
+    if(!mode || (std::strcmp(mode,"1") && std::strcmp(mode,"reentry")) || !automation || std::strcmp(automation,"1"))return false;
+    const bool reentry=!std::strcmp(mode,"reentry");
     const char *route=std::getenv("SM64DS_PC_TEST_WATERBOMB_ROUTE");
     int observe_x=0,observe_z=0,retreat_x=0,retreat_z=0;
     if(!route || std::sscanf(route,"%d:%d:%d:%d",&observe_x,&observe_z,&retreat_x,&retreat_z)!=4)return false;
     if(observe_x< -32768 || observe_x>32767 || observe_z< -32768 || observe_z>32767 ||
        retreat_x< -32768 || retreat_x>32767 || retreat_z< -32768 || retreat_z>32767)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);
-    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
-    enum {APPROACH,OBSERVE,RETREAT,DRAIN,COMPLETE};
+    enum {APPROACH,OBSERVE,RETREAT,DRAIN,COMPLETE,EXIT,CASTLE,REENTERED};
     static int phase=APPROACH,initial_health=0,retreat_leg=0;
     static bool fragments_seen=false;
+    static unsigned waypoint=0;
+    static uint64_t selection_tick=0,jump_until=0,next_jump=0;
     const auto tick=ntr::rt_frame();
-    const char *state=pc_player_state_name(p);
-    const bool free=!p->mIsNoControl && !p->mIsControlDisabled;
     uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto controls=[&]() {ntr::input_test_controls(true,buttons,sx,sy);return true;};
+    auto ready=[&]() {return p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;};
     auto event=[&](const char *name) {
         std::fprintf(stderr,"[native waterbomb replay] event=%s tick=%llu health=%d pos=%d,%d,%d\n",
-            name,static_cast<unsigned long long>(tick),p->GetHealth(),p->mPosX,p->mPosY,p->mPosZ);
+            name,static_cast<unsigned long long>(tick),p?p->GetHealth():-1,p?p->mPosX:0,p?p->mPosY:0,p?p->mPosZ:0);
     };
+    if(phase==EXIT) {
+        if(data_0209f2f8==2 && p && p->aliveState==1) {phase=CASTLE;event("castle-return");}
+        else {
+            if(!data_0209f2c4) {
+                // Original pause falls back to the full-screen map during Hurt.
+                // Wait for its own player eligibility check before opening it.
+                if(ready() && func_02029408() && tick%45<3) {buttons=8;event("pause-request");}
+            }
+            else if(data_0209f248==11 && tick%45<3)buttons=2;
+            else if(data_0209f248==3 && tick%45<3)buttons=data_0209f2e0==3?1:0x80;
+            return controls();
+        }
+    }
+    if(phase==CASTLE) {
+        if(data_0209f2f8==6 && p && p->aliveState==1) {phase=REENTERED;event("course-reentry");}
+        else {
+            if(!p || p->aliveState!=1) {
+                if(!selection_tick)selection_tick=tick;
+                // Let the original scene/fade become ready before Left then A.
+                const auto elapsed=tick-selection_tick;
+                if(elapsed>=180) {
+                    const auto step=(elapsed-180)%120;
+                    if(step<3)buttons=0x20;
+                    else if(step>=60 && step<63)buttons=1;
+                }
+                return controls();
+            }
+            selection_tick=0;
+            if(data_0209d660) {if(tick%45<3)buttons=1;return controls();}
+            if(!ready())return controls();
+            const int route[][3]={{-1000,1400,60},{-2100,600,50},{-2300,500,40},
+                {-2750,50,40},{-2800,-700,50},{-3400,-700,50},{-3700,-450,40},{-5200,-450,40}};
+            const unsigned last=sizeof(route)/sizeof(route[0])-1;
+            const unsigned index=waypoint>last?last:waypoint;
+            const double dx=route[index][0]*4096.0-p->mPosX,dz=route[index][1]*4096.0-p->mPosZ;
+            if(index==last && std::hypot(dx,dz)<320*4096.0 && tick>=next_jump &&
+               (!std::strcmp(pc_player_state_name(p),"St_Wait_Main") || !std::strcmp(pc_player_state_name(p),"St_Walk_Main"))) {
+                jump_until=tick+12;next_jump=tick+75;
+            }
+            if(tick<jump_until)buttons=2;
+            if(std::hypot(dx,dz)<=route[index][2]*4096.0) {if(waypoint<=last)++waypoint;}
+            else {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*22000);sy=static_cast<int16_t>(-std::cos(angle)*22000);
+            }
+            return controls();
+        }
+    }
+    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
+    const char *state=pc_player_state_name(p);
+    const bool free=ready();
+    if(phase==REENTERED) {
+        if(free && !p->mIsAirborne && !std::strcmp(state,"St_Wait_Main")) {phase=COMPLETE;event("reentry-complete");}
+        return controls();
+    }
     if(phase==APPROACH) {
         if(!free || std::hypot(p->mPosX-observe_x*4096.0,p->mPosZ-observe_z*4096.0)>60*4096.0 ||
            (std::strcmp(state,"St_Wait_Main") && std::strcmp(state,"St_Walk_Main")))return false;
@@ -357,6 +415,7 @@ static bool replay_waterbomb_controls() {
     }
     if(phase==OBSERVE && fragments_seen && p->GetHealth()<initial_health) {
         phase=RETREAT;event("damage-and-fragments");
+        if(reentry) {phase=EXIT;event("exit-request");}
     }
     if(phase==RETREAT && free) {
         const double dx=retreat_x*4096.0-p->mPosX,dz=(retreat_leg?retreat_z:observe_z)*4096.0-p->mPosZ;

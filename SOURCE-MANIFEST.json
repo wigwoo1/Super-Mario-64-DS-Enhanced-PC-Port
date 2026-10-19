@@ -6624,6 +6624,11 @@
       "bytes": 3870
     },
     {
+      "path": "port/docs/native-waterbomb-reentry-2026-10-19.txt",
+      "sha256": "f5337cab1c6fe02db9301fffcdde141c9435a47fc3c4c76b845fda6a2ed9434f",
+      "bytes": 3536
+    },
+    {
       "path": "port/docs/native-yoshi-start-and-render-checkpoint-2026-10-15.txt",
       "sha256": "bf48857757be832d115a64e1b226693c75aaf9383fe1c60dd87d3853b739b5e1",
       "bytes": 6341
@@ -6635,8 +6640,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "c7257c5faf638395b2e763de39a27f7b271fdb7d8d8ce61d0c85f60c43178e80",
-      "bytes": 220847
+      "sha256": "55cdae7656b328e54817a4a1ef16164d159186f05f18e5264361e8ad56df8265",
+      "bytes": 221784
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -6665,8 +6670,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "1187a89c100c8a395ebaa57751318eef7deb13d2bffa99fae2afc4c087753e50",
-      "bytes": 5052
+      "sha256": "9459dbcf737cf654f21932a5e2bca0248da4b886fb93522f8a7ca93e51235691",
+      "bytes": 5216
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7135,8 +7140,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "8a7d3a24bf5283ee88c53df9f08949b776db5a6ba0579e79ee920968fdb46e0f",
-      "bytes": 85571
+      "sha256": "970d8ccb7e6f731c5d5ff5bb4df90a0298f0bf7efa3c132e81165d3429c8d7d3",
+      "bytes": 88716
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7907,6 +7912,11 @@
       "path": "port/tools/check_texture_source_roles.py",
       "sha256": "cc48e1683a19a624701b00351ee7f90f5beb83c1bb22cdaf40ef61d3b3a0da30",
       "bytes": 6480
+    },
+    {
+      "path": "port/tools/check_waterbomb_reentry.py",
+      "sha256": "ed90ab219f0b489a60f461beabc042ed479ebd51713a94a10484008a034e3a04",
+      "bytes": 4815
     },
     {
       "path": "port/tools/check_waterbomb_replay.py",
