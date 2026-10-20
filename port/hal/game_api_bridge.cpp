@@ -358,8 +358,29 @@ dActor_c *_ZN8dActor_c13SpawnSoundObjEj(dActor_c *self, unsigned int param)
     // Recovered callers retain the sound actor (for example the cap intro).
     // The cartridge wrapper's last Spawn call returns it in r0, although its
     // reconstructed void declaration would discard that value on the host.
-    return dActor_c::Spawn(0x167,param,
+    const char *trace = std::getenv("SM64DS_PC_SOUND_OBJ_TRACE");
+    const bool enabled = trace && trace[0] && trace[0] != '0';
+    if (enabled) {
+        std::fprintf(stderr,
+                     "[native sound_obj] spawn-request actor=359 param=%u parent=%p area=%d\n",
+                     param, static_cast<void *>(self), static_cast<int>(self->mAreaId));
+        std::fflush(stderr);
+    }
+    dActor_c *spawned = dActor_c::Spawn(0x167,param,
         *reinterpret_cast<const Vector3 *>(&self->mPosX),nullptr,self->mAreaId,-1);
+    if (enabled) {
+        if (spawned)
+            std::fprintf(stderr,
+                         "[native sound_obj] spawn-result ptr=%p actor=%u unique=%u alive=%u param=%u\n",
+                         static_cast<void *>(spawned), static_cast<unsigned>(spawned->actorID),
+                         static_cast<unsigned>(spawned->uniqueID),
+                         static_cast<unsigned>(spawned->aliveState),
+                         static_cast<unsigned>(spawned->param1));
+        else
+            std::fprintf(stderr, "[native sound_obj] spawn-result null\n");
+        std::fflush(stderr);
+    }
+    return spawned;
 }
 dActor_c *_ZN8dActor_c4NextEPKS_(const dActor_c *after)
 { return dActor_c::Next(after); }

@@ -437,6 +437,7 @@ static void capture_waterbomb_state() {
     const char *path=std::getenv("SM64DS_PC_WATERBOMB_CAPTURE");
     if(!path || !*path)return;
     static FILE *file=nullptr;static uint64_t previous=~uint64_t(0);
+    static FILE *bombhei_file=nullptr;
     const auto tick=ntr::rt_frame();if(tick==previous)return;previous=tick;
     if(!file) {
         file=std::fopen(path,"w");if(!file)return;
@@ -463,8 +464,53 @@ static void capture_waterbomb_state() {
         }
     }
     std::fflush(file);
+    const char *bombhei_path=std::getenv("SM64DS_PC_BOMBHEI_CAPTURE");
+    if(bombhei_path && *bombhei_path) {
+        if(!bombhei_file) {
+            bombhei_file=std::fopen(bombhei_path,"w");
+            if(bombhei_file)std::fputs("tick,level,id,alive,variant,state,death,fuse,carried,hit,other,flags,vuln,x,y,z\n",bombhei_file);
+        }
+        if(bombhei_file) {
+            for(auto *a=dActor_c::FindWithActorID(206,nullptr);a;a=dActor_c::FindWithActorID(206,a)) {
+                auto *b=static_cast<daBmb_c *>(a);
+                std::fprintf(bombhei_file,"%llu,%d,%u,%u,%u,%d,%d,%u,%u,%u,%u,%u,%u,%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),data_0209f2f8,b->uniqueID,b->aliveState,
+                    unsigned(b->mVariant),b->mState,b->mDeathState,unsigned(b->mFuse),b->mCarrier?1u:0u,
+                    b->mdCc_c.hitFlags,b->mdCc_c.otherOwner,b->mdCc_c.flags,b->mdCc_c.vulnFlags,b->mPosX,b->mPosY,b->mPosZ);
+            }
+            std::fflush(bombhei_file);
+        }
+    }
 }
 
+extern "C" int pc_native_collision_capture_enabled(void) {
+    const char *path=std::getenv("SM64DS_PC_COLLISION_CAPTURE");
+    return path && *path;
+}
+
+extern "C" void pc_native_collision_trace_pair(
+    unsigned int owner0, unsigned int owner1, unsigned int flags0, unsigned int flags1,
+    unsigned int sharedFlags, int overlap, const Vector3 *pos0, const Vector3 *pos1) {
+    const char *path=std::getenv("SM64DS_PC_COLLISION_CAPTURE");
+    if(!path || !*path)return;
+    dActor_c *actor0=dActor_c::FindWithID(owner0);
+    dActor_c *actor1=dActor_c::FindWithID(owner1);
+    static FILE *file=nullptr;
+    if(!file) {
+        file=std::fopen(path,"w");
+        if(file)std::fputs("tick,owner0,actor0,owner1,actor1,flags0,flags1,shared_flags,overlap,x0,y0,z0,x1,y1,z1,bombhei_fuse,bombhei_state,waterbomb_variant,waterbomb_state\n",file);
+    }
+    if(!file)return;
+    int fuse=-1,bombState=-1,waterVariant=-1,waterState=-1;
+    if(actor0 && actor0->actorID==206) {auto *b=static_cast<const daBmb_c *>(actor0);fuse=b->mFuse;bombState=b->mState;}
+    if(actor1 && actor1->actorID==206) {auto *b=static_cast<const daBmb_c *>(actor1);fuse=b->mFuse;bombState=b->mState;}
+    if(actor0 && actor0->actorID==208) {auto *w=static_cast<const daWbm_c *>(actor0);waterVariant=w->mVariant;waterState=w->mState;}
+    if(actor1 && actor1->actorID==208) {auto *w=static_cast<const daWbm_c *>(actor1);waterVariant=w->mVariant;waterState=w->mState;}
+    std::fprintf(file,"%llu,%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+        static_cast<unsigned long long>(ntr::rt_frame()),owner0,actor0?unsigned(actor0->actorID):0,owner1,actor1?unsigned(actor1->actorID):0,
+        flags0,flags1,sharedFlags,overlap,pos0->x,pos0->y,pos0->z,pos1->x,pos1->y,pos1->z,fuse,bombState,waterVariant,waterState);
+    std::fflush(file);
+}
 // Input-only repeated cannon/course-lifecycle replay. All travel is ordinary
 // stick/button input; pointers, actors, camera fields and saves are only read.
 static bool replay_cannon_cycle_controls() {

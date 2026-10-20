@@ -402,6 +402,8 @@ set(OV002_DATA_SYMBOLS
     data_ov002_02110094 data_ov002_021100ac
     data_ov002_0211013c data_ov002_0211022c
     data_ov002_0211058c data_ov002_021106ac
+    data_ov002_0210c080 data_ov002_0211110c
+    data_ov002_0210d7f4
     data_ov002_02110064 data_ov002_020ff120 data_ov002_021101cc)
 set(OV002_DATA_CPP "${CMAKE_BINARY_DIR}/host-src/ov002_data.cpp")
 set(PC_GAME_LINK_HISTORY "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log")
@@ -1119,6 +1121,10 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     "${PORT_REPO_ROOT_ABS}/src/_ZN8dActor_cD1Ev.cpp"
     "${PORT_REPO_ROOT_ABS}/src/_ZN9fLiNdBa_cD1Ev.cpp"
     "${PORT_REPO_ROOT_ABS}/src/d_a_ply.cpp"
+    # SOUND_OBJ's native actor factory is installed at profile ID359. Keep its
+    # recovered callbacks in the production game target; the generic closure
+    # does not discover C-linkage factories from profile tables automatically.
+    "${PORT_REPO_ROOT_ABS}/src/game/actors/d_a_sound_obj.cpp"
     "${PORT_REPO_ROOT_ABS}/src/_ZN6PlayerC1Ev.cpp"
     # Emit the native Player vftable used by PlayerC1's PC-side vtable alias.
     "${PORT_REPO_ROOT_ABS}/src/_ZN6PlayerD1Ev.cpp"

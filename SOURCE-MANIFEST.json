@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "9d5a286c9a0f75af83801cffa79953cb5ba284f43d183834e93dbcbafd6e77b3",
-      "bytes": 74256
+      "sha256": "69183ef15a43aa9238f2e42267e7ac6105856c1e28a99c9d6143e15972c37f81",
+      "bytes": 74621
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6820,8 +6820,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "67320b3b4e4cf2c40a21acc88833012fb0ed1a0eb847eafb89a34b8c2c5d1072",
-      "bytes": 33443
+      "sha256": "8524f8f1072e4443e5974db214b0f07d2cbed92c864fadd57a6458b2f703f52c",
+      "bytes": 33841
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -6915,8 +6915,8 @@
     },
     {
       "path": "port/hal/game_api_bridge.cpp",
-      "sha256": "5d06258ed9ebadefa06a687e24590d1b2c40ecbc64852e915f489a5ad1d5b6f3",
-      "bytes": 37799
+      "sha256": "2b160c62721543e06b626db3e5257fe7ffbca18757970345b0f45ff73d6c1de4",
+      "bytes": 38830
     },
     {
       "path": "port/hal/gx_bank_state.asm",
@@ -7145,8 +7145,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "ed956b617fcb68cb6cf80c0a5d1c966509f7f25b09fa37b49a223e7f7304223b",
-      "bytes": 88954
+      "sha256": "4e46ab36305c9a2749bbd6c10b3106dc2cb109972707bc11399b5a2698a63602",
+      "bytes": 91831
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -10755,8 +10755,8 @@
     },
     {
       "path": "src/actors/dActor_c.cpp",
-      "sha256": "4373d67ef4bc1ee4e4de51e4067a5877c79d3d8ae9d778d780174c3f46cec9d5",
-      "bytes": 57140
+      "sha256": "27c341e95669cab1a0cdf76758a591be8783f147a752d113c2ac567afa24ec76",
+      "bytes": 58280
     },
     {
       "path": "src/actors/daDemo_c.cpp",
@@ -12210,8 +12210,8 @@
     },
     {
       "path": "src/engine/collision/dCc_c.cpp",
-      "sha256": "dec5efcdb5e1041ebd86c571294f12dc589abbad2717f18d93640160559e4e75",
-      "bytes": 11278
+      "sha256": "527065fbfc58a7d77143a9d4060ea8496235ee40a9bffb93db98662a900c451a",
+      "bytes": 12317
     },
     {
       "path": "src/engine/collision/dCcAc_c.cpp",
@@ -13235,8 +13235,8 @@
     },
     {
       "path": "src/game/actors/d_a_sound_obj.cpp",
-      "sha256": "5dfca17de5041ba0d906fb53579c60c82b8859d06a3668524fea61cc12df610d",
-      "bytes": 7146
+      "sha256": "f13d6156d53c202e46358f7b4357dddc8475dfd71905c2f8179208c4fca728ac",
+      "bytes": 12565
     },
     {
       "path": "src/game/actors/d_a_star_gate.cpp",

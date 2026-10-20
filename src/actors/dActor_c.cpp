@@ -70,6 +70,10 @@
 /* Includes: union of the admitted legacy files', first-seen in emission
  * order. Header-guarded, so the union is safe; ordering constraints are
  * not otherwise checked. */
+#if defined(SM64DS_PLATFORM_PC)
+#include <cstdio>
+#include <cstdlib>
+#endif
 #include "types.h"
 #include "decl_common.h"
 #include "dActor_c.h"
@@ -124,6 +128,16 @@ void dActor_c::AfterInitResources(u32 vfSuccess)
  * 0x02011220  size 0x24 */
 int dActor_c::BeforeCleanupResources()
 {
+#if defined(SM64DS_PLATFORM_PC)
+    const char *trace = std::getenv("SM64DS_PC_SOUND_OBJ_TRACE");
+    if (actorID == 0x167 && trace && trace[0] && trace[0] != '0') {
+        std::fprintf(stderr,
+                     "[native sound_obj] cleanup-begin ptr=%p unique=%u alive=%u param=%u\n",
+                     static_cast<void *>(this), static_cast<unsigned>(uniqueID),
+                     static_cast<unsigned>(aliveState), static_cast<unsigned>(param1));
+        std::fflush(stderr);
+    }
+#endif
     if (fBase_c::BeforeCleanupResources() != 0)
         return 1;
     return 0;
@@ -135,6 +149,17 @@ int dActor_c::BeforeCleanupResources()
  * 0x02011214  size 0xc */
 void dActor_c::AfterCleanupResources(u32 vfSuccess)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    const char *trace = std::getenv("SM64DS_PC_SOUND_OBJ_TRACE");
+    if (actorID == 0x167 && trace && trace[0] && trace[0] != '0') {
+        std::fprintf(stderr,
+                     "[native sound_obj] cleanup-end ptr=%p unique=%u alive=%u param=%u success=%u\n",
+                     static_cast<void *>(this), static_cast<unsigned>(uniqueID),
+                     static_cast<unsigned>(aliveState), static_cast<unsigned>(param1),
+                     static_cast<unsigned>(vfSuccess));
+        std::fflush(stderr);
+    }
+#endif
     fBase_c::AfterCleanupResources(vfSuccess);
 }
 

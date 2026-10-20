@@ -275,6 +275,8 @@ extern "C" unsigned char g_profile_BOMBKING[];
 extern "C" unsigned char g_profile_BOMBHEI[];
 extern "C++" { extern SharedFilePtr data_ov102_0214e9c0, data_ov102_0214e9c8; }
 extern "C" void *daYegg_c_classInit();
+extern "C" void *daSoundObj_c_classInit();
+extern "C" void pc_sound_obj_init_callbacks(void);
 // MAP derives directly from dBase_c: its ROM profile is eight bytes.
 static PcActorProfile pc_map_profile = {(void *)&dMap_c_classInit, 335, 335};
 extern "C" void pc_door_init_tables(void);
@@ -345,6 +347,11 @@ static PcNativeActorProfile pc_picture_gate_profile = {
 static PcNativeActorProfile pc_door_profile = {
     (void *)&daDoor_c_classInit, 353, 353, 0x60800002u,
     0x7d000, 0x7d000, 0x1f40000, 0
+};
+// SOUND_OBJ (359), recovered from the original ov002 profile at 0x0210c064.
+static PcNativeActorProfile pc_sound_obj_profile = {
+    (void *)&daSoundObj_c_classInit, 359, 359, 0x24800000u,
+    0, 0x1000, 0, 0
 };
 #endif
 /* BOOT/TITLE/STAGE dispatch their explicit native factories in the scene
@@ -435,6 +442,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[352] = &pc_demo_profile;
     data_020a4bb8_storage[353] = &pc_door_profile;
     data_020a4bb8_storage[307] = &pc_picture_gate_profile;
+    pc_sound_obj_init_callbacks();
+    data_020a4bb8_storage[359] = &pc_sound_obj_profile;
 #endif
     data_020a4bb8 = data_020a4bb8_storage;
     pc_sync_actor_profile_table_cpp();

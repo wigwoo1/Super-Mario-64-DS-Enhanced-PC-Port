@@ -17,6 +17,13 @@
  */
 #include "dCc_c.h"
 
+#if defined(SM64DS_PLATFORM_PC)
+extern "C" int pc_native_collision_capture_enabled(void);
+extern "C" void pc_native_collision_trace_pair(
+    u32 owner0, u32 owner1, u32 flags0, u32 flags1, u32 sharedFlags,
+    Fix12i overlap, const Vector3 *pos0, const Vector3 *pos1);
+#endif
+
 struct Player;
 struct Arg;
 
@@ -202,6 +209,20 @@ void dCc_c::Process()
             other->hitFlags = data_0209cee8->flags;
             data_0209cee8->otherOwner = other->GetOwnerID();
             other->otherOwner = data_0209cee8->GetOwnerID();
+
+#if defined(SM64DS_PLATFORM_PC)
+            /* Test-only observation at the exact collision stage. Actor
+               Behavior clears these one-frame hit fields before the host
+               frame hook can inspect them. This callback is inert unless the
+               user explicitly sets SM64DS_PC_COLLISION_CAPTURE. */
+            const u32 flags0 = data_0209cee8->flags;
+            const u32 flags1 = other->flags;
+            if (((flags0 == 0x200004 && flags1 == 0x204004) ||
+                 (flags0 == 0x204004 && flags1 == 0x200004)) &&
+                pc_native_collision_capture_enabled())
+                pc_native_collision_trace_pair(owner0, other->GetOwnerID(),
+                    flags0, flags1, sharedFlags, overlap, pos0, &pos1);
+#endif
 
             if (sharedFlags & 0x4000000)
             {

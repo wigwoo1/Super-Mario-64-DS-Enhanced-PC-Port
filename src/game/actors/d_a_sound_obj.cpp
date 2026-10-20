@@ -45,6 +45,16 @@
  */
 
 #include "daSoundObj_c.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include <cstdio>
+#include <cstdlib>
+#include "Sound.h"
+static bool pc_sound_obj_trace_enabled()
+{
+    const char *trace = std::getenv("SM64DS_PC_SOUND_OBJ_TRACE");
+    return trace && trace[0] && trace[0] != '0';
+}
+#endif
 
 /* One row of the 0xc-stride sound table: the four members InitResources
  * loads, in table order. */
@@ -58,10 +68,41 @@ struct SoundObjRow {
 typedef char SoundObjRow_size_must_be_0x0c[
     sizeof(SoundObjRow) == 0x0c ? 1 : -1];
 
-/* The callback table's owner, kept a forward-declared shadow: the table's
-   entries are heterogeneous starters, not members of one class (see the
-   deslop Leftover above). */
+#if defined(SM64DS_PLATFORM_PC)
+/* ARM stores these heterogeneous callbacks as 8-byte member-pointer records,
+   but the 32-bit MSVC host stores a single-inheritance member pointer as a
+   4-byte code pointer and calls it with this in ECX. Give each callback a real
+   host member thunk so its original ARM (this, counter) arguments reach the
+   recovered C functions with the correct host calling convention. */
+namespace Sound {
+int PlaySmallSecretSound(dActor_c *actor, u16 *counter);
+}
+extern "C" int func_0200f7f0(dActor_c *actor, u16 *counter);
+extern "C" int func_ov002_020f9468(daSoundObj_c *self, u16 *counter);
+extern "C" int func_ov002_020f93a8(daSoundObj_c *self, u16 *counter);
+
+struct SoundObjectCallbackOwner {
+    int StartSecretSound(u16 *counter) {
+        return Sound::PlaySecretSound((dActor_c *)this, counter);
+    }
+    int StartSmallSecretSound(u16 *counter) {
+        return Sound::PlaySmallSecretSound((dActor_c *)this, counter);
+    }
+    int StartSound21(u16 *counter) {
+        return func_0200f7f0((dActor_c *)this, counter);
+    }
+    int StartPositionalSound(u16 *counter) {
+        return func_ov002_020f9468((daSoundObj_c *)this, counter);
+    }
+    int StartLoopingSound(u16 *counter) {
+        return func_ov002_020f93a8((daSoundObj_c *)this, counter);
+    }
+};
+#else
+/* On ARM the original overlay initializer supplies heterogeneous callback
+   pointer/adjustment pairs; this shadow type preserves that layout. */
 struct SoundObjectCallbackOwner;
+#endif
 
 typedef int (SoundObjectCallbackOwner::*SoundObjectCallback)(u16 *);
 
@@ -74,10 +115,45 @@ extern int data_0209b490;                 /* MUSIC_VOLUME_LSL_12 */
 extern int data_0209b49c;                 /* MESSAGE_SOUND_VOLUME_LSL_12 */
 }
 
+#if defined(SM64DS_PLATFORM_PC)
+/* Rebuild __sinit_ov002_02107f88's seven callback entries with MSVC member
+   pointers and thunks. The original ARM overlay initializer cannot execute
+   in the native host process. */
+extern "C" void pc_sound_obj_init_callbacks()
+{
+    data_ov002_0211110c[0] = &SoundObjectCallbackOwner::StartSecretSound;
+    data_ov002_0211110c[1] = &SoundObjectCallbackOwner::StartSmallSecretSound;
+    data_ov002_0211110c[2] = &SoundObjectCallbackOwner::StartSound21;
+    data_ov002_0211110c[3] = &SoundObjectCallbackOwner::StartPositionalSound;
+    data_ov002_0211110c[4] = &SoundObjectCallbackOwner::StartLoopingSound;
+    data_ov002_0211110c[5] = &SoundObjectCallbackOwner::StartPositionalSound;
+    data_ov002_0211110c[6] = &SoundObjectCallbackOwner::StartPositionalSound;
+    if (pc_sound_obj_trace_enabled()) {
+        std::fprintf(stderr, "[native sound_obj] callback-table initialized host-slot-size=%u\n",
+                     static_cast<unsigned>(sizeof(SoundObjectCallback)));
+        std::fflush(stderr);
+    }
+}
+#endif
+
 // @symbol daSoundObj_c_classInit
 extern "C" daSoundObj_c *daSoundObj_c_classInit()
 {
-    return new daSoundObj_c();
+    daSoundObj_c *obj = new daSoundObj_c();
+#if defined(SM64DS_PLATFORM_PC)
+    if (pc_sound_obj_trace_enabled()) {
+        if (obj)
+            std::fprintf(stderr,
+                         "[native sound_obj] factory ptr=%p actor=%u unique=%u alive=%u param=%u\n",
+                         static_cast<void *>(obj), static_cast<unsigned>(obj->actorID),
+                         static_cast<unsigned>(obj->uniqueID), static_cast<unsigned>(obj->aliveState),
+                         static_cast<unsigned>(obj->param1));
+        else
+            std::fprintf(stderr, "[native sound_obj] factory null\n");
+        std::fflush(stderr);
+    }
+#endif
+    return obj;
 }
 
 // @symbol _ZN12daSoundObj_c13InitResourcesEv
@@ -90,8 +166,24 @@ int daSoundObj_c::InitResources()
     dActor_c *actor;
     int current;
 
-    if (param1 > 7)
+#if defined(SM64DS_PLATFORM_PC)
+    if (pc_sound_obj_trace_enabled()) {
+        std::fprintf(stderr,
+                     "[native sound_obj] init-begin ptr=%p actor=%u unique=%u alive=%u param=%u\n",
+                     static_cast<void *>(this), static_cast<unsigned>(actorID),
+                     static_cast<unsigned>(uniqueID), static_cast<unsigned>(aliveState),
+                     static_cast<unsigned>(param1));
+        std::fflush(stderr);
+    }
+#endif
+    if (param1 > 7) {
+#if defined(SM64DS_PLATFORM_PC)
+        if (pc_sound_obj_trace_enabled())
+            std::fprintf(stderr, "[native sound_obj] init-rejected param=%u\n",
+                         static_cast<unsigned>(param1));
+#endif
         return 0;
+    }
 
     mSoundID = data_ov002_0210c080[param1].soundID;
     mVolume = data_ov002_0210c080[param1].volume;
@@ -119,6 +211,16 @@ int daSoundObj_c::InitResources()
 
     mCounter = 0;
     mAreaId = -1;
+#if defined(SM64DS_PLATFORM_PC)
+    if (pc_sound_obj_trace_enabled()) {
+        std::fprintf(stderr,
+                     "[native sound_obj] init-ok ptr=%p actor=%u unique=%u param=%u sound=%d volume=%d limit=%u loop=%u\n",
+                     static_cast<void *>(this), static_cast<unsigned>(actorID),
+                     static_cast<unsigned>(uniqueID), static_cast<unsigned>(param1), mSoundID,
+                     mVolume, static_cast<unsigned>(mCounterLimit), static_cast<unsigned>(mLoop));
+        std::fflush(stderr);
+    }
+#endif
     return 1;
 }
 
@@ -127,8 +229,27 @@ int daSoundObj_c::Behavior()
 {
     SoundObjectCallbackOwner *owner = (SoundObjectCallbackOwner *)this;
     int done = (owner->*data_ov002_0211110c[param1])(&mCounter);
+#if defined(SM64DS_PLATFORM_PC)
+    if (pc_sound_obj_trace_enabled() && (mCounter <= 2 || done != 0)) {
+        std::fprintf(stderr,
+                     "[native sound_obj] behavior ptr=%p param=%u sound=%d counter=%u limit=%u done=%d current=%d\n",
+                     static_cast<void *>(this), static_cast<unsigned>(param1), mSoundID,
+                     static_cast<unsigned>(mCounter), static_cast<unsigned>(mCounterLimit), done,
+                     data_0208e430);
+        std::fflush(stderr);
+    }
+#endif
     if (done != 0 || mSoundID != data_0208e430
         || (mCounter > 0xa && data_0209b49c <= 0x7f)) {
+#if defined(SM64DS_PLATFORM_PC)
+        if (pc_sound_obj_trace_enabled()) {
+            std::fprintf(stderr,
+                         "[native sound_obj] mark-destroy ptr=%p param=%u sound=%d current=%d counter=%u done=%d\n",
+                         static_cast<void *>(this), static_cast<unsigned>(param1), mSoundID,
+                         data_0208e430, static_cast<unsigned>(mCounter), done);
+            std::fflush(stderr);
+        }
+#endif
         MarkForDestruction();
         if (data_0208e430 != 0x22) {
             _ZN5Sound7PlaySubEjjj5Fix12IiEb(data_0208e430, 0x7f, 0, 0x7f000, 0);
