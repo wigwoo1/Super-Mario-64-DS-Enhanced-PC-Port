@@ -21,6 +21,13 @@ def check(case, slot_seed, minigame_seed):
         rows = [{k: v if k == 'player_state' else int(v) for k, v in r.items()}
                 for r in csv.DictReader(f)]
     start, castle, back = (events[n] for n in ('exit-request', 'castle-return', 'course-reentry'))
+    observations = [(int(t), int(selected), int(phase)) for t, selected, phase in re.findall(
+        r'\[native mission observation\] tick=(\d+) selected=(\d+) phase=(\d+) mode=0 confirm=0 ready=1', log)
+        if castle < int(t) < back]
+    assert any(selected > 0 for _, selected, _ in observations), 'reentry default mission was not observed'
+    assert any(selected == 0 and phase == 2 for _, selected, phase in observations), 'mission1 highlight/navigation readiness not observed'
+    assert any(castle < int(t) < back for t in re.findall(
+        r'\[native mission replay\] tick=(\d+) selected=\d+ phase=\d+ buttons=20', log)), 'ordinary Left input not observed on reentry'
     first = [r for r in rows if r['level'] == 6 and r['tick'] < castle]
     active = [r for r in first if r['tick'] == start and r['kind'] == 208 and r['variant'] in (1, 2, 3)]
     assert active, 'exit did not begin with a moving bomb or fragment'

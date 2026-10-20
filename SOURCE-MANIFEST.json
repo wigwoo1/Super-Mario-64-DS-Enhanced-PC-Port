@@ -6629,6 +6629,11 @@
       "bytes": 3536
     },
     {
+      "path": "port/docs/native-waterbomb-reentry-verified-2026-10-19.txt",
+      "sha256": "462b440eab9cb878f2af9c0b26a92940e4853adb0f08aa8e2845bc63e522c936",
+      "bytes": 4364
+    },
+    {
       "path": "port/docs/native-yoshi-start-and-render-checkpoint-2026-10-15.txt",
       "sha256": "bf48857757be832d115a64e1b226693c75aaf9383fe1c60dd87d3853b739b5e1",
       "bytes": 6341
@@ -6640,8 +6645,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "55cdae7656b328e54817a4a1ef16164d159186f05f18e5264361e8ad56df8265",
-      "bytes": 221784
+      "sha256": "5cfbf2932710051f9a05fa3bdc2421eaf498480049fa1b1942003139cea0fdae",
+      "bytes": 222841
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -6670,8 +6675,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "9459dbcf737cf654f21932a5e2bca0248da4b886fb93522f8a7ca93e51235691",
-      "bytes": 5216
+      "sha256": "5e1c5d4d6804e867e26e22105750b7862518d0b6afd29cd9c1bba7c485a31b10",
+      "bytes": 5173
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7140,8 +7145,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "970d8ccb7e6f731c5d5ff5bb4df90a0298f0bf7efa3c132e81165d3429c8d7d3",
-      "bytes": 88716
+      "sha256": "ed956b617fcb68cb6cf80c0a5d1c966509f7f25b09fa37b49a223e7f7304223b",
+      "bytes": 88954
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7704,6 +7709,11 @@
       "bytes": 2797
     },
     {
+      "path": "port/tests/test_star_select_transform.py",
+      "sha256": "66d747315db211346a114c9a4051de0bf456d5037f7662b70fbce910c753388e",
+      "bytes": 1380
+    },
+    {
       "path": "port/tools/bombking_host.py",
       "sha256": "32b70192205be2f5214e1004c06cf6595a06befe5aaacd452c42f88f0bd95512",
       "bytes": 4130
@@ -7915,8 +7925,8 @@
     },
     {
       "path": "port/tools/check_waterbomb_reentry.py",
-      "sha256": "ed90ab219f0b489a60f461beabc042ed479ebd51713a94a10484008a034e3a04",
-      "bytes": 4815
+      "sha256": "42c49e5256e83f0082601afb12737f3c6e055cd2914d522655534206335e714a",
+      "bytes": 5498
     },
     {
       "path": "port/tools/check_waterbomb_replay.py",
@@ -8010,7 +8020,7 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "f2c6a68ddcb55b9462fe000ae91c9197cff78b7a58c70ae2acfac9a58a216780",
+      "sha256": "230972711487025480d447b9572fdeb950a357aebcc5472abbc36d8a6e6c403b",
       "bytes": 6112
     },
     {
@@ -8085,8 +8095,8 @@
     },
     {
       "path": "port/tools/star_select_host.py",
-      "sha256": "efff916bf9be50a6032de9dd69f54dfbb1fe025e8623d27a15775cfeec7bb227",
-      "bytes": 3270
+      "sha256": "ccf82de64f67013e7b21e385a61f768a1ca954e64166165d939a33089704d243",
+      "bytes": 4955
     },
     {
       "path": "port/tools/test_bombking_host.py",

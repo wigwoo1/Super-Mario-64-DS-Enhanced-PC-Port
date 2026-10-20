@@ -1,0 +1,62 @@
+Original mission1 water-bomb cleanup/reentry VERIFIED - 2026-10-19
+
+Supersedes the failed acceptance in native-waterbomb-reentry-2026-10-19.txt.
+Those diagnostic runs remain rejected; none was relabeled as passing.
+
+Replay repair only; original src/include and saved progression are unchanged.
+The prior replay inferred mission-selection readiness from player pointer/dialogue
+state and timed Left/A presses. Original STAR_SELECT has separate fade, navigation
+activation and highlight states. A single timed Left is insufficient if it merely
+activates navigation. The recovered Behavior reads highlight0x115, input phase0x135,
+mode0x133 and confirmation timer0x119. Left first activates phase1, another edge
+activates phase2, then normal Left navigation can change the highlighted mission.
+
+star_select_host.py now exposes a read-only snapshot from original Behavior,
+expires it after one tick, and invalidates it at CleanupResources. No game fields
+are modified by observation. Replay checks this actual scene snapshot before
+player/dialogue branches, uses ordinary Left inputs until highlight0/phase2,
+then ordinary A. Original Behavior still sets/commits the selected mission.
+The helper is gated by the existing automation/reentry test environment variables.
+Snapshot logging requires STATE_CAPTURE; normal installed gameplay is unchanged.
+
+Accepted local case native-waterbomb-reentry-observed-20261019:
+11000frames,exit0; original title/FileA/castle painting/mission1, real walking/jumps.
+- Native bomb body and fragment damage before exit; health5 after fragment hit6544.
+- Exit requested6544 with fragments212..216; actual pause6615 while falling bomb217
+  is alive. Original pause selection3 Exit Course is used.
+- Castle return6795; no actor207/208 remains in castle samples. Painting texture
+  cache resets twice; create6 and destroy0 painting lifecycle each occurs twice.
+- On original mission selection return, observed default highlight1. Left7260
+  activates phase1; Left7280 activates phase2; highlight0 observed7282. A7300;
+  original scene confirms mission1 again. Two original mission1 confirmations total.
+- Course reentry7350; restored grounded control7402. Old cannon/dropper/projectile
+  IDs absent; fresh droppers374/375 and firing cannons376/380 exist.
+- Recreated cannon emits upward projectile386 at7459 (removed7534), followed by
+  additional fresh projectiles. InitResources succeeds and models render after reentry.
+- Final11000 grounded idle Yoshi,health5, normal control. Full slot/minigame bytes
+  match isolated seeds; validated progression CRC also matches. User saves untouched.
+- Screenshots6500 (bomb encounter) and7800 (Yoshi and recreated cannon) shown.
+
+Release build passes.53/53 CTests22.69s; three new star-select adaptation tests;
+native-data audit and strict check_waterbomb_reentry.py pass. The checker now
+requires actual highlight/readiness observations and normal Left input as well as
+actor lifecycle, fresh firing, original menus, painting reload and save checks.
+Eight in-memory damaged-evidence probes are rejected: wrong mission, absent active
+bomb at pause, stale actor ID, actor surviving castle, changed save, missing return,
+missing recreated firing cannons and missing scene observations. Prior mission2
+diagnostic is independently rejected. The later positive assertions now have an
+actual passing runtime case, unlike the prior handoff.
+
+QA EXE SHA256 AD881D92D6450B6E73C8910C5312BE81E43F15216116307C859581B766ACFA58.
+Normal F: EXE remains691DD3029EC05CA6228FF319C8BEDD81AC852FE12C4E8E4B1F3DB9B2A0E98770;
+this is replay/observation work, so no normal installation replacement is needed.
+Public symbol-only link metadata remains identical. Full EXE/private images/logs/
+CSV/generated data stay local. Existing dev-2026-10-19 kit is unchanged and still
+predates cannon gameplay; no new release or kit acceptance is claimed here.
+
+Scope: one original mission1 course lifecycle; not all placements, every course,
+long-term memory leak freedom, Bob-omb contact, or complete audio/game acceptance.
+Full port and settings/texture/VS roadmap remain unfinished.
+Next bounded task: refresh the ROM-free build kit using the established fresh-folder
+reconstruction/runtime workflow, exact source commit and allowlisted packaging.
+Luna Medium is appropriate for that workflow; pause for this recommended downgrade.

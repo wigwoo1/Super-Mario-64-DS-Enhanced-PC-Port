@@ -26,11 +26,11 @@ game assets, personal saves, or proprietary compiler is included here.
   A second Battlefield cannon has since passed entry, aiming, firing and landing.
   Its approach exposed a first Mario-cap intro crash, now repaired in the current
   source. An original mission-1 water-bomb encounter now verifies cannon launches,
-  repeated drops, bouncing, body/fragment damage and safe recovery. Other placements,
-  projectile cleanup across course changes and the sound emitter/audio backend
+  repeated drops, bouncing, body/fragment damage and safe recovery. Other placements
+  and the sound emitter/audio backend
   remain unfinished or unverified.
-  A diagnostic exit/re-entry replay reaches the castle safely but currently selects
-  mission 2 on return; mission-1 water-bomb reload acceptance is still failing.
+  An original mission-1 exit/re-entry replay also verifies removal of active
+  water-bomb actors, painting reload, fresh cannon/dropper actors and renewed firing.
   The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
   cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.
 - Browser Download Play, complete multiplayer, and the requested AI texture

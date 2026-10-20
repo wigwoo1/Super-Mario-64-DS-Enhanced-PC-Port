@@ -136,6 +136,7 @@ static unsigned observed_boss_state(const daBombking_c *boss) {
 extern "C" short GetAngleToCamera(int player);
 extern "C" unsigned char data_0209f2d4;
 extern "C" int func_02029408(void);
+extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *,unsigned *);
 // Input-only course-route QA: decimal level:x:z:radius waypoints in world
 // units, with optional :1 to jump near the waypoint. Never writes player
 // positions, save flags, actors or scene state.
@@ -337,7 +338,7 @@ static bool replay_waterbomb_controls() {
     static int phase=APPROACH,initial_health=0,retreat_leg=0;
     static bool fragments_seen=false;
     static unsigned waypoint=0;
-    static uint64_t selection_tick=0,jump_until=0,next_jump=0;
+    static uint64_t jump_until=0,next_jump=0;
     const auto tick=ntr::rt_frame();
     uint16_t buttons=0;int16_t sx=0,sy=0;
     auto controls=[&]() {ntr::input_test_controls(true,buttons,sx,sy);return true;};
@@ -360,20 +361,18 @@ static bool replay_waterbomb_controls() {
         }
     }
     if(phase==CASTLE) {
+        unsigned selection=0,selection_phase=0,selection_mode=0,confirm=0,selection_ready=0;
+        if(pc_star_select_status(&selection,&selection_phase,&selection_mode,&confirm,&selection_ready)) {
+            if(selection_ready && !confirm && selection_mode==0 && tick%20<3) {
+                buttons=selection==0 && selection_phase==2?1:0x20;
+                if(tick%20==0)std::fprintf(stderr,"[native mission replay] tick=%llu selected=%u phase=%u buttons=%x\n",
+                    static_cast<unsigned long long>(tick),selection,selection_phase,unsigned(buttons));
+            }
+            return controls();
+        }
         if(data_0209f2f8==6 && p && p->aliveState==1) {phase=REENTERED;event("course-reentry");}
         else {
-            if(!p || p->aliveState!=1) {
-                if(!selection_tick)selection_tick=tick;
-                // Let the original scene/fade become ready before Left then A.
-                const auto elapsed=tick-selection_tick;
-                if(elapsed>=180) {
-                    const auto step=(elapsed-180)%120;
-                    if(step<3)buttons=0x20;
-                    else if(step>=60 && step<63)buttons=1;
-                }
-                return controls();
-            }
-            selection_tick=0;
+            if(!p || p->aliveState!=1)return controls();
             if(data_0209d660) {if(tick%45<3)buttons=1;return controls();}
             if(!ready())return controls();
             const int route[][3]={{-1000,1400,60},{-2100,600,50},{-2300,500,40},
