@@ -1,4 +1,6 @@
 #include "ntr/input.h"
+#include "ntr/video.h"
+#include "ntr/controller_bindings.h"
 #include "ntr/mmio.h"
 
 #include <algorithm>
@@ -24,9 +26,10 @@ uint16_t g_touch_x = 0, g_touch_y = 0;
 unsigned long long g_input_poll_count = 0;
 bool g_auto_confirm_logged = false;
 bool g_menu_navigation = true;
+bool g_camera_zoom_pending = false;
 bool g_test_controls=false;uint16_t g_test_buttons=0;int16_t g_test_x=0,g_test_y=0;
 
-uint16_t scripted_buttons(unsigned long long poll, const char *schedule) {
+uint16_t scripted_buttons(unsigned long long poll, const char *schedule, unsigned limit=0x0fff) {
     uint16_t result = 0;
     // Opt-in replay pulses: decimal poll : hexadecimal DS key mask, comma
     // separated. Each lasts five polls, matching the existing startup pulses.
@@ -36,7 +39,7 @@ uint16_t scripted_buttons(unsigned long long poll, const char *schedule) {
         if (time_end != schedule && *time_end == ':') {
             const auto mask = std::strtoul(time_end + 1, &mask_end, 16);
             if (mask_end != time_end + 1 && (*mask_end == ',' || !*mask_end) &&
-                start != 0 && mask <= 0x0fff && poll >= start && poll - start < 5)
+                start != 0 && mask <= limit && poll >= start && poll - start < 5)
                 result |= static_cast<uint16_t>(mask);
         }
         const char *next = std::strchr(schedule, ',');
@@ -106,10 +109,10 @@ void input_poll() {
     // mapping it to D-pad bits as well would mix digital movement with the
     // continuous direction and speed. Keyboard and physical D-pad remain
     // digital controls.
-    uint16_t pressed = 0;
+    uint16_t pressed = controller_face_buttons(g_state.buttons,g_menu_navigation);
     const uint16_t buttons = g_state.buttons;
-    if ((buttons & XINPUT_GAMEPAD_A) || key_down(VK_SPACE)) pressed |= 1u << 0;
-    if ((buttons & XINPUT_GAMEPAD_B) || key_down(VK_LSHIFT)) pressed |= 1u << 1;
+    if (key_down(VK_SPACE)) pressed |= 1u << 0;
+    if (key_down(VK_LSHIFT)) pressed |= 1u << 1;
     if ((buttons & XINPUT_GAMEPAD_BACK) || key_down(VK_BACK)) pressed |= 1u << 2;
     if ((buttons & XINPUT_GAMEPAD_START) || key_down(VK_RETURN)) pressed |= 1u << 3;
     if ((buttons & XINPUT_GAMEPAD_DPAD_RIGHT) || key_down('D')) pressed |= 1u << 4;
@@ -118,8 +121,8 @@ void input_poll() {
     if ((buttons & XINPUT_GAMEPAD_DPAD_DOWN) || key_down('S')) pressed |= 1u << 7;
     if ((buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) || key_down('E')) pressed |= 1u << 8;
     if ((buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) || key_down('Q')) pressed |= 1u << 9;
-    if ((buttons & XINPUT_GAMEPAD_X) || key_down('X')) pressed |= 1u << 10;
-    if ((buttons & XINPUT_GAMEPAD_Y) || key_down('C')) pressed |= 1u << 11;
+    if (key_down('X')) pressed |= 1u << 10;
+    if (key_down('C')) pressed |= 1u << 11;
 
     // Optional host-side automation for unattended startup/gameplay tracing.
     // These variables are unset during normal play and do not alter the UI.
@@ -132,6 +135,8 @@ void input_poll() {
         g_touch = false;
         g_touch_x = g_touch_y = 0;
         write_touch_latch(false, 0, 0);
+        g_state.buttons=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_PAD_BUTTONS"),0xffff);
+        pressed |= controller_face_buttons(g_state.buttons,g_menu_navigation);
     }
     // Replay taps use the same hardware latch as mouse input. Restrict this
     // test interface to isolated automation; each valid tap lasts five polls.
@@ -237,6 +242,14 @@ void input_poll() {
         (star_controls && std::strcmp(star_controls,"1")==0))) {
         pressed |= g_test_buttons;g_state.left_x=g_test_x;g_state.left_y=g_test_y;
     }
+    static bool previous_zoom=false;
+    bool zoom_down=(g_state.buttons & XINPUT_GAMEPAD_RIGHT_THUMB)!=0;
+    if(automation_only && automation_only[0]=='1')
+        zoom_down=zoom_down || scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_CAMERA_ZOOM"))!=0;
+    g_state.camera_zoom_pressed=zoom_down && !previous_zoom;
+    if(g_menu_navigation) g_camera_zoom_pending=false;
+    else if(g_state.camera_zoom_pressed) g_camera_zoom_pending=true;
+    previous_zoom=zoom_down;
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);
 
     g_state.touch = g_touch;
@@ -256,6 +269,11 @@ void input_test_controls(bool enabled,uint16_t buttons,int16_t x,int16_t y) {
     g_test_buttons=buttons&0xfff;g_test_x=x;g_test_y=y;
 }
 InputState input_state() { return g_state; }
+bool input_take_camera_zoom() {
+    const bool pending=g_camera_zoom_pending;
+    g_camera_zoom_pending=false;
+    return pending;
+}
 
 void input_set_touch(bool pressed, uint16_t x, uint16_t y) {
     g_touch = pressed;
@@ -297,6 +315,13 @@ void input_left_stick(float *x, float *y) {
 
 extern "C" void ntr_input_left_stick(float *x, float *y) {
     ntr::input_left_stick(x, y);
+}
+
+extern "C" unsigned short ntr_input_run_buttons(unsigned short held, int analog) {
+    // The retail touch joystick still controls speed with its magnitude.
+    // Supplying the run-held flag also covers movement actions that check it
+    // directly instead of consulting the touch-stick mode.
+    return static_cast<unsigned short>(held | ((analog || ntr::video_get_settings().always_run) ? 0x800 : 0));
 }
 
 extern "C" void ntr_input_movement_stick(float *x, float *y, unsigned mode) {

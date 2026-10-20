@@ -5,6 +5,9 @@
 #include "ntr/input.h"
 #include <algorithm>
 #include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include "ntr/rt.h"
 
 namespace G2S {
 unsigned int GetBG0CharPtr();
@@ -19,7 +22,9 @@ extern unsigned short data_0209f300;
 extern signed char data_0209f2f8;
 extern int data_0208ee44;
 extern unsigned char data_0209d698;
+extern unsigned char data_0208ee3c;
 extern void *data_0209d6f8;
+int GetSoundMode();
 int SublevelToLevel(int);
 int func_02054d88();
 }
@@ -30,6 +35,25 @@ bool active, legacy, saved_panel, touch_was_down;
 uint16_t old_panels[1024], button_panel[128];
 uint16_t nav_previous, nav_repeat;
 unsigned nav_ticks;
+unsigned stage_options_focus;
+int stage_options_action;
+int stage_options_last_action;
+
+static void trace_stage_options(uint16_t keys,int edge,const ntr::InputState &input) {
+    const char *path=std::getenv("SM64DS_PC_STAGE_OPTIONS_TRACE");
+    if(!path || !*path)return;
+    static FILE *file=nullptr;
+    if(!file) { file=std::fopen(path,"w"); if(file)std::fputs("tick,state,focus,keys,edge,action,sound,backlight,touch\n",file); }
+    if(file && (edge || stage_options_action || stage_options_last_action || ntr::rt_frame()%60==0)) {
+        std::fprintf(file,"%llu,%u,%u,%u,%u,%d,%d,%u,%u\n",static_cast<unsigned long long>(ntr::rt_frame()),unsigned(data_0209f1ec),stage_options_focus,unsigned(keys),unsigned(edge),stage_options_last_action,GetSoundMode(),unsigned(data_0208ee3c),unsigned(input.touch));
+        std::fflush(file);
+    }
+    stage_options_last_action=0;
+}
+
+static void queue_stage_options_action(unsigned focus, bool forward) {
+    stage_options_action = focus == 0 ? (forward ? 1 : -1) : 2;
+}
 
 void restore_panels() {
     if (saved_panel) std::memcpy(G2S::GetBG1ScrPtr(),old_panels,sizeof(old_panels));
@@ -67,6 +91,9 @@ extern "C" void pc_pause_settings_reset() {
 extern "C" int pc_pause_settings_page() { return active ? static_cast<int>(menu.page)+1 : pc_wanted_settings_page(); }
 extern "C" int pc_pause_settings_row() { return active ? static_cast<int>(menu.row) : pc_wanted_settings_row(); }
 extern "C" int pc_pause_save_status() { return menu.save_status; }
+extern "C" int pc_stage_options_take_action() {
+    const int action=stage_options_action; stage_options_action=0; return action;
+}
 extern "C" int pc_pause_settings_render() { if (!active) return 0; draw(); return 1; }
 
 extern "C" int pc_pause_settings_update() {
@@ -95,6 +122,20 @@ extern "C" int pc_pause_settings_update() {
     if (legacy) {
         if (state!=9 && state!=10) legacy=false;
         else if (edge & 2) back_to_pause();
+        else if (state==10 && !input.touch) {
+            if (edge & (0x40|0x80)) {
+                stage_options_focus ^= 1;
+                data_0209f2e0 = static_cast<unsigned char>(stage_options_focus);
+                dScStage_c::PS_UpdateOptionsMenu();
+            }
+            if (edge & 1) queue_stage_options_action(stage_options_focus,true);
+            else if (stage_options_focus==0 && (edge & 0x30))
+                queue_stage_options_action(stage_options_focus,(edge & 0x10)!=0);
+        }
+        if(state==10) {
+            stage_options_last_action=stage_options_action;
+            trace_stage_options(keys,edge,input);
+        }
         return 0;
     }
     if (!active && state==9) {
@@ -108,7 +149,7 @@ extern "C" int pc_pause_settings_update() {
     if (!active) return 0;
     auto settings = ntr::video_get_settings();
     uint16_t menu_keys = keys;
-    if (tapped && input.touch_x>=8 && input.touch_x<248) {
+    if (tapped && !ntr::video_minimap_editor_active() && input.touch_x>=8 && input.touch_x<248) {
         for (unsigned row=0;row<menu.rows();++row) {
             if (input.touch_y>=32+row*40 && input.touch_y<64+row*40) {
                 menu.row = row;
@@ -121,6 +162,8 @@ extern "C" int pc_pause_settings_update() {
     if (action==pc_pause::Action::Changed) ntr::video_set_settings(settings);
     if (action==pc_pause::Action::GameOptions) {
         active = false; legacy = true; restore_panels();
+        stage_options_focus = 0;
+        stage_options_action = 0;
         data_0209f248 = data_0209f1ec = 9;
         return 0; // Run the original Options initializer and update path.
     }

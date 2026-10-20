@@ -31,7 +31,10 @@
 #if defined(SM64DS_PLATFORM_PC)
 #include <cstdio>
 #include <cstdlib>
+#include "dClipper.h"
+#include "hal/render_distance_policy.h"
 #include "hal/native_scalar_delete.h"
+#include "ntr/video.h"
 /* The DS vtable stores ARM addresses and cannot be used by the native actor
    scheduler. Preserve the recovered slot order while dispatching through the
    host ABI, as the PC Stage adapter does. */
@@ -121,7 +124,11 @@ extern u8 data_0209f2c4;
 extern s8 data_0209f2f8;
 extern s32 data_0209f32c;
 extern void *data_0209f394[];
-extern int data_0209f43c[];
+#if defined(SM64DS_PLATFORM_PC)
+extern "C" dClipper data_0209f43c;
+#else
+extern "C" int data_0209f43c[];
+#endif
 extern s32 data_0209fc48;
 extern Matrix4x3 data_020a0e68;
 extern void *data_ov002_0210c3b0;
@@ -439,6 +446,13 @@ int dCamera_c::Render()
     s32 sp[6];
     s16 sp18;
     s16 var_r4;
+#if defined(SM64DS_PLATFORM_PC)
+    const s32 originalFar=*(s32 *)((char *)self+0x100);
+    const s32 originalClipperFar=data_0209f43c.mFarZ;
+    const auto distance=ntr::video_get_settings().render_distance;
+    const s32 renderFar=pc_render_distance::projection_far(distance,originalFar);
+    if(renderFar!=originalFar) *(s32 *)((char *)self+0x100)=renderFar;
+#endif
 
     sp[0] = *(s32 *)((char *)self + 0x80);
     sp[1] = *(s32 *)((char *)self + 0x84);
@@ -561,6 +575,12 @@ int dCamera_c::Render()
     }
 
     dView_c::Render();
+#if defined(SM64DS_PLATFORM_PC)
+    if(renderFar!=originalFar) {
+        *(s32 *)((char *)self+0x100)=originalFar;
+        data_0209f43c.mFarZ=originalClipperFar;
+    }
+#endif
     return 1;
 }
 
@@ -592,7 +612,11 @@ void func_0200d954(char *c, short arg) {
     int j = i * 2;
     *(int *)(c + 0x104) = func_02053200(data_02082214[j]);
     *(int *)(c + 0x108) = func_02053200(data_02082214[j + 1]);
+#if defined(SM64DS_PLATFORM_PC)
+    _ZN8dClipper13Func_020156DCEitii(&data_0209f43c, *(int *)(c + 0xf8), arg, *(int *)(c + 0xfc), *(int *)(c + 0x100));
+#else
     _ZN8dClipper13Func_020156DCEitii(data_0209f43c, *(int *)(c + 0xf8), arg, *(int *)(c + 0xfc), *(int *)(c + 0x100));
+#endif
 }
 
 // @symbol func_0200d8c8

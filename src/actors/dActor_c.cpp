@@ -73,6 +73,9 @@
 #if defined(SM64DS_PLATFORM_PC)
 #include <cstdio>
 #include <cstdlib>
+#include "dClipper.h"
+#include "hal/render_distance_policy.h"
+#include "ntr/video.h"
 #endif
 #include "types.h"
 #include "decl_common.h"
@@ -82,6 +85,20 @@
 #include "dCc_c.h"
 #include "dBgCh_Lin.h"
 #include "Sound.h"
+
+#if defined(SM64DS_PLATFORM_PC)
+static void pc_trace_extended_actor_render(const dActor_c *actor,u32 status) {
+    const char *path=std::getenv("SM64DS_PC_RENDER_DISTANCE_RENDER_TRACE");
+    if(!path || !*path)return;
+    static FILE *trace=nullptr;
+    static bool attempted=false;
+    if(!attempted) { attempted=true; trace=std::fopen(path,"w");
+        if(trace)std::fputs("actor_id,actor_uid,render_status,flags\n",trace); }
+    if(trace) { std::fprintf(trace,"%u,%u,%u,%08x\n",unsigned(actor->actorID),
+        unsigned(actor->uniqueID),unsigned(status),unsigned(actor->mFlags));
+        std::fflush(trace); }
+}
+#endif
 
 /* -------------------------------------------------------------------------- */
 // @symbol _ZN8dActor_c19BeforeInitResourcesEv
@@ -170,10 +187,18 @@ void dActor_c::AfterCleanupResources(u32 vfSuccess)
 extern "C" {
 u8 IsAreaShowing(int areaId);
 void MulVec3Mat4x3(Vector3 *v, Matrix4x3 *m, Vector3 *dst);
+#if defined(SM64DS_PLATFORM_PC)
 int _ZN8dClipper13Func_020150E8ER7Vector35Fix12IiEPh(char *thisp, Vector3 *v, int radius, u8 *out);
+#else
+int _ZN8dClipper13Func_020150E8ER7Vector35Fix12IiEPh(char *thisp, Vector3 *v, int radius, u8 *out);
+#endif
 extern int data_0209fc68; /* nonzero forces the actor to think anyway */
 extern Matrix4x3 data_0209b3ec; /* world -> camera */
+#if defined(SM64DS_PLATFORM_PC)
+extern dClipper data_0209f43c; /* the dClipper instance */
+#else
 extern char data_0209f43c; /* the dClipper instance */
+#endif
 extern u8 data_0209f274; /* doubles the far-away threshold when set */
 extern u8 data_0209f2c4;
 extern u8 data_0209f20c;
@@ -205,7 +230,7 @@ int dActor_c::BeforeBehavior()
         }
         if (mFlags & 0x10003) {
             int r = _ZN8dClipper13Func_020150E8ER7Vector35Fix12IiEPh(
-                        &data_0209f43c,
+                        reinterpret_cast<char *>(&data_0209f43c),
                         (Vector3 *)&mCamSpacePosX,
                         mClipRadius,
                         &mClipResult);
@@ -270,6 +295,53 @@ int dActor_c::BeforeRender()
         goto ret1;
     if (!(flags & 2))
         goto ret1;
+#if defined(SM64DS_PLATFORM_PC)
+    {
+        const ntr::RenderDistance distance=ntr::video_get_settings().render_distance;
+        if(distance!=ntr::RenderDistance::Minimum) {
+            /* Re-run only the camera-frustum test. BeforeBehavior owns the
+               actor's AI/update flags and the area/story visibility gate; do
+               not change either one to draw an already-loaded distant actor. */
+            Vector3 cameraPosition;
+            cameraPosition.x=mCamSpacePosX;
+            cameraPosition.y=mCamSpacePosY;
+            cameraPosition.z=mCamSpacePosZ;
+            dClipper *clipper=&data_0209f43c;
+            const s32 oldFar=clipper->mFarZ;
+            clipper->mFarZ=0x3fffffff;
+            u8 hint=static_cast<u8>(mClipResult&3);
+            const int depth=_ZN8dClipper13Func_020150E8ER7Vector35Fix12IiEPh(
+                reinterpret_cast<char *>(clipper),&cameraPosition,mClipRadius,&hint);
+            clipper->mFarZ=oldFar;
+
+            const int64_t threshold=pc_render_distance::limit(
+                distance,mClipDistance,data_0209f274!=0);
+            const bool visible=pc_render_distance::visible(depth,threshold);
+            const char *tracePath=std::getenv("SM64DS_PC_RENDER_DISTANCE_TRACE");
+            if(tracePath && *tracePath) {
+                static FILE *trace=nullptr;
+                static bool attempted=false;
+                if(!attempted) { attempted=true; trace=std::fopen(tracePath,"w");
+                    if(trace)std::fputs("actor_id,actor_uid,mode,depth,limit,old_flags,visible\n",trace); }
+                if(trace) { std::fprintf(trace,"%u,%u,%u,%d,%lld,%08x,%u\n",
+                    unsigned(actorID),unsigned(uniqueID),unsigned(distance),depth,
+                    static_cast<long long>(threshold),unsigned(flags),unsigned(visible));
+                    std::fflush(trace); }
+            }
+            if(visible) {
+                /* The original render gate uses these bits as its distance
+                   result. Clear both only for this synchronous draw so actor
+                   rendering and drop-shadow helpers see a visible actor.
+                   AfterRender restores the previous values. The clip result's
+                   upper bits are outside dClipper's two-bit plane hint. */
+                mClipResult=static_cast<u8>((mClipResult&3)|0x80|
+                    ((flags&8)?0x40:0)|((flags&0x10)?0x20:0));
+                mFlags&=~0x18;
+                return 1;
+            }
+        }
+    }
+#endif
 ret0:
     return 0;
 ret1:
@@ -282,6 +354,15 @@ ret1:
  * 0x02010f6c  size 0xc */
 void dActor_c::AfterRender(u32 vfSuccess)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(mClipResult&0x80) {
+        pc_trace_extended_actor_render(this,vfSuccess);
+        mFlags&=~0x18;
+        if(mClipResult&0x40)mFlags|=0x8;
+        if(mClipResult&0x20)mFlags|=0x10;
+        mClipResult&=3;
+    }
+#endif
     fBase_c::AfterRender(vfSuccess);
 }
 

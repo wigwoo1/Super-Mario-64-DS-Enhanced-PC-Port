@@ -31,7 +31,7 @@ constexpr GLenum MAX_ANISO=0x84ff,TEXTURE_ANISO=0x84fe;
  X(Clear) X(ClearColor) X(ClearStencil) X(ClearDepth) X(DepthMask) X(DepthFunc) X(ColorMask) \
  X(StencilMask) X(StencilFunc) X(StencilOp) X(BlendFunc) X(PolygonMode) X(Viewport) \
  X(GenTextures) X(DeleteTextures) X(BindTexture) X(TexParameteri) X(TexParameterf) X(TexImage2D) \
- X(TexSubImage2D) X(GetString) X(GetError) X(GetFloatv) X(ReadPixels) X(Finish)
+ X(TexSubImage2D) X(CopyTexSubImage2D) X(GetString) X(GetError) X(GetFloatv) X(ReadPixels) X(Finish)
 #define GL_EXT(X) \
  X(GLuint,CreateShader,(GLenum)) X(void,ShaderSource,(GLuint,GLsizei,const char *const *,const GLint *)) \
  X(void,CompileShader,(GLuint)) X(void,GetShaderiv,(GLuint,GLenum,GLint *)) \
@@ -67,6 +67,8 @@ HMODULE library=nullptr;
 HWND context_window=nullptr,game_window=nullptr;
 HDC context_dc=nullptr;HGLRC context=nullptr;
 GLuint framebuffer=0,color_target=0,depth_target=0,program=0,base_image=0,map_image=0,white_image=0;
+GLuint gameplay_image=0,gameplay_framebuffer=0;
+unsigned gameplay_width=0,gameplay_height=0;
 GLint u_polygon=-1,u_alpha=-1,u_pass=-1,u_mode=-1,u_toon=-1,u_highlight=-1;
 unsigned target_width=0,target_height=0,triangle_count=0;
 bool menu_scene=false,force_scan=false,readback_ready=false;
@@ -362,6 +364,8 @@ void close_worker() {
         if(base_image)gl.DeleteTextures(1,&base_image);if(map_image)gl.DeleteTextures(1,&map_image);
         if(white_image)gl.DeleteTextures(1,&white_image);if(color_target)gl.DeleteTextures(1,&color_target);
         if(framebuffer&&gl.DeleteFramebuffers)gl.DeleteFramebuffers(1,&framebuffer);
+        if(gameplay_image)gl.DeleteTextures(1,&gameplay_image);
+        if(gameplay_framebuffer&&gl.DeleteFramebuffers)gl.DeleteFramebuffers(1,&gameplay_framebuffer);
         if(depth_target&&gl.DeleteRenderbuffers)gl.DeleteRenderbuffers(1,&depth_target);
         if(program&&gl.DeleteProgram)gl.DeleteProgram(program);
         gl.MakeCurrent(nullptr,nullptr);gl.DeleteContext(context);
@@ -371,6 +375,7 @@ void close_worker() {
     if(context_window)DestroyWindow(context_window);context_window=nullptr;
     if(library)FreeLibrary(library);library=nullptr;
     gl={};game_window=nullptr;framebuffer=color_target=depth_target=program=base_image=map_image=white_image=0;
+    gameplay_image=gameplay_framebuffer=0;gameplay_width=gameplay_height=0;
     target_width=target_height=triangle_count=0;adapter_name[0]=0;cache.clear();missing.clear();cache_bytes=use_counter=0;
     readback_pixels.clear();raw_pixels.clear();readback_ready=false;anisotropic=0;stats={};
 }
@@ -378,7 +383,7 @@ void glsw_set_menu_scene(bool active){menu_scene=active;}
 void glsw_set_anisotropic_filtering(uint8_t value){anisotropic=value==2||value==4||value==8||value==16?uint8_t(std::min<float>(value,max_aniso)):0;}
 uint8_t glsw_anisotropic_filtering(){return anisotropic;}
 bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,
-                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top) {
+                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay) {
     stats={};auto start=std::chrono::steady_clock::now();
     if(!context||s.width<256||s.height<192||s.width>3840||s.height>2160||!resize(s.width,s.height))return false;
     readback_ready=false;gl.UseProgram(program);gl.BindFramebuffer(FBO,framebuffer);
@@ -405,6 +410,15 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
         for(unsigned y=0;y<SCREEN_H;++y)for(unsigned x=0;x<SCREEN_W;++x)opaque.px[y][x]=sub->px[y][x]|0xff000000u;
         gl.BindTexture(GL_TEXTURE_2D,map_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,opaque.px);
         overlay_state(false);quad(map_image,!s.upscale_2d);
+    }
+    if(cache_gameplay && !screens) {
+        if(!gameplay_image)gl.GenTextures(1,&gameplay_image);
+        gl.BindTexture(GL_TEXTURE_2D,gameplay_image);
+        if(gameplay_width!=target_width || gameplay_height!=target_height) {
+            gl.TexImage2D(GL_TEXTURE_2D,0,RGBA16F,target_width,target_height,0,BGRA,GL_UNSIGNED_BYTE,nullptr);
+            gameplay_width=target_width;gameplay_height=target_height;
+        }
+        gl.CopyTexSubImage2D(GL_TEXTURE_2D,0,0,0,0,0,target_width,target_height);
     }
     if(!screens&&map&&s.minimap){
         gl.BindTexture(GL_TEXTURE_2D,map_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,map);
@@ -477,14 +491,31 @@ void glsw_close() {
     worker.thread=worker.wake=worker.done=nullptr;worker.stop=false;worker.job={};
 }
 bool glsw_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool geometry,
-                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool top) {
-    bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,top);})&&result;
+                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool top,bool cache_gameplay) {
+    bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,top,cache_gameplay);})&&result;
 }
 bool glsw_present(unsigned width,unsigned height,bool aspect) {
     bool result=false;return submit([&]{result=present_worker(width,height,aspect);})&&result;
 }
 bool glsw_readback(std::vector<uint32_t> &pixels,unsigned &width,unsigned &height) {
     bool result=false;return submit([&]{result=readback_worker(pixels,width,height);})&&result;
+}
+bool glsw_readback_gameplay(std::vector<uint32_t> &pixels,unsigned &width,unsigned &height) {
+    bool result=false;
+    return submit([&]{
+        if(!gameplay_image || !gameplay_width || !gameplay_height)return;
+        if(!gameplay_framebuffer)gl.GenFramebuffers(1,&gameplay_framebuffer);
+        gl.BindFramebuffer(FBO,gameplay_framebuffer);
+        gl.FramebufferTexture2D(FBO,COLOR_ATTACHMENT,GL_TEXTURE_2D,gameplay_image,0);
+        if(gl.CheckFramebufferStatus(FBO)==FBO_COMPLETE) {
+            width=gameplay_width;height=gameplay_height;
+            std::vector<uint32_t> raw(size_t(width)*height);pixels.resize(raw.size());
+            gl.ReadPixels(0,0,width,height,BGRA,GL_UNSIGNED_BYTE,raw.data());
+            for(unsigned y=0;y<height;++y)std::copy_n(raw.data()+size_t(height-1-y)*width,width,pixels.data()+size_t(y)*width);
+            result=ok("gameplay preview readback");
+        }
+        gl.BindFramebuffer(FBO,framebuffer);
+    })&&result;
 }
 
 const char *glsw_adapter(){return adapter_name;}

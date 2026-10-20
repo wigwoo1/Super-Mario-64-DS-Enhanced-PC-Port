@@ -86,7 +86,13 @@ void func_020197b8(void) {
         if ((*(int*)(data_0209ee90 + 0x108) & 0x10) == 0)
             data_0209d514 = 0;
         data_0209d50c = 9;
+#if defined(SM64DS_PLATFORM_PC)
+        /* The host sound update handles both native playback and silent
+           fallback without the ARM7 driver latch. */
+        func_020132d8();
+#else
         if (data_0209b480 != 0) func_020132d8();
+#endif
         PC_MAIN_TRACE("sound update: complete");
         if (data_0209e64c != 0 || func_0203da80(0x9d) != 0)
             func_02030e4c();

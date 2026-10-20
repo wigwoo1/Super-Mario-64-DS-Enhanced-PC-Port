@@ -1,6 +1,7 @@
 #include "dScStage_c.h"
 #include "PlayerInput.h"
 #include "ntr/input.h"
+#include "ntr/video.h"
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -14,7 +15,7 @@ extern unsigned char data_0209f4a0[],data_0209f4a2[],data_0209f4a4[],data_0209f4
 extern unsigned char data_0209f4a8[],data_0209f4a9[],data_0209f4ab[],data_0209f4ac[],data_0209f4ae[];
 extern unsigned char pc_controller_state_end[],data_020a0e58[];
 unsigned char gTouchHeld[16],gTouchEdge[16],gTouchX[16],gTouchY[16],gActivePlayerSlot;
-unsigned char data_0209f2d8=0,data_0209d660=0,data_0209f21c=4,data_0209f350[4]={};
+unsigned char data_0209f2d8=0,data_0209d660=0,data_0209f21c=4,data_0209f350[4]={},data_0209f2c4=0;
 int data_0209caa0[4]={0,0,0x80,0},data_0209fc48=0;
 short data_020756b0[16],data_02082214[8192];
 unsigned short keymap[16],*data_0209214c[3]={keymap,keymap,keymap};
@@ -62,7 +63,7 @@ int main() {
     _putenv_s("SM64DS_PC_TEST_STICK_X","20000");_putenv_s("SM64DS_PC_TEST_STICK_Y","0");
     ntr::input_poll();dScStage_c::CheckInput();
     CHECK(field(data_0209f4a0)>2550 && field(data_0209f4a0)<2750);
-    CHECK(field(data_0209f49c)==0 && field(data_0209f49e)==0); // Analog is never a jump press.
+    CHECK(field(data_0209f49c)==0x800 && field(data_0209f49e)==0); // Run held, never a jump/attack press.
     CHECK(field(data_0209f4a2)>2550 && field(data_0209f4a4)==0);
     CHECK(field(data_0209f4a6)==0x4000 && data_0209f4ac[0]==1);
     for(unsigned p=1;p<4;++p) CHECK(field(data_0209f4a0,p)==0 && field(data_0209f49e,p)==0);
@@ -105,8 +106,23 @@ int main() {
     ntr::input_poll();dScStage_c::CheckInput();
     CHECK(field(data_0209f4a0)==4096 && field(data_0209f4a2)==-4096 && field(data_0209f49e)==0);
     _putenv_s("SM64DS_PC_TEST_STICK_X","0");
+    word(data_0209f49c,0,0); // Production CheckCameraInput clears held each tick.
     ntr::input_poll();dScStage_c::CheckInput();
     CHECK(field(data_0209f4a0)==0 && field(data_0209f49c)==0 && field(data_0209f49e)==0);
+    // Always Run acts after button mapping, on local gameplay only. A pause
+    // must not synthesize Run even when the preference remains enabled.
+    auto settings=ntr::video_get_settings();
+    for(unsigned option: {0u,1u}) for(unsigned paused: {0u,1u}) {
+        settings.always_run=option!=0;ntr::video_set_settings(settings);
+        data_0209f2c4=static_cast<unsigned char>(paused);
+        for(unsigned p=0;p<4;++p){word(data_0209f49c,p,0);word(data_0209f49e,p,0);}
+        std::memset(data_020a0e58,0,16);raw[0]=0x10;
+        dScStage_c::CheckInput();
+        CHECK(field(data_0209f49c)==(0x10 | (option && !paused ? 0x800 : 0)));
+        CHECK(field(data_0209f49e)==0);
+        for(unsigned p=1;p<4;++p)CHECK(field(data_0209f49c,p)==0);
+    }
+    data_0209f2c4=0;
     std::memset(data_0209f498,0x55,96);data_0209caa0[2]=0;
     dScStage_c::CheckInput();
     for(unsigned p=0;p<4;++p) CHECK(field(data_0209f4a0,p)==0 && field(data_0209f49e,p)==0);

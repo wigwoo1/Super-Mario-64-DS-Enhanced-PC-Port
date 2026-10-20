@@ -1,0 +1,54 @@
+Wanted native audio integration checks - 2026-10-20 (Sol Medium)
+Status VERIFIED for the scripted pause/resume/retry/Rec Room flows below.
+No gameplay or audio behavior repair was needed. Listening quality remains
+unverified; this does not establish game-wide or retail audio fidelity.
+
+Changes
+- SM64DS_PC_WANTED_TRACE enables the existing Wanted scene/menu trace without
+  the large general engine trace. It also records current/target music volume.
+- Audio sequence/effect/player-pause logs include game update timestamps.
+  SM64DS_PC_AUDIO_TRACE additionally logs immediate stops and stop-all.
+- Added private replay/acceptance/negative-probe drivers in the local work area.
+  The original source, input timing, gameplay, sound waits and save code were
+  not changed for this milestone.
+
+Build and verification
+- Explicit native game target builds successfully. 54/54 CTests pass (56.31s).
+- Final tested EXE SHA256:
+  1d52b6ab8b4af42fe0e32ca5795eee33555352d3fcfc86abe97e237bb3311b99
+- Two initial runtime flows passed; repeated both with final volume tracing.
+- native-audio-wanted-pause-final-20261020:3800frames,exit0. Original title and
+  Rec Room touch entry; Wanted music13 at1891. Start2200 opens pause, time8
+  remains fixed through2520 and music volume reaches64. Continue2500 resumes:
+  time6 at2640/time4 at2760, volume127. Start2800 pauses again, time4 remains
+  fixed. Quit3100 reaches original Rec Room; music5 begins3147. Final screenshot
+  3650 shows Rec Room.18starts,0audio errors,3799audio updates.
+  WAV5608960frames,8885378nonzero samples,peak32767;3samples at integer limits.
+- native-audio-wanted-retry-final-20261020:6300frames,exit0. Original timeout,
+  game-over jingle3 at2794, score/results, Play Again5000 restarts music13 at
+  5054. New round time10 at5160/5280, time8 at5400. Start5500 pauses at time6;
+  music volume64 and timer fixed through5760. Quit5800 restores Rec Room music5
+  at5847. Final screenshot6250 shows Rec Room.34starts,0errors,6299updates.
+  WAV9371648frames,16405543nonzero samples,peak32768;67samples at integer limits.
+- Both flows contain original pause/continue/quit effects4/98/99, and exit
+  stop-fade requests for players0/1/14/21/31. No Wanted updates continue after
+  the return transition. Windows consumed the submitted audio, and streamed
+  WAV samples match the mixer's frame/nonzero/peak statistics.
+- Isolated minigame save containers remain byte-identical to their seeds.
+  No main-game slot save was created. User/preview/F: saves were not edited.
+- Eight negative probes reject wrong pause volume, absent resume/retry reset,
+  absent Wanted/Rec Room music, absent exit cleanup, mixer errors and stale
+  Wanted updates after return. They mutate evidence in memory only.
+- Runtime screenshots inspected and shown: pause, retry gameplay, Rec Room.
+  Rec Room is dScMiniGm, not DSMT. The DSMT menu CSV stops when leaving the
+  file menu; it is not evidence of Rec Room input. Return verification uses
+  scene/audio observations plus visual inspection. Another Rec Room tap was
+  not tested by these flows.
+
+Limits / next bounded check
+Audio remains opt-in diagnostic work. Listening comparison, spatial effects,
+shared voice priorities, other minigames/courses and physical input remain
+unaccepted. Correct/incorrect target touch feedback is a separate bounded
+Wanted audio check. Existing touch replay tools can support that next task.
+The prior castle-door movement fix remains unchanged. No new stable install
+or public ROM-free build kit is implied by this milestone.

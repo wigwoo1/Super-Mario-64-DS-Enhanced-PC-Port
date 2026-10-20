@@ -1,0 +1,34 @@
+Native camera distance zoom - diagnostic acceptance, 2026-10-20
+
+PC Settings page8 has a second row: CAMERA ZOOM. Original,0.75x,0.5x,0.25x
+correspond to original,4/3,2,4 times camera-to-target distance. Right-stick
+click cycles once per press; choice persists in camera_zoom=0..3.
+
+The host camera adapter changes the temporary render eye before its /8
+conversion, preserving original camera tracking state, saved dialogue state
+and field of view. It extends from the existing collision-adjusted eye and
+uses the original camera collision filter/raycast, stopping32world units
+before the first camera-solid surface. Zoom is permitted only for the normal
+player camera while control is enabled, with no pause or scripted sequence.
+Scripted/cannon/collection cameras retain original rendering. A closer wall
+can prevent a requested zoom level from reaching its full distance.
+
+Verification: native game and all test targets compile.54/54CTest pass;
+2camera-host transform tests pass. Isolated3000frame replay cycles all choices,
+returns to Original, ignores click during pause, resumes control and saves
+choice.1900frame restart reloads choice.4300frame D-pad/A replay opens original
+stage Options -> PC Settings -> page8 -> row2 and changes zoom, then backs out.
+Screenshots inspected for default/wider gameplay view and settings text.
+Strict private acceptance checks validate click count/timing, distance and
+clipped-ray geometry, clean exits, persisted setting and unchanged save bytes.
+Fixed-point collision lateral rounding is tolerated up to1/16world unit.
+
+Tested EXE SHA256:
+fba476a2727d328a605795939a992c8dcc1ff34e6a7e4bdcfcce462e73cec4e5
+
+Limitations: physical Xbox hardware was not manually operated. These tests
+cover Battlefield start-area scenery, pause and course-entry control gating;
+they do not establish all-course/water/moving-platform collision acceptance.
+Preset-angle/free rotation using right stick or mouse remains planned.
+All-menu D-pad/button navigation is a separate unfinished milestone.
+No stable-install or public-release promotion is implied.

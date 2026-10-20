@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
+#include <initializer_list>
 
 #include "Model.h"
 #include "dExtFrameCtrl_c.h"
@@ -37,6 +39,11 @@ enum { FRAMES = 24 };
 
 static int g_failures;
 static unsigned g_vblank_irq_count;
+static unsigned clock_presentations;
+static void clock_game() {
+    for(unsigned i=0;i<120;++i)ntr::rt_vblank_wait();
+}
+static bool clock_hook(uint64_t) {++clock_presentations;return true;}
 static void vblank_irq_probe() { ++g_vblank_irq_count; }
 #define CHECK(cond) \
     do { if (!(cond)) { ++g_failures; \
@@ -174,6 +181,18 @@ int main(void)
     for (int i = 1; i < FRAMES; ++i)
         if (g_tris[i] > 0 && g_tris[i - 1] > 0) ++moving;
     CHECK(moving == FRAMES - 1);    /* every frame drew geometry */
+
+    // Real scheduler regression: display rate must not change game time.
+    // No renderer workload here, so these bounds measure pacing, not GPU speed.
+    for(unsigned fps: {60u,120u,240u}) {
+        ntr::rt_set_target_fps(fps);clock_presentations=0;
+        const auto start=std::chrono::steady_clock::now();
+        CHECK(ntr::rt_run(clock_game,clock_hook,120)==120);
+        const double elapsed=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+        printf("clock %u FPS: 120 simulation ticks in %.3f seconds, %u presentations\n",fps,elapsed,clock_presentations);
+        CHECK(elapsed>=1.90 && elapsed<=2.30);
+        CHECK(clock_presentations>=fps*18/10 && clock_presentations<=fps*23/10);
+    }
 
     if (g_failures) {
         fprintf(stderr, "smoke_frames: %d FAILURE(S)\n", g_failures);

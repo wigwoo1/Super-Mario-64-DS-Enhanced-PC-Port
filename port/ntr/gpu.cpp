@@ -42,6 +42,7 @@ ComPtr<ID3D11DeviceContext> context;
 ComPtr<IDXGISwapChain> swap;
 ComPtr<ID3D11RenderTargetView> window_view, target_view;
 ComPtr<ID3D11Texture2D> target, depth, staging;
+ComPtr<ID3D11Texture2D> gameplay_cache;
 ComPtr<ID3D11DepthStencilView> depth_view;
 ComPtr<ID3D11ShaderResourceView> target_sample;
 ComPtr<ID3D11VertexShader> vertex_shader;
@@ -563,7 +564,7 @@ void gpu_close() {
     if(context) { context->ClearState();context->Flush(); }
     texture_cache.clear();cache_bytes=0;use_counter=0;cache_epoch=0;unavailable_replacements.clear();
     base_texture={};map_texture={};white_texture={};
-    target_sample.Reset();staging.Reset();target_view.Reset();target.Reset();depth_view.Reset();depth.Reset();
+    gameplay_cache.Reset();target_sample.Reset();staging.Reset();target_view.Reset();target.Reset();depth_view.Reset();depth.Reset();
     retirement_query.Reset();window_view.Reset();swap.Reset();vertex_shader.Reset();pixel_shader.Reset();layout.Reset();vertex_buffer.Reset();draw_params.Reset();toon_params.Reset();
     for(auto &sampler:texture_samplers)sampler.Reset();
     for(auto &level:anisotropic_samplers) for(auto &sampler:level) sampler.Reset();
@@ -588,8 +589,8 @@ void gpu_set_anisotropic_filtering(uint8_t level) {
 }
 uint8_t gpu_anisotropic_filtering() {return using_gl_software?glsw_anisotropic_filtering():anisotropic_level;}
 bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,const uint32_t *foreground,
-                const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top) {
-    if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,engine_a_on_top);
+                const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay) {
+    if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,engine_a_on_top,cache_gameplay);
     frame_stats={};
     struct Timer {
         std::chrono::steady_clock::time_point start=std::chrono::steady_clock::now();
@@ -638,6 +639,15 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
         context->UpdateSubresource(map_texture.resource.Get(),0,nullptr,opaque_base.px,SCREEN_W*4,0);
         if(!quad(map_texture.view.Get(),s.upscale_2d?nearest_clamp.Get():linear_clamp.Get())) return false;
     }
+    if(cache_gameplay && !screens) {
+        D3D11_TEXTURE2D_DESC desc{},old{};target->GetDesc(&desc);
+        if(gameplay_cache)gameplay_cache->GetDesc(&old);
+        if(!gameplay_cache || old.Width!=desc.Width || old.Height!=desc.Height) {
+            gameplay_cache.Reset();desc.BindFlags=0;
+            if(!hr_ok(device->CreateTexture2D(&desc,nullptr,&gameplay_cache),"gameplay preview cache"))return false;
+        }
+        context->CopyResource(gameplay_cache.Get(),target.Get());
+    }
     if(!screens && map && s.minimap) {
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
         context->UpdateSubresource(map_texture.resource.Get(),0,nullptr,map,SCREEN_W*4,0);
@@ -667,22 +677,29 @@ bool gpu_present(unsigned width,unsigned height,bool preserve_aspect) {
     ID3D11ShaderResourceView *null_view=nullptr;context->PSSetShaderResources(0,1,&null_view);
     return hr_ok(swap->Present(0,0),"present");
 }
-bool gpu_readback(std::vector<uint32_t> &pixels,unsigned &width,unsigned &height) {
-    if(using_gl_software)return glsw_readback(pixels,width,height);
-    if(!target) return false;
-    if(!staging) {
-        D3D11_TEXTURE2D_DESC desc{};target->GetDesc(&desc);
+static bool read_texture(ID3D11Texture2D *texture,std::vector<uint32_t> &pixels,unsigned &width,unsigned &height) {
+    if(!texture) return false;
+    D3D11_TEXTURE2D_DESC desc{},old{};texture->GetDesc(&desc);
+    if(staging)staging->GetDesc(&old);
+    if(!staging || old.Width!=desc.Width || old.Height!=desc.Height) {
+        staging.Reset();
         desc.Usage=D3D11_USAGE_STAGING;desc.BindFlags=0;desc.CPUAccessFlags=D3D11_CPU_ACCESS_READ;
         if(!hr_ok(device->CreateTexture2D(&desc,nullptr,&staging),"capture staging")) return false;
     }
-    context->CopyResource(staging.Get(),target.Get());
+    context->CopyResource(staging.Get(),texture);
     D3D11_MAPPED_SUBRESOURCE mapped{};
     if(!hr_ok(context->Map(staging.Get(),0,D3D11_MAP_READ,0,&mapped),"capture readback")) return false;
-    width=target_width;height=target_height;pixels.resize(static_cast<size_t>(width)*height);
+    width=desc.Width;height=desc.Height;pixels.resize(static_cast<size_t>(width)*height);
     for(unsigned y=0;y<height;++y) std::memcpy(pixels.data()+static_cast<size_t>(y)*width,
         static_cast<const char *>(mapped.pData)+y*mapped.RowPitch,width*4);
     context->Unmap(staging.Get(),0);
     return true;
+}
+bool gpu_readback(std::vector<uint32_t> &pixels,unsigned &width,unsigned &height) {
+    return using_gl_software?glsw_readback(pixels,width,height):read_texture(target.Get(),pixels,width,height);
+}
+bool gpu_readback_gameplay(std::vector<uint32_t> &pixels,unsigned &width,unsigned &height) {
+    return using_gl_software?glsw_readback_gameplay(pixels,width,height):read_texture(gameplay_cache.Get(),pixels,width,height);
 }
 const char *gpu_adapter() { return using_gl_software?glsw_adapter():adapter_name; }
 unsigned gpu_triangle_count() { return using_gl_software?glsw_triangle_count():triangles_drawn; }
@@ -696,10 +713,11 @@ bool gpu_open(void *,bool,VideoRenderer) { return false; }
 void gpu_close() {}
 void gpu_set_anisotropic_filtering(uint8_t) {}
 uint8_t gpu_anisotropic_filtering() { return 0; }
-bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool) { return false; }
+bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool) { return false; }
 void gpu_set_menu_scene(bool) {}
 bool gpu_present(unsigned,unsigned,bool) { return false; }
 bool gpu_readback(std::vector<uint32_t> &,unsigned &,unsigned &) { return false; }
+bool gpu_readback_gameplay(std::vector<uint32_t> &,unsigned &,unsigned &) { return false; }
 const char *gpu_adapter() { return "unavailable"; }
 unsigned gpu_triangle_count() { return 0; }
 GpuFrameStats gpu_frame_stats() {return {};}

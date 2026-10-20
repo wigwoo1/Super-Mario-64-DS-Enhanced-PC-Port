@@ -11,7 +11,10 @@
 /* recovered: named members + shared header */
 #include "Player.h"
 #if defined(SM64DS_PLATFORM_PC) && defined(SM64DS_GAME_TARGET)
+#include <intrin.h>
 extern "C" void pc_rebase_player_state(Player::State *state);
+// Local extern: native-only optional transition diagnostics, outside game ABI.
+extern "C" void pc_trace_player_state_change(const Player *,const Player::State *,const Player::State *,const void *);
 #endif
 extern "C" {
 extern void func_ov002_020d4540(void *p);
@@ -29,6 +32,7 @@ int Player::ChangeState(State &state) {
     State *newState = &state;
 #if defined(SM64DS_PLATFORM_PC) && defined(SM64DS_GAME_TARGET)
     pc_rebase_player_state(mState);
+    pc_trace_player_state_change(this,mState,newState,_ReturnAddress());
 #endif
     mRequestedState = newState;
 

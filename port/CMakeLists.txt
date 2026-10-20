@@ -106,6 +106,12 @@ endif()
 # The ntr platform layer: imported host DS hardware (see ntr/README.md).
 # Compiled as its own lib so every gate binary can link the pieces it needs.
 add_library(ntr STATIC
+    ntr/sdat.cpp ntr/audio.cpp
+    third_party/sseqplayer/Player.cpp third_party/sseqplayer/Track.cpp
+    third_party/sseqplayer/Channel.cpp third_party/sseqplayer/SSEQ.cpp
+    third_party/sseqplayer/SBNK.cpp third_party/sseqplayer/SWAR.cpp
+    third_party/sseqplayer/SWAV.cpp third_party/sseqplayer/INFOEntry.cpp
+    third_party/sseqplayer/NDSStdHeader.cpp
     ntr/texture_assets.cpp
     hal/oam_buffers.asm
     hal/controller_state.asm
@@ -114,7 +120,7 @@ add_library(ntr STATIC
 target_include_directories(ntr PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 if(MSVC)
     target_compile_options(ntr PRIVATE /wd4311 /wd4312)
-    target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 dxgi d3dcompiler)
+    target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 dxgi d3dcompiler winmm)
 endif()
 
 # Controller-input smoke: verify the native stick's radial deadzone and its
@@ -122,6 +128,11 @@ endif()
 add_executable(smoke_input tests/smoke_input.cpp)
 target_link_libraries(smoke_input PRIVATE ntr)
 add_test(NAME smoke_input COMMAND smoke_input)
+add_executable(smoke_sdat tests/smoke_sdat.cpp)
+target_link_libraries(smoke_sdat PRIVATE ntr)
+add_test(NAME smoke_sdat COMMAND smoke_sdat)
+add_executable(probe_sdat tests/probe_sdat.cpp)
+target_link_libraries(probe_sdat PRIVATE ntr)
 add_executable(smoke_screen_layout tests/smoke_screen_layout.cpp)
 target_link_libraries(smoke_screen_layout PRIVATE ntr)
 add_test(NAME smoke_screen_layout COMMAND smoke_screen_layout)
@@ -129,6 +140,10 @@ add_executable(smoke_pause_settings tests/smoke_pause_settings.cpp hal/pc_pause_
 target_include_directories(smoke_pause_settings PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(smoke_pause_settings PRIVATE ntr)
 add_test(NAME smoke_pause_settings COMMAND smoke_pause_settings)
+add_executable(smoke_render_distance tests/smoke_render_distance.cpp)
+target_include_directories(smoke_render_distance PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
+add_test(NAME smoke_render_distance COMMAND smoke_render_distance)
 add_executable(smoke_wanted_settings_surface tests/smoke_wanted_settings_surface.cpp
     hal/wanted_settings_surface.cpp hal/pc_pause_settings_state.cpp)
 target_include_directories(smoke_wanted_settings_surface PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -522,6 +537,13 @@ if(MSVC)
 endif()
 
 # Gate 5: the fiber frame loop -- game-shaped frames, host-rastered.
+add_executable(smoke_scene_clock tests/smoke_scene_clock.cpp
+    ../src/unnamed/arm9/0201/func_0201a4bc.c ../src/_ZN3IRQ13VBlankHandlerEv.cpp)
+target_include_directories(smoke_scene_clock PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_compile_definitions(smoke_scene_clock PRIVATE SM64DS_PLATFORM_PC)
+target_link_libraries(smoke_scene_clock PRIVATE ntr)
+add_test(NAME smoke_scene_clock COMMAND smoke_scene_clock)
+
 add_executable(smoke_frames tests/smoke_frames.cpp
     hal/heap_globals.cpp hal/os_arena.cpp hal/heap_vtable.cpp hal/fs.cpp
     hal/model_host.cpp hal/frame_gx_bank_bridge.cpp hal/oam_state.cpp hal/gx_upload_bridge.cpp hal/ctor_bridge.cpp hal/mem_delete2.cpp
@@ -1218,7 +1240,7 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     hal/actor_ctor_bridge.cpp hal/player_factory_bridge.cpp hal/actor_profile_link_bridge.cpp hal/anim_bridge.cpp hal/anim_ctor_bridge.cpp
     hal/cxxname_bridge.cpp hal/game_api_bridge.cpp hal/level_overlay.cpp hal/itcm_math.cpp hal/megachar_stub.cpp
     hal/demo_model_bridge.cpp hal/player_state_callbacks.cpp hal/float_bits.cpp
-    hal/pc_session.cpp hal/pc_pause_settings.cpp hal/pc_pause_settings_state.cpp
+    hal/pc_session.cpp hal/pc_pause_settings.cpp hal/pc_pause_settings_state.cpp hal/touch_menu_navigation.cpp hal/course_clear_input.cpp hal/stage_options_input.cpp
     hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp
     hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
     "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV001_IMAGE_CPP}"

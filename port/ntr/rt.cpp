@@ -235,9 +235,13 @@ uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames, void (*befo
 
         if (now.QuadPart >= next_game_tick.QuadPart) {
             run_game = true;
-            // Avoid a catch-up burst after a slow presentation; simulation
-            // resumes at most once, then re-establishes the 60 Hz deadline.
-            next_game_tick.QuadPart = now.QuadPart + game_tick_period;
+            // Keep the simulation deadline on its original 60 Hz timeline.
+            // Resetting it to "now + period" accumulated tiny sleep overruns,
+            // skipped alternate updates at 60 FPS, and made higher display
+            // rates appear to speed up the game. Skip missed deadlines only
+            // after a genuinely slow frame; never accumulate pacing jitter.
+            do { next_game_tick.QuadPart += game_tick_period; }
+            while(next_game_tick.QuadPart <= now.QuadPart);
         } else {
             run_game = false;
         }

@@ -3,6 +3,7 @@
 #include "ntr/rt.h"
 #include "ntr/video.h"
 #include "ntr/fs.h"
+#include "ntr/audio.h"
 #include "ntr/input.h"
 #include "dFader_c.h"
 #include "dActor_c.h"
@@ -75,6 +76,9 @@ extern "C" unsigned int data_ov002_020ff480[];
 extern "C" signed char SUBLEVEL_LEVEL_TABLE[];
 extern "C" unsigned char data_0209d660, data_0209d684;
 extern "C" int data_0209b490, data_0209b49c;
+// Local extern: verify the historic exported sound ABI through the integer
+// signature used by original door/message callers, rather than its C++ wrapper.
+extern "C" int _ZN5Sound7PlaySubEjjj5Fix12IiEb(unsigned,unsigned,unsigned,int,int);
 extern "C" unsigned short data_ov100_02148708[];
 
 static int observed_story_course() {
@@ -864,6 +868,7 @@ static bool trace_enabled()
 // Input-only collection for the labelled Power Star fixture below. A fixed
 // camera-relative stick recording becomes invalid when an entry camera changes.
 // Observe the actual star position and use the ordinary controller path instead.
+static unsigned power_star_fixture_target;
 static bool replay_power_star_controls()
 {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -877,7 +882,7 @@ static bool replay_power_star_controls()
         for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;
             actor=dActor_c::FindWithActorID(178,actor)) {
             auto *star=static_cast<daStar_c *>(actor);
-            if(star->aliveState!=1 || star->param1!=1 || star->mState!=4)continue;
+            if(star->aliveState!=1 || star->uniqueID!=power_star_fixture_target || star->mState!=4)continue;
             static bool logged=false;
             if(!logged) {
                 std::fprintf(stderr,"[native Power Star replay] target=%u tick=%llu; input-only collection\n",
@@ -903,13 +908,18 @@ static bool replay_power_star_controls()
 // named/native; enumerate the live actor IDs once at a requested frame.
 static void trace_actor_census(uint64_t frame)
 {
-    static bool emitted = false;
+    static uint64_t last_frame = ~uint64_t(0);
     const char *when = std::getenv("SM64DS_PC_TRACE_ACTORS_AT");
-    if (emitted || !when || !*when) return;
-    char *end = nullptr;
-    const auto target = std::strtoull(when, &end, 10);
-    if (end == when || *end || frame != target) return;
-    emitted = true;
+    if (last_frame == frame || !when || !*when) return;
+    bool selected=false;
+    while(when && *when) {
+        char *end=nullptr;
+        const auto target=std::strtoull(when,&end,10);
+        if(end!=when && (!*end || *end==',') && frame==target)selected=true;
+        const char *next=std::strchr(when,',');when=next?next+1:nullptr;
+    }
+    if(!selected)return;
+    last_frame=frame;
 
     unsigned count = 0;
     for (auto *actor = dActor_c::Next(nullptr); actor && count < 4096;
@@ -935,21 +945,71 @@ static bool trace_script_progress(uint64_t frame)
     // Explicit QA placement only: keep course geometry/ROM and ordinary play
     // intact while exercising the original Power Star pickup and exit path.
     // The host hook runs between game ticks on the same thread.
-    static bool power_star_fixture_attempted=false;
+    static uint64_t power_star_fixture_tick=~uint64_t(0);
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *power_fixture=std::getenv("SM64DS_PC_TEST_POWER_STAR");
-    if(!power_star_fixture_attempted && ntr::rt_frame()==1700 &&
+    const auto fixture_frame=ntr::rt_frame();
+    // Isolated QA encounters. Ordinary mode approaches an original Mario-cap
+    // Goomba; fixture mode spawns a native bank-1 Mario-cap Goomba nearby.
+    // The normal tongue/contact/reward path must release and collect its cap.
+    // No cap actor, hit, transformation or camera state is injected.
+    static bool camera_goomba_approached=false;
+    if(!camera_goomba_approached && automation && !std::strcmp(automation,"1"))
+    if(const char *cap_tick=std::getenv("SM64DS_PC_TEST_CAMERA_GOOMBA"))
+    if(fixture_frame==std::strtoull(cap_tick,nullptr,10) && data_0209f2f8==6) {
+        camera_goomba_approached=true;
+        auto *player=static_cast<Player *>(data_0209f394[0]);
+        if(player && player->aliveState==1 && !player->mIsNoControl && !player->mIsControlDisabled) {
+            daKrb_c *target=nullptr;double nearest=1e30;
+            const char *fixture=std::getenv("SM64DS_PC_TEST_CAMERA_GOOMBA_FIXTURE");
+            if(fixture && !std::strcmp(fixture,"1")) {
+                Vector3 position={player->mPosX,player->mPosY,player->mPosZ+180*4096};
+                target=static_cast<daKrb_c *>(dActor_c::Spawn(200,0xf0f3,position,nullptr,player->mAreaId,-1));
+            }
+            if(!fixture || std::strcmp(fixture,"1"))
+            for(auto *a=dActor_c::FindWithActorID(200,nullptr);a;a=dActor_c::FindWithActorID(200,a)) {
+                auto *g=static_cast<daKrb_c *>(a);
+                const double distance=std::hypot(double(g->mPosX)-player->mPosX,double(g->mPosZ)-player->mPosZ);
+                if(g->aliveState==1 && g->mCapId==0 && distance<nearest) {target=g;nearest=distance;}
+            }
+            if(target) {
+                player->mPosX=player->mPrevPosX=player->mPreClsnPosX=target->mPosX;
+                player->mPosY=player->mPrevPosY=player->mPreClsnPosY=target->mPosY;
+                player->mPosZ=player->mPrevPosZ=player->mPreClsnPosZ=target->mPosZ-180*4096;
+                player->mAngleY=player->mPrevAngleY=0;
+                player->mHorzSpeed=player->mVertSpeed=0;
+                std::fprintf(stderr,"[native QA camera Goomba] tick=%llu actor=%u cap=%u dormant=%u pos=%d,%d,%d\n",
+                    static_cast<unsigned long long>(fixture_frame),target->uniqueID,unsigned(target->mCapId),unsigned(target->mIsDormant),
+                    player->mPosX,player->mPosY,player->mPosZ);
+            }
+        }
+    }
+    unsigned fixture_param=0;
+    const char *fixture_sequence=std::getenv("SM64DS_PC_TEST_POWER_STAR_SEQUENCE");
+    if(!fixture_sequence)fixture_sequence="1700:1";
+    while(fixture_sequence && *fixture_sequence) {
+        char *tick_end=nullptr,*param_end=nullptr;
+        const auto tick=std::strtoull(fixture_sequence,&tick_end,10);
+        if(tick_end!=fixture_sequence && *tick_end==':') {
+            const auto param=std::strtoul(tick_end+1,&param_end,10);
+            if(param_end!=tick_end+1 && (!*param_end || *param_end==',') &&
+               tick==fixture_frame && param>=1 && param<=7)fixture_param=static_cast<unsigned>(param);
+        }
+        const char *next=std::strchr(fixture_sequence,',');fixture_sequence=next?next+1:nullptr;
+    }
+    if(power_star_fixture_tick!=fixture_frame && fixture_param &&
        automation && std::strcmp(automation,"1")==0 &&
        power_fixture && std::strcmp(power_fixture,"1")==0 && data_0209f2f8==6) {
         auto *player=static_cast<Player *>(data_0209f394[0]);
-        power_star_fixture_attempted=true;
+        power_star_fixture_tick=fixture_frame;
         if(player && player->aliveState==1 && !player->mIsNoControl && !player->mIsControlDisabled) {
             Vector3 position;
             position.x=player->mPosX;position.y=player->mPosY+120*4096;
             position.z=player->mPosZ-350*4096;
-            auto *star=dActor_c::Spawn(178,1,position,nullptr,player->mAreaId,-1);
-            std::fprintf(stderr,"[native QA fixture] Power Star level=6 param=0001 actor=%u pos=%d,%d,%d; original collection/save/exit unchanged\n",
-                star?star->uniqueID:0u,position.x,position.y,position.z);
+            auto *star=dActor_c::Spawn(178,fixture_param,position,nullptr,player->mAreaId,-1);
+            power_star_fixture_target=star?star->uniqueID:0u;
+            std::fprintf(stderr,"[native QA fixture] Power Star level=6 param=%04x actor=%u pos=%d,%d,%d; ordinary native collection\n",
+                fixture_param,power_star_fixture_target,position.x,position.y,position.z);
         }else std::fprintf(stderr,"[native QA fixture] Power Star cancelled: player not ready\n");
     }
     // Explicit QA travel only. The boss, fight, health and rewards stay on
@@ -1580,7 +1640,7 @@ int main(int argc, char **argv)
         std::fprintf(stderr, "[sm64ds] mounting ROM: %s\n", rom_path);
         std::fflush(stderr);
     }
-    if (!ntr::fs_mount_rom(rom_path, false)) {
+    if (!ntr::fs_mount_rom(rom_path, true)) {
         trace("ROM mount failed");
         MessageBoxA(nullptr,
                     "The ROM could not be mounted. Check that the supplied .nds "
@@ -1603,9 +1663,24 @@ int main(int argc, char **argv)
         return 3;
     }
     trace("game window opened; starting frame runtime");
+    ntr::audio_open();
+
+    if(const char *test=std::getenv("SM64DS_PC_TEST_AUDIO_ABI"))if(!std::strcmp(test,"1")){
+        int waiting=-1,finished=-1;
+        if(ntr::audio_ready()){
+            data_0209b490=0;data_0209b49c=0;
+            waiting=_ZN5Sound7PlaySubEjjj5Fix12IiEb(0,127,0,0x15666,1);
+            data_0209b490=127<<12;
+            finished=_ZN5Sound7PlaySubEjjj5Fix12IiEb(0,127,0,0x15666,1);
+        }
+        const bool ok=waiting==0 && finished==1;
+        std::fprintf(stderr,"[native audio ABI] waiting=%d finished=%d expected=0,1 result=%s\n",waiting,finished,ok?"PASS":"FAIL");
+        ntr::audio_close();ntr::video_close();ExitProcess(ok?0:10);
+    }
 
     ntr::rt_run(run_game, trace_script_progress, runtime_frame_limit(), pc_stage_graph_prepare);
     trace("frame runtime returned");
+    ntr::audio_close();
     trace("closing game window");
     ntr::video_close();
     trace("game window closed");

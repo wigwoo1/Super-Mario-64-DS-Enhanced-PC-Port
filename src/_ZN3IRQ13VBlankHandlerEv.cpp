@@ -43,15 +43,7 @@ void VBlankHandler(void)
     }
   }
 #endif
-  // Native play advances game logic once per host simulation tick. The DS
-  // renderer's delta is 2 during gameplay; keep that value for timers, but
-  // the host has already coalesced the two DS VBlanks into one callback.
-#if defined(SM64DS_PLATFORM_PC)
-  if ((data_0209d514 >= (data_0208ee44 > 1 ? 1 : data_0208ee44)) &&
-      (data_0209d4f0 != 0))
-#else
   if ((data_0209d514 >= data_0208ee44) && (data_0209d4f0 != 0))
-#endif
   {
     OS_WakeupThread(&data_0209d500);
     data_0209d514 = 0;

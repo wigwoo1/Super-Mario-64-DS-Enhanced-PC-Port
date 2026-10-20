@@ -10,6 +10,25 @@ import minigame_data
 
 
 class MinigameHostTests(unittest.TestCase):
+    def test_shared_controller_frame_covers_original_menu_handlers(self):
+        native=minigame_host.transform((ROOT/'src/minigames/d_s_mg_base.cpp').read_text())
+        self.assertEqual(native.count('pc_touch_menu::Frame pc_controller_frame(this);'),1)
+        self.assertIn('flags = data_020a0e5a[mode * 2] & ~pc_controller_frame.consumed_keys();',native)
+        self.assertIn('pc_touch_menu::reset();',native)
+        # Keep native transitions and touch processing rather than calling
+        # retry/return callbacks directly from the controller adapter.
+        self.assertIn('func_ov004_020aeb24((char *)this);',native)
+        self.assertIn('if (func_ov004_020b0b1c(2)',minigame_host.transform((ROOT/'src/actors/dMgState_c.cpp').read_text()))
+
+    def test_rec_room_controller_frame_is_scoped_and_idempotent(self):
+        original=(ROOT/'src/actors/dScMiniGm_c.cpp').read_text()
+        native=minigame_host.transform(original)
+        self.assertEqual(native.count('pc_touch_menu::Frame pc_controller_frame(this);'),1)
+        self.assertIn('pc_touch_menu::reset();',native)
+        self.assertIn('~0x3f3',native)
+        self.assertIn('func_ov005_020c0378();',native)
+        self.assertEqual(native,minigame_host.transform(native))
+
     def test_original_callback_inventory(self):
         records = minigame_host.descriptors(ROOT)
         self.assertEqual(len(records), 72)

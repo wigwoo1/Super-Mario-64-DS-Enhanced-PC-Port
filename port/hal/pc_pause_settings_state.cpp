@@ -19,7 +19,7 @@ uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &t
 void Menu::reset(uint16_t held) { *this = Menu{}; previous = held; }
 unsigned Menu::rows() const {
     if(page==Page::Position || page==Page::Save) return 2;
-    if(page==Page::Graphics) return 2;
+    if(page==Page::Graphics) return 3;
     if(page==Page::Screens) return 1;
     return 3;
 }
@@ -40,7 +40,7 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
     }
     if (edge & 0x300) {
         int next = static_cast<int>(page) + ((edge & 0x100) ? 1 : -1);
-        page = static_cast<Page>(next > 7 ? 1 : next < 1 ? 7 : next);
+        page = static_cast<Page>(next > 8 ? 1 : next < 1 ? 8 : next);
         row = 0; return Action::None;
     }
     if(page==Page::Save) {
@@ -71,6 +71,10 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
             s.renderer=s.renderer==ntr::VideoRenderer::D3D11?ntr::VideoRenderer::OpenGLSoftware:ntr::VideoRenderer::D3D11;
             break;
         }
+        if(row==2) {
+            s.render_distance=static_cast<ntr::RenderDistance>((static_cast<unsigned>(s.render_distance)+(direction>0?1:3))%4);
+            break;
+        }
         static constexpr uint8_t levels[]={0,2,4,8,16};
         unsigned current=0;
         while(current<4 && levels[current]!=s.anisotropic_filtering) ++current;
@@ -84,6 +88,11 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         break;
     case Page::Screens:
         s.minigame_layout=static_cast<ntr::MinigameLayout>((static_cast<unsigned>(s.minigame_layout)+(direction>0?1:2))%3);
+        break;
+    case Page::Gameplay:
+        if(row==0) s.stay_in_stage_after_star = !s.stay_in_stage_after_star;
+        else if(row==1) s.camera_zoom=static_cast<uint8_t>((s.camera_zoom+(direction>0?1:3))%4);
+        else s.always_run=!s.always_run;
         break;
     case Page::Position:
         if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000-s.minimap_scale));
@@ -109,10 +118,12 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
     case Page::Visual:
         if (i==0) std::snprintf(out,size,"2D SCALING %s",s.upscale_2d?"CRISP":"SMOOTH");
         if (i==1) std::snprintf(out,size,"MINIMAP %s",s.minimap?on:off);
-        if (i==2) std::snprintf(out,size,"MAP ROTATION %s",s.minimap_rotate_with_player?"FOLLOW":"UPRIGHT");
+        if (i==2) std::snprintf(out,size,"MAP ROTATION %s",s.minimap_rotate_with_player?"CAMERA":"UPRIGHT");
         break;
     case Page::Graphics:
         if(i==1) {std::snprintf(out,size,"RENDERER %s",s.renderer==ntr::VideoRenderer::OpenGLSoftware?"OPENGL CPU":"D3D11");break;}
+        if(i==2) { static const char *names[]={"MINIMUM","LOW","MEDIUM","ENTIRE MAP"};
+            std::snprintf(out,size,"RENDER DISTANCE %s",names[static_cast<unsigned>(s.render_distance)]); break; }
         if(i==0) std::snprintf(out,size,"ANISOTROPIC %s",s.anisotropic_filtering==0?"OFF":
             s.anisotropic_filtering==2?"2X":s.anisotropic_filtering==4?"4X":
             s.anisotropic_filtering==8?"8X":"16X");
@@ -129,6 +140,10 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         std::snprintf(out,size,"%s",i==0?"SAVE CURRENT FILE":"BACK");break;
     case Page::Screens:
         std::snprintf(out,size,"MINIGAME VIEW %s",ntr::screen_layout_name(s.minigame_layout));break;
+    case Page::Gameplay:
+        if(i==0) std::snprintf(out,size,"%s",s.stay_in_stage_after_star?"STAY IN STAGE":"RETURN TO CASTLE");
+        else if(i==1) std::snprintf(out,size,"CAMERA ZOOM %s",s.camera_zoom==1?"0.75X":s.camera_zoom==2?"0.5X":s.camera_zoom==3?"0.25X":"ORIGINAL");
+        else std::snprintf(out,size,"ALWAYS RUN %s",s.always_run?on:off);break;
     }
 }
 
@@ -136,7 +151,7 @@ static unsigned glyph(char c) {
     if (c>='0' && c<='9') return c-'0';
     if (c>='A' && c<='Z') return c-'A'+0x0a;
     if (c>='a' && c<='z') return c-'a'+0x2d;
-    return c=='%' ? 0x4f : c=='-' ? 0x47 : c==':' ? 0x4a : c=='/' ? 0x4e : 0x4d;
+    return c=='.' ? 0x50 : c=='%' ? 0x4f : c=='-' ? 0x47 : c==':' ? 0x4a : c=='/' ? 0x4e : 0x4d;
 }
 void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
           uint16_t *text, uint16_t *panels, const unsigned char *font,
@@ -158,6 +173,9 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     auto *percent_tiles=chars+0x4000+0x4f*64;
     for(unsigned y=0;y<16;++y) for(unsigned x=0;x<8;++x)
         if(percent[y]&(0x80>>x)) percent_tiles[y*4+x/2]|=ink<<((x&1)*4);
+    auto *dot_tiles=chars+0x4000+0x50*64;
+    for(unsigned y=12;y<14;++y) for(unsigned x=3;x<5;++x)
+        dot_tiles[y*4+x/2]|=ink<<((x&1)*4);
     std::fill(text,text+1024,0x2ff);
     std::fill(panels,panels+1024,blank_panel);
     auto line = [text](const char *label, unsigned y) {
@@ -171,7 +189,8 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     };
     char label[64];
     if (m.page==Page::Options) line("OPTIONS",1);
-    else { std::snprintf(label,sizeof(label),"PC SETTINGS %u/7",static_cast<unsigned>(m.page)); line(label,1); }
+    else { std::snprintf(label,sizeof(label),"PC SETTINGS %u/8",static_cast<unsigned>(m.page)); line(label,1); }
+    if(m.page==Page::Gameplay) line("R3 CYCLES CAMERA ZOOM",18);
     if(m.page==Page::Screens) line("TOP 75%  BOTTOM 25%",15);
     if(m.page==Page::Graphics && ntr::video_renderer_notice()[0])line(ntr::video_renderer_notice(),15);
     for (unsigned i=0;i<m.rows();++i) {

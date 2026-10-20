@@ -4,7 +4,7 @@
 #include <cstddef>
 
 namespace pc_pause {
-enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens };
+enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens, Gameplay };
 enum class Action { None, Changed, GameOptions, BackPause, SaveProgress };
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks);
 struct Menu {

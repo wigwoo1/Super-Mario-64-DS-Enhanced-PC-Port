@@ -9,6 +9,9 @@
  */
 #include "types.h"
 #include "Sound.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "ntr/audio.h"
+#endif
 #include "SoundPlayerRecord.h"
 #include "NestedHeapIterator.h"
 #include "HeapAllocator.h"
@@ -2016,11 +2019,17 @@ extern "C" int func_0204fa3c(int owner, void *b, u32 c)
 // @symbol func_0204fa2c
 extern "C" int func_0204fa2c(int *p, int fade)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()){ntr::audio_stop(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(p)),fade);return 1;}
+#endif
     return ((int(*)(u8 *thiz, int fade))func_0204f5a0)((u8 *)*p, fade);
 }
 
 // @symbol func_0204f9c4
 extern "C" void func_0204f9c4(int idx, int arg1) {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()){ntr::audio_stop_player(idx,arg1);return;}
+#endif
     int i;
     struct S *p = ((struct S*)data_020a50ec);
     u8 *thiz = &((u8*)data_020a4d6c)[idx * 0x1c];
@@ -2033,6 +2042,9 @@ extern "C" void func_0204f9c4(int idx, int arg1) {
 
 // @symbol func_0204f958
 extern "C" void func_0204f958(int idx, int val) {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()){ntr::audio_pause_player(idx,val!=0);return;}
+#endif
     u8 *cur;
     u8 *next;
     char *iter = &((char*)data_020a4d6c)[idx * 0x1c];
@@ -2074,6 +2086,9 @@ extern "C" void func_0204f914(void **p, unsigned char v) {
 
 // @symbol func_0204f8cc
 extern "C" void func_0204f8cc(char **c, int a, int b) {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()){ntr::audio_volume(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(c)),a,b);return;}
+#endif
     char *p = *c;
     if (p == 0) return;
     if (*(unsigned char *)(p + 0x2c) == 2) return;

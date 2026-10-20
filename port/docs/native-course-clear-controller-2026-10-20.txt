@@ -1,0 +1,66 @@
+Native course-clear controller navigation - 2026-10-20
+VERIFIED for the single-player paths below. Overall port remains incomplete.
+Executable SHA256:
+72fcf592e38c2bebffdaec61c6571c0c1603958f9da9a8d7a3cd2bcc54eb0b98
+
+Gap: retail LC_Update reads touch and Start/Select, while the existing PC pause
+adapter only runs inside PS_Update. Course-clear therefore ignored Xbox A and
+D-pad. Baseline5200tick replay collected a native Power Star and reached the
+castle clear overlay, but remained there after D-pad/A with control disabled.
+
+Fix: port/hal/course_clear_input.h/.cpp and a host-only scoped LC_Update hook.
+D-pad Up/Down wraps the3 original choices; A and original Start/Select confirm.
+B chooses the original Continue action without saving. Real touch has priority.
+The adapter updates native menu selection/highlight, then temporarily supplies
+the original stride4 touch record for controller confirmation. It masks scoped
+AB/Start/Select/D-pad edges so retail rejection beeps or stale released-touch
+coordinates cannot override selection. Both raw key word and all four touch
+lanes are restored on every return. It does not call save/transition directly.
+Held opening A/B drains before confirmation. Original tally, save text/timing,
+SaveCurrentFile, Continue, scene fade, actor teardown and title return remain
+the original handlers. No matched src/ source or save-format changes.
+Optional SM64DS_PC_COURSE_CLEAR_TRACE records phase/selection/input transitions.
+
+Build/automated acceptance: native Release and all test targets compile;
+55/55CTest PASS54.04s. smoke_pause_settings now checks opening/held A/B, mapping
+swap, Up/Down wrap/repeat, original Start, invalid selection and touch priority.
+
+Four exact-executable native replays PASS, all exit0 and audio shutdown errors0:
+1.Save & Continue5200ticks: D-pad selects1/0/1/0; Xbox A confirms0 at4100.
+  Original phase3->4->5->6->0 commits slot0 exactly once; castle Yoshi returns
+  St_Wait_Main, control enabled. A/B/C are not cross-written.
+2.B Continue5200ticks: D-pad wraps2/0/1/2/1; Xbox B selects2 at4100.
+  Native phase3->6->0 skips save. Slot0 byte-identical to seed, no save commit;
+  castle Yoshi idle with control restored.
+3.Touch priority5200ticks: D-pad selects1; B and real test touch on choice0 at
+  4100. Real touch wins; controller injection stays off, native Save & Continue
+  commits once and restores control.
+4.Original route Save & Quit8400ticks: original title/File A, castle door,
+  painting and mission1 entry -> Battlefield, native Star fixture at5000,
+  input-only approach/normal collision, celebration, original castle clear
+  screen. D-pad2/0/1 and A7200 confirm1; one save commit, Stage actors/player
+  tear down and original title root0/sub0 with4 controls returns. The cached
+  sublevel byte remains2 after teardown; UI/actor evidence proves scene return.
+
+Power Star fixture spawns actor178 param1 near Yoshi; collection/credit and
+course exit are native. It does not inject collection, hit, menu or save state.
+These QA seeds already contain that Star: this is also repeat-Star routing,
+not a claim that this milestone tests every new-Star/boss/special-course path.
+The initial original-route diagnostic missed its fixture because the default
+1700 spawn preceded course entry4449. Scheduling5000 corrected the harness;
+that diagnostic is not accepted as a course-clear test.
+
+Private runner/checker: work/run-course-clear-controller-20261020.ps1 and
+work/check-course-clear-controller-20261020.py. Evidence folders have prefix
+work/native-course-clear- and suffix-20261020: save-continue, back,
+touch-priority, original-quit-star-timed. test-config.json stores exact inputs.
+Each case uses new save/seed folders. Seed bytes checked against original QA
+source; slot0 header/CRC valid, no new B/C files; source/user saves and ROM
+untouched. Exact runtime BMP->PNG pixel comparisons retained as screenshots.
+Full executables, extracted assets, private saves/logs/screenshots stay local.
+
+Remaining: other native minigames, actual Xbox hardware and mixed
+mouse/controller use. Stage Game Options sound/backlight navigation was
+rechecked against the latest build; see native-stage-options-controller-
+2026-10-20.txt.
+Do not claim all touch menus or the whole port complete from this milestone.

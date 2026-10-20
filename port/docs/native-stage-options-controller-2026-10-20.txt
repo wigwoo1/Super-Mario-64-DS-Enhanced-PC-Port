@@ -1,0 +1,47 @@
+Native Stage Game Options controller navigation - 2026-10-20
+
+Original Stage Game Options now accepts D-pad Up/Down to focus Sound and
+Backlight. A advances the focused option; Left/Right change the Sound mode.
+The original native option handlers still apply the changes. B returns to the
+pause menu. Real touch input takes priority. When touch and pad input arrive
+together, the touch lanes stay live while the controller key record is masked.
+Controller-generated touch and raw button changes are scoped to one PS_Update
+call and restored immediately.
+
+Implementation:
+- hal/pc_pause_settings.cpp tracks controller focus and queues native actions.
+- hal/stage_options_input.cpp scopes synthetic touch lanes and masks the
+  controller key record while the original PS_Update handler runs.
+- tools/boot_closure.py adds the frame scope to the PC-generated dScStage_c
+  translation unit. No matched decomp source was changed.
+
+Verification:
+- Release native executable and all default test targets built.
+- 55/55 CTest cases passed after the touch-priority fix.
+- Isolated native original-title -> File A -> course -> pause -> Stage Game
+  Options replay exited 0. Trace confirmed the three native sound modes,
+  focus movement from Sound to Backlight, Backlight On->Off, and B returning to
+  the pause menu without triggering the OK control. The final replay checker
+  passed with14 screenshots. See work/native-stage-options-controller-final-
+  20261020.
+- The replay used a private copy of the development QA save. User saves and the
+  ROM were not involved. This milestone does not certify physical controller
+  hardware or unrelated touch menus.
+
+Executable SHA256: 7D2114C78403C97DA9A1E618AF76C5F414D127A2E428DDBBC40A620F7B01C0C2
+
+Latest source recheck 2026-10-20:
+- Rebuilt native Release executable from the current source; all 56/56 CTest
+  cases passed.
+- Repeated the isolated title -> File A -> course -> pause -> Game Options
+  controller replay. The trace verified sound modes 0 -> 1 -> 2, D-pad focus
+  movement, Backlight On -> Off, and B returning to the parent pause menu.
+- Replay checker passed with 14 screenshots. Evidence:
+  work/native-stage-options-controller-resume-20261020.
+- Current executable SHA256:
+  71F19D948E2ABCBDEDDEFCBBF280F999156F6E0A1A163150D60E3442DA4C7E8B.
+- The private checker now pins this latest verified executable hash.
+
+Remaining: verify on the user's physical controller, audit other menus, and
+implement the separate roadmap options (including Entire Map object/enemy
+visibility) in later milestones.

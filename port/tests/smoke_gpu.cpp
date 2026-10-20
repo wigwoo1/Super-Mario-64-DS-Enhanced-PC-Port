@@ -51,6 +51,25 @@ int main(int argc,char **argv) {
     for(auto &row:base.px) for(auto &p:row) p=0xff101820;
     ntr::VideoSettings s;s.width=256;s.height=192;s.upscale_2d=true;s.minimap=false;
     std::vector<uint32_t> pixels;unsigned width=0,height=0;
+    {
+        std::vector<uint32_t> cached;unsigned cw=0,ch=0;
+        CHECK(!ntr::gpu_readback_gameplay(cached,cw,ch));
+        static ntr::Framebuffer map;for(auto &row:map.px)for(auto &pixel:row)pixel=0xffff0000;
+        auto preview=s;preview.width=512;preview.height=384;preview.minimap=true;
+        preview.minimap_x=preview.minimap_y=250;preview.minimap_scale=500;
+        CHECK(ntr::gpu_render(base,&map.px[0][0],preview,false,nullptr,nullptr,nullptr,true,true));
+        CHECK(ntr::gpu_readback(pixels,width,height));
+        CHECK(width==512 && height==384 && pixels[192*512+256]==0xffff0000);
+        CHECK(ntr::gpu_readback_gameplay(cached,cw,ch));
+        CHECK(cw==512 && ch==384 && cached[192*512+256]==0xff101820);
+        static ntr::Framebuffer pause;pause=base;for(auto &row:pause.px)for(auto &pixel:row)pixel=0xff777777;
+        CHECK(ntr::gpu_render(pause,nullptr,s,false));
+        CHECK(ntr::gpu_readback_gameplay(cached,cw,ch));
+        CHECK(cw==512 && ch==384 && cached[0]==0xff101820); // Pause did not replace gameplay cache.
+        CHECK(ntr::gpu_render(base,nullptr,s,false,nullptr,nullptr,nullptr,true,true));
+        CHECK(ntr::gpu_readback_gameplay(cached,cw,ch));
+        CHECK(cw==256 && ch==192 && cached.back()==0xff101820); // Resize replaces cache correctly.
+    }
     setup();triangle();
     CHECK(ntr::gpu_render(base,nullptr,s,true));CHECK(ntr::gpu_readback(pixels,width,height));
     CHECK(width==256 && height==192 && ntr::gpu_triangle_count()==1);

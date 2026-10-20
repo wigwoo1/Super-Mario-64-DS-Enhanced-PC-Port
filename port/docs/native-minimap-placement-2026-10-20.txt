@@ -1,0 +1,84 @@
+MINIMAP DIRECT PLACEMENT - 2026-10-20
+Status: VERIFIED in bounded native automated replays; overall port incomplete.
+
+How to use
+Pause -> Options -> PC Settings -> use the shoulder buttons to reach Position.
+Click and hold the outlined map to drag it over the frozen gameplay preview.
+Release to save. The initial grab point is preserved and the entire map stays
+inside the screen. D-pad up/down selects X/Y; left/right adjusts the position.
+B returns to Options. Leaving mid-drag saves the current location. Resume to
+see normal gameplay with the new placement; opening Position again previews it.
+
+Implementation
+- Cache the clean gameplay render target before the minimap is composited.
+  D3D11 copies GPU-to-GPU; OpenGL CPU uses its render texture. Read back once
+  on entering pause, not every gameplay frame. Cache the original/filtered
+  bottom-screen maps separately so hide-touch-target choice remains usable.
+- Position shows the last gameplay image and map, with current size, opacity,
+  placement and selected-axis captions. The map's orientation is from that
+  captured gameplay frame; changing rotation while paused takes effect after
+  resuming. Other settings pages retain their native menus.
+- Editor pointer coordinates share the saved0..1000 layout space. Preserve
+  grab offset, bound the whole map and require a new press inside the map.
+  Editor input is consumed instead of being forwarded to DS touch menus;
+  leaving while held suppresses physical touch forwarding until release.
+- Drag release and page exit persist placement. A failed write is reported
+  as SAVE FAILED. D-pad changes use the existing settings writer. The preview
+  follows existing mouse/window scaling and supports native render sizes4K.
+- CPU reference fallback caches its clean256x192 frame. Full-game acceptance
+  here covers native D3D11 and OpenGL CPU; not every fallback/platform scenario.
+  If no gameplay snapshot exists, Position retains its numeric controls.
+
+Build and tests
+- Native Release build succeeds.55/55CTest PASS,64.63sec. Drag unit checks
+  cover offset, press outside, edge exclusion, release/reset, minimum/maximum
+  sizes and off-screen pointer coordinates. GPU tests verify clean cache excludes
+  the old minimap, survives pause draws and handles resize on D3D11 and Mesa.
+- Initial extended GPU fixture overflowed the test executable's stack before
+  main (Windows c00000fd); move its additional large framebuffers to static
+  storage. Final renderer/video3/3 tests PASS,7.78sec. No game crash in this work.
+- Isolated native1280x720,60FPS, rotated map,size260,opacity190:
+  6800ticks exit0; drag710,35 ->214,335 ->edge740,740. Outside press moving into
+  map does nothing. Next drag70,70; D-pad changes X and Y to80,80. Resume,
+  reopen Position and a3900tick app restart preserve80,80; both exit0.
+- Native3840x2160,120FPS, upright map,size500,opacity128:
+  6800ticks exit0; first134,275, edge500,500; outside press does nothing; next
+  drag0,0, D-pad10,10. On reopening, leave while held: current221,76 saves
+  instead of the pointer's future destination. Resume and3900tick restart
+  preserve221,76. Preview captures are genuine3840x2160 pixels.
+- Mesa llvmpipe640x480,size100,opacity255, rotated map:
+  4400ticks exit0; native Position preview, drag267,375 and edge900,900 pass.
+  The runtime logs verified llvmpipe and the preview's640x480 dimensions.
+- Private strict checker verifies exact executable hashes, pages, positions,
+  border pixels, original saves byte-for-byte, release persistence, outside
+  press, native D-pad, pause/reentry, mid-drag exit and app-restart persistence.
+-26captures archived as lossless PNGs; decoded pixel hashes verified before
+  removing redundant BMPs. One BMP alias retains the earlier chat image link;
+  over389MB of redundant capture storage removed. Screens shown in the chat.
+
+Exact tested executable SHA256
+6a7a5d007c0080d3431b70ba31e9250a1fe5d75e621ee7eea18d1d601e53c2fe
+
+Private workspace work/ evidence (never publish screenshots/logs/saves)
+minimap-drag-ctest-20261020.log
+minimap-drag-renderer-tests-final-20261020.log
+check-minimap-drag-20261020.py
+native-minimap-drag-20261020
+native-minimap-drag-4k-20261020
+native-minimap-drag-opengl-20261020-v2
+
+Installation
+This bounded-verified development executable/map is installed behind the existing
+F: Play Mario64DS launcher. The previous scene-clock-camera build is backed up
+in native-checkpoint-2026-10-20-minimap-placement. Installed SHA256 matches;
+ROM, saves and settings are preserved. The F: Mesa DLL hashes match the tested
+runtime. Authoritative source remains in the C: development workspace; this
+installation does not synchronize older full F: source trees. No public binary
+release or ROM-free kit refresh is claimed; embedded game stays local.
+
+Limits and remaining scope
+The automated pointer segments use the production drag handler; physical mouse,
+Xbox and mixed DPI/window-focus behavior still need user hardware acceptance.
+Preview is frozen and Stage-specific; Wanted/Rec Room numeric placement remains.
+Remaining shared touch/pause menu navigation, free camera, enemy/object Entire
+Map visibility and all remaining requested port features remain in the roadmap.

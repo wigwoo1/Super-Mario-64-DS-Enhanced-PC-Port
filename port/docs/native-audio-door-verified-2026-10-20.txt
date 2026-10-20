@@ -1,0 +1,58 @@
+Native castle-door movement fix - 2026-10-20
+Status VERIFIED for the tested original door/course route, with and without audio.
+Audio remains opt-in diagnostic work; game-wide audio fidelity is not accepted.
+
+Root cause
+The native source transformer skipped the thiscall member definition annotated
+_ZN6Player19func_ov002_020c0434Ev, but kept searching later in the aggregate
+Player.cpp. It mistook a call inside func_ov002_020c1ad8 for a definition and
+inserted its linker alias inside that unrelated wall helper. The resulting
+literal-name movement predicate called the two-argument wall helper with one
+argument. Its garbage angle depended on register/memory layout. Audio exposed
+the failure, but a separate silent replay also reproduced it. It was not an
+audio mixer or collision-physics defect.
+
+Before the fix the linker map put the predicate and wall helper at the same
+address. Transition stacks showed Walk -> OnWall inside that incorrect call,
+then a false positive causing StomachSlide/ButtSlide. After the fix the predicate
+has a typed cdecl-to-thiscall bridge in game_api_bridge.cpp. The map confirms
+separate implementations. No player physics, route coordinates, door eligibility
+or normal save logic were changed.
+
+Changes
+- boot_closure.py stops each annotation search at the next annotation, requires
+  the definition's opening brace immediately after its signature, and stops
+  when it finds a non-SDK class member needing a typed bridge.
+- Five focused alias tests pass, including the real aggregate Player.cpp.
+- Optional SM64DS_PC_PLAYER_STATE_TRACE=begin:end logs requested state changes,
+  normalized native callers and stack addresses. These are requests before
+  cleanup/initialization, not assertions that every transition committed.
+
+Verification
+- Explicit native game build passes; 54/54 CTests pass (28.86 seconds).
+- Literal-name PlaySub ABI regression still returns exactly 0 and 1.
+- native-audio-door-fixed-reentry-20261020: 11000 frames, exit0. Original
+  title/File A, actual walking through the Star door (NoControl2430..2481),
+  door waypoint2515, original painting and mission1, body/fragment damage,
+  original Exit Course request6544, castle6795, mission1 reentry7350,
+  restored control7402, final grounded idle at11000. The strict existing
+  course-reentry checker verifies actor cleanup/recreation, fresh cannon
+  firing, painting reload and byte-identical isolated slot/minigame saves.
+- Captured16284160 stereo frames;24355372 nonzero samples; peak32767;
+  913starts,0errors,10999 game audio updates. Device consumed16284768 frames.
+  Streamed WAV samples agree with mixer statistics. Listening quality unverified.
+- native-audio-door-fixed-silent-20261020: same executable,3000frames exit0,
+  door and painting reached, original mission selection visible, unchanged saves.
+- native-audio-door-star-regression-20261020:3300frames exit0, pickup1723,
+  original exit1850, same1-Star credit, save commit, castle control, pause/resume;
+  4920320 audio frames,145starts,0errors,3299updates. Strict verifier passes.
+- Runtime screenshots inspected and shown. Earlier failed diagnostic door runs
+  remain rejected; they are not successful gameplay evidence.
+
+Native EXE SHA256 (private ROM-derived executable):
+a906a8845d8fc36604de5d983fbb09d8fba578b8d002ef2973f9497e1475c2c6
+
+Next bounded milestone: exercise Wanted's entry, pause/retry/return and scene
+audio teardown using the existing replay and isolated saves. Spatial audio,
+low-level sound variants, shared voice priorities and listening checks remain.
+No stable installation or public ROM-free kit promotion is implied by this fix.

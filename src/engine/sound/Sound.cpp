@@ -17,6 +17,9 @@
  */
 #include "types.h"
 #include "Sound.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "ntr/audio.h"
+#endif
 
 extern "C" {
 
@@ -354,14 +357,20 @@ extern "C" int _ZN5Sound17ChangeMusicVolumeEj5Fix12IiE(unsigned int a, int b)
 #if defined(SM64DS_PLATFORM_PC)
     // No sequence is playing while the DS audio driver is disabled. Report
     // the requested transition as complete so gameplay can finish waiting.
-    if (data_0209b480 == 0)
+    if (data_0209b480 == 0 && !ntr::audio_ready())
         data_0209b490 = data_0208e42c << 12;
 #endif
     return data_0209b490 == (data_0208e42c << 12);
 }
 
 // @symbol _ZN5Sound7PlaySubEjjj5Fix12IiEb
+#if defined(SM64DS_PLATFORM_PC)
+// Original exported-name callers read an int. MSVC bool returns only AL;
+// preserve a full 0/1 in EAX for those callers as well as the bool wrapper.
+extern "C" int _ZN5Sound7PlaySubEjjj5Fix12IiEb(unsigned int a, unsigned int b, unsigned int c, int d, int e)
+#else
 extern "C" bool _ZN5Sound7PlaySubEjjj5Fix12IiEb(unsigned int a, unsigned int b, unsigned int c, int d, int e)
+#endif
 {
 #if defined(SM64DS_PLATFORM_PC)
     // PC startup has no DS sequence driver. A requested jingle therefore
@@ -369,7 +378,7 @@ extern "C" bool _ZN5Sound7PlaySubEjjj5Fix12IiEb(unsigned int a, unsigned int b, 
     // latch deadlocks locked-door messages after Lakitu's opening jingle.
     // Keep this fallback scoped to the disabled driver; a future native
     // audio backend must enable it only when it can advance these states.
-    if (data_0209b480 == 0) {
+    if (data_0209b480 == 0 && !ntr::audio_ready()) {
         data_0208e42c = (signed char)b;
         data_0209b490 = (int)b << 12;
         data_0209b494 = d;
@@ -604,6 +613,7 @@ void PlayBank0(u32 id, const Vector3 &pos)
 void Play(unsigned int j1, unsigned int j2, const Vector3 &v)
 {
 #if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()) {ntr::audio_effect(j1,j2,j1==3?data_0208e428:-1);return;}
     // PC startup leaves the sound engine disabled. Match the lower-level
     // playback guard before looking up banks that have not been initialized.
     if (data_0209b480 == 0) return;
@@ -638,6 +648,9 @@ extern "C" void func_0201251c(int a, int b, int c, int d)
 // @symbol Sound_PlayIfNotActive
 extern "C" int Sound_PlayIfNotActive(int a, int b, int c, int d)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready())return ntr::audio_long_effect(a,b,c,b==3?data_0208e428:-1);
+#endif
     char *o = (char *)func_02011934(data_0209b53c, a);
     if (o) {
         *(unsigned char *)(o + 6) = 1;
@@ -687,6 +700,7 @@ namespace Sound {
 int PlayLong(u32 handle, u32 a, u32 b, const Vector3 &pos, s16 e)
 {
 #if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready())return ntr::audio_long_effect(handle,a,b,a==3?data_0208e428:-1);
     if (data_0209b480 == 0) return 0;
 #endif
     if (func_02048a1c((int *)&pos, a, b) == 0)
@@ -756,6 +770,9 @@ namespace Sound {
 // @symbol _ZN5Sound13PlayCharVoiceEjjRK7Vector3
 unsigned int PlayCharVoice(unsigned int a, unsigned int b, const Vector3 &v)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready())return ntr::audio_effect(1,b+data_02075250[a]);
+#endif
     return ((unsigned int (*)(unsigned int, unsigned int, const Vector3 &))Play)(
         1, b + data_02075250[a], v);
 }
@@ -881,6 +898,9 @@ extern "C" void func_02011e94(int *out)
 // @symbol Player_PlaySoundEffect
 extern "C" int Player_PlaySoundEffect(int arg0, int arg1, int arg2)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready())return ntr::audio_effect(arg1,arg2,arg1==3?data_0208e428:-1);
+#endif
     if (data_0209b480 == 0) return 1;
     if (arg1 != 3)
         return func_02051f1c((void *)arg0, arg1, arg2);
@@ -890,6 +910,9 @@ extern "C" int Player_PlaySoundEffect(int arg0, int arg1, int arg2)
 // @symbol func_02011dcc
 extern "C" int func_02011dcc(int *g, int x)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready())return ntr::audio_sequence(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(g)),x)!=0;
+#endif
     int r4 = func_02051fb4(g, x);
     if (r4 != 0 && g == data_0209b4a0) {
         func_02049764();
@@ -1226,6 +1249,21 @@ extern "C" int func_02011654(char *table, char *n)
 // @symbol func_020132d8
 extern "C" void func_020132d8(void)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()) {
+        ntr::audio_tick();
+        func_02012d64();
+        if(data_0208e430>=0) {
+            ApproachLinear(data_0209b49c,data_0209b470<<12,data_0209b494);
+            func_02013524((int)data_0209b4b0,data_0209b49c>>12,0);
+            if(!data_0209b49c || !ntr::audio_active(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(data_0209b4b0)))) {
+                data_0208e430=-1;data_0209b49c=0;data_0209b470=0;
+                func_0204fa2c(data_0209b4b0,0);
+            }
+        }
+        return;
+    }
+#endif
     if (data_0209b480 == 0) return;
     func_02012d64();
     if (data_0208e430 >= 0) {
@@ -1285,6 +1323,9 @@ extern "C" void func_02013524(int a, int b, int c)
     if (data_0209b474 != 0) {
         c = b = 0;
     }
+#if defined(SM64DS_PLATFORM_PC)
+    if(ntr::audio_ready()){ntr::audio_volume(static_cast<uint32_t>(a),b,c);return;}
+#endif
     func_0204f8cc(a, b, c);
 }
 

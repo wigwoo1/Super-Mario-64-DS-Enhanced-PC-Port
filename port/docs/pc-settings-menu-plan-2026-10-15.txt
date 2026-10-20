@@ -1,3 +1,111 @@
+Stage Game Options controller milestone (2026-10-20): D-pad Up/Down focuses
+Sound/Backlight, A advances/toggles and Left/Right changes Sound; B returns.
+The original native option handlers process the controls, real touch retains
+priority, and one-call synthetic touch/key changes are restored.55CTest pass;
+all three sound modes and Backlight On->Off passed the isolated native replay.
+See native-stage-options-controller-2026-10-20.txt. Other games, physical
+controller hardware and mixed pointer acceptance remain open.
+
+Course-clear controller milestone (2026-10-20): D-pad wraps native choices,
+A/Start/Select confirm, B Continue without saving; touch wins. Four native
+replays verify SaveContinue/no-save/touch/SaveQuit, original course-entry/title
+return, save semantics and restored control.55CTest pass. See
+native-course-clear-controller-2026-10-20.txt. Stage original Game Options
+and other minigame menus still need controller acceptance.
+
+Title/options/file dialogs milestone (2026-10-20): verified native controller
+Off/On, all sound modes, Scores, erase/overwrite cancellation and Back chain.
+Fixed PC ARM7 backlight wait, retained focus during widget animations, initialized
+modal dialog focus.55CTest,11Python tests and3native replays pass; no adventure
+progress writes. Read native-title-options-controller-2026-10-20.txt. Remaining
+stage course-clear/other-game menus and real Xbox/mixed-pointer acceptance.
+
+Rec Room acceptance (2026-10-20): all four character tabs and both pages
+pass controller replays in all3 screen layouts, plus B back to title.
+D-pad/A page arrows and L/R pass. Same installedD58A executable; no game code
+changed. See native-recroom-controller-2026-10-20.txt. Remaining title submenus,
+stage course-clear and other minigame menus still need acceptance.
+
+Controller menu milestone (2026-10-20): shared Rec Room/minigame bridge built.
+Wanted pause, original options, score/save continuation, Retry and Quit pass
+two isolated replays;55CTest and9transform tests pass. Other games, Rec Room
+categories/pages and stage course-clear menus still need acceptance. Read
+native-touch-menu-controller-2026-10-20.txt for precise scope.
+
+Enemy/object visibility request (2026-10-20): PLANNED, not implemented.
+Extend the saved render-distance settings (Minimum / Low / Medium / Entire Map)
+to enemies, pickups, scenery and other objects, not just level geometry.
+Entire Map should show every currently loaded, relevant actor at any distance
+when it is in the camera view. Remove distance-only model/shadow clipping and
+check spawn/despawn visibility gates where they prevent distant display.
+Preserve mission/story visibility, collected/dead actors and real wall occlusion.
+Keep AI, collision and gameplay activation independent from visibility; do not
+silently activate every distant enemy just to draw it. Streamed/unloaded areas
+need an explicit loading strategy, not a claim that clipping alone loads them.
+Test far-away enemies, moving objects, pickups, shadows, course reentry, all
+distance choices, saved settings, and performance at 4K. Show distant-view shots.
+
+Implementation progress (2026-10-21): four choices are saved in the native
+Graphics page. PC dActor_c::BeforeRender rechecks the camera frustum with a
+longer depth limit; BeforeBehavior and the area/story gate are unchanged. The
+distance and shadow bits are temporarily cleared only around the synchronous
+actor Render call, then restored by AfterRender. Low/Medium use 2x/4x of the
+native clip range; Entire Map uses the expanded camera depth limit. No unloaded
+actors are spawned or activated. The native executable builds, and the settings
+and distance policy tests pass. Paired isolated replays at Minimum and Entire
+Map both exit0; their first7000 captured game-state rows match exactly, and the
+Entire Map trace records accepted distant Goombas, Bob-ombs, coins, and doors;
+their Render callbacks report success. However, the captured frames at ticks
+6500 and10500 are pixel-identical between settings. Thus visible improvement is
+not yet verified; possible later render/occlusion gates remain. Do not install or
+promote this build. Continue with stronger visual instrumentation or a known
+open-view actor fixture, then verify visible pixels and shadows before acceptance.
+
+Timing correction (2026-10-20): prior scheduler test covered raw VBlank speed,
+not original scene-update cadence. Restore original IRQ interval and main-loop
+wake: Stage delta2 =30 logic updates/sec; interval1 =60; interval3 =20, while
+input/IRQs remain60Hz. 60/120/240 are presentation targets; interpolation pending.
+Original IRQ + wait acceptance now covers all nine FPS/interval combinations.
+Gameplay Y camera mode / X sprint (Always Run off) retain menu X/Y semantics.
+R3 latches across intervening VBlanks.55CTest,2camera transform tests and three
+4300tick red-cap Goomba replays pass: every state row matches at60/120/240FPS.
+Mario disguise, Y inspection/analog exit, R3 cycles and move/stop pass. Separate
+X digital sprint and original-menu/door/painting-entry replays pass. See
+native-scene-clock-camera-2026-10-20.txt for controlled-fixture scope and limits.
+
+Controls/camera follow-up (2026-10-20): IMPLEMENTED with bounded automated
+acceptance. Gameplay Xbox A jumps / B attacks; menu A confirms / B backs out.
+Full analog travel runs without holding Run; partial travel controls walking
+speed. ALWAYS RUN on PC Settings page8 also enables digital running and persists.
+Camera distance Original/0.75x/0.5x/0.25x is saved and cycled with R3. R3 exits
+the original inspection view (now Xbox Y); analog movement also cancels that view. Normal
+camera tracking returns when door no-control/recenter finishes. Rotating map
+mode now follows the camera view rather than character heading; upright remains.
+Physical VBlank pacing no longer drifts with presentation rate;120 raw ticks
+take about1.99seconds at each60/120/240target. Scene logic follows its original
+interval (Stage30Hz). Higher display rates repeat states; interpolation pending.
+
+Minimap direct placement (2026-10-20): IMPLEMENTED; bounded automated acceptance.
+Native Position settings show a clean frozen gameplay preview. Drag the map
+with preserved grab offset and whole-map bounds, release to save, or retain
+D-pad X/Y adjustment. Enter/leave Position, normal resume, mid-drag page exit
+and app restart pass with unchanged saves.55CTest; native720p/4K D3D11 and
+OpenGL CPU replays cover sizes100/260/500, opacity128/190/255, camera/upright,
+outside clicks and visible border pixels. Physical mouse/Xbox and mixed DPI
+acceptance remain open. Preview uses the captured gameplay map orientation;
+rotation changes made while paused appear after resuming. Numeric controls
+remain if no gameplay snapshot exists. See native-minimap-placement-2026-10-20.txt.
+
+All touch/pause menus on D-pad/buttons (requested2026-10-20): INCOMPLETE.
+Title/save and custom PC Settings have navigation. Audit and implement remaining
+Rec Room/shared minigame pause/options/results and course-clear controls. Use
+A confirm / B back, preserve touch/mouse, show selection, and avoid duplicate
+actions. Verify each shared flow; Wanted alone cannot establish all-menu support.
+
+Earlier camera rotation request remains PLANNED; distance zoom does not implement
+free rotation. Physical Xbox operation and broad all-course acceptance remain
+unverified. These are local diagnostic builds, not a stable-install promotion.
+
 Camera controls request (2026-10-17): PLANNED, not implemented.
 Add a saved Camera Mode choice to the native pause PC Settings menu:
 - Preset Angles: right-stick left/right turns the camera by the same fixed
@@ -269,3 +377,33 @@ shared dual-screen tests. Runtime absence falls back to D3D11 with a visible
 message.52/52 tests,3audits,real Wanted switching/restart and Yoshi4K pass;
 installed F: build also runs OpenGL successfully. CPU4K performance is slow.
 See native-opengl-cpu-checkpoint-2026-10-16.txt for full evidence and limits.
+
+Stay in the stage after Star collection (requested 2026-10-20): PLANNED.
+Add a native pause/settings option, "After collecting a Star": STAY IN STAGE
+(requested behavior) / RETURN TO CASTLE (original behavior). Persist the choice.
+After an ordinary course Star, keep the celebration and save/credit handling,
+then restore normal control in the current course without a castle transition.
+Do not reload the course just to simulate staying; retain its current actors,
+coins and opened mechanisms. Check the original mission state before offering
+another Star; staying must not duplicate rewards or unlock an impossible mission.
+Keep explicit exits, death, Game Over and scripted progression/boss transitions
+working. Handle course-specific exceptions deliberately and document them.
+Acceptance: first and repeat Star pickups, unchanged duplicate credit, live and
+reloaded saves, music/celebration completion, restored control/camera/HUD,
+collecting another available Star, manual course exit, and both setting values.
+Show screenshots for runtime checks. Implement after the current audio work;
+the current Star audio regression retains the original return-to-castle flow.
+
+Original / Remastered music (requested 2026-10-20): PLANNED.
+Add a saved "Music" selection to the native settings menu: ORIGINAL / REMASTERED.
+Original plays the game's local SDAT music. Remastered uses replacement MP3s
+the user will provide later, with an explicit mapping from each original music
+sequence ID to its replacement file. Do not generate or obtain replacement music
+in advance. Missing/invalid replacements fall back to the original track.
+Preserve gameplay music selection, jingles, volume/fades, pause/resume, stop and
+completion semantics; sound effects and character voices remain independent.
+Record loop points/intro behavior per replacement so looping music is continuous
+and one-shot jingles can finish. Choose and document MP3 decoding/distribution
+after the original audio integration is accepted. Keep replacement files local
+unless their distribution is explicitly authorized. Test both modes, persistence,
+missing/corrupt files, switching tracks/modes, loops, jingles and scene changes.

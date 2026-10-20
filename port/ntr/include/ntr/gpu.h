@@ -12,11 +12,13 @@ uint8_t gpu_anisotropic_filtering();
 bool gpu_render(const Framebuffer &base, const uint32_t *minimap,
                 const VideoSettings &settings, bool geometry, const uint32_t *foreground = nullptr,
                 const DualScreenLayout *screens = nullptr, const Framebuffer *sub = nullptr,
-                bool engine_a_on_top = true);
+                bool engine_a_on_top = true, bool cache_gameplay = false);
 // Screen-authored menus use their original full-frame projection.
 void gpu_set_menu_scene(bool active);
 bool gpu_present(unsigned width, unsigned height, bool preserve_aspect = false);
 bool gpu_readback(std::vector<uint32_t> &pixels, unsigned &width, unsigned &height);
+// Last gameplay frame before the minimap was composited; read only on editor entry.
+bool gpu_readback_gameplay(std::vector<uint32_t> &pixels, unsigned &width, unsigned &height);
 const char *gpu_adapter();
 unsigned gpu_triangle_count();
 struct GpuFrameStats {

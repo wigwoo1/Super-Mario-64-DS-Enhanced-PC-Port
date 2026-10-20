@@ -79,7 +79,9 @@ def add_free_function_aliases(text: str) -> tuple[str, int]:
         if not name:
             return None
         pattern = re.compile(r"\b" + re.escape(name) + r"\s*\(")
-        for occurrence in pattern.finditer(masked, annotation.end()):
+        next_annotation = SYMBOL_ANNOTATION.search(text, annotation.end())
+        section_end = next_annotation.start() if next_annotation else len(masked)
+        for occurrence in pattern.finditer(masked, annotation.end(), section_end):
             opening = masked.find("(", occurrence.start(), occurrence.end())
             depth = 0
             closing = None
@@ -93,10 +95,12 @@ def add_free_function_aliases(text: str) -> tuple[str, int]:
                         break
             if closing is None:
                 continue
-            brace = masked.find("{", closing + 1)
-            semicolon = masked.find(";", closing + 1)
-            if brace < 0 or (semicolon >= 0 and semicolon < brace):
+            # A call inside an if condition is not a definition. Searching for
+            # any later brace could attach its alias to the caller instead.
+            body = re.match(r"\s*(?:const\s*)?\{", masked[closing + 1:section_end])
+            if not body:
                 continue
+            brace = closing + 1 + body.end() - 1
             prior_delimiters = [masked.rfind(";", 0, occurrence.start()),
                                 masked.rfind("{", 0, occurrence.start()),
                                 masked.rfind("}", 0, occurrence.start())]
@@ -109,7 +113,7 @@ def add_free_function_aliases(text: str) -> tuple[str, int]:
             # still require a thiscall bridge; never infer them as free code.
             sdk_scopes = {"G2", "G2S", "G2x", "GX", "GXS", "Sound", "CP15", "Event", "IRQ"}
             if qualified_scope and not qualified_oam and qualified_scope.group(1) not in sdk_scopes:
-                continue
+                return None
             namespace_alias = name.startswith("func_") and not re.search(
                 r"[A-Za-z_][A-Za-z0-9_]*::\s*$", prefix)
             for namespace in ("G2", "G2S", "G2x", "GX", "GXS", "Sound", "CP15", "Event", "IRQ"):
@@ -421,18 +425,21 @@ def main() -> int:
                     import native_save_hooks
                     transformed=native_save_hooks.transform(transformed)
                     rewrites+=2
-                    transformed = ('extern "C" int pc_pause_settings_update();\n'
+                    transformed = ('#include "hal/course_clear_input.h"\n'
+                        '#include "hal/stage_options_input.h"\n'
+                        'extern "C" int pc_pause_settings_update();\n'
                         'extern "C" int pc_pause_settings_render();\n'
                         'extern "C" void pc_pause_settings_reset();\n' + transformed)
                     for signature, statement in (
-                        ('void dScStage_c::PS_Update()', 'if (pc_pause_settings_update()) return;'),
+                        ('void dScStage_c::LC_Update()', 'pc_course_clear::Frame pc_controller_frame;'),
+                        ('void dScStage_c::PS_Update()', 'if (pc_pause_settings_update()) return; pc_stage_options::Frame pc_stage_options_frame;'),
                         ('void dScStage_c::PS_Render()', 'if (pc_pause_settings_render()) return;'),
                         ('void dScStage_c::PS_Cleanup()', 'pc_pause_settings_reset();')):
                         pattern = re.escape(signature) + r'\s*\{'
                         transformed, count = re.subn(pattern, lambda m: m[0]+'\n    '+statement,
                                                      transformed,count=1)
                         if count != 1: raise ValueError('Native pause hook changed: '+signature)
-                    rewrites += 3
+                    rewrites += 4
                 if path.name == 'IsButtonInputValid.c':
                     old = 'if (val & 0xc)'
                     if transformed.count(old) != 1: raise ValueError('Pause confirm hook changed')
@@ -475,7 +482,7 @@ def main() -> int:
                         raise ValueError('Minimap icon orientation hook changed')
                     render = render.replace(anchor, anchor +
                         '\n        const u16 pcDisplayAngle = ntr::video_minimap_angle(\n'
-                        '            (unsigned short)player->unk8E);')
+                        '            data_0209f318 ? (unsigned short)data_0209f318->f17c : 0);')
                     render = render.replace('this->mAngle', 'pcDisplayAngle')
                     behavior = transformed[behavior_start:behavior_end]
                     anchor = 'player = (Obj *)data_0209f394[data_0209f250];'
@@ -483,7 +490,7 @@ def main() -> int:
                         raise ValueError('Minimap projection orientation hook changed')
                     behavior = behavior.replace(anchor, anchor +
                         '\n    const u16 pcDisplayAngle = ntr::video_minimap_angle(\n'
-                        '        (unsigned short)data_0209f394[data_0209f250]->unk8E);')
+                        '        data_0209f318 ? (unsigned short)data_0209f318->f17c : 0);')
                     internal, projection = behavior.split('L4d8:\n')
                     projection = projection.replace('this->mAngle', 'pcDisplayAngle')
                     projection = projection.replace(', mAngle);', ', pcDisplayAngle);')

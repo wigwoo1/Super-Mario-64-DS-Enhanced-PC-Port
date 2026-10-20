@@ -11,35 +11,27 @@ game assets, personal saves, or proprietary compiler is included here.
 
 ## Current state
 
-- Native original title/file menus, course entry and selected gameplay actors.
-- Native rendering with resolution settings up to 3840x2160, controller input,
-  a minimap, and PC settings work already present in the source.
-- Wanted minigame and pause/settings work; the remaining game is incomplete.
-- Current source fixes Yoshi's false collision hits and verifies native Buddy
-  dialogue, cannon-shutter opening, camera return and restored controls.
-  Repeat conversations and the open cannon flag also survive the original
-  Save/Quit flow and a fresh-process reload.
-  Current source also integrates the first Battlefield cannon: Yoshi can enter,
-  aim horizontally/vertically, fire along the chosen direction and regain control.
-  Two consecutive rides and a third after the original course exit/re-entry
-  have also been checked.
-  A second Battlefield cannon has since passed entry, aiming, firing and landing.
-  Its approach exposed a first Mario-cap intro crash, now repaired in the current
-  source. An original mission-1 water-bomb encounter now verifies cannon launches,
-  repeated drops, bouncing, body/fragment damage and safe recovery. Other placements
-  remain unverified. The native sound emitter now passes creation, callback and
-  cleanup checks during a repeat Power Star pickup. Its seven-row data table
-  is also checked against the user's ROM. Audible playback remains incomplete;
-  the PC sound API currently completes requests silently.
-  An original mission-1 exit/re-entry replay also verifies removal of active
-  water-bomb actors, painting reload, fresh cannon/dropper actors and renewed firing.
-  The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
-  cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.
-  The later `dev-2026-10-20-native-refresh-verified` kit includes the cannon and
-  water-bomb work but predates the sound table fix now in source. See
-  `port/docs/native-sound-actor-verified-2026-10-20.txt` for that fix's scope.
-- Browser Download Play, complete multiplayer, and the requested AI texture
-  packs remain development plans. See the detailed plans in `port/docs/`.
+- Native original title/file flow, selected courses and actors, Power Star
+  rewards, course-clear behavior, Wanted, and portions of the Rec Room work.
+- Controller navigation is verified for several original title, file, pause,
+  Game Options, course-clear and minigame menus. Physical Xbox hardware and all
+  menu/game combinations have not been accepted.
+- The Windows renderer offers resolutions up to 3840x2160, a repositionable
+  minimap, and other PC settings. The Entire Map render-distance choice is
+  present, but its visible effect has not been verified. Game logic remains at
+  the original scene rate; higher presentation targets repeat frames, and
+  interpolation is future work.
+- Native audio can be enabled with `SM64DS_PC_NATIVE_AUDIO=1`. It plays original
+  sequences and effects in selected tested scenes, but remains opt-in and
+  diagnostic. Listening fidelity, spatial effects, shared voice/channel
+  behavior and coverage across the game remain incomplete.
+- Original title/course entry, selected cannon and water-bomb encounters,
+  repeat Star credit, pause/re-entry and selected audio flows have isolated
+  runtime checks. See the dated `port/docs/` checkpoints for exact coverage and
+  limitations; no single checkpoint establishes a complete port.
+- The stay-in-stage-after-Star preference, free camera, HD texture packs,
+  online VS and browser Download Play remain incomplete or planned. Requested AI
+  texture generation and replacement also remain future work.
 
 ## Downloading a development build
 

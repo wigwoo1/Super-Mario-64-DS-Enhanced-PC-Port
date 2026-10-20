@@ -10,9 +10,12 @@
 #if defined(SM64DS_GAME_TARGET)
 #include "hal/dsmt_scene.h"
 #include "hal/wanted_pause_settings.h"
+#include "hal/touch_menu_navigation.h"
 #include "dScMgLuigi_c.h"
+#include "Player.h"
 extern "C" dScMgBase_c::graphCallback_c data_ov004_020beb74;
 extern "C" int pc_pause_settings_page();
+extern "C" int pc_pause_settings_row();
 #endif
 
 extern "C" {
@@ -20,8 +23,13 @@ PcStageGraphState data_0209f3c4 = {};
 extern void *data_0209d4a8;
 extern unsigned char data_0209f2c4;
 #if defined(SM64DS_GAME_TARGET)
+extern void *data_0209f394[];
+extern unsigned char data_0209f294,data_0209f20c;
+extern int data_0209fc48;
 // The C IRQ/OAM shards use cdecl tables. The minigame registry is a real
 // native C++ object, whose virtual methods require the MSVC thiscall ABI.
+extern signed char data_0208e42c;
+extern int data_0209b490;
 int pc_minigame_graph_dispatch(void *object, int slot, int *result)
 {
     if(object != &data_ov004_020beb74) return 0;
@@ -58,7 +66,18 @@ void pc_stage_graph_prepare()
     wanted_settings=pc_wanted_settings_page()!=0;
 #endif
     ntr::video_set_pause_screen(paused || wanted_settings,custom_settings);
-    if (active || paused) ntr_input_set_menu_navigation(paused ? 1 : 0);
+#if defined(SM64DS_GAME_TARGET)
+    ntr::video_set_minimap_editor(paused && pc_pause_settings_page()==6,pc_pause_settings_row());
+#endif
+    if (active || paused) {
+        bool menu_context=paused;
+#if defined(SM64DS_GAME_TARGET)
+        const auto *player=static_cast<const Player *>(data_0209f394[0]);
+        menu_context=menu_context || data_0209f294 || data_0209f20c || data_0209fc48 ||
+            (player && (player->mIsNoControl || player->mIsControlDisabled));
+#endif
+        ntr_input_set_menu_navigation(menu_context ? 1 : 0);
+    }
     if (active) {
         pc_stage_graph_apply(&data_0209f3c4);
 #if defined(SM64DS_GAME_TARGET)
@@ -87,11 +106,22 @@ void pc_stage_graph_prepare()
         data_ov004_020beb74.GraphCallback2();
         pc_wanted_settings_prepare();
         auto *scene = data_ov004_020beb74.mScene;
-        if (scene && scene->actorID == 366 && std::getenv("SM64DS_PC_TRACE") && ntr::rt_frame()%120==0) {
+        ntr_input_set_menu_navigation(scene && (scene->mMenuOpen || scene->mStateController.mState==18) ? 1 : 0);
+        if (scene && scene->actorID == 366 &&
+            (std::getenv("SM64DS_PC_TRACE") || std::getenv("SM64DS_PC_WANTED_TRACE")) && ntr::rt_frame()%120==0) {
             auto *wanted = static_cast<dScMgLuigi_c *>(scene);
-            std::fprintf(stderr,"[native Wanted] tick=%llu controller=%d timer=%d state=%d time=%d menu=%d\n",
+            std::fprintf(stderr,"[native Wanted] tick=%llu controller=%d timer=%d state=%d time=%d menu=%d music_volume=%d music_target=%d\n",
                 static_cast<unsigned long long>(ntr::rt_frame()),scene->mStateController.mState,
-                scene->mStateController.mTimer,wanted->mState,wanted->mTime,scene->mMenuOpen);
+                scene->mStateController.mTimer,wanted->mState,wanted->mTime,scene->mMenuOpen,
+                data_0209b490 >> 12,int(data_0208e42c));
+            std::fprintf(stderr,"[Wanted board] tick=%llu board=%u target=%u wanted=%u found=%u slots=",
+                static_cast<unsigned long long>(ntr::rt_frame()),wanted->mBoard,wanted->mTarget,
+                wanted->mWanted,wanted->mFound);
+            for(int i=0;i<4;i++) if(wanted->mActive[i])
+                std::fprintf(stderr,"%s%d:%d,%d:c%d:k%d",i?";":"",i,
+                    int(wanted->mPosX[i])>>12,int(wanted->mPosY[i])>>12,
+                    wanted->mCharacter[i],wanted->mKind[i]);
+            std::fputc('\n',stderr);
             std::fprintf(stderr,"[Wanted menu] pos=%d,%d;%d,%d;%d,%d cursor=%d phase=%d options=%d/%d bg=%08x,%08x oam=%04x,%04x,%04x\n",
                 scene->mMenuItem0X,scene->mMenuItem0Y,scene->mMenuItem1X,scene->mMenuItem1Y,
                 scene->mMenuItem2X,scene->mMenuItem2Y,scene->mMenuCursor,scene->mMenuCursorPhase,
@@ -101,7 +131,8 @@ void pc_stage_graph_prepare()
                 *reinterpret_cast<volatile unsigned short*>(0x07000404));
         }
     }
-    else pc_dsmt_graph_prepare();
+    else {ntr_input_set_menu_navigation(1);pc_dsmt_graph_prepare();}
+    pc_touch_menus_prepare();
 #endif
 }
 }

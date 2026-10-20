@@ -36,6 +36,9 @@ class RewardHostTest(unittest.TestCase):
         self.assertEqual(result.count('static_cast<daStarBase_c *>(dActor_c::FindWithID(mMarkerID))->Collect();'),2)
         self.assertEqual(reward_host.transform(result),result)
         self.assertIn('(this->*data_ov002_021109d8[mState])();',result)
+        self.assertIn('return pc_star_should_stay(this) ? 1 : 0;',result)
+        self.assertIn('func_ov002_020e9630() != 0 || pc_star_should_stay(this)',result)
+        self.assertIn('p, r4, 0x187, 0',result)
 
     def test_unrelated_source(self):
         self.assertEqual(reward_host.transform('int f(){return 1;}'),'int f(){return 1;}')

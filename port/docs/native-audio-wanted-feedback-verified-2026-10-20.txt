@@ -1,0 +1,52 @@
+Wanted correct/wrong touch feedback - 2026-10-20 (Sol Medium)
+
+Status VERIFIED for the first correct and incorrect target touches with native
+audio enabled. No gameplay or audio behavior fix was needed. Listening quality
+and physical mouse/controller input remain unverified.
+
+Diagnostic change
+- The optional SM64DS_PC_WANTED_TRACE record now also logs the current board,
+  target slot, requested character, hit/miss flag and the first four active
+  picture positions/characters. It is trace-only and does not change gameplay.
+- Private replay and strict WAV/save verification scripts are in the local work
+  folder; captures, ROM-derived assets and full executables remain private.
+
+Build and verification
+- Explicit sm64ds_pc target build passed. Tested executable SHA256:
+  9a9c89059602d70c62bcb127e79c29943f86c096460dd56fb09676b9ad501370.
+- 54/54 CTests pass (31.87 seconds).
+- Correct-target replay: 2900 frames, exit0. At tick2160 the board reports
+  target slot1, requested character0, and the character at112,80. The tap at
+  2200:112:80 reports found1 and state3 at tick2280. The lower screen displays
+  the correct Mario with +5; the timer rises from9 at2160 to13 at2400 and the
+  next board starts by2520. Original audio effects38 and188 occur on the hit;
+  reward effects443/444 follow. WAV has4416000 frames,6461815 nonzero samples,
+  peak32768, and the mixer reports0 errors over2899 game updates.
+- Wrong-target replay: 2900 frames, exit0. The tap at2200:112:112 hits another
+  character. The lower screen displays -10; the board reports found0/state3
+  with time0 at2280. Original miss effects192 and14 occur. WAV has4393472
+  frames,6398048 nonzero samples, peak32767, and0 mixer errors over2899 updates.
+- The same final executable was also rechecked through the full pause/continue/
+  quit and timeout/results/retry/pause/quit paths. Both return to the Rec Room.
+  Pause run:3800 frames, exit0, volume ducks to64 and returns to127, timer
+  freezes while paused, WAV5664768 frames/8956583 nonzero/peak32767/0 errors.
+  Retry run:6300 frames, exit0, game-over jingle and Play Again restart music13,
+  pause and Rec Room music5 return pass, WAV9444352 frames/16487323 nonzero/
+  peak32768/0 errors. They report3799 and6299 audio updates respectively.
+- Both WAV sample counts/peaks match the mixer report. Both replay save copies
+  match their seed SHA256
+  cf3832584fbdd9d913e49e5790e2f06443a8d3d03950b49a811c284735faa2ad; neither
+  created a main-game slot save. User saves were not used or changed.
+- Screenshots: local work/native-audio-wanted-feedback-hit-20261020 and
+  work/native-audio-wanted-feedback-wrong-20261020, plus pause/retry rechecks
+  under work/native-audio-wanted-pause-recheck-20261020 and
+  work/native-audio-wanted-retry-recheck-20261020. See each verification.json.
+
+Limits
+- These are scripted stylus replays against the native runtime. No listening
+  comparison, mouse/controller test, other Wanted board, course or minigame
+  audio acceptance was performed.
+- Native audio remains opt-in diagnostic work. Do not promote this executable
+  to the stable install or publish a new build kit from this check alone.
+- The public repository/release were not changed. The broad PC-port goal and
+  the separate planned features remain unfinished.

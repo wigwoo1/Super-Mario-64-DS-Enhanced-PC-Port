@@ -29,6 +29,10 @@ void func_020199a4(void)
         func_0201a4bc();
         data_0209d4f0 = 0;
         data_0209d514 = 0;
+#if defined(SM64DS_PLATFORM_PC)
+        func_020132d8();
+#else
         if (data_0209b480 != 0) func_020132d8();
+#endif
     }
 }

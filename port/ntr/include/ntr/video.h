@@ -8,6 +8,7 @@
 
 namespace ntr {
 enum class VideoRenderer : uint8_t { D3D11, OpenGLSoftware };
+enum class RenderDistance : uint8_t { Minimum, Low, Medium, EntireMap };
 
 struct VideoSettings {
     uint32_t width = 1280;
@@ -21,10 +22,14 @@ struct VideoSettings {
     uint16_t minimap_scale = 260;   // width as tenths of a percent of output width
     uint16_t minimap_x = 710;       // position as tenths of a percent
     uint16_t minimap_y = 35;
-    bool minimap_rotate_with_player = false; // otherwise lock map upright
+    bool minimap_rotate_with_player = false; // legacy field name: now follows camera
     bool minimap_hide_touch_target = true;
     bool upscale_2d = false;        // crisp pixel-preserving window upscaling
     TextureQuality texture_quality = TextureQuality::Original;
+    uint8_t camera_zoom = 0; // Original, 0.75x, 0.5x, 0.25x; inverse distance
+    bool always_run = false; // digital movement; analog speed follows stick travel
+    bool stay_in_stage_after_star = false; // retain original castle exit by default
+    RenderDistance render_distance = RenderDistance::Minimum;
 };
 
 // Create a resizable native window. Resolution and minimap layout are changed
@@ -41,7 +46,7 @@ bool video_load_settings(const char *path = nullptr);
 bool video_save_settings(const char *path = nullptr);
 // Cycle through the supported 16:9, 16:10, and 21:9 output presets up to 4K.
 void video_cycle_resolution(VideoSettings &settings);
-uint16_t video_minimap_angle(uint16_t player_heading);
+uint16_t video_minimap_angle(uint16_t camera_heading);
 void video_set_minimap_gameplay(bool active);
 bool video_minimap_visible();
 // Present the original bottom-screen pause/options interface as the main view.
@@ -49,6 +54,9 @@ void video_set_pause_screen(bool active, bool custom_settings = false);
 // Custom settings use background tiles; gameplay map sprites obscure their text.
 bool video_bottom_objects_visible();
 bool video_pause_screen();
+// Native Position page: frozen gameplay/map preview, mouse drag plus controller values.
+void video_set_minimap_editor(bool enabled, unsigned selected_axis=0);
+bool video_minimap_editor_active();
 void video_set_minigame_active(bool active);
 bool video_dual_screen_active();
 // Controller focus on the original touch menu; negative left hides it.

@@ -14,6 +14,7 @@ struct InputState {
     int16_t right_y = 0;
     uint8_t left_trigger = 0;
     uint8_t right_trigger = 0;
+    bool camera_zoom_pressed = false; // rising edge of Xbox right-stick click
     bool touch = false;
     uint16_t touch_x = 0;  // 0..255 in bottom-screen coordinates
     uint16_t touch_y = 0;  // 0..191
@@ -24,6 +25,8 @@ void input_poll();
 // Accepted only with both AUTOMATION_ONLY=1 and TEST_BOSS_BOT=1.
 void input_test_controls(bool enabled, uint16_t buttons, int16_t x, int16_t y);
 InputState input_state();
+// Retain a host click across the scene's intervening VBlank(s), consume once.
+bool input_take_camera_zoom();
 
 // Set the mouse stylus position in bottom-screen coordinates. The host also
 // updates the DS touch-sample latch consumed by the original touch callback.
@@ -45,6 +48,9 @@ extern "C" void ntr_input_left_stick(float *x, float *y);
 // Map active host travel into the retail touch joystick's usable speed range.
 // Menu navigation and raw stick calibration keep their original normalization.
 extern "C" void ntr_input_movement_stick(float *x, float *y, unsigned mode);
+// Apply only to the local gameplay controller after the original button map.
+// This never injects a Run press into touch menus or minigames.
+extern "C" unsigned short ntr_input_run_buttons(unsigned short held, int analog);
 // Title navigation converts stick directions into menu keys. Gameplay keeps
 // those keys digital and consumes stick magnitude through the virtual stick.
 extern "C" void ntr_input_get_menu_keys(unsigned short *keys);

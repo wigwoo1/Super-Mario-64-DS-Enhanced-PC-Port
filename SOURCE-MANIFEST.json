@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "69183ef15a43aa9238f2e42267e7ac6105856c1e28a99c9d6143e15972c37f81",
-      "bytes": 74621
+      "sha256": "78f2a4d7419fd175e7563c298fe1d45fd1a72d402e98578e5c6dbbc4f0abfa03",
+      "bytes": 75998
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6459,6 +6459,26 @@
       "bytes": 4852
     },
     {
+      "path": "port/docs/native-audio-checkpoint-2026-10-20.txt",
+      "sha256": "68da2be5b583e2ddac7b9bc2024f30dfeb934cb91cd0f00a2ca0997001821f5b",
+      "bytes": 6774
+    },
+    {
+      "path": "port/docs/native-audio-door-verified-2026-10-20.txt",
+      "sha256": "4f5f68f7ce9691deb1cd1890b4371ebd904dad637250323016d205445b0ee5d5",
+      "bytes": 3631
+    },
+    {
+      "path": "port/docs/native-audio-wanted-feedback-verified-2026-10-20.txt",
+      "sha256": "55e7c3e8c877d5ff86994f4a9fc5edc9c1c68a905c950418365cd30227ef1aea",
+      "bytes": 3283
+    },
+    {
+      "path": "port/docs/native-audio-wanted-verified-2026-10-20.txt",
+      "sha256": "585d4b81f870e2ac3dcc2f4cf86f289c9e56fc7a42d762dcf8b9865687b0d879",
+      "bytes": 3541
+    },
+    {
       "path": "port/docs/native-buddy-cannon-verified-2026-10-18.txt",
       "sha256": "4af836cc0b536c61f9195bc57ad30c6049739edb4e6ee0ef344b704256d69c17",
       "bytes": 3700
@@ -6479,6 +6499,11 @@
       "bytes": 3662
     },
     {
+      "path": "port/docs/native-camera-distance-zoom-2026-10-20.txt",
+      "sha256": "52447ad30967ab07c90b36d1eec3b1e8e41c6601b9409fe0603c70618f7ad0e3",
+      "bytes": 2076
+    },
+    {
       "path": "port/docs/native-cannon-integration-2026-10-19.txt",
       "sha256": "0261114bc1018bbba3f271f4bea47d94a9b08d2f0aa23382aaf823c57aea6b16",
       "bytes": 4391
@@ -6497,6 +6522,16 @@
       "path": "port/docs/native-controller-records-checkpoint-2026-10-15.txt",
       "sha256": "c7c96cc8471724201b9a8ca19705e79796df882fdfca34c04b03d5a38ac8a013",
       "bytes": 4645
+    },
+    {
+      "path": "port/docs/native-controls-camera-corrections-2026-10-20.txt",
+      "sha256": "9a810cffd41aa7cd81235cf8adbfc7854246ad5a4359c39a53d99a0018cf12e9",
+      "bytes": 3575
+    },
+    {
+      "path": "port/docs/native-course-clear-controller-2026-10-20.txt",
+      "sha256": "f85a0a32d596bee3441ff6b58e75facdb7f95d9009e3f8df277bbe5071149415",
+      "bytes": 4285
     },
     {
       "path": "port/docs/native-current-build-installation-2026-10-16.txt",
@@ -6554,6 +6589,11 @@
       "bytes": 3008
     },
     {
+      "path": "port/docs/native-minimap-placement-2026-10-20.txt",
+      "sha256": "18e44dd4e234cf3225d681efd26a16b7bc8b58c005f1505678916842aa0da2fc",
+      "bytes": 5209
+    },
+    {
       "path": "port/docs/native-opengl-cpu-checkpoint-2026-10-16.txt",
       "sha256": "9d8528c0a7d9c3a180dec69ec8a02865893a4c7bf49ea4d99775875864686fa3",
       "bytes": 7078
@@ -6579,6 +6619,11 @@
       "bytes": 4362
     },
     {
+      "path": "port/docs/native-recroom-controller-2026-10-20.txt",
+      "sha256": "01f0267d8ce55418d8d193d255a3d053488fa3b505ff957f9f94d5a3ba482640",
+      "bytes": 2588
+    },
+    {
       "path": "port/docs/native-save-checkpoint-2026-10-15.txt",
       "sha256": "591d86a148a2da9b03e1a96a6d45bc6b2b9d2a907a260033848d7e764fca8f07",
       "bytes": 4679
@@ -6587,6 +6632,11 @@
       "path": "port/docs/native-save-format-2026-10-15.txt",
       "sha256": "2eec0b40c2590181a8dabf0b3493c80cf64ff36e1072b1655d25ca1f43b85288",
       "bytes": 3161
+    },
+    {
+      "path": "port/docs/native-scene-clock-camera-2026-10-20.txt",
+      "sha256": "12271008f063d06e42d5a0a76c3eece9d5c76a1ef9028caa08802e01f153e0d9",
+      "bytes": 5306
     },
     {
       "path": "port/docs/native-second-cannon-2026-10-19.txt",
@@ -6602,6 +6652,11 @@
       "path": "port/docs/native-sound-actor-verified-2026-10-20.txt",
       "sha256": "8773abc8f95d6720278e551ce5e3942358989260901870c6f4d4856d0a149d8e",
       "bytes": 2481
+    },
+    {
+      "path": "port/docs/native-stage-options-controller-2026-10-20.txt",
+      "sha256": "e4d746843e88d4b7e232fd1d273e1bb3af5dbe09e81026bf28123034c63c293e",
+      "bytes": 2550
     },
     {
       "path": "port/docs/native-texture-ownership-checkpoint-2026-10-15.txt",
@@ -6622,6 +6677,16 @@
       "path": "port/docs/native-texture-streaming-checkpoint-2026-10-15.txt",
       "sha256": "da4f03bd452563fa1b9e31b61b625cf68900d3bcd3c5bd7b01aae033d8038345",
       "bytes": 5983
+    },
+    {
+      "path": "port/docs/native-title-options-controller-2026-10-20.txt",
+      "sha256": "4dcb5317af64cbea1288f48f17c5f4a42f3eabad9183797d3b389c913405b39d",
+      "bytes": 4102
+    },
+    {
+      "path": "port/docs/native-touch-menu-controller-2026-10-20.txt",
+      "sha256": "bc99f6493fdc36e4246494c2d3f73fb312896aaa18aa9fd9eba47ae2c5e7230d",
+      "bytes": 2863
     },
     {
       "path": "port/docs/native-waterbomb-combat-2026-10-19.txt",
@@ -6655,8 +6720,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "94af8cbf398d5d779af5ed0423e0fb965012d8ff13fc29ec738b1b7361e317ad",
-      "bytes": 18405
+      "sha256": "3d08e967dbb3356cf311a750eedd79977a17627ca20338513266921b8ceea587",
+      "bytes": 28036
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -6680,8 +6745,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "cdb1aa1890847cd5d00cc701fc8d3853552ae0a47ab7afbf640738ab128f4247",
-      "bytes": 5624
+      "sha256": "d1d52106c36c7e5bbd3b25f877053612b1da3d79cca2f685e60b02edb7bd4c0b",
+      "bytes": 4946
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -6859,6 +6924,16 @@
       "bytes": 755
     },
     {
+      "path": "port/hal/course_clear_input.cpp",
+      "sha256": "f1f36dda025f106e2d521fcabc4dac6510b8d70e4b20a25c64a1e1317bb515e7",
+      "bytes": 2586
+    },
+    {
+      "path": "port/hal/course_clear_input.h",
+      "sha256": "e3ba9afa0ed0eb7fcf7e9bcd9f0729ef1f777f535d76d4a936ba5167e0bd0224",
+      "bytes": 1533
+    },
+    {
       "path": "port/hal/cstd_div.c",
       "sha256": "724bb9054029d52b1a728fd070037bb682cc3b29980a6cacdd32e90d7c586d46",
       "bytes": 380
@@ -6885,8 +6960,8 @@
     },
     {
       "path": "port/hal/dsmt_input.cpp",
-      "sha256": "018851af2780c7837e0de22d7ea992559d0d3d7f96e7161767101995fc28e6a1",
-      "bytes": 6138
+      "sha256": "a428e567188ee725bbe01d163b8c97e6caa795ca3a29a23966fc5e3f55db4a3f",
+      "bytes": 6520
     },
     {
       "path": "port/hal/dsmt_primitives.cpp",
@@ -6920,8 +6995,8 @@
     },
     {
       "path": "port/hal/game_api_bridge.cpp",
-      "sha256": "2b160c62721543e06b626db3e5257fe7ffbca18757970345b0f45ff73d6c1de4",
-      "bytes": 38830
+      "sha256": "954fda675c90c4674240cb015e602116ff90439e6e68704c1774f4af27031675",
+      "bytes": 39081
     },
     {
       "path": "port/hal/gx_bank_state.asm",
@@ -7035,18 +7110,18 @@
     },
     {
       "path": "port/hal/pc_pause_settings.cpp",
-      "sha256": "ef5b731db52191c0a404cfefd51337d48e5c7d50433b319ad348b2dffcadd258",
-      "bytes": 5024
+      "sha256": "370e385b86c88e8a5468e9d7bb3ec711bf21f8d90492f4ba70022a33186fd302",
+      "bytes": 7041
     },
     {
       "path": "port/hal/pc_pause_settings_state.cpp",
-      "sha256": "29a77983a2c34cf6352e58347a5743883a4326a90ee7db8727781345462431cd",
-      "bytes": 9417
+      "sha256": "c4d93c6c6f5edb16e7a6d1bc35e7a42d5479c5e166e42883b3587449df232ced",
+      "bytes": 10640
     },
     {
       "path": "port/hal/pc_pause_settings_state.h",
-      "sha256": "5fed99078be8666eec7e0e0da098843d05be1c37daeb6f76255b51f5982367b6",
-      "bytes": 1088
+      "sha256": "c57886c1aad97517aec939e333fc31826b1fcc617089e315309855d7cb6e80dc",
+      "bytes": 1098
     },
     {
       "path": "port/hal/pc_session.cpp",
@@ -7085,13 +7160,18 @@
     },
     {
       "path": "port/hal/player_state_callbacks.cpp",
-      "sha256": "aadf1710f37906761afe4eb64c312123593a3ef8bb38459081e0f4cf90831328",
-      "bytes": 3158
+      "sha256": "eb42b1c1aa2d5b72b51121def12b25387c19386f3fb2c15d497111d1b22b21b5",
+      "bytes": 4735
     },
     {
       "path": "port/hal/player_state_methods.inc",
       "sha256": "d1264f0dcf075982ac9b0b825a216df55943f7e6fd543a11fdb00f2bb502ebfb",
       "bytes": 9657
+    },
+    {
+      "path": "port/hal/render_distance_policy.h",
+      "sha256": "1879569bc33f61e33743a6bf54d5cbe2657936e356e313cbb35ef945d24c8b65",
+      "bytes": 1254
     },
     {
       "path": "port/hal/shims.cpp",
@@ -7105,8 +7185,8 @@
     },
     {
       "path": "port/hal/stage_graph_state.cpp",
-      "sha256": "af8d382e556dead7cd3f54a6c920f05e7af8943eb63d6135aae3bcaf605a526c",
-      "bytes": 5053
+      "sha256": "391b670eea45a1a71c18d8f28ea4351fb6263df1e24176f9e56c38f7f77d8c04",
+      "bytes": 6659
     },
     {
       "path": "port/hal/stage_graph_state.h",
@@ -7114,9 +7194,34 @@
       "bytes": 551
     },
     {
+      "path": "port/hal/stage_options_input.cpp",
+      "sha256": "34a70dfeac1ae94374c681f569894f4c852d0e351a97c2fa80edbe285b679615",
+      "bytes": 1690
+    },
+    {
+      "path": "port/hal/stage_options_input.h",
+      "sha256": "a20571c1a471d6d2005b4f0d03270c83ae58ed216e5eb7b1fd137611cdc6017a",
+      "bytes": 437
+    },
+    {
       "path": "port/hal/star_add_marker.cpp",
       "sha256": "e73471598117adccf861d26909c42fd884605aa6d117b8fe5102cba501e0aecd",
       "bytes": 1193
+    },
+    {
+      "path": "port/hal/star_collection_policy.h",
+      "sha256": "73e3ab34a85081e2d0773db91289c41e3a1258f3348768348ba028c2f7d80fa7",
+      "bytes": 585
+    },
+    {
+      "path": "port/hal/touch_menu_navigation.cpp",
+      "sha256": "75c29da03595eef05cc26b482934c9e2b95f99c7f7be27e13570ce9718fc9e2e",
+      "bytes": 7682
+    },
+    {
+      "path": "port/hal/touch_menu_navigation.h",
+      "sha256": "b5f0a18a15a7da1b588b2d78f23701b0c93dd4a9413bbf0b7ffdb6ad60ef12de",
+      "bytes": 2442
     },
     {
       "path": "port/hal/touch_state.asm",
@@ -7150,8 +7255,13 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "49ac04db9bb57b61fa0dd7c4c408db6ea987f6b0a0ca1e607357ae98c4eca5d3",
-      "bytes": 93749
+      "sha256": "3be2bd87716d4cb9622d42e55c934128a68d755ddca3ede2ac1c74c38a4f0cdb",
+      "bytes": 98261
+    },
+    {
+      "path": "port/ntr/audio.cpp",
+      "sha256": "8dcfe7fa18b35b802baac19f8f278ef712243e5954c59bab11e61fc89ccf4311",
+      "bytes": 9565
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7165,13 +7275,13 @@
     },
     {
       "path": "port/ntr/gl_software.cpp",
-      "sha256": "706f8b4692e3339dfc8f5765e4328c30c3a498192f1bd94b119a3984acd3f322",
-      "bytes": 29188
+      "sha256": "3c26658c44ce1a9b8242335862e98f4f60abfc9a9f7c11512ffbcb1ac54614b6",
+      "bytes": 31076
     },
     {
       "path": "port/ntr/gpu.cpp",
-      "sha256": "c517566a3a5cee0c193fe686433b8f9cebd9bc314067aee102c593c224d832c3",
-      "bytes": 42302
+      "sha256": "87f4ff482be415c4c211c69e6b392799ab7ffa858b5f5a1c48864b7ec167716f",
+      "bytes": 43488
     },
     {
       "path": "port/ntr/gx.cpp",
@@ -7179,9 +7289,24 @@
       "bytes": 43343
     },
     {
+      "path": "port/ntr/include/ntr/audio.h",
+      "sha256": "15fd6649b94886b30c1b6cc120cae9630af9a3ea1b10e191e32ddcc55329894b",
+      "bytes": 657
+    },
+    {
+      "path": "port/ntr/include/ntr/audio_ramp.h",
+      "sha256": "5643d4e650835e6ded10d0520a007a991c4bcdb86fe5b78db1cd391c142c8ccc",
+      "bytes": 783
+    },
+    {
       "path": "port/ntr/include/ntr/bmd.h",
       "sha256": "7508955011c00aacf50cf6a0c31cc4935454186c34e209e58984f998856f324c",
       "bytes": 3057
+    },
+    {
+      "path": "port/ntr/include/ntr/controller_bindings.h",
+      "sha256": "31ff3e41848874641738dd7549238d0ee1fcce2593f21d5ff4fcc4f69481936c",
+      "bytes": 570
     },
     {
       "path": "port/ntr/include/ntr/fs.h",
@@ -7190,13 +7315,13 @@
     },
     {
       "path": "port/ntr/include/ntr/gl_software.h",
-      "sha256": "4e36aa69b26a1c8bf7058cccc35d04a10472e844f1085e7281c3c2b750b57f19",
-      "bytes": 725
+      "sha256": "448436e41b47caa8f771f017234dae5fabb32c8ffd7b95296af0a408b9aeb795",
+      "bytes": 806
     },
     {
       "path": "port/ntr/include/ntr/gpu.h",
-      "sha256": "b2d03db089f8de895c12f5702bc219a357db8d479cc5081ec11a961995027282",
-      "bytes": 1555
+      "sha256": "f5126388c369d5141c612403a998c14922f4ef8d5e4f4004f65bf96dc31518f1",
+      "bytes": 1763
     },
     {
       "path": "port/ntr/include/ntr/gx.h",
@@ -7205,8 +7330,8 @@
     },
     {
       "path": "port/ntr/include/ntr/input.h",
-      "sha256": "25d6c87c6f20d33f80ae2d0147ef4edecb5ae12f7dea8e91039721e1f677a1cb",
-      "bytes": 2318
+      "sha256": "8f3ee7345aa57bb7a571a65ece6593395da65d4a84cc3435bb269da45a2f011c",
+      "bytes": 2732
     },
     {
       "path": "port/ntr/include/ntr/lz77.h",
@@ -7215,13 +7340,18 @@
     },
     {
       "path": "port/ntr/include/ntr/menu_navigation.h",
-      "sha256": "ba78775ed77992071f2e2156c697f4665912a6870811505a5e59c54a218aaf4f",
-      "bytes": 983
+      "sha256": "069903a76b0fd186d672ca1cb62aa0bb37d47919c0f78f94b63c5533a2f01345",
+      "bytes": 1278
     },
     {
       "path": "port/ntr/include/ntr/minigame_callback.h",
       "sha256": "60e2776d30f9a69ac4c31ffc63ec368afdbc84143644b2d29faf6674f685d8dd",
       "bytes": 1168
+    },
+    {
+      "path": "port/ntr/include/ntr/minimap_drag.h",
+      "sha256": "5902bdfa99c0c03f792f246c288090522a2ad0a7a112b551472f7ef720e29f71",
+      "bytes": 901
     },
     {
       "path": "port/ntr/include/ntr/mmio.h",
@@ -7244,6 +7374,11 @@
       "bytes": 919
     },
     {
+      "path": "port/ntr/include/ntr/sdat.h",
+      "sha256": "81a257ca4a8a79ff06a2654d5d07ffe55eaaada0934aa7c59bf6e26ecf42b22e",
+      "bytes": 1485
+    },
+    {
       "path": "port/ntr/include/ntr/texture.h",
       "sha256": "86f4e33e92f82cd8a12f46e709ea952886307440cff2bad82559fc674a480d24",
       "bytes": 3366
@@ -7255,13 +7390,13 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "1995180c888d8bbe23602a50df2f270d2523c31697af7342663e374d369bd675",
-      "bytes": 3092
+      "sha256": "c44c458031604e5d8d878ac159c964f66ee46f2d12485b2f0c023a1432d0f64b",
+      "bytes": 3682
     },
     {
       "path": "port/ntr/input.cpp",
-      "sha256": "dd9aabd9eb09b00ab6ff88cdab02d39964035e3161e7bda4fa6ce0bf23fe5efa",
-      "bytes": 14903
+      "sha256": "d0aef86d403fe840e481b267d54da3e2419b0091caa9e18dd2947918e2814c9c",
+      "bytes": 16168
     },
     {
       "path": "port/ntr/io.cpp",
@@ -7285,8 +7420,8 @@
     },
     {
       "path": "port/ntr/rt.cpp",
-      "sha256": "70f97638a3a4d598ecff9433eae828ecf7ad2acecbc4a0c31d57bbf2b479c8b9",
-      "bytes": 8522
+      "sha256": "d4840431b20c1b36426741c91043679ca9810e18dfbf18b8602643a5cca8947a",
+      "bytes": 8807
     },
     {
       "path": "port/ntr/runtime.cpp",
@@ -7297,6 +7432,11 @@
       "path": "port/ntr/screen_layout.cpp",
       "sha256": "d3da2ed905b4be51d7e3698e71d9664c6c6c2ed70b1163cb98361f7c5b68cd87",
       "bytes": 2301
+    },
+    {
+      "path": "port/ntr/sdat.cpp",
+      "sha256": "96deddd99fa7d47b747f951969cdd67a7f80a5d73c4f78a58314d463a425ecbc",
+      "bytes": 13191
     },
     {
       "path": "port/ntr/texture.cpp",
@@ -7325,8 +7465,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "c0a2f9882543057970db974a4524c3d38336be987f87e8323e110f8c57b61b3d",
-      "bytes": 37935
+      "sha256": "539632440508514f947a0a6b34b3cfb4fb987c96a65c961b433c93e68bed7528",
+      "bytes": 47724
     },
     {
       "path": "port/README.md",
@@ -7384,6 +7524,11 @@
       "bytes": 1094
     },
     {
+      "path": "port/tests/probe_sdat.cpp",
+      "sha256": "25b8eda9810f6c2795974e5a597fed2ced2c5908c15affe9dbc005988fa49caa",
+      "bytes": 7156
+    },
+    {
       "path": "port/tests/smoke.cpp",
       "sha256": "f65a75508ae11daa2f857b6197c526a7d0c90ce5396b80b97e8cf41f26dcbadd",
       "bytes": 6258
@@ -7415,8 +7560,8 @@
     },
     {
       "path": "port/tests/smoke_controller_state.cpp",
-      "sha256": "4bcbe106030b0aa24c84e6bed1dd2bb924c914a6217fe06dc7cb4e1137356e8e",
-      "bytes": 6595
+      "sha256": "70aded34d56a22b52d7c8c6f9c92cfc810fda7898cfdb955e9eb9c60a74449bb",
+      "bytes": 7504
     },
     {
       "path": "port/tests/smoke_dma.cpp",
@@ -7435,8 +7580,8 @@
     },
     {
       "path": "port/tests/smoke_dsmt_input.cpp",
-      "sha256": "1fb6468ab3a5f3f2a71308aaae0669bcf4bf82aa866e0f3840e672d42306a4d1",
-      "bytes": 4476
+      "sha256": "6629cccb604fd4e8360e94b6e27403032cd2e7c9f690604bbe5dfc8b02187287",
+      "bytes": 4794
     },
     {
       "path": "port/tests/smoke_dsmt_palette.cpp",
@@ -7465,8 +7610,8 @@
     },
     {
       "path": "port/tests/smoke_frames.cpp",
-      "sha256": "a9926590d7550b2313beab91675584e46d961f6565cea04efbda5f87624939d3",
-      "bytes": 7068
+      "sha256": "24dc954bf33541a4daeb5df69520a526f95343ed40c2ffebd2d0baa6957e48f2",
+      "bytes": 8043
     },
     {
       "path": "port/tests/smoke_fs.cpp",
@@ -7475,8 +7620,8 @@
     },
     {
       "path": "port/tests/smoke_gpu.cpp",
-      "sha256": "0ecb2c4d53ee2e3e088ab2f6c8e074dbd1bb7dc1957b7693668348cceb82a347",
-      "bytes": 16549
+      "sha256": "8390ccc3695ad2d9f85b6d6a300aea249dfce4796dfb3dc98fa91dd1ee1d18ae",
+      "bytes": 17855
     },
     {
       "path": "port/tests/smoke_gx.cpp",
@@ -7500,8 +7645,8 @@
     },
     {
       "path": "port/tests/smoke_input.cpp",
-      "sha256": "c55c0943f8b5cbd407a5debda6230fde73f4a3c882bf6c8ced929a628159943b",
-      "bytes": 6743
+      "sha256": "36fa8b381f2b63bbfb70773e9e0a3228af98a008362be32e7caf602fc3667e0a",
+      "bytes": 8243
     },
     {
       "path": "port/tests/smoke_input_history.cpp",
@@ -7560,8 +7705,8 @@
     },
     {
       "path": "port/tests/smoke_pause_settings.cpp",
-      "sha256": "e2089c89d05a423649273629bab5138b509fa4a0225ce290588d7f1312813fef",
-      "bytes": 6862
+      "sha256": "6f8348cb7af11eab42837ca33a833a9ff9ba537a76f42aa8d5334b00dbbfe6df",
+      "bytes": 11793
     },
     {
       "path": "port/tests/smoke_pc_session.cpp",
@@ -7589,14 +7734,29 @@
       "bytes": 2690
     },
     {
+      "path": "port/tests/smoke_render_distance.cpp",
+      "sha256": "d94891dc9eecee5d8f5c9d8e573d13a21f766afd855bbdae8f611c2655c11d14",
+      "bytes": 1657
+    },
+    {
       "path": "port/tests/smoke_roots.cpp",
       "sha256": "bd1ba57fe4906f326d76ecd0f4f670fcf4baf66947182a9ee94f0df576f2c362",
       "bytes": 3205
     },
     {
+      "path": "port/tests/smoke_scene_clock.cpp",
+      "sha256": "39f17b4ad139d8ff56cf9b0fee6f6cdf182d795f95a99d44ffb4d80dad78af58",
+      "bytes": 1725
+    },
+    {
       "path": "port/tests/smoke_screen_layout.cpp",
       "sha256": "4f0329f11a8aa9f4debf0ca05334216f003d87ea5240782f14566a404cd245ac",
       "bytes": 3536
+    },
+    {
+      "path": "port/tests/smoke_sdat.cpp",
+      "sha256": "d76ae821ee467773460febba07b41dc82978897a5d5f384d5db1a618510b04a1",
+      "bytes": 4799
     },
     {
       "path": "port/tests/smoke_soak.cpp",
@@ -7645,8 +7805,8 @@
     },
     {
       "path": "port/tests/smoke_video.cpp",
-      "sha256": "fac07706675cc9942018658d44b23a221d5a7fd5e538ff387b6d19107f71ea74",
-      "bytes": 11859
+      "sha256": "cc2be9ac2398f550c9870539afdd64394859567404ee8565dd20128af8d63a1a",
+      "bytes": 13814
     },
     {
       "path": "port/tests/smoke_wanted_settings_surface.cpp",
@@ -7654,9 +7814,19 @@
       "bytes": 1810
     },
     {
+      "path": "port/tests/test_backlight_host.py",
+      "sha256": "82f7a698b245c4ef79b6af6f0a6be72ef0382fb5f7e4cb37ea7643302e4e3352",
+      "bytes": 1030
+    },
+    {
       "path": "port/tests/test_boot_aliases.py",
-      "sha256": "b82762703c96e69f0ec2bf3e4c3d94c5d6ff4d69d0f9418aeb8b3c32638c3a8d",
-      "bytes": 1097
+      "sha256": "74ba1f35634e5d30920b9b8a0ab1ce1a5e480dc52628bce3876010437ab2ab8c",
+      "bytes": 2268
+    },
+    {
+      "path": "port/tests/test_camera_host.py",
+      "sha256": "afcaba8737d8ac11d3c55450ff5a4c270fc69d0f55b88fa35d8e3349c147fdbb",
+      "bytes": 1347
     },
     {
       "path": "port/tests/test_conditional_star_pickup.py",
@@ -7700,8 +7870,8 @@
     },
     {
       "path": "port/tests/test_minigame_host.py",
-      "sha256": "dca5e89c6fe02ef7570e06de885cd13474b4abb8975af490536f0e8a3a52ab0f",
-      "bytes": 4840
+      "sha256": "f0e29e3e770803b19f49203e2de1966e65d5810aaf25aba540c515f1db8259d7",
+      "bytes": 6088
     },
     {
       "path": "port/tests/test_picture_gate_transform.py",
@@ -7710,13 +7880,123 @@
     },
     {
       "path": "port/tests/test_reward_host.py",
-      "sha256": "a4202332d119dc47aa33b8308ad874959a8d62c4df8bf9420532bbf1d042d621",
-      "bytes": 2797
+      "sha256": "cf5754bf38b3d4da701d267b628d95ee87a17499419e0d63548ca4cd10ca73d7",
+      "bytes": 3007
     },
     {
       "path": "port/tests/test_star_select_transform.py",
       "sha256": "66d747315db211346a114c9a4051de0bf456d5037f7662b70fbce910c753388e",
       "bytes": 1380
+    },
+    {
+      "path": "port/third_party/sseqplayer/Channel.cpp",
+      "sha256": "63eccb504bd6b6a96f0fd8ad401f0e2a701788c9a1b81ab61d5f6597ebafca43",
+      "bytes": 26997
+    },
+    {
+      "path": "port/third_party/sseqplayer/Channel.h",
+      "sha256": "7e4f2940058fb1f0a7ecb113125ebfb3f40626b2e83f6996b798150ad49180ed",
+      "bytes": 3644
+    },
+    {
+      "path": "port/third_party/sseqplayer/common.h",
+      "sha256": "692e33ef27a3fdb408fcbf702049c180ad7c4f5ed3f84e191eabfbe0d2d24a09",
+      "bytes": 7325
+    },
+    {
+      "path": "port/third_party/sseqplayer/consts.h",
+      "sha256": "5d8750c0db0a94faf76fc5253c48223d1f97eda113332a9d733bee33cd0d9845",
+      "bytes": 1762
+    },
+    {
+      "path": "port/third_party/sseqplayer/INFOEntry.cpp",
+      "sha256": "13364351b5d80804bfb33bf0c8d3ba74e8429a15c52d1247fec695dee5a501ba",
+      "bytes": 1125
+    },
+    {
+      "path": "port/third_party/sseqplayer/INFOEntry.h",
+      "sha256": "23adffa0396021a95ff3317dcde87f3a43756bfb4c3c91f5fef10cecef627dde",
+      "bytes": 780
+    },
+    {
+      "path": "port/third_party/sseqplayer/LICENSE.TXT",
+      "sha256": "929bac5badf341834cf6df6bb04e485bb7f4673590324d7aaa3f476fdb768d68",
+      "bytes": 482
+    },
+    {
+      "path": "port/third_party/sseqplayer/NDSStdHeader.cpp",
+      "sha256": "284a7a0cb9ca4ac4987f68424c9ec6f043d532d81f2aa1ec7166d272d4dcfa2c",
+      "bytes": 904
+    },
+    {
+      "path": "port/third_party/sseqplayer/NDSStdHeader.h",
+      "sha256": "9f892ce854a6fc7ad0897c6104216f43f2b4c46196bb099642794b20dc44e48e",
+      "bytes": 498
+    },
+    {
+      "path": "port/third_party/sseqplayer/Player.cpp",
+      "sha256": "f501571e288c221e03a3716416bda4ed518487f30153486f21d34d6145310999",
+      "bytes": 5936
+    },
+    {
+      "path": "port/third_party/sseqplayer/Player.h",
+      "sha256": "113d99068e6ab6ba9573c3be094f50ad7ab063ea47f0264b2750725b682ba77a",
+      "bytes": 1127
+    },
+    {
+      "path": "port/third_party/sseqplayer/SBNK.cpp",
+      "sha256": "32d19d905143ae7b383726bd8a3861d2bb8427385948685f57a659a74582f7cc",
+      "bytes": 3492
+    },
+    {
+      "path": "port/third_party/sseqplayer/SBNK.h",
+      "sha256": "26e84380c9c5a49b106c42dbdfbcca0a54a75df21522e64aeb8a3e1db35d5eaa",
+      "bytes": 1124
+    },
+    {
+      "path": "port/third_party/sseqplayer/SSEQ.cpp",
+      "sha256": "4e355d702b6ccf7f138ed54864ca7a1a2b759929c25c1cf15665694b8c0c284f",
+      "bytes": 1208
+    },
+    {
+      "path": "port/third_party/sseqplayer/SSEQ.h",
+      "sha256": "dc206fb221012a4f4dde7b74d563ac8c9680f56d21b4736035055cac983dc823",
+      "bytes": 591
+    },
+    {
+      "path": "port/third_party/sseqplayer/SWAR.cpp",
+      "sha256": "d7e7edec80821aa7eff0686d5e5dcda71346821aae444cadb6b14229ba94da29",
+      "bytes": 1184
+    },
+    {
+      "path": "port/third_party/sseqplayer/SWAR.h",
+      "sha256": "cbab337202deaa5245928556bd2ea0ebfe19d15da0018fc3dffd01ebdb478436",
+      "bytes": 627
+    },
+    {
+      "path": "port/third_party/sseqplayer/SWAV.cpp",
+      "sha256": "d197d1b358378eab317a417330b7976ffdacbeead25813139c0f3e428e1f4492",
+      "bytes": 3941
+    },
+    {
+      "path": "port/third_party/sseqplayer/SWAV.h",
+      "sha256": "a37f2c08c3f03d21fa540b608dd69ece14fee49be51994318461e1ed68be3942",
+      "bytes": 609
+    },
+    {
+      "path": "port/third_party/sseqplayer/Track.cpp",
+      "sha256": "b4fc7ced507395dca6e165b2e23339bf4e6cf4a27124afb4d07fcd20c58c9d67",
+      "bytes": 22434
+    },
+    {
+      "path": "port/third_party/sseqplayer/Track.h",
+      "sha256": "39ca0a6a93e60d5f37cb15f3f40705feeb5e6f903874066d9bebd452ce318a66",
+      "bytes": 1920
+    },
+    {
+      "path": "port/third_party/sseqplayer/UPSTREAM.txt",
+      "sha256": "02689083db76ed26aadfb2c567b9b3dd243655af17d4f16cbe320dadab8714df",
+      "bytes": 711
     },
     {
       "path": "port/tools/bombking_host.py",
@@ -7725,8 +8005,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "c28d1d968d5c6e7c4d2042371f1d1a9aae836fd3c1fc733aa4140449994d5a4f",
-      "bytes": 36224
+      "sha256": "0c5f7d99ff4d2f8223fdf43911397508f4e8f334a49d5f0ea61ea2ac37017d53",
+      "bytes": 36850
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -7735,8 +8015,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "8c19e1893bcc4628a7307f3decca71a6155858f37f06ffcd8ee06d2d2f59e2ad",
-      "bytes": 4905
+      "sha256": "cf8130342a5f3914a3cb8c5ff0ab40074b17d4fb2ee8f25a67b68ff1f943de39",
+      "bytes": 11642
     },
     {
       "path": "port/tools/cannon_host.py",
@@ -7985,8 +8265,8 @@
     },
     {
       "path": "port/tools/hostgen.py",
-      "sha256": "edaf254eb948233f9f5e119b291a552c21eed5cfe170dc5c5c5a2f74f0e724b5",
-      "bytes": 25198
+      "sha256": "ec10bd842442c447df5fea3c8c4f9c7f3b3133e234e3b225648b26c8a4caaf55",
+      "bytes": 27894
     },
     {
       "path": "port/tools/lakitu_host.py",
@@ -8015,8 +8295,8 @@
     },
     {
       "path": "port/tools/make_reward_test_save.py",
-      "sha256": "d73183ba086a0ba14ffffd03a582b4e3bed79b5aa96a9ae4e75277594ea2c2b4",
-      "bytes": 1699
+      "sha256": "6b2c18f01cdca8cc2ff136e0e3f47ae1bc8c73539306dd2451adba3c7ecdc713",
+      "bytes": 1790
     },
     {
       "path": "port/tools/minigame_data.py",
@@ -8025,8 +8305,8 @@
     },
     {
       "path": "port/tools/minigame_host.py",
-      "sha256": "7c0db073c2bcad59d387164e3101daef2676c09ea2f2c6cf24100294830a98b8",
-      "bytes": 14538
+      "sha256": "85e11c62ce3cdc3f2754891d272e139889079a3c0977a7bd930fb7d256f0723a",
+      "bytes": 15874
     },
     {
       "path": "port/tools/minigame_menu_data.py",
@@ -8035,8 +8315,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "230972711487025480d447b9572fdeb950a357aebcc5472abbc36d8a6e6c403b",
-      "bytes": 6112
+      "sha256": "ed0ac3ce02a39b2f8eb0b8d3f63816fc386d11c2187d4a4beaadcca58047325d",
+      "bytes": 6335
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -8095,8 +8375,8 @@
     },
     {
       "path": "port/tools/reward_host.py",
-      "sha256": "37f1269941903e0802052ebadc561b718999618648cb406d6cb50e391b9abac0",
-      "bytes": 6046
+      "sha256": "edadbfa04403bb40389373cbd058696c4e14975c9ad3b022ca79b59dff90125e",
+      "bytes": 7523
     },
     {
       "path": "port/tools/romdata.py",
@@ -9005,8 +9285,8 @@
     },
     {
       "path": "src/_ZN3IRQ13VBlankHandlerEv.cpp",
-      "sha256": "6f388dd365e95960b36cf3a7f5b6cd9209c45e280bdb6e65b45e6b06204d3c38",
-      "bytes": 1944
+      "sha256": "10d795ad399d7e75c77bfaf8956625d832b0b6ecb27947765875198ef14f6637",
+      "bytes": 1578
     },
     {
       "path": "src/_ZN3IRQ15ClearInterruptsEj.cpp",
@@ -9550,8 +9830,8 @@
     },
     {
       "path": "src/_ZN6Player11ChangeStateERNS_5StateE.cpp",
-      "sha256": "bbbe2e3d6b2289c610093658598d3f55e5592e2467c13bdeb66f4dc3e4f8cb5b",
-      "bytes": 3416
+      "sha256": "b656e03715cb1012f4dc14cdb842bd3e15a6dae8bbcb4c6841c7259fbb1651af",
+      "bytes": 3708
     },
     {
       "path": "src/_ZN6Player11St_Fly_InitEv.cpp",
@@ -10770,8 +11050,8 @@
     },
     {
       "path": "src/actors/dActor_c.cpp",
-      "sha256": "27c341e95669cab1a0cdf76758a591be8783f147a752d113c2ac567afa24ec76",
-      "bytes": 58280
+      "sha256": "5e470e34e1dcf66936482da7fad44afe8f9cd6264bad2ff6bb11273384792e5c",
+      "bytes": 62024
     },
     {
       "path": "src/actors/daDemo_c.cpp",
@@ -12400,18 +12680,18 @@
     },
     {
       "path": "src/engine/sound/Sound.cpp",
-      "sha256": "342e68a8739a5fdf6010b86d4cb080774c7b33ed93b0b6612cc1d4aa1597b09d",
-      "bytes": 36068
+      "sha256": "5739ad3d55cfcc493e74f69c9af09e62423226bb6b8acfdd2e6b5ca778305aa4",
+      "bytes": 37873
     },
     {
       "path": "src/engine/sound/SoundEngine.cpp",
-      "sha256": "6d6694322191f490654399ea8aa3c9bec10ccfe2d4416f411f8d5c6362eaaee8",
-      "bytes": 80189
+      "sha256": "7606248836b07aa581b1b1c90d0b87557b44190bffc8f61d184908c05364cd46",
+      "bytes": 80775
     },
     {
       "path": "src/engine/view/dCamera_c.cpp",
-      "sha256": "0f883e1be6527ae3e72ae3bad22f6c7026ff2ff49a0653cd8b821e841490988e",
-      "bytes": 56674
+      "sha256": "98c4d7bc5bf6d6940bee02074abd03fa1550c63d2f318e28b250f9c8c53f4468",
+      "bytes": 57553
     },
     {
       "path": "src/engine/view/dView_c.cpp",
@@ -15375,13 +15655,13 @@
     },
     {
       "path": "src/unnamed/arm9/0201/func_020197b8.c",
-      "sha256": "0eabbccd90c80b640959f379f97b665100bc8490584bfe0d788683a9afb06308",
-      "bytes": 3550
+      "sha256": "d9c5eae83f8b540c2cf5223f1576776d756b0033c732856336463a81596a5fc1",
+      "bytes": 3747
     },
     {
       "path": "src/unnamed/arm9/0201/func_020199a4.c",
-      "sha256": "92877a7e287d8815e7c75d9e67826e9b6b16c94874b14a009e8b08ae17ebf939",
-      "bytes": 886
+      "sha256": "08e3b75cdc6f10bf2a11dce66579198f110d8d64c599b05714ce4844ff6726ca",
+      "bytes": 956
     },
     {
       "path": "src/unnamed/arm9/0201/func_02019a58.c",
@@ -15475,8 +15755,8 @@
     },
     {
       "path": "src/unnamed/arm9/0201/func_0201a4bc.c",
-      "sha256": "912a3cef480294603c967b674a9965887fc864cf71c9989c9bf97fa39f925b94",
-      "bytes": 283
+      "sha256": "aeed1a72d04741a51334524ce7d28120986f5b472d8314776cfb35bc348a1e08",
+      "bytes": 580
     },
     {
       "path": "src/unnamed/arm9/0201/func_0201a4d0.c",

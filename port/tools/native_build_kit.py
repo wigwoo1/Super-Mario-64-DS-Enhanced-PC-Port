@@ -80,7 +80,7 @@ def main():
     libraries = re.search(r'  LINK_LIBRARIES = (.+)', link_block)[1].split()
     libraries = [x for x in libraries if x.lower() != 'ntr.lib']
     assert all(re.fullmatch(r'[A-Za-z0-9_]+\.lib', x) for x in libraries)
-    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete port; Buddy opening/persistence, repeated first-cannon rides/course reentry, a second Battlefield cannon ride, first Mario-cap intro crash repair and one original mission1 water-bomb encounter/actor cleanup/reload after course reentry verified; other placements and native audio remain unverified or incomplete',
+    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete native port. Original title/file/course entry, Star rewards/course clear, controller menu paths, selected cannon/water-bomb encounters, and selected native-audio scenes are verified in local isolated runs. Native audio remains opt-in and diagnostic; listening fidelity, shared voice/channel behavior and broad scene coverage are incomplete. Entire Map render-distance visual improvement is not yet verified. HD texture replacement, online/download-play VS, other courses/actors and other requested roadmap features remain incomplete.',
                 'prebuilt': prebuilt, 'local_objects': local, 'generators': generators,
                 'system_libraries': libraries, 'root_fallback': 'Compiled local checkout paths replaced with dot; launcher sets SM64DS_ASSET_ROOT.'}
     (kit / 'manifest.json').write_text(json.dumps(metadata, indent=2) + '\n')

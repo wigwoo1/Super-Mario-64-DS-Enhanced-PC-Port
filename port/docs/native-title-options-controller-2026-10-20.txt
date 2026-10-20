@@ -1,0 +1,61 @@
+Original title options and file-menu controller milestone - 2026-10-20
+Title/options/file-dialog runtime acceptance VERIFIED for the paths below.
+Executable SHA256:
+8ca639caa2d9086fca41b8626cf7e810f5ac42ebd01e7c81de1e50bf9fe4eb80
+
+Fix1: title Backlight Off hung in func_0205f9ac -> func_0205ff08 waiting for
+ARM7 FIFO acknowledgement. Port-only hostgen transformation acknowledges valid
+SDK backlight commands locally, rejects invalid arguments with the original
+0xffff result, and preserves TurnBacklightOn/Off's original UI state writes.
+No DS ARM7 or physical DS backlights exist on PC. This legacy option changes
+the original menu's state; it does not control Windows monitor brightness.
+The matched src/ files remain unchanged. Only the generated PC wrapper differs.
+The stalled diagnostic QA process was positively identified and stopped after
+source proved the infinite acknowledgement wait; it was not restarted merely
+because observation timed out.
+
+Fix2: changing an option briefly hides its original widget while it animates.
+Retain that widget's focus identity instead of resetting to OK when absent;
+confirmation remains disabled until the target is eligible again. Navigation
+can select an eligible replacement if an old target stays absent.
+Modal dialogs share their parent's root/submenu. Enter/leave of modal state is
+a separate focus context, so Yes/No initializes correctly instead of retaining
+an invisible file target. The focus policy is tested by smoke_dsmt_input.
+Opt-in menu CSV appends sound/backlight state for exact runtime verification.
+
+Native Release build succeeds. Full55CTest PASS50.80s;2 backlight host-transform
+tests and9 shared-minigame transform tests PASS. Initial all-target build found
+the new trace globals missing from the isolated smoke fixture; supplied fixture
+state/functions and rebuilt successfully. No shipping game link error remained.
+
+3400tick title-options acceptance exits0: existing file menu -> B to title ->
+D-pad Up/A opens original Options -> Backlight Off then On, previous sound arrow
+cycles0->2->1->0, next arrow cycles0->1->2->0; focus stays on activated controls
+through animations. B returns to title; original preferences restored in memory.
+5700tick file-dialog acceptance exits0: File Options -> Erase -> select File B,
+B activates No; back to Options -> Copy -> File B source/File A destination,
+B activates No on overwrite; Back clears source then exits Copy; Scores ->
+File B records -> Back through Scores/Options/file selection to original title.
+Both confirmations expose2 targets and initialize controller focus on Yes.
+Neither test writes adventure slots0/1/2; A/B payloads unchanged; C stays absent.
+
+Private fixture copies a validated dedicated QA File A and minigame save into
+new case folders; a File B copy has only slot identity/header CRC changed.
+Source hashes, CRCs and exact payloads are checked after each replay. User F:
+ROM/saves/settings are not used by these replays. No user data is edited.
+Runner: work/run-title-submenus-20261020.ps1 -Flow options/files with new CaseName.
+Private checker: work/check-title-submenus-20261020.py.
+Evidence: work/native-title-options-accepted-20261020 and
+work/native-file-dialog-accepted-20261020. test-config.json stores exact schedules.
+Runtime captures have verified lossless PNG copies; diagnostic BMP duplicates
+can be removed by work/archive-title-submenu-captures-20261020.py.
+
+Wanted6500tick audio/menus regression PASS exit0: title -> RecRoom -> Wanted,
+pause/custom/original options, sound0->2->0, held B safety, resume, save notice,
+held Retry safety, pause -> RecRoom -> title. Audio47starts0errors. Evidence:
+work/native-wanted-title-focus-regression-20261020. Complete private checker
+without skip option PASS for all3 accepted native replays.
+Full embedded-data executables/logs/saves/screenshots stay local, not GitHub.
+Remaining: original stage course-clear menus, native controls for other games,
+physical Xbox and mixed pointer/controller acceptance. This does not prove all
+touch menus or all minigames complete. Next milestone: course-clear menu audit.

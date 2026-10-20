@@ -1,0 +1,103 @@
+Native audio foundation checkpoint - 2026-10-20
+
+Latest Wanted audio follow-up (Sol Medium,2026-10-20): actual correct and
+incorrect touch feedback replays pass. The correct target plays its original
+hit/reward sounds, shows +5 and adds five seconds; a wrong target plays the
+miss sounds and shows -10. Both WAV captures report zero audio errors and leave
+the isolated save unchanged. Added optional board/target details to the Wanted
+trace only. 54/54 CTests pass. Read native-audio-wanted-feedback-verified-
+2026-10-20.txt for exact run evidence and limits. No stable install or public
+kit promotion is implied.
+
+Wanted follow-up (Sol Medium,2026-10-20): original entry, pause/resume volume
+ducking, timeout/game-over jingle, retry and Rec Room return pass with native
+audio.54/54CTest and8negative acceptance probes pass. Isolated saves unchanged;
+zero reported audio errors. No gameplay/audio behavior fix was needed. Read
+native-audio-wanted-verified-2026-10-20.txt for exact evidence and limits.
+
+Follow-up integration checks (Sol Medium,2026-10-20)
+Fixed discarded host volume/stop/player fade lengths with game-frame Q8 ramps;
+PC main loops now advance host audio without enabling the missing DS driver.
+Added a direct integer-call ABI probe: PlaySub returned dirty upper register
+bits for bool results; its PC exported definition now returns full0/1. ARM
+definition preserved.54/54 tests and native ABI/core fade probes pass. Latest
+3300frame repeat-Star/pause/save/control replay verifies3299audio updates and
+nonzero device output with0errors. Original sound-actor table audit still passes.
+
+Follow-up door fix (Sol High,2026-10-20): a generated linker alias attached a
+movement predicate to an unrelated wall helper with an incompatible signature.
+The generator and typed bridge are corrected. This also affected silent runs
+depending on memory layout. The11000frame audio-enabled original door/course
+entry/exit/reentry route now passes the strict checker with unchanged saves,
+zero audio errors and10999host updates. Silent door entry and repeat-Star/pause
+regressions pass too. Read native-audio-door-verified-2026-10-20.txt for details.
+Earlier failed diagnostic door runs remain rejected; no stable promotion.
+New planned Music Original/Remastered MP3 option is in the PC settings plan.
+
+Status: diagnostic, opt-in. This is not complete game-wide audio acceptance.
+Normal launches retain the previously accepted silent behavior. Do not promote
+this as the stable installation or a verified public build kit yet.
+
+Implemented
+- Local SDAT/INFO/FAT, SSEQ and SSAR reader; SBNK/SWAR/SWAV instruments/samples.
+- PCM8/16 and DS ADPCM decoding, sample looping, sequence tracks and envelopes.
+- SSEQPlayer core adapted from kode54/SSEQPlayer at revision
+  77222d3657adff358fb4e610d3e56bb7ada8ec24. Original author: Naram Qashat;
+  derived from fincs/FSS. License/attribution retained under third_party/sseqplayer.
+- Bounded event/file reads and execution. Signed ADPCM predictor, ADPCM header
+  length correction, overflow/empty-wave rejection and zero-length note-wait.
+- Banks sharing a FAT file reuse complementary wave bindings, matching the
+  recovered resource cache. Conflicting bindings fail explicitly.
+- SSAR starts retain the complete shared event block for relative jump targets.
+- Windows waveOut, 48 kHz stereo16, four512-frame buffers and a separate mixer
+  thread. Audio thread owns no game actor/save pointers. Optional local WAV capture.
+- Host routes for music, public effects/voices, refreshed long effects, handles,
+  player pause/stop, volume and sub-sequence completion. ARM7 driver remains off.
+- Archive3 effects use the original runtime bank variable; observed bank32 in
+  Battlefield. The offline audit explicitly uses QA bank32 for archive3 only.
+
+Evidence
+- Game target built explicitly: sm64ds_pc is excluded from the default build.
+-54/54 CTests pass, including synthetic PCM8/16/ADPCM vectors, malformed and
+  overflowing/truncated waves, bounded events and endless-note voice chaining.
+- Private local-asset audit:83 music starts,10 seconds each;1448 effect starts,
+  1 second each; all124 bank records and89 wave archives loaded without errors.
+  This tests bounded playback windows, not complete songs or every runtime bank.
+- Native control probe: pause/resume, mute/unmute, handle replacement, stop,
+  one-shot completion and stop-all pass. Star sequence34 ends within20 seconds.
+-3300-frame native game runs: real repeat-Star contact/collection, original
+  celebration and course exit, unchanged saved credit, castle jump and restored
+  control. One run includes original pause/resume. Nonzero captured PCM agrees
+  with mixer statistics; Windows device position advances; zero audio errors.
+- Simulated unavailable device: silent fallback completes the same Star/save/
+  return-to-control regression normally with isolated saves.
+-2300-frame original title/File A/castle run exits normally, restored control,
+  nonzero captured audio and zero reported audio errors. Screenshots captured.
+
+Limitations / next work
+- No listening-based assessment of timbre, pitch, balance, clicks or fidelity.
+- Spatial attenuation/pan and all low-level direct-call variants are not accepted.
+- Original player priority/count limits and one shared16-channel hardware pool
+  are not implemented across host players: each active sequence has16 channels;
+  the adapter currently bounds simultaneous host players to32. This can change
+  the balance/priority of overlapping sounds. Do not describe this as DS parity.
+- Layer/track variables, scene changes, stop fades and all gameplay sound waits
+  still need targeted review and runtime coverage. Do not merely enable the
+  original driver latch: its IPC consumer and heap are still absent on PC.
+- Device loss mid-play preserves silent completion but has no device recovery.
+- The tested castle Star door, Battlefield reentry and Wanted pause/retry/return
+  flows pass with audio. Other minigame interactions, doors/tutorial messages,
+  long sessions and all other courses remain unaccepted with audio. No stable
+  installation or new release kit yet.
+
+Developer diagnostic use
+Set SM64DS_PC_NATIVE_AUDIO=1 to opt in. SM64DS_PC_AUDIO_CAPTURE accepts a private
+WAV output path; SM64DS_PC_AUDIO_NO_DEVICE=1 simulates a missing device.
+Use probe_sdat with a locally extracted archive and --audit or --controls.
+Game audio/assets, captures and full executables remain local. Build kits need
+fresh-folder reconstruction/runtime acceptance before publication.
+
+Separate planned gameplay request
+Staying in the course after collecting a Star is recorded in
+pc-settings-menu-plan-2026-10-15.txt. It has not been implemented. Current audio
+regressions deliberately exercise the original course-exit path.

@@ -1,4 +1,6 @@
 #include "ntr/input.h"
+#include "ntr/video.h"
+#include "ntr/controller_bindings.h"
 #include "ntr/mmio.h"
 
 #include <cmath>
@@ -10,6 +12,11 @@ static bool near(float actual, float expected, float epsilon = 0.002f) {
 }
 
 int main() {
+    if(ntr::controller_face_buttons(0x1000,false)!=2 || ntr::controller_face_buttons(0x2000,false)!=1 ||
+       ntr::controller_face_buttons(0x1000,true)!=1 || ntr::controller_face_buttons(0x2000,true)!=2 ||
+       ntr::controller_face_buttons(0x3000,false)!=3 || ntr::controller_face_buttons(0xffff,true)!=0xc03 ||
+       ntr::controller_face_buttons(0x4000,false)!=0x800 || ntr::controller_face_buttons(0x8000,false)!=0x400 ||
+       ntr::controller_face_buttons(0x4000,true)!=0x400 || ntr::controller_face_buttons(0x8000,true)!=0x800)return 86;
     float x = 0.0f, y = 0.0f;
     ntr::normalize_stick(0, 0, &x, &y);
     if (x != 0.0f || y != 0.0f) return 1;
@@ -37,14 +44,18 @@ int main() {
 #if defined(_WIN32)
     _putenv_s("SM64DS_PC_AUTOMATION_ONLY", "1");
     _putenv_s("SM64DS_PC_AUTOCONFIRM_POLL", "2");
+    _putenv_s("SM64DS_PC_TEST_CAMERA_ZOOM", "2:1");
     _putenv_s("SM64DS_PC_AUTOCONFIRM_REPEAT", "0");
     _putenv_s("SM64DS_PC_AUTODOWN_POLL", "0");
     _putenv_s("SM64DS_PC_TEST_STICK_X", "");
     _putenv_s("SM64DS_PC_TEST_STICK_Y", "");
+    ntr_input_set_menu_navigation(0);
     ntr::input_set_touch(true, 100, 100);
     ntr::input_poll();
+    if(ntr::input_state().camera_zoom_pressed)return 80;
     if (ntr::input_keyinput() != 0x0fff || ntr::input_state().touch) return 7;
     ntr::input_poll();
+    if(!ntr::input_state().camera_zoom_pressed)return 81;
     if (ntr::input_keyinput() != 0x0ffe) return 8;
 
     // A timed replay must start neutral, supply partial analog travel only
@@ -56,6 +67,9 @@ int main() {
     _putenv_s("SM64DS_PC_TEST_STICK_END_POLL", "7");
     for (int poll = 3; poll <= 8; ++poll) {
         ntr::input_poll();
+        if(ntr::input_state().camera_zoom_pressed)return 82;
+        if(poll==3 && (!ntr::input_take_camera_zoom() || ntr::input_take_camera_zoom()))return 87;
+        if(poll>3 && ntr::input_take_camera_zoom())return 88;
         const int expected_x = poll >= 5 && poll < 7 ? 20000 : 0;
         if (ntr::input_state().left_x != expected_x ||
             ntr::input_state().left_y != 0 || ntr::input_keyinput() != 0x0fff) return 9;
@@ -131,6 +145,11 @@ int main() {
     if(ntr::input_keyinput()!=0xfff || ntr::input_state().left_x)return 25;
     _putenv_s("SM64DS_PC_TEST_POWER_STAR", "");
 #endif
-    std::puts("input smoke: analog travel, isolated input and timed stick replay pass");
+    auto settings=ntr::video_get_settings();settings.always_run=false;ntr::video_set_settings(settings);
+    if(ntr_input_run_buttons(0x10,0)!=0x10 || ntr_input_run_buttons(0x810,0)!=0x810)return 83;
+    if(ntr_input_run_buttons(0,1)!=0x800 || ntr_input_run_buttons(0x402,1)!=0xc02)return 84;
+    settings.always_run=true;ntr::video_set_settings(settings);
+    if(ntr_input_run_buttons(0x10,0)!=0x810 || ntr_input_run_buttons(0x402,0)!=0xc02)return 85;
+    std::puts("input smoke: analog travel, isolated input, run policy and timed stick replay pass");
     return 0;
 }

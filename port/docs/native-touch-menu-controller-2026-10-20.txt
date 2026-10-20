@@ -1,0 +1,42 @@
+Shared touch-menu controller bridge - 2026-10-20
+VERIFIED for the runtime paths below; broader all-menu request remains partial.
+Executable SHA256:
+d58a6314784aafa4de8e7568bd3795d463349871d2236eb253394fe19450d13c
+
+Rec Room icons, character tabs, page arrows and Back expose spatial focus.
+D-pad moves focus; A confirms; B selects a real Back/Return/Resume target.
+L/R can activate the Rec Room page arrow when that page exists.
+Shared minigame pause: Resume, Return to Rec Room, Options.
+Original sound/backlight options use their actual touch icons and handlers.
+Shared results buttons use their live original registry, positions and readiness.
+Original score/save notices which require any fresh touch accept A to continue.
+Controller actions temporarily supply the real touch lanes, restore those lanes
+on scope exit, and leave transitions, score/save writes and sound to retail code.
+Held A/B must be released between actions even when face mappings change on
+scene transitions. Mouse/touch takes precedence; controller focus hides then.
+Stage movement, gameplay A/B/Y/X and R3 mappings are unchanged by this bridge.
+
+Acceptance: native Release build;55/55 CTest PASS48.67s;9 Python transform tests.
+Two isolated-save, no-touch-schedule controller replays pass and exit0:
+1.6500ticks audio enabled: original title -> Rec Room -> Wanted, hold opening A,
+  pause, D-pad Options -> PC Settings -> original Game Options, sound0->2->0,
+  hold B to close options without dismissing parent pause, release+fresh B
+  resume, timeout, A save notice, hold A Retry without pausing new round,
+  pause -> Return to Rec Room, B -> original title. Audio47starts,0errors.
+2.5500ticks audio disabled: title -> Wanted, timeout, A save notice, D-pad Down
+  focuses Quit, B activates Quit -> Rec Room, B -> title.
+Synthetic physical Xbox A/B and raw DS D-pad/Start schedules were used.
+Actual Xbox hardware and mouse/controller switching require manual acceptance.
+Only default Wanted icon and Rec Room Back were runtime exercised here.
+Rec Room all categories/page arrows, original title subpanels, other minigames,
+stage course-clear menus and all screen layouts need broader acceptance before
+claiming every touch menu works. Do not launch unsupported games as verified.
+
+Private evidence: work/native-shared-menu-{pause,results}-notice-20261020.
+Private scripts: run-shared-menu-controller-20261020.ps1 and corresponding
+check-shared-menu-controller-20261020.py. Logs/images/saves stay local.
+Earlier diagnostic replay lacked the separate any-touch save-notice target;
+the final build adds it using the existing native callback identity. A compile
+error from comparing the host callback record as a member pointer was corrected
+to compare the native thunk function; no ARM addresses are executed on PC.
+Full game executables embed ROM-derived data and must never be uploaded.

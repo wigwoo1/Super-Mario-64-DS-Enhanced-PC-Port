@@ -15,6 +15,9 @@ int func_ov007_020b7090(unsigned short,unsigned short,unsigned short,unsigned sh
 extern unsigned char *data_ov007_0210342c;
 extern unsigned int data_ov007_020d77dc[24][3];
 extern int data_ov007_02102ddc[];
+// local extern: no shared include declares these original option-state globals.
+int GetSoundMode();
+extern unsigned char data_0208ee3c;
 }
 
 static void controller_menu_touch(unsigned short &keys,unsigned short &x,unsigned short &y,bool &touch) {
@@ -28,7 +31,10 @@ static void controller_menu_touch(unsigned short &keys,unsigned short &x,unsigne
     auto *root=*reinterpret_cast<short **>(context+4);
     auto *sub=*reinterpret_cast<short **>(context+8);
     if(!root || !sub)return;
-    const int layout=(root[0]<<16)|static_cast<unsigned short>(sub[0]);
+    // A modal dialog uses the same root/submenu as its parent. Treat entering
+    // or leaving that dialog as a new focus context, not a widget animation.
+    const int layout=(root[0]<<16)|static_cast<unsigned short>(sub[0])|
+        (data_ov007_02102ddc[1]!=4?0x40000000:0);
     if(layout!=last_layout){focused=-1;last_layout=layout;}
     const unsigned short edge=keys&~previous;previous=keys;
     if(!(keys&2))consume_back=false;
@@ -56,7 +62,7 @@ static void controller_menu_touch(unsigned short &keys,unsigned short &x,unsigne
         if(item.right<0 || item.bottom<0 || item.left>255 || item.top>191 || item.right<=item.left || item.bottom<=item.top)continue;
         targets[count++]=item;
     }
-    if(ntr::menu_focus_index(targets,count,focused)<0)focused=count?targets[0].id:-1;
+    focused=ntr::menu_focus_initialize(targets,count,focused);
     if(navigate)focused=ntr::menu_focus_move(targets,count,focused,dx,dy);
     const int index=ntr::menu_focus_index(targets,count,focused);
     if(!touch && (edge&(1|8))) {
@@ -92,9 +98,9 @@ static void controller_menu_touch(unsigned short &keys,unsigned short &x,unsigne
     if(consume_back)keys&=static_cast<unsigned short>(~2u);
     if(const char *path=std::getenv("SM64DS_PC_MENU_CAPTURE")) {
         static FILE *file=nullptr;
-        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,root,sub,dialog,focus,count,keys,touch,x,y\n",file);}
+        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,root,sub,dialog,focus,count,keys,touch,x,y,sound,backlight\n",file);}
         if(file && (ntr::rt_frame()%10==0 || edge || touch)) {
-            std::fprintf(file,"%llu,%d,%d,%d,%d,%d,%u,%u,%u,%u\n",static_cast<unsigned long long>(ntr::rt_frame()),root[0],sub[0],data_ov007_02102ddc[1],focused,count,keys,touch?1u:0u,x,y);
+            std::fprintf(file,"%llu,%d,%d,%d,%d,%d,%u,%u,%u,%u,%d,%u\n",static_cast<unsigned long long>(ntr::rt_frame()),root[0],sub[0],data_ov007_02102ddc[1],focused,count,keys,touch?1u:0u,x,y,GetSoundMode(),unsigned(data_0208ee3c));
             std::fflush(file);
         }
     }

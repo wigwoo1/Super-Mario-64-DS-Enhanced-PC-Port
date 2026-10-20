@@ -67,6 +67,11 @@ struct PcSharedFilePtrView { unsigned short fileID; unsigned char numRefs; unsig
 #include "ntr/rt.h"
 #include "ntr/mmio.h"
 
+// The movement predicate is a thiscall member. Literal-name C callers must
+// pass through a typed bridge, never an alias to a later wall helper.
+extern "C" int _ZN6Player19func_ov002_020c0434Ev(Player *self)
+{ return self->func_ov002_020c0434(); }
+
 // Callback vtables are owned by the runtime tracker. The simple subclasses
 // use the common particle queue setup; the water/clip bookkeeping callbacks
 // do not enqueue a new system themselves.

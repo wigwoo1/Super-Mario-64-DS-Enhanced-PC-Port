@@ -6,6 +6,8 @@
 #include <cstdlib>
 extern "C" {
 unsigned char data_020a0f10;
+unsigned char data_0208ee3c=1;
+int GetSoundMode(){return 0;}
 unsigned char *data_ov007_0210342c=nullptr;
 unsigned int data_ov007_020d77dc[24][3]={};
 int data_ov007_02102ddc[7]={};
@@ -40,6 +42,11 @@ int main() {
     pc_dsmt_input_update();
     if(received[2]!=0)return 3;
     const ntr::MenuTarget files[]={{1,20,50,80,110},{2,96,50,156,110},{3,172,50,232,110},{4,20,145,80,180}};
+    if(ntr::menu_focus_initialize(files,4,-1)!=1 ||
+       ntr::menu_focus_initialize(files,0,-1)!=-1 ||
+       ntr::menu_focus_initialize(files,1,2)!=2 ||
+       ntr::menu_focus_index(files,1,2)!=-1 ||
+       ntr::menu_focus_index(files,4,2)!=1)return 11;
     if(ntr::menu_focus_move(files,4,1,1,0)!=2 || ntr::menu_focus_move(files,4,2,1,0)!=3 ||
        ntr::menu_focus_move(files,4,2,-1,0)!=1 || ntr::menu_focus_move(files,4,1,0,1)!=4 ||
        ntr::menu_focus_move(files,4,4,0,-1)!=1)return 4;

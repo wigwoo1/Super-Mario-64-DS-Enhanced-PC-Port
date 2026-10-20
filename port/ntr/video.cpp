@@ -7,6 +7,7 @@
 #include "ntr/ppu.h"
 #include "ntr/rt.h"
 #include "ntr/texture.h"
+#include "ntr/minimap_drag.h"
 
 #include <algorithm>
 #include <array>
@@ -35,6 +36,15 @@ Framebuffer g_top;
 Framebuffer g_foreground;
 Framebuffer g_bottom;
 Framebuffer g_minimap;
+Framebuffer g_editor_map;
+Framebuffer g_editor_map_full;
+std::vector<uint32_t> g_editor_background;
+unsigned g_editor_width=0,g_editor_height=0,g_editor_axis=0;
+bool g_editor_active=false,g_editor_dirty=false,g_editor_redraw=false,g_editor_map_ready=false;
+bool g_editor_save_failed=false;
+bool g_editor_suppress_pointer=false;
+uint64_t g_editor_cache_tick=~uint64_t(0);
+MinimapDrag g_editor_drag;
 bool g_minimap_gameplay = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
@@ -155,7 +165,7 @@ void draw_settings_menu(HDC dc) {
               s.texture_quality==TextureQuality::Upscaled?" - no pack installed":"");
     draw_menu_text(dc, 28, 245, line, RGB(245, 248, 255));
     wsprintfA(line, "Map orientation: %s   [O toggles]",
-              s.minimap_rotate_with_player ? "Rotate with player" : "Upright");
+              s.minimap_rotate_with_player ? "Rotate with camera" : "Upright");
     draw_menu_text(dc, 28, 274, line, RGB(245, 248, 255));
     wsprintfA(line, "Touch target: %s   [V toggles]",
               s.minimap_hide_touch_target ? "hidden" : "shown");
@@ -209,7 +219,7 @@ void capture_framebuffer_if_requested() {
 
     // Read back the actual native render target only for requested captures.
     // Ordinary GPU presentation never copies the 4K frame through the CPU.
-    if (g_gpu && !gpu_readback(g_output,g_output_width,g_output_height)) return;
+    if (g_gpu && !g_editor_active && !gpu_readback(g_output,g_output_width,g_output_height)) return;
     FILE *file = std::fopen(path, "wb");
     if (!file) return;
     const uint32_t pixel_bytes = static_cast<uint32_t>(g_output.size() * sizeof(uint32_t));
@@ -245,11 +255,79 @@ void capture_framebuffer_if_requested() {
                     g_settings.minimap_hide_touch_target ? g_minimap : g_bottom);
     }
 }
+// Editor uses a clean frozen render target. GDI captions are rendered into
+// the same CPU pixels as the map so saved screenshots match the actual page.
+void render_minimap_editor() {
+    g_output=g_editor_background;
+    g_output_width=g_editor_width;g_output_height=g_editor_height;
+    const int w=int(g_output_width),h=int(g_output_height);
+    BITMAPINFO bmi{};bmi.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth=w;bmi.bmiHeader.biHeight=-h;
+    bmi.bmiHeader.biPlanes=1;bmi.bmiHeader.biBitCount=32;bmi.bmiHeader.biCompression=BI_RGB;
+    void *bits=nullptr;HDC dc=CreateCompatibleDC(nullptr);
+    HBITMAP bitmap=CreateDIBSection(dc,&bmi,DIB_RGB_COLORS,&bits,nullptr,0);
+    if(dc && bitmap && bits) {
+        const auto previous=SelectObject(dc,bitmap);
+        std::memcpy(bits,g_output.data(),g_output.size()*4);
+        const int font_size=std::max(8,h/43),margin=std::max(4,w/80);
+        RECT footer{0,std::max(0,h-font_size*5),w,h};
+        FillRect(dc,&footer,static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)));
+        HFONT font=CreateFontA(-font_size,0,0,0,FW_SEMIBOLD,FALSE,FALSE,FALSE,
+            ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY,DEFAULT_PITCH,"Segoe UI");
+        const auto old_font=SelectObject(dc,font);SetBkMode(dc,TRANSPARENT);
+        SetTextColor(dc,RGB(255,225,95));
+        const char *title="MINIMAP POSITION - drag the map";
+        TextOutA(dc,margin,footer.top+font_size/3,title,int(std::strlen(title)));
+        char value[160];
+        std::snprintf(value,sizeof(value),"%sX %.1f%%    %sY %.1f%%    %s",
+            g_editor_axis==0?"> ":"",g_settings.minimap_x/10.0,
+            g_editor_axis==1?"> ":"",g_settings.minimap_y/10.0,
+            g_editor_save_failed?"SAVE FAILED":g_editor_drag.active?"Release to save":"Saved");
+        SetTextColor(dc,g_editor_save_failed?RGB(255,100,100):RGB(255,255,255));
+        TextOutA(dc,margin,footer.top+font_size*2,value,int(std::strlen(value)));
+        const char *help="D-pad: select/adjust   L/R: pages   B: back";
+        TextOutA(dc,margin,footer.top+font_size*7/2,help,int(std::strlen(help)));
+        GdiFlush();std::memcpy(g_output.data(),bits,g_output.size()*4);
+        SelectObject(dc,old_font);SelectObject(dc,previous);DeleteObject(font);
+    }
+    if(bitmap)DeleteObject(bitmap);if(dc)DeleteDC(dc);
+    const auto &map=g_settings.minimap_hide_touch_target?g_editor_map:g_editor_map_full;
+    std::array<uint8_t,SCREEN_W*SCREEN_H> transparent{};
+    video_minimap_transparency_mask(&map.px[0][0],transparent.data(),SCREEN_W,SCREEN_H);
+    const int left=w*g_settings.minimap_x/1000,top=h*g_settings.minimap_y/1000;
+    const int mw=std::max(1,w*g_settings.minimap_scale/1000),mh=std::max(1,h*g_settings.minimap_scale/1000);
+    for(int y=0;y<mh && top+y<h;++y)for(int x=0;x<mw && left+x<w;++x) {
+        const int sy=y*SCREEN_H/mh,sx=x*SCREEN_W/mw;
+        if(!transparent[sy*SCREEN_W+sx])
+            blend_minimap(&g_output[size_t(top+y)*w+left+x],map.px[sy][sx],g_settings.minimap_opacity);
+    }
+    const uint32_t border=g_editor_drag.active?0xff80ffff:0xffffdc40;
+    const int right=std::min(w-1,left+mw-1),bottom=std::min(h-1,top+mh-1);
+    for(int x=left;x<=right;++x) {g_output[size_t(top)*w+x]=border;g_output[size_t(bottom)*w+x]=border;}
+    for(int y=top;y<=bottom;++y) {g_output[size_t(y)*w+left]=border;g_output[size_t(y)*w+right]=border;}
+    g_editor_redraw=false;
+}
+
+void update_minimap_drag(bool down,int x,int y) {
+    const bool was_active=g_editor_drag.active;
+    if(g_editor_drag.update(down,x,y,g_settings.minimap_scale,g_settings.minimap_x,g_settings.minimap_y)) {
+        g_editor_dirty=true;g_editor_redraw=true;
+    }
+    if(was_active!=g_editor_drag.active)g_editor_redraw=true;
+    if(was_active && !down && g_editor_dirty) {
+        g_editor_save_failed=!video_save_settings();
+        if(!g_editor_save_failed)g_editor_dirty=false;
+        std::fprintf(stderr,"[minimap editor] release tick=%llu pos=%u,%u saved=%d\n",
+            static_cast<unsigned long long>(rt_frame()),g_settings.minimap_x,g_settings.minimap_y,int(!g_editor_save_failed));
+    }
+}
 #endif
 
 void clamp_settings(VideoSettings &s) {
     if(static_cast<unsigned>(s.renderer)>1)s.renderer=VideoRenderer::D3D11;
     if(static_cast<unsigned>(s.minigame_layout)>2) s.minigame_layout=MinigameLayout::TopBottom;
+    if(s.camera_zoom>3) s.camera_zoom=0;
+    if(static_cast<unsigned>(s.render_distance)>3) s.render_distance=RenderDistance::Minimum;
     if(static_cast<unsigned>(s.texture_quality)>5) s.texture_quality=TextureQuality::Original;
     if(s.anisotropic_filtering!=2 && s.anisotropic_filtering!=4 &&
        s.anisotropic_filtering!=8 && s.anisotropic_filtering!=16) s.anisotropic_filtering=0;
@@ -289,6 +367,8 @@ bool video_open(const char *title) {
 }
 
 void video_close() {
+    video_set_minimap_editor(false);
+    g_editor_background.clear();g_editor_map_ready=false;g_editor_cache_tick=~uint64_t(0);
     gpu_close(); g_gpu=false;
     texture_set_backend(TextureBackend::CpuDecode);
 #if defined(_WIN32)
@@ -321,6 +401,10 @@ bool video_load_settings(const char *path) {
         if (std::strcmp(line, "width") == 0) loaded.width = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "height") == 0) loaded.height = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "target_fps") == 0) loaded.target_fps = static_cast<uint32_t>(value);
+        else if (std::strcmp(line, "camera_zoom") == 0) loaded.camera_zoom = value<=3 ? static_cast<uint8_t>(value) : 0;
+        else if (std::strcmp(line, "always_run") == 0) loaded.always_run = value == 1;
+        else if (std::strcmp(line, "render_distance") == 0) loaded.render_distance = value<=3 ? static_cast<RenderDistance>(value) : RenderDistance::Minimum;
+        else if (std::strcmp(line, "stay_in_stage_after_star") == 0) loaded.stay_in_stage_after_star = value == 1;
         else if (std::strcmp(line, "anisotropic_filtering") == 0) loaded.anisotropic_filtering=static_cast<uint8_t>(std::min(value,255ul));
         else if (std::strcmp(line, "renderer") == 0) loaded.renderer=value==1?VideoRenderer::OpenGLSoftware:VideoRenderer::D3D11;
         else if (std::strcmp(line, "minigame_layout") == 0) loaded.minigame_layout=value<=2?static_cast<MinigameLayout>(value):MinigameLayout::TopBottom;
@@ -329,7 +413,7 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line, "minimap_scale") == 0) loaded.minimap_scale = static_cast<uint16_t>(std::min(value, 65535ul));
         else if (std::strcmp(line, "minimap_x") == 0) loaded.minimap_x = static_cast<uint16_t>(std::min(value, 65535ul));
         else if (std::strcmp(line, "minimap_y") == 0) loaded.minimap_y = static_cast<uint16_t>(std::min(value, 65535ul));
-        else if (std::strcmp(line, "minimap_rotate_with_player") == 0) loaded.minimap_rotate_with_player = value != 0;
+        else if (std::strcmp(line, "minimap_rotate_with_player") == 0 || std::strcmp(line, "minimap_rotate_with_camera") == 0) loaded.minimap_rotate_with_player = value != 0;
         else if (std::strcmp(line, "minimap_hide_touch_target") == 0) loaded.minimap_hide_touch_target = value != 0;
         else if (std::strcmp(line, "upscale_2d") == 0) loaded.upscale_2d = value != 0;
         else if (std::strcmp(line, "hd_textures") == 0) legacy_upscaled = value != 0;
@@ -363,7 +447,7 @@ bool video_save_settings(const char *path) {
     const bool write_ok = std::fprintf(file,
         "width=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
-        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\n",
+        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\ncamera_zoom=%u\nalways_run=%u\nrender_distance=%u\n",
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
         static_cast<unsigned>(g_settings.minimap_scale),
@@ -373,7 +457,7 @@ bool video_save_settings(const char *path) {
         g_settings.minimap_hide_touch_target ? 1u : 0u,
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
-        static_cast<unsigned>(g_settings.renderer)) >= 0;
+        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance)) >= 0;
     const bool close_ok = std::fclose(file) == 0;
     if (!write_ok || !close_ok) { std::remove(temporary); return false; }
 #if defined(_WIN32)
@@ -389,6 +473,7 @@ bool video_save_settings(const char *path) {
 
 void video_set_settings(const VideoSettings &settings) {
     g_settings = settings;
+    if(g_editor_active)g_editor_redraw=true;
     clamp_settings(g_settings);
     if (g_settings.target_fps != 60 && g_settings.target_fps != 120 &&
         g_settings.target_fps != 240) g_settings.target_fps = 60;
@@ -421,13 +506,19 @@ found:
     settings.height = kResolutionPresets[index][1];
 }
 
-uint16_t video_minimap_angle(uint16_t player_heading) {
-    // The map's +Z projects downward; player-forward must project upward.
+uint16_t video_minimap_angle(uint16_t camera_heading) {
+    // Use the original map convention: camera look-at -> eye angle. This
+    // places the world in the same orientation as the current camera view.
     return g_settings.minimap_rotate_with_player
-        ? static_cast<uint16_t>(player_heading + 0x8000u) : 0;
+        ? camera_heading : 0;
 }
 
-void video_set_minimap_gameplay(bool active) { g_minimap_gameplay = active; }
+void video_set_minimap_gameplay(bool active) {
+    if(!active && g_minimap_gameplay) {
+        g_editor_map_ready=false;g_editor_background.clear();g_editor_cache_tick=~uint64_t(0);
+    }
+    g_minimap_gameplay = active;
+}
 void video_set_menu_focus(int left,int top,int right,int bottom) {
     g_focus_left=left;g_focus_top=top;g_focus_right=right;g_focus_bottom=bottom;
 }
@@ -435,8 +526,29 @@ bool video_minimap_visible() {
     return g_settings.minimap && g_minimap_gameplay && !g_pause_screen && !g_minigame_active;
 }
 void video_set_pause_screen(bool active, bool custom_settings) {
+    if(active && !g_pause_screen && g_minimap_gameplay && g_gpu) {
+        if(!gpu_readback_gameplay(g_editor_background,g_editor_width,g_editor_height))
+            g_editor_background.clear();
+    }
     g_pause_screen = active;g_hide_pause_objects = active && custom_settings;
 }
+void video_set_minimap_editor(bool enabled,unsigned selected_axis) {
+    enabled=enabled && g_pause_screen && g_minimap_gameplay &&
+        !g_editor_background.empty() && g_editor_map_ready;
+    if(enabled!=g_editor_active) {
+        if(enabled)std::fprintf(stderr,"[minimap editor] enter tick=%llu preview=%ux%u pos=%u,%u\n",
+            static_cast<unsigned long long>(rt_frame()),g_editor_width,g_editor_height,g_settings.minimap_x,g_settings.minimap_y);
+        if(!enabled && g_editor_drag.held)g_editor_suppress_pointer=true;
+        if(g_editor_dirty) {
+            g_editor_save_failed=!video_save_settings();
+            if(!g_editor_save_failed)g_editor_dirty=false;
+        }
+        g_editor_drag.reset();g_editor_redraw=true;
+    }
+    if(g_editor_axis!=selected_axis)g_editor_redraw=true;
+    g_editor_axis=selected_axis;g_editor_active=enabled;
+}
+bool video_minimap_editor_active() {return g_editor_active;}
 bool video_bottom_objects_visible() { return !g_hide_pause_objects; }
 bool video_pause_screen() { return g_pause_screen; }
 void video_set_minigame_active(bool active) {
@@ -623,7 +735,44 @@ bool video_present_frame() {
         cursor.x<output_area.x+output_area.width && cursor.y<output_area.y+output_area.height &&
         screen_touch(touch_rect,int(int64_t(cursor.x-output_area.x)*g_settings.width/output_area.width),
                      int(int64_t(cursor.y-output_area.y)*g_settings.height/output_area.height),touch_x,touch_y);
-    input_set_touch(!g_menu_open && have_cursor && touch_inside && (GetAsyncKeyState(VK_LBUTTON)&0x8000),touch_x,touch_y);
+    if(!(GetAsyncKeyState(VK_LBUTTON)&0x8000))g_editor_suppress_pointer=false;
+    input_set_touch(!g_menu_open && !g_editor_suppress_pointer && have_cursor && touch_inside && (GetAsyncKeyState(VK_LBUTTON)&0x8000),touch_x,touch_y);
+
+    if(g_editor_active) {
+        input_set_touch(false,0,0);
+        bool down=have_cursor && GetForegroundWindow()==g_window && (GetAsyncKeyState(VK_LBUTTON)&0x8000);
+        int x=int(int64_t(cursor.x)*1000/touch_w),y=int(int64_t(cursor.y)*1000/touch_h);
+        if(const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY"))if(automation[0]=='1') {
+            // Normalized pointer segments exercise the production drag logic;
+            // release outside each interval, independent of host presentation.
+            down=false;
+            const char *segment=std::getenv("SM64DS_PC_TEST_MINIMAP_DRAG");
+            while(segment && *segment) {
+                unsigned long long begin=0,end=0;int x0=0,y0=0,x1=0,y1=0,count=0;
+                if(std::sscanf(segment,"%llu:%llu:%d:%d:%d:%d%n",&begin,&end,&x0,&y0,&x1,&y1,&count)==6 &&
+                   count>0 && (!segment[count] || segment[count]==',') && end>begin+1 &&
+                   rt_frame()>=begin && rt_frame()<end &&
+                   x0>=-3000 && x0<=3000 && y0>=-3000 && y0<=3000 &&
+                   x1>=-3000 && x1<=3000 && y1>=-3000 && y1<=3000) {
+                    down=true;
+                    x=x0+int((int64_t(x1)-x0)*int64_t(rt_frame()-begin)/int64_t(end-begin-1));
+                    y=y0+int((int64_t(y1)-y0)*int64_t(rt_frame()-begin)/int64_t(end-begin-1));
+                    break;
+                }
+                const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
+            }
+        }
+        update_minimap_drag(down,x,y);
+        if(g_editor_redraw)render_minimap_editor();
+        HDC dc=GetDC(g_window);if(!dc)return false;
+        BITMAPINFO bmi{};bmi.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
+        bmi.bmiHeader.biWidth=g_output_width;bmi.bmiHeader.biHeight=-LONG(g_output_height);
+        bmi.bmiHeader.biPlanes=1;bmi.bmiHeader.biBitCount=32;bmi.bmiHeader.biCompression=BI_RGB;
+        SetStretchBltMode(dc,COLORONCOLOR);
+        StretchDIBits(dc,0,0,touch_w,touch_h,0,0,g_output_width,g_output_height,g_output.data(),&bmi,DIB_RGB_COLORS,SRCCOPY);
+        ReleaseDC(g_window,dc);capture_framebuffer_if_requested();
+        return true;
+    }
 
     ppu_scanout(ENGINE_A, g_top);
     ppu_scanout_obj(ENGINE_A, g_top);
@@ -655,6 +804,16 @@ bool video_present_frame() {
     const Framebuffer &main_view = g_pause_screen && !dual ? g_bottom : g_top;
     g_output.assign(&main_view.px[0][0], &main_view.px[0][0] + SCREEN_W * SCREEN_H);
     g_output_width=SCREEN_W;g_output_height=SCREEN_H;
+    const bool cache_gameplay=g_minimap_gameplay && !g_pause_screen && !dual && geometry_visible && g_editor_cache_tick!=rt_frame();
+    if(cache_gameplay) {
+        g_editor_map_full=g_bottom;
+        ppu_scanout(ENGINE_B,g_editor_map,true,0x0b);ppu_scanout_obj(ENGINE_B,g_editor_map);
+        g_editor_map_ready=true;
+        if(!g_gpu) {
+            g_editor_background=g_output;g_editor_width=SCREEN_W;g_editor_height=SCREEN_H;
+        }
+        g_editor_cache_tick=rt_frame();
+    }
     if(dual && !g_gpu) {
         screen_compose(engine_a_on_top?g_top:g_bottom,engine_a_on_top?g_bottom:g_top,
                        screens,g_settings.width,g_settings.height,g_output);
@@ -723,7 +882,7 @@ bool video_present_frame() {
         const auto submit_start=std::chrono::steady_clock::now();
         if (!gpu_render(main_view,video_minimap_visible()?gpu_map_pixels.data():nullptr,
                         g_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
-                        dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top) || !gpu_present(width,height,dual)) {
+                        dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay) || !gpu_present(width,height,dual)) {
             std::fprintf(stderr,"[video] native GPU presentation failed; reverting to software on the next frame\n");
             gpu_close();g_gpu=false;
             texture_set_backend(TextureBackend::SoftwareReference);

@@ -1,4 +1,9 @@
 #include "Player.h"
+#include "ntr/rt.h"
+#include "ntr/audio.h"
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -40,10 +45,10 @@ static uintptr_t native_method(int (Player::*method)())
     return address;
 }
 
-extern "C" const char *pc_player_state_name(const Player *player)
+static const char *native_state_name(const Player::State *state)
 {
-    if (!player || !player->mState) return "none";
-    const uintptr_t address=player->mState->mMain.address;
+    if (!state) return "none";
+    const uintptr_t address=state->mMain.address;
 #define PC_PLAYER_STATE_METHOD(guest, method) \
     if(address==guest || address==native_method(&Player::method)) return #method;
 #define PC_PLAYER_STATE_WORKER(guest, worker) \
@@ -52,6 +57,30 @@ extern "C" const char *pc_player_state_name(const Player *player)
 #undef PC_PLAYER_STATE_METHOD
 #undef PC_PLAYER_STATE_WORKER
     return "unknown";
+}
+
+extern "C" const char *pc_player_state_name(const Player *player)
+{
+    return native_state_name(player?player->mState:nullptr);
+}
+
+extern "C" void pc_trace_player_state_change(const Player *p,const Player::State *oldState,const Player::State *newState,const void *caller)
+{
+    const char *range=std::getenv("SM64DS_PC_PLAYER_STATE_TRACE");
+    unsigned begin=0,end=0;
+    if(!range || std::sscanf(range,"%u:%u",&begin,&end)!=2)return;
+    const auto tick=ntr::rt_frame();if(tick<begin || tick>end)return;
+    const auto image=reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
+    std::fprintf(stderr,"[native player transition] tick=%llu old=%s new=%s state=%p main=%08x caller=%08x pos=%d,%d,%d speed=%d airborne=%u step=%u phase=%u work=%u loop=%u audio=%u\n",
+        tick,native_state_name(oldState),native_state_name(newState),newState,
+        newState?unsigned(newState->mMain.address):0,unsigned(reinterpret_cast<uintptr_t>(caller)-image+0x400000),
+        p->mPosX,p->mPosY,p->mPosZ,p->mHorzSpeed,unsigned(p->mIsAirborne),
+        unsigned(p->mStateStep),unsigned(p->mStatePhase),unsigned(p->mStateWork),unsigned(p->mLoopingSoundHandle),unsigned(ntr::audio_ready()));
+    void *frames[10];
+    const auto count=CaptureStackBackTrace(0,10,frames,nullptr);
+    std::fprintf(stderr,"[native player stack] tick=%llu",tick);
+    for(unsigned i=0;i<count;++i)std::fprintf(stderr," %08x",unsigned(reinterpret_cast<uintptr_t>(frames[i])-image+0x400000));
+    std::fprintf(stderr,"\n");
 }
 
 extern "C" void pc_rebase_player_state(Player::State *state)

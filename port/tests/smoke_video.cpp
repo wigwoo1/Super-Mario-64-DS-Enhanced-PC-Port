@@ -1,6 +1,7 @@
 #include "ntr/video.h"
 #include "ntr/texture.h"
 #include "ntr/rt.h"
+#include "ntr/minimap_drag.h"
 
 #include <cmath>
 #include <cstdio>
@@ -58,6 +59,27 @@ static bool write_test_png(const char *path) {
 #endif
 
 int main() {
+    {
+        ntr::MinimapDrag drag;uint16_t x=710,y=35;
+        if(drag.update(true,800,100,260,x,y) || !drag.active)return 200;
+        if(!drag.update(true,300,400,260,x,y) || x!=210 || y!=335)return 201;
+        if(!drag.update(true,-400,1500,260,x,y) || x!=0 || y!=740)return 202;
+        if(drag.update(false,0,0,260,x,y) || drag.active || x!=0 || y!=740)return 203;
+        if(drag.update(true,900,900,260,x,y) || drag.active)return 204;
+        if(drag.update(true,100,800,260,x,y) || drag.active)return 205; // No press inside: no drag.
+        drag.reset();x=y=100;
+        if(drag.update(true,600,600,500,x,y) || drag.active)return 206; // Outside right/bottom edge.
+        drag.reset();
+        if(drag.update(true,599,599,500,x,y) || !drag.active)return 207;
+        if(!drag.update(true,2000,-2000,500,x,y) || x!=500 || y!=0)return 208;
+        for(unsigned scale=100;scale<=500;scale+=10)for(int delta: {-2000,0,150,2000}) {
+            drag.reset();x=y=100;
+            drag.update(true,100+scale/3,100+scale/2,uint16_t(scale),x,y);
+            drag.update(true,delta,delta,uint16_t(scale),x,y);
+            if(x!=std::clamp(delta-int(scale/3),0,1000-int(scale)) ||
+               y!=std::clamp(delta-int(scale/2),0,1000-int(scale)))return 209;
+        }
+    }
     if (ntr::video_pause_screen()) return 22;
     for(unsigned paused=0;paused<2;++paused)for(unsigned custom=0;custom<2;++custom) {
         ntr::video_set_pause_screen(paused!=0,custom!=0);
@@ -97,10 +119,10 @@ int main() {
     if (ntr::video_minimap_angle(0x4567) != 0) return 20;
     settings.minimap_rotate_with_player = true;
     ntr::video_set_settings(settings);
-    if (ntr::video_minimap_angle(0x4567) != 0xc567 ||
-        ntr::video_minimap_angle(0xffff) != 0x7fff ||
-        ntr::video_minimap_angle(0x8000) != 0 ||
-        ntr::video_minimap_angle(0) != 0x8000) return 21;
+    if (ntr::video_minimap_angle(0x4567) != 0x4567 ||
+        ntr::video_minimap_angle(0xffff) != 0xffff ||
+        ntr::video_minimap_angle(0x8000) != 0x8000 ||
+        ntr::video_minimap_angle(0) != 0) return 21;
     settings.minimap_scale = 500;
     settings.minimap_x = settings.minimap_y = 1000;
     ntr::video_set_settings(settings);
@@ -198,6 +220,8 @@ int main() {
     settings.texture_quality = ntr::TextureQuality::Upscaled;
     settings.minimap_rotate_with_player = true;
     settings.minimap_hide_touch_target = false;
+    settings.stay_in_stage_after_star = true; settings.camera_zoom=3; settings.always_run=true;
+    settings.render_distance=ntr::RenderDistance::EntireMap;
     ntr::video_set_settings(settings);
     if (!ntr::video_save_settings(settings_path)) return 16;
     settings.width = 1280;
@@ -206,6 +230,8 @@ int main() {
     settings.renderer = ntr::VideoRenderer::D3D11;
     settings.minimap_rotate_with_player = false;
     settings.minimap_hide_touch_target = true;
+    settings.stay_in_stage_after_star = false; settings.camera_zoom=0; settings.always_run=false;
+    settings.render_distance=ntr::RenderDistance::Minimum;
     ntr::video_set_settings(settings);
     if (!ntr::video_load_settings(settings_path)) return 17;
     const ntr::VideoSettings loaded = ntr::video_get_settings();
@@ -214,7 +240,7 @@ int main() {
         loaded.renderer!=ntr::VideoRenderer::OpenGLSoftware || loaded.minimap || loaded.minimap_opacity != 137 ||
         loaded.minimap_scale != 310 || loaded.minimap_x != 420 || loaded.minimap_y != 170 ||
         !loaded.upscale_2d || loaded.texture_quality!=ntr::TextureQuality::Upscaled || !ntr::texture_upscaled() ||
-        !loaded.minimap_rotate_with_player || loaded.minimap_hide_touch_target) return 18;
+        !loaded.minimap_rotate_with_player || loaded.minimap_hide_touch_target || !loaded.stay_in_stage_after_star || loaded.camera_zoom!=3 || !loaded.always_run || loaded.render_distance!=ntr::RenderDistance::EntireMap) return 18;
     // Every saved quality overrides the historical toggle, in either key order.
     for(unsigned quality=0;quality<6;++quality) {
         settings.texture_quality=static_cast<ntr::TextureQuality>(quality);
@@ -241,6 +267,8 @@ int main() {
     if(ntr::video_get_settings().anisotropic_filtering!=0) return 30;
     settings.renderer=static_cast<ntr::VideoRenderer>(255);ntr::video_set_settings(settings);
     if(ntr::video_get_settings().renderer!=ntr::VideoRenderer::D3D11)return 31;
+    settings.render_distance=static_cast<ntr::RenderDistance>(255);ntr::video_set_settings(settings);
+    if(ntr::video_get_settings().render_distance!=ntr::RenderDistance::Minimum)return 32;
     std::remove(settings_path);
     std::puts("video smoke: 16:9, 16:10, 21:9 presets through 4K pass");
     return 0;

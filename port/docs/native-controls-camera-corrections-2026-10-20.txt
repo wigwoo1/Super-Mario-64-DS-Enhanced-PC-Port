@@ -1,0 +1,55 @@
+Native controls/camera corrections - bounded verification, 2026-10-20
+
+Implemented:
+- Gameplay Xbox A -> DS B (jump), Xbox B -> DS A (attack). Menus retain
+  A confirm/B back. Dialogue/no-control and minigame pause/results contexts
+  retain menu semantics. Keyboard and literal DS replay schedules stay as before.
+- Analog motion supplies the logical Run-held flag after the original button
+  map, with no synthetic press edge. The original touch-stick magnitude keeps
+  partial travel slow and full travel running; holding Run does not change it.
+- Saved ALWAYS RUN preference on PC Settings page8, row3 supplies Run-held for
+  local digital gameplay. Pause and other-player records do not receive it.
+- R3 leaves the original X inspection view through its normal flag/cleanup
+  path, restores tracking and cycles saved zoom. Analog movement also cancels
+  inspection; its cleanup now restores the camera as well as the player state.
+- Door/no-control recenter state b0e8 continuously targets128world units.
+  Record that state during no-control and restore normal tracking when control
+  resumes. This does not reset unrelated camera states or active cutscenes.
+  Player-specific reads are guarded by actorID; R3 also handles recenter views.
+- Rotating minimap uses camera angle in both background projection and icon
+  rendering. Upright remains unchanged. Old rotation preference keys still load;
+  the legacy internal field name now means camera-following rotation.
+- Keep simulation deadlines on an absolute60Hz timeline rather than resetting
+  them after every presentation. The old reset accumulated sleep jitter and
+  could skip updates at60FPS, making higher display targets appear faster.
+
+Verification:
+- Game and all test targets compile.54/54CTest pass after correcting the new
+  Gameplay page row count. Updated production-controller test also passes,
+  including local/remote, pause, Run preference and no synthetic action edges.
+-2camera-host transform tests pass.
+- Real runtime clock regression:120updates in1.985/1.993/1.997seconds at
+  60/120/240targets, with120/239/477presentations respectively.
+- Native Battlefield replays at60/120/240 have identical recorded player,
+  input and camera states over simulation ticks1490..1800. Camera-following
+  minimap matrix matches view direction and differs from character heading.
+- Partial/full analog, full analog with Run held, digital Run OFF/ON, saved
+  preference reload, Xbox-mask A jump/B Yoshi attack, and menu confirm/back pass.
+- Reproduced X inspection lock in previous preview. New R3 and repeated analog
+  move/stop replays restore walking and normal camera state.
+- Original castle door replay restores normal tracking at tick2488 and accepts
+  R3 at2519. Final guarded3000tick door run exits0. Actual captures inspected
+  for gameplay, three-row settings, rotating minimap and wide post-door view.
+- Isolated slot1/minigame save bytes match their seed files. Personal saves
+  were not used for replays or overwritten.
+
+Final camera/door-tested EXE SHA256:
+01531f92014d100081bfad965e0a4299f5eda6f79404f61fcbcf807aa28b143c
+
+Limitations:
+Xbox button masks are injected through the production mapping for automated
+tests; physical Xbox operation remains for manual confirmation. Camera tests
+cover bounded Battlefield/door paths, not every course/cutscene. Higher display
+rates currently repeat60Hz game states; motion interpolation remains pending.
+Free camera rotation, minimap dragging and remaining shared touch-menu
+navigation are unfinished. No stable F: installation or public kit promotion.

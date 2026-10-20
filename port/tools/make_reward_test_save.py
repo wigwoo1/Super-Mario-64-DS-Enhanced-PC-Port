@@ -13,6 +13,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('source',type=pathlib.Path)
     p.add_argument('destination',type=pathlib.Path)
+    p.add_argument('--unlock-mask',type=int,choices=range(1,8),default=7)
     args=p.parse_args()
     assert not args.destination.exists(),'destination must be a new QA directory'
     copies={}
@@ -26,14 +27,14 @@ def main():
             assert slot==0 and size==68 and raw[24:28]==b'8000',name
             assert raw[24+0x41]==3,'fixture must keep Yoshi selected'
             flags,=struct.unpack_from('<I',raw,24+8)
-            struct.pack_into('<I',raw,24+8,flags|7)
+            struct.pack_into('<I',raw,24+8,flags|args.unlock_mask)
         else:
             assert slot==3 and size==740 and raw[24:28]==b'5000',name
         struct.pack_into('<I',raw,16,zlib.crc32(raw))
         copies[name]=raw
     args.destination.mkdir(parents=True)
     for name,raw in copies.items():(args.destination/name).write_bytes(raw)
-    print('PASS: separate QA save created; Mario/Luigi/Wario unlock bits set, '
+    print(f'PASS: separate QA save created; unlock mask {args.unlock_mask} set, '
           'Yoshi selected, checksums valid; source untouched')
 
 

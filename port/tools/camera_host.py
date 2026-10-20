@@ -97,4 +97,116 @@ def transform(text):
         if text.count(old) != 1:
             raise ValueError('Camera dispatcher body changed')
         text = text.replace(old, new)
+    anchor = '    void *lookdir = &data_02086efc;'
+    if text.count(anchor) != 1:
+        raise ValueError('Camera render eye conversion changed')
+    # Scale the temporary render eye, before the original /8 conversion. The
+    # tracking camera and saved dialogue/cutscene coordinates remain untouched.
+    anchor = '    {\n        s32 s2 = (s32)(sp[2] + 4) >> 3;'
+    if text.count(anchor) != 1:
+        raise ValueError('Camera render coordinate conversion changed')
+    text = text.replace(anchor, '    pc_camera_zoom(this, sp);\n\n' + anchor)
+    text = text.replace('// @symbol _ZN9dCamera_c6RenderEv',
+                        'static void pc_camera_zoom(dCamera_c *, s32 *);\n\n// @symbol _ZN9dCamera_c6RenderEv')
+    text = ('#include "ntr/video.h"\n#include "ntr/input.h"\n#include "ntr/rt.h"\n'
+            '#include <cmath>\n#include <climits>\n' + text)
+    text += r'''
+// Native distance zoom, using the camera's own background collision filter.
+static void pc_camera_zoom(dCamera_c *camera, s32 *view)
+{
+    // Player.h pins actorID at 0xc and control-disabled/no-control bytes at
+    // 0x6f6/0x709. Avoid importing its collision classes into this C shard.
+    auto *player = reinterpret_cast<unsigned char *>(camera->mTargetPlayer);
+    const bool is_player = player && *reinterpret_cast<const u16 *>(player+0xc) == 0xbf;
+    const bool allowed = is_player &&
+        !player[0x6f6] && !player[0x709] &&
+        !data_0209fc48 && !data_0209f294 && !data_0209f20c && !data_0209f2c4;
+    static dCamera_c *previous_camera=nullptr;
+    static bool recenter_from_no_control=false;
+    if(previous_camera!=camera) {previous_camera=camera;recenter_from_no_control=false;}
+    const auto recenter=reinterpret_cast<dCamera_c::State *>(&data_0209b0e8);
+    if(camera->mState!=recenter) recenter_from_no_control=false;
+    else if(is_player && (player[0x6f6] || player[0x709])) recenter_from_no_control=true;
+    if(allowed && recenter_from_no_control) {
+        // GoBehindPlayer's door-exit state continually targets 128 units.
+        // Keep it during no-control, then restore tracking when play resumes.
+        camera->ChangeState(reinterpret_cast<dCamera_c::State *>(&data_0209b008));
+        recenter_from_no_control=false;
+        view[0]=camera->lookAt.x;view[1]=camera->lookAt.y;view[2]=camera->lookAt.z;
+        view[3]=camera->pos.x;view[4]=camera->pos.y;view[5]=camera->pos.z;
+        std::fprintf(stderr,"[camera zoom] recenter-exit tick=%llu\n",static_cast<unsigned long long>(ntr::rt_frame()));
+    }
+    auto settings = ntr::video_get_settings();
+    static unsigned long long last_trace=0;
+    if(std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE") && ntr::rt_frame()>=last_trace+30) {
+        last_trace=ntr::rt_frame();
+        const auto *bytes=reinterpret_cast<const unsigned char *>(camera);
+        std::fprintf(stderr,"[camera native] tick=%llu state=%p mode_offset=%d flags=%x allowed=%d scale=%d,%d view=%d,%d,%d,%d,%d,%d\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),static_cast<void *>(camera->mState),
+            camera->mState_13c-reinterpret_cast<int>(&data_02086fcc),camera->mFlags,int(allowed),
+            *reinterpret_cast<const int *>(bytes+0x104),*reinterpret_cast<const int *>(bytes+0x108),
+            view[0],view[1],view[2],view[3],view[4],view[5]);
+    }
+    static unsigned long long handled = ~0ull;
+    if (ntr::input_take_camera_zoom() && handled != ntr::rt_frame()) {
+        handled = ntr::rt_frame();
+        if (allowed) {
+            // X's original cycle can enter St_CameraZoom (camera state b098).
+            // Use its normal flag-driven exit so the player state cleans up
+            // on the following tick; restore the normal camera immediately.
+            if(camera->mState == reinterpret_cast<dCamera_c::State *>(&data_0209b098) || camera->mState==recenter) {
+                *reinterpret_cast<u16 *>(player+0x6ce) &= ~4u;
+                player[0x715]=0;
+                camera->ChangeState(reinterpret_cast<dCamera_c::State *>(&data_0209b008));
+                view[0]=camera->lookAt.x;view[1]=camera->lookAt.y;view[2]=camera->lookAt.z;
+                view[3]=camera->pos.x;view[4]=camera->pos.y;view[5]=camera->pos.z;
+                std::fprintf(stderr,"[camera zoom] inspection-exit tick=%llu\n",handled);
+            }
+            settings.camera_zoom = static_cast<unsigned char>((settings.camera_zoom+1)%4);
+            ntr::video_set_settings(settings);
+            const bool saved = ntr::video_save_settings();
+            std::fprintf(stderr,"[camera zoom] tick=%llu option=%u saved=%d\n",
+                handled,unsigned(settings.camera_zoom),int(saved));
+        }
+    }
+    if (!allowed || !settings.camera_zoom || settings.camera_zoom>3) return;
+    const int denominator[] = {4,3,2,1};
+    Vec3 start = {view[3],view[4],view[5]}, end;
+    int *desired = &end.x;
+    for (int i=0;i<3;++i) {
+        const long long value = view[i]+(static_cast<long long>(view[i+3])-view[i])*4/denominator[settings.camera_zoom];
+        desired[i]=static_cast<int>(value<INT_MIN?INT_MIN:value>INT_MAX?INT_MAX:value);
+    }
+    // Trace only the extension beyond the already collision-adjusted retail
+    // eye. Keep 32 world units of clearance from the first camera-solid face.
+    dBgCh_Lin line;
+    _ZN9dBgCh_LinC1Ev(&line);
+    func_0200897c(camera,&line);
+    _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&line,&start,&end,nullptr);
+    bool blocked = _ZN9dBgCh_Lin10DetectClsnEv(&line)!=0;
+    if (blocked) {
+        Vec3 hit;
+        _ZN9dBgCh_Lin10GetClsnPosEv(&hit,&line);
+        const double dx=double(hit.x)-start.x,dy=double(hit.y)-start.y,dz=double(hit.z)-start.z;
+        const double length=std::sqrt(dx*dx+dy*dy+dz*dz);
+        const double fraction=length>32*4096 ? (length-32*4096)/length : 0;
+        end.x=start.x+static_cast<int>(dx*fraction);
+        end.y=start.y+static_cast<int>(dy*fraction);
+        end.z=start.z+static_cast<int>(dz*fraction);
+    }
+    _ZN9dBgCh_LinD1Ev(&line);
+    view[3]=end.x;view[4]=end.y;view[5]=end.z;
+    if (std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE") && ntr::rt_frame()%30==0)
+        std::fprintf(stderr,"[camera zoom view] tick=%llu option=%u blocked=%d base=%d,%d,%d eye=%d,%d,%d target=%d,%d,%d\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),unsigned(settings.camera_zoom),int(blocked),
+            start.x,start.y,start.z,end.x,end.y,end.z,view[0],view[1],view[2]);
+}
+
+extern "C" void pc_camera_restore_after_inspection(void *object)
+{
+    auto *camera=static_cast<dCamera_c *>(object);
+    if(camera && camera->mState == reinterpret_cast<dCamera_c::State *>(&data_0209b098))
+        camera->ChangeState(reinterpret_cast<dCamera_c::State *>(&data_0209b008));
+}
+'''
     return text

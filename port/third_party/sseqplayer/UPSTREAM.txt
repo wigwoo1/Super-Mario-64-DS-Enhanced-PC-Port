@@ -1,0 +1,10 @@
+SSEQPlayer by Naram Qashat (CyberBotX), derived from fincs/FSS.
+Source: https://github.com/kode54/SSEQPlayer
+Revision: 77222d3657adff358fb4e610d3e56bb7ada8ec24
+License: WTFPL v2, preserved in LICENSE.TXT; original file attribution preserved.
+Local changes: Player renamed PcSdatPlayer to avoid the game class; bounded
+file/track reads and execution; signed ADPCM predictor and header validation.
+Zero-length note-wait now waits for the track's active voices to finish. Behavior
+reference: https://github.com/TetraSsky/DualRip (README's voice-chaining note).
+The SDAT/SSAR archive adapter and host device integration are separate port code.
+No game assets or proprietary sound driver binaries are included here.

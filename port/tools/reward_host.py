@@ -94,6 +94,29 @@ extern "C" void pc_player_no_control_init(Player *self, const int *row) {
         text += 'static_assert(sizeof(McapStateRec)==16,"native cap state stride");\n'
         text += 'static_assert(sizeof(daObjMarioCap_c)==0x410 && offsetof(daObjMarioCap_c,mStateEntry)==0x3bc,"native cap layout");\n'
     elif 'typedef void (daStar_c::*StateHandler)();' in text:
+        # Ordinary mission Stars can share the retail secret-Star path: pose,
+        # generic save question, normal camera/control cleanup, no stage reload.
+        hooks = {
+            'ret0:\n    return 0;\n}\n\n/* -------------------------------------------------------------------------- */\n/* ROM ordinal 15':
+            'ret0:\n    return pc_star_should_stay(this) ? 1 : 0;\n}\n\n/* -------------------------------------------------------------------------- */\n/* ROM ordinal 15',
+            '} else if (func_ov002_020e9630() != 0) {':
+            '} else if (func_ov002_020e9630() != 0 || pc_star_should_stay(this)) {',
+            'if (mStarID == 0 || func_ov002_020e9630() != 0) {':
+            'if (mStarID == 0 || func_ov002_020e9630() != 0 || pc_star_should_stay(this)) {'
+        }
+        for old, new in hooks.items():
+            assert text.count(old) == 1, 'Star stay hook source changed: ' + old[:65]
+            text = text.replace(old, new)
+        anchor = 'int daStar_c::func_ov002_020ea3a4() {'
+        helper = '''static bool pc_star_should_stay(const daStar_c *star) {
+    return pc_star::can_stay(ntr::video_get_settings().stay_in_stage_after_star,
+        star->actorID, data_0209f2d8, SublevelToLevel(data_0209f2f8),
+        star->mStarID, star->mKind, star->mHomeState);
+}
+
+'''
+        assert text.count(anchor) == 1
+        text = '#include "ntr/video.h"\n#include "hal/star_collection_policy.h"\n' + text.replace(anchor, helper + anchor)
         # The complete table is defined in this TU using native member pointers.
         # Do not copy the DS PMF bytes over it during overlay initialization.
         text += '\nstatic_assert(sizeof(daStar_c)==0x4c4 && offsetof(daStar_c,mMarkerID)==0x434,"native silver-star layout");\n'

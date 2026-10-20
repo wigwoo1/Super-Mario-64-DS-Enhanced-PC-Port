@@ -1,0 +1,40 @@
+Rec Room controller navigation acceptance - 2026-10-20
+VERIFIED: all four character tabs, both pages, D-pad/A and L/R page controls,
+B return to the original title, in Top/Bottom, Left/Right and Right/Left layouts.
+This extends native-touch-menu-controller-2026-10-20.txt; no game code changed.
+
+Exact local and F: executable SHA256:
+d58a6314784aafa4de8e7568bd3795d463349871d2236eb253394fe19450d13c
+Release build succeeds (no work to do);5 focused CTests PASS0.38s and9 Python
+transform tests PASS. The prior full55CTest acceptance remains for this same exe.
+Three independent4100tick native replays exit0. Each starts at original title,
+enters Rec Room with A, navigates page arrows with D-pad and A, selects each
+character tab, uses L/R for forward/back pages, then B returns to title.
+Runtime contexts100..107 cover four categories x two pages. Each first page
+exposes12 targets:6 games,4 tabs,1 arrow,1 Back. Second pages expose9 targets:
+3 games,4 tabs,1 arrow,1 Back. Actual A/B and shoulder actions match the exact
+13 expected native-handler activations per replay. Game icons are not activated;
+this verifies navigation, not that all36 minigames have working native gameplay.
+
+Save fixture: copy the dedicated QA minigames save into a new per-run directory.
+Validate SM64PC01 header/slot3/payload740/CRC32, then set only the28 unlock bits
+at payload+4 and recomputeCRC. Source QA seed hash remains unchanged:
+cf3832584fbdd9d913e49e5790e2f06443a8d3d03950b49a811c284735faa2ad
+No F: save or ROM is used/edited by these replays; C: verified ROM cache is read.
+Each resulting fixture retains valid CRC and all unlock flags.
+
+Private runner: work/run-recroom-navigation-20261020.ps1
+Private fixture/checkers: work/prepare-recroom-navigation-20261020.py and
+work/check-recroom-navigation-20261020.py. Evidence directories:
+work/native-recroom-navigation-20261020
+work/native-recroom-navigation-topbottom-20261020
+work/native-recroom-navigation-rightleft-20261020
+Runtime screenshots are losslessly converted to PNG and pixel-compared withBMP.
+Logs, saves, screenshots and full embedded-data executables must remain private.
+
+Remaining broader touch-menu work: original title options/file subpanels and
+confirmation dialogs, stage course-clear menus, other native minigame handlers,
+real Xbox hardware, and mixed mouse/controller interactions. Do not claim the
+entire all-touch-menu request complete from these Rec Room/Wanted checks.
+Next bounded milestone: original title options and File Options navigation with
+isolated saves; verify Back/Cancel without altering the user's progress.

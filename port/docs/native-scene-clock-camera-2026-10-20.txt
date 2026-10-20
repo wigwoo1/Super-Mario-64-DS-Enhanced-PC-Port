@@ -1,0 +1,82 @@
+SCENE TIMING AND CONTROLLER/CAMERA - 2026-10-20
+Status: verified in bounded native replays. Overall port remains incomplete.
+
+Corrections
+- Previous frame-clock checks measured120 raw VBlanks in about2 seconds.
+  That proved stable host timing, not the original scene update frequency.
+  Stage InitResources sets data_0208ee44=2. The original IRQ wakes the main
+  loop only after that interval. The PC shortcut incorrectly returned after
+  every VBlank and clamped the IRQ threshold to1, doubling Stage game speed.
+- Restore the original IRQ threshold and keep the PC main-thread wait parked
+  until its counter is reset by that wake. Stage logic now runs30updates/sec,
+  interval1 scenes60 and interval3 scenes20. Physical IRQ/input stay60Hz.
+  Preserve the prior absolute host-deadline fix. High display targets repeat
+  existing game states; smooth motion interpolation remains future work.
+- Gameplay Xbox A jumps, B attacks, Y selects original camera mode, X runs.
+  Menus preserve their previous A/B/X/Y semantics. Keyboard binds unchanged.
+  Full analog travel already runs; Always Run also covers digital movement.
+- R3 clicks are retained across intervening VBlanks until the camera consumes
+  them once. Previously a press between30Hz scene updates could disappear.
+  Menu polling discards pending clicks. R3 cycles the saved Original/0.75x/
+  0.5x/0.25x distance choices. Keep the previous inspection/door recovery hooks.
+- Enemy/object Entire Map render distance was added to the roadmap, including
+  shadows, visibility gates, independent AI activation and unloaded-area limits.
+  It is planned, not implemented.
+
+Build and acceptance
+- Native Release build succeeds; 55/55 CTest pass (52.53sec), including new
+  smoke_scene_clock using the actual original IRQ and PC main-loop wait.
+  All nine FPS60/120/240 x interval1/2/3 combinations pass.120 VBlanks take
+  about1.99sec, producing120/60/40 actual scene updates respectively.
+- Two camera-generator tests pass. Input tests cover all face-button maps,
+  R3 retention and single consumption across polls.
+- Exact-build4300tick replays at60/120/240FPS each exit0. Every captured state
+  row agrees between rates after excluding only target_fps. Native audio on,
+  D3D11/NVIDIA GPU,1280x720, isolated saves. Strict private checker passes.
+- Red-cap test uses an automation-only native bank-1 Mario-cap Goomba spawned
+  near Yoshi. No cap, hit, camera state or transformation is injected. Normal
+  tongue attack releases cap122(type18, Mario) at2727; cap enters Yoshi's mouth,
+  no-control pickup animation runs and cap is removed2840. At3000 Yoshi remains
+  underlying character3 with rendered Mario body0 and normal camera/control.
+  Y mode enters inspection3250; analog movement exits it; camera normal3420,
+  remains normal after stopping3500/3600/4250. R3 cycles1/2/3/0 at3450/3650/
+  3850/4050 and saves each choice.
+- First direct-cap placement did not collect; rejected as acceptance and its
+  source hook was removed. An original Mario Goomba approach was also rejected
+  as cap acceptance: cap selection suppressed its hat and Yoshi ate the enemy
+  without a drop. Original encounter selection/priority was not changed.
+- Separate4300tick X sprint/Y camera replay exits0. Digital Right alone yields
+  speed32760 and held0x10; Right+physical Xbox X yields98304 and held0x810.
+  Camera remains normal. Y reaches inspection and analog restores normal.
+- Original title/FileA/castle-door/painting/mission-selection route6500ticks
+  exits0 with audio enabled. Door recenter restores normal tracking3501,
+  mission1 confirmed and Battlefield enters4449. R3 works5000/5500/6000.
+
+Executable SHA256 (all final runtime cases)
+882040eb8910a7ff22d518278fee8171ad89513f7f386186a095fb2647c9756a
+
+Private local evidence (workspace work/)
+clock-controls-ctest-final-20261020.log
+check-scene-clock-camera-20261020.py
+native-movement-AnalogFull-off-20261020-red-goomba-fixture-v1
+native-movement-AnalogFull-off-20261020-red-goomba-fixture-120-v1
+native-movement-AnalogFull-off-20261020-red-goomba-fixture-240-v1
+native-movement-AnalogFull-off-20261020-x-sprint-camera-v1
+native-scene-clock-original-door-20261020
+
+Installation and limits
+F: was unavailable during earlier camera work; its main executable still had
+an older hash. This bounded-verified development executable/map is now installed
+behind the existing Play Mario 64 DS.cmd, with previous executable/map/status
+backed up in native-checkpoint-2026-10-20-scene-clock-camera. Installed SHA256
+matches the tested build. ROM, saves and user settings were not modified.
+Local game embeds ROM-derived data
+and must not be published. No public build kit refresh is claimed here.
+Actual physical Xbox use and broad all-course/cap/collision coverage remain
+unverified. The cap test is a controlled Goomba encounter, not a full traversal
+of the original red-cap Goomba's selection conditions. Existing isolated old
+replays use earlier timing and must be adapted before acceptance on this build.
+Minimap direct dragging is still incomplete: cached-renderer API scaffolding
+compiles but does not activate the editor. Keep it pending in the roadmap.
+Remaining shared menu navigation, free-camera rotation and the broader port
+roadmap remain active. Sol Medium is appropriate for the next UI milestone.

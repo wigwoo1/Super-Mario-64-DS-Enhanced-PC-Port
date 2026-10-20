@@ -152,12 +152,57 @@ def transform(text):
     text = minigame_host.transform(text)
     minigame_hooks = 0
     if text != original: minigame_hooks += 1
+    if 'int func_0205f9ac(int a, int b) {' in text and 'pc_backlight_sync' not in text:
+        # DS synchronous backlight commands wait for an ARM7 FIFO reply.
+        # PC has no second processor/physical DS backlights. Keep the SDK's
+        # validation/result contract; TurnBacklightOn/Off own the UI state.
+        old='''    int local;
+    int r = func_0205f9e8(a, b, (void *)func_0205ff00, &local);
+    if (r != 0) return r;
+    func_0205ff08();
+    return local;'''
+        if text.count(old)!=1: raise ValueError('Synchronous backlight SDK wrapper changed')
+        text=text.replace(old,'''    /* pc_backlight_sync: acknowledge locally, without an ARM7 wait. */
+    return (a >= 0 && a <= 2 && (b == 0 || b == 1)) ? 0 : 0xffff;''')
+        minigame_hooks+=1
+    if 'int Player::St_CameraZoom_Main()' in text:
+        cleanup='int Player::St_CameraZoom_Cleanup()\n{'
+        if text.count(cleanup)!=1: raise ValueError('Inspection cleanup changed')
+        text=('extern "C" void pc_camera_restore_after_inspection(void *);\n'+text)
+        text=text.replace(cleanup,cleanup+'''
+    extern void *data_0209f318;
+    pc_camera_restore_after_inspection(data_0209f318);''')
+        anchor='    if (data_02092110 < 0) {\n        if ((unsigned short)(mStateFlags & 4) == 0) {'
+        if text.count(anchor)!=1: raise ValueError('Inspection camera exit changed')
+        text='extern "C" void ntr_input_left_stick(float *, float *);\n'+text
+        text=text.replace(anchor, '''    if (data_02092110 < 0) {
+        // The original inspection view cancels on digital movement edges.
+        // Native analog travel has no such edge; use the same flag-driven
+        // exit before the original cleanup/return-to-walking code.
+        float analog_x=0.0f,analog_y=0.0f;
+        ntr_input_left_stick(&analog_x,&analog_y);
+        if(analog_x!=0.0f || analog_y!=0.0f) mStateFlags &= ~4u;
+        if ((unsigned short)(mStateFlags & 4) == 0) {''')
+        minigame_hooks+=1
     if 'void dScStage_c::CheckInput()' in text and 'ntr_input_left_stick(&stickX, &stickY);' in text:
         anchor='ntr_input_left_stick(&stickX, &stickY);'
         if text.count(anchor)!=1: raise ValueError('Native movement stick hook changed')
         text=text.replace('extern "C" void ntr_input_left_stick(float *x, float *y);',
                           'extern "C" void ntr_input_movement_stick(float *x, float *y, unsigned mode);')
         text=text.replace(anchor,'ntr_input_movement_stick(&stickX, &stickY, p->mode);')
+        text = ('extern "C" unsigned short ntr_input_run_buttons(unsigned short, int);\n'
+                'extern "C" unsigned char data_0209f2c4;\n' + text)
+        anchor = '                    p->cnt = 0;\n                }\n            }\n#endif'
+        if text.count(anchor)!=1: raise ValueError('Native analog controller tail changed')
+        text=text.replace(anchor, '''                    p->cnt = 0;
+                }
+                if(i==0 && !data_0209fc48 && !data_0209f2c4) {
+                    const bool analog=stickX!=0.0f || stickY!=0.0f;
+                    p->held=ntr_input_run_buttons(p->held,analog);
+                    if(analog) p->pressed &= ~0x800u;
+                }
+            }
+#endif''')
         minigame_hooks+=1
     if 'char* func_ov002_020d708c(char* self)' in text and '((VObj*)a)->IsTargetable()' in text:
         # The cartridge's slot18 is OnYoshiTryEat. MSVC merges the destructor

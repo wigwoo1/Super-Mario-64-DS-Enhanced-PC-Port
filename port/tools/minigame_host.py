@@ -173,6 +173,13 @@ def transform(text):
         for old,new in hooks.items():
             if text.count(old)!=1: raise ValueError('Wanted settings hook changed: '+old)
             text=text.replace(old,new)
+        text='#include "hal/touch_menu_navigation.h"\n'+text
+        anchor='    if (mMenuOpen && pc_wanted_settings_update(this)) return 0;'
+        text=text.replace(anchor,'    if (mMenuOpen && pc_wanted_settings_update(this)) return 0;\n    pc_touch_menu::Frame pc_controller_frame(this);')
+        anchor='flags = data_020a0e5a[mode * 2];'
+        if text.count(anchor)!=1: raise ValueError('Shared menu button gate changed')
+        text=text.replace(anchor,'flags = data_020a0e5a[mode * 2] & ~pc_controller_frame.consumed_keys();')
+        text=text.replace('    pc_wanted_settings_reset();','    pc_wanted_settings_reset();\n    pc_touch_menu::reset();')
         text='#include "hal/wanted_pause_settings.h"\n'+text
         # Verified ARM LDR ip/BX ip veneer to LoadFile: preserve its ID and
         # returned allocation explicitly under the x86 stack calling convention.
@@ -206,6 +213,13 @@ def transform(text):
         for old, obj in [('data_ov004_020beb68->f26()', 'data_ov004_020beb68'),
                          ('g->m()', 'g'), ('sl->f68()', 'sl')]:
             text = text.replace(old, 'reinterpret_cast<dScMgBase_c *>(' + obj + ')->OnHitByCannonBlastedChar()')
+    if 's32 dScMiniGm_c::Behavior()\n{' in text:
+        text='#include "hal/touch_menu_navigation.h"\n'+text
+        text=text.replace('s32 dScMiniGm_c::Behavior()\n{','s32 dScMiniGm_c::Behavior()\n{\n    pc_touch_menu::Frame pc_controller_frame(this);')
+        text=text.replace('s32 dScMiniGm_c::CleanupResources()\n{','s32 dScMiniGm_c::CleanupResources()\n{\n    pc_touch_menu::reset();')
+        anchor='if ((data_020a0e5a[gActivePlayerSlot << 1] & 0xfff) != 0)'
+        if text.count(anchor)!=1: raise ValueError('Rec Room unhandled-button sound gate changed')
+        text=text.replace(anchor,'if ((data_020a0e5a[gActivePlayerSlot << 1] & (0xfff & ~0x3f3)) != 0)')
     if 'typedef void (C31b4::*PMF31b4)();' in text or 'void func_ov004_020b52fc(C *c)' in text:
         text = '#include "ntr/minigame_callback.h"\n' + text
         text = re.sub(r'typedef void \((?:C31b4|C321c|Base|C)::\*(PMF\w*)\)\(\);',
