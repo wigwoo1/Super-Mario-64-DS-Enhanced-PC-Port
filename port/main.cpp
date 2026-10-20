@@ -861,6 +861,43 @@ static bool trace_enabled()
     return value && value[0] && value[0] != '0';
 }
 
+// Input-only collection for the labelled Power Star fixture below. A fixed
+// camera-relative stick recording becomes invalid when an entry camera changes.
+// Observe the actual star position and use the ordinary controller path instead.
+static bool replay_power_star_controls()
+{
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *fixture=std::getenv("SM64DS_PC_TEST_POWER_STAR");
+    if(!automation || std::strcmp(automation,"1") || !fixture ||
+       std::strcmp(fixture,"1") || ntr::rt_frame()<1700)return false;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    if(data_0209f2f8==6 && player && player->aliveState==1 &&
+       !player->mIsNoControl && !player->mIsControlDisabled && !data_0209d660) {
+        for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;
+            actor=dActor_c::FindWithActorID(178,actor)) {
+            auto *star=static_cast<daStar_c *>(actor);
+            if(star->aliveState!=1 || star->param1!=1 || star->mState!=4)continue;
+            static bool logged=false;
+            if(!logged) {
+                std::fprintf(stderr,"[native Power Star replay] target=%u tick=%llu; input-only collection\n",
+                    star->uniqueID,static_cast<unsigned long long>(ntr::rt_frame()));
+                logged=true;
+            }
+            const double dx=double(star->mPosX)-player->mPosX;
+            const double dz=double(star->mPosZ)-player->mPosZ;
+            if(std::hypot(dx,dz)>15*4096.0) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*18000);
+                sy=static_cast<int16_t>(-std::cos(angle)*18000);
+            }
+            break;
+        }
+    }
+    ntr::input_test_controls(true,buttons,sx,sy);
+    return true;
+}
+
 // Opt-in read-only actor census for fresh-save route investigation. The
 // original object table may spawn actors whose retail profile is not yet
 // named/native; enumerate the live actor IDs once at a requested frame.
@@ -939,7 +976,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route())replay_boss_controls();
+        if(!replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

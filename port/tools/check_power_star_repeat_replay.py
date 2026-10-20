@@ -14,7 +14,10 @@ def verify(rows, states, code, before, after, log):
     assert len({r['id'] for r in star}) == 1, 'expected one repeat fixture'
     assert star[0]['star_id']=='1' and int(star[0]['payload']) & 4, 'star did not recognize prior collection'
     pickup = min(int(r['tick']) for r in star if r['state']=='5')
-    assert any(int(r['tick']) < pickup and int(r['hit']) & 0x400000 and r['other']=='3' for r in star), 'missing real player contact'
+    # Actor IDs are allocated at runtime; native scene entry can give the
+    # player a different ID. The retail player-contact bit plus a nonzero
+    # owner is the same pickup evidence used by the first-collection checker.
+    assert any(int(r['tick']) < pickup and int(r['hit']) & 0x400000 and int(r['other'])!=0 for r in star), 'missing real player contact'
     assert {'5','6','7'} <= {r['state'] for r in star}, 'incomplete celebration'
     assert all(r['save_star_mask']=='2' and int(r['power_star_total'])==total for r in rows), 'duplicate or lost live credit'
     assert before[0x14:0x32] == after[0x14:0x32], 'saved course progress changed'

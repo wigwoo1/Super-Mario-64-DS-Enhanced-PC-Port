@@ -6599,6 +6599,11 @@
       "bytes": 7294
     },
     {
+      "path": "port/docs/native-sound-actor-verified-2026-10-20.txt",
+      "sha256": "8773abc8f95d6720278e551ce5e3942358989260901870c6f4d4856d0a149d8e",
+      "bytes": 2481
+    },
+    {
       "path": "port/docs/native-texture-ownership-checkpoint-2026-10-15.txt",
       "sha256": "193d840ee46788ea24b94d09be9920bfbc02a124775c77b3b792a09fdaa00f98",
       "bytes": 6666
@@ -6675,8 +6680,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "5e1c5d4d6804e867e26e22105750b7862518d0b6afd29cd9c1bba7c485a31b10",
-      "bytes": 5173
+      "sha256": "cdb1aa1890847cd5d00cc701fc8d3853552ae0a47ab7afbf640738ab128f4247",
+      "bytes": 5624
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7145,8 +7150,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "4e46ab36305c9a2749bbd6c10b3106dc2cb109972707bc11399b5a2698a63602",
-      "bytes": 91831
+      "sha256": "49ac04db9bb57b61fa0dd7c4c408db6ea987f6b0a0ca1e607357ae98c4eca5d3",
+      "bytes": 93749
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -7255,8 +7260,8 @@
     },
     {
       "path": "port/ntr/input.cpp",
-      "sha256": "ab41ae0f76dcc0d2690dd47e103c9de38cd072666d5b5fa65d8ecea695f4b4ee",
-      "bytes": 14639
+      "sha256": "dd9aabd9eb09b00ab6ff88cdab02d39964035e3161e7bda4fa6ce0bf23fe5efa",
+      "bytes": 14903
     },
     {
       "path": "port/ntr/io.cpp",
@@ -7495,8 +7500,8 @@
     },
     {
       "path": "port/tests/smoke_input.cpp",
-      "sha256": "d167a9181e153864139ee545d95f5c2c808509526940cac2cddae3cb78582079",
-      "bytes": 6027
+      "sha256": "c55c0943f8b5cbd407a5debda6230fde73f4a3c882bf6c8ced929a628159943b",
+      "bytes": 6743
     },
     {
       "path": "port/tests/smoke_input_history.cpp",
@@ -7880,8 +7885,8 @@
     },
     {
       "path": "port/tools/check_power_star_repeat_replay.py",
-      "sha256": "5a81eb40d18c64bfedd66840730ade19a0ff752f8d26fa473242410ff195a8a1",
-      "bytes": 2809
+      "sha256": "f6aa0a6ba1e08d314320fed0ff1011779ae40965417991895155945131ef8861",
+      "bytes": 3038
     },
     {
       "path": "port/tools/check_power_star_replay.py",
@@ -7902,6 +7907,16 @@
       "path": "port/tools/check_shared_data.py",
       "sha256": "f66b2923ce7f2c0a2ef5fbed5f650930079c912e9e4cc12a09b803e3eace4f9f",
       "bytes": 1739
+    },
+    {
+      "path": "port/tools/check_sound_obj_native_data.py",
+      "sha256": "e60023c57f7c3cabfafa6ccd11589dbcfca177b00b9ff15bdfad6b5618e16bf3",
+      "bytes": 1609
+    },
+    {
+      "path": "port/tools/check_sound_obj_replay.py",
+      "sha256": "4f3ab8b827b0de8b8c8a016595ff1b98cfd5ac2ebcf4fb0f2d6aaa37049f2b97",
+      "bytes": 2780
     },
     {
       "path": "port/tools/check_special_rewards_replay.py",
@@ -8050,8 +8065,8 @@
     },
     {
       "path": "port/tools/overlay_data.py",
-      "sha256": "34354d6e92bd67bd544fe6d3211df4589f268a06a94fef0f645e7f580bbd2435",
-      "bytes": 5866
+      "sha256": "07ea2d93dd159a3ed9bd4297a0af978fd9a4f6eb1be34a723afdee29537cfce1",
+      "bytes": 6238
     },
     {
       "path": "port/tools/pc_title_session.py",
@@ -13235,8 +13250,8 @@
     },
     {
       "path": "src/game/actors/d_a_sound_obj.cpp",
-      "sha256": "f13d6156d53c202e46358f7b4357dddc8475dfd71905c2f8179208c4fca728ac",
-      "bytes": 12565
+      "sha256": "d5097ae06d31fcb8d3915131b7d0c6b7c812928596b192e2d0324dfeb5fb4ff8",
+      "bytes": 12820
     },
     {
       "path": "src/game/actors/d_a_star_gate.cpp",

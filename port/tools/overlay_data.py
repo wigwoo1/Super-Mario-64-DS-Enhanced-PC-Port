@@ -80,6 +80,12 @@ def main() -> int:
         # 0x020ff790 is an interior label, not the end of the animation array.
         if args.overlay == 2 and name == "data_ov002_020ff480":
             size = 736 * 4
+        # SOUND_OBJ indexes seven 12-byte rows. The labels at +4/+8/+10
+        # name members inside the first row, not the end of the array.
+        # Stopping at the next label emitted only the first sound ID and
+        # made every later field/row read unrelated host globals.
+        if args.overlay == 2 and name == "data_ov002_0210c080":
+            size = 7 * 12
         if kind == "bss" or address >= bss_start:
             lines.append(f"__declspec(align(4)) unsigned char {name}[{size}] = {{0}};")
             continue

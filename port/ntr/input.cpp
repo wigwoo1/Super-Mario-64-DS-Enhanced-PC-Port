@@ -231,8 +231,10 @@ void input_poll() {
     pressed |= scripted_buttons(g_input_poll_count, std::getenv("SM64DS_PC_TEST_BUTTONS"));
     const char *bot_controls=std::getenv("SM64DS_PC_TEST_BOSS_BOT");
     const char *route_controls=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+    const char *star_controls=std::getenv("SM64DS_PC_TEST_POWER_STAR");
     if(g_test_controls && automation_only && std::strcmp(automation_only,"1")==0 &&
-       ((bot_controls && std::strcmp(bot_controls,"1")==0) || (route_controls && *route_controls))) {
+       ((bot_controls && std::strcmp(bot_controls,"1")==0) || (route_controls && *route_controls) ||
+        (star_controls && std::strcmp(star_controls,"1")==0))) {
         pressed |= g_test_buttons;g_state.left_x=g_test_x;g_state.left_y=g_test_y;
     }
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);
@@ -247,8 +249,10 @@ void input_test_controls(bool enabled,uint16_t buttons,int16_t x,int16_t y) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *boss_bot=std::getenv("SM64DS_PC_TEST_BOSS_BOT");
     const char *course_route=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+    const char *power_star=std::getenv("SM64DS_PC_TEST_POWER_STAR");
     g_test_controls=enabled && automation && std::strcmp(automation,"1")==0 &&
-        ((boss_bot && std::strcmp(boss_bot,"1")==0) || (course_route && *course_route));
+        ((boss_bot && std::strcmp(boss_bot,"1")==0) || (course_route && *course_route) ||
+         (power_star && std::strcmp(power_star,"1")==0));
     g_test_buttons=buttons&0xfff;g_test_x=x;g_test_y=y;
 }
 InputState input_state() { return g_state; }

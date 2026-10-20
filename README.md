@@ -27,12 +27,17 @@ game assets, personal saves, or proprietary compiler is included here.
   Its approach exposed a first Mario-cap intro crash, now repaired in the current
   source. An original mission-1 water-bomb encounter now verifies cannon launches,
   repeated drops, bouncing, body/fragment damage and safe recovery. Other placements
-  and the sound emitter/audio backend
-  remain unfinished or unverified.
+  remain unverified. The native sound emitter now passes creation, callback and
+  cleanup checks during a repeat Power Star pickup. Its seven-row data table
+  is also checked against the user's ROM. Audible playback remains incomplete;
+  the PC sound API currently completes requests silently.
   An original mission-1 exit/re-entry replay also verifies removal of active
   water-bomb actors, painting reload, fresh cannon/dropper actors and renewed firing.
   The `dev-2026-10-19` kit contains the earlier Buddy checkpoint and predates
   cannon riding. The initial `dev-2026-10-18` kit retains its documented collision bug.
+  The later `dev-2026-10-20-native-refresh-verified` kit includes the cannon and
+  water-bomb work but predates the sound table fix now in source. See
+  `port/docs/native-sound-actor-verified-2026-10-20.txt` for that fix's scope.
 - Browser Download Play, complete multiplayer, and the requested AI texture
   packs remain development plans. See the detailed plans in `port/docs/`.
 

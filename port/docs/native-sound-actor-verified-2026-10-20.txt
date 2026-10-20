@@ -1,0 +1,39 @@
+Native sound actor data and lifecycle checkpoint
+
+SOUND_OBJ (actor359) is registered in the native profile table. Its seven host
+callback adapters preserve the recovered starter functions and host calling
+conventions. The first direct lifecycle test found that the generated row table
+at data_ov002_0210c080 contained only four bytes: the next symbol names a member
+inside row0. The generator now emits all seven 12-byte rows from the local ROM.
+No ROM-derived row bytes are included in source control.
+
+Verification:
+- Native MSVC x86 build succeeded; 53/53 CTests passed after rebuilding tests.
+- check_sound_obj_native_data.py verifies the full 84-byte array and profile
+  against the local overlay, plus the native factory binding.
+- A 3300-frame isolated-save replay entered Battlefield, placed a labelled
+  ordinary Power Star fixture, and steered with normal controller input.
+  The Star's original collision/collection code spawned sound actor359/param4.
+  Its initialization fields matched ROM row4; its native starter callback ran,
+  then destruction and cleanup completed exactly once.
+- Player contact at tick1742 led to pickup at1743 and course exit at1870.
+  Castle control, a later jump and idle returned. Saved Star credit remained
+  one before and after the repeat pickup; the course mask remained2.
+- Six negative evidence checks reject the old truncated-table run, missing
+  callback or cleanup, missing player-contact flags/owner, and duplicate credit.
+- Runtime executable SHA256:
+  f0ff53e5bc580af9a501e53a0041c058aaf50e5ba738e2d1942c7d85d5844be4
+
+The scripted fixture does not prove every sound actor caller or parameter.
+The first historical replay was blocked by an unfinished tutorial; a second
+fixed stick recording missed the Star after camera changes. The accepted replay
+uses position observations to steer through the ordinary input path. Actor IDs
+are allocated dynamically, so the repeat verifier checks the retail player-hit
+bit and a nonzero collision owner rather than a fixed player ID.
+
+The PC sound driver remains disabled and requests complete silently. This check
+does not establish audible sound, music, timing with an active sequence driver,
+or complete gameplay. Implementing and testing a native SDAT playback backend
+remains future work. Screenshots, saves, full executables, extracted assets and
+diagnostic logs stay local. The latest preexisting release kit predates this fix;
+it must not be described as containing this checkpoint.

@@ -49,6 +49,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include "Sound.h"
+static_assert(sizeof(daSoundObj_c)==0xe4,"Native SOUND_OBJ allocation size");
+static_assert(offsetof(daSoundObj_c,mSoundID)==0xd4,"Native SOUND_OBJ sound field");
+static_assert(offsetof(daSoundObj_c,mCounterLimit)==0xde,"Native SOUND_OBJ counter field");
 static bool pc_sound_obj_trace_enabled()
 {
     const char *trace = std::getenv("SM64DS_PC_SOUND_OBJ_TRACE");

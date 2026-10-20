@@ -119,6 +119,17 @@ int main() {
     if(ntr::input_keyinput()!=0xfff || ntr::input_state().left_x)return 22;
     ntr::input_test_controls(false,0,0,0);
     _putenv_s("SM64DS_PC_TEST_COURSE_ROUTE", "");
+    _putenv_s("SM64DS_PC_TEST_POWER_STAR", "1");
+    ntr::input_test_controls(true,2,18000,-18000);ntr::input_poll();
+    if(ntr::input_keyinput()!=0xffd || ntr::input_state().left_x!=18000 || ntr::input_state().left_y!=-18000)return 23;
+    _putenv_s("SM64DS_PC_TEST_POWER_STAR", "0");ntr::input_poll();
+    if(ntr::input_keyinput()!=0xfff || ntr::input_state().left_x)return 24;
+    _putenv_s("SM64DS_PC_AUTOMATION_ONLY", "0");
+    _putenv_s("SM64DS_PC_TEST_POWER_STAR", "1");
+    ntr::input_test_controls(true,1,20000,0);
+    _putenv_s("SM64DS_PC_AUTOMATION_ONLY", "1");ntr::input_poll();
+    if(ntr::input_keyinput()!=0xfff || ntr::input_state().left_x)return 25;
+    _putenv_s("SM64DS_PC_TEST_POWER_STAR", "");
 #endif
     std::puts("input smoke: analog travel, isolated input and timed stick replay pass");
     return 0;
