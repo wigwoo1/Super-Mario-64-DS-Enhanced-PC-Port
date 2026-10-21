@@ -30,6 +30,8 @@ namespace ntr {
 namespace {
 
 VideoSettings g_settings;
+struct WindowPreferences {unsigned width=1280,height=720;bool maximized=false;};
+WindowPreferences g_window_preferences;
 bool g_open = false;
 bool g_menu_open = false;
 bool g_menu_was_pressed = false;
@@ -58,15 +60,17 @@ bool g_forced_software = false,g_renderer_failed = false;
 VideoRenderer g_active_renderer=VideoRenderer::D3D11;
 unsigned g_output_width=SCREEN_W,g_output_height=SCREEN_H;
 
-constexpr std::array<std::array<uint32_t, 2>, 12> kResolutionPresets{{
+constexpr std::array<std::array<uint32_t, 2>, 13> kResolutionPresets{{
     {{1280, 720}}, {{1920, 1080}}, {{2560, 1440}}, {{3840, 2160}},
     {{1280, 800}}, {{1920, 1200}}, {{2560, 1600}}, {{3456, 2160}},
     {{1280, 549}}, {{2560, 1097}}, {{3440, 1474}}, {{3840, 1646}},
+    {{256,192}},
 }};
 
 const char *aspect_name(uint32_t width, uint32_t height) {
     if (height == 0) return "unknown";
     const double ratio = static_cast<double>(width) / height;
+    if(std::abs(ratio-4.0/3.0)<0.035)return "4:3";
     if (std::abs(ratio - 16.0 / 10.0) < 0.035) return "16:10";
     if (std::abs(ratio - 21.0 / 9.0) < 0.035) return "21:9";
     return "16:9";
@@ -78,7 +82,16 @@ const char *kWindowClass = "SM64DSNativeVideoWindow";
 
 LRESULT CALLBACK video_window_proc(HWND window, UINT message, WPARAM wparam,
                                    LPARAM lparam) {
+    if(message==WM_SIZE && g_open) {
+        if(wparam==SIZE_MAXIMIZED)g_window_preferences.maximized=true;
+        else if(wparam==SIZE_RESTORED && LOWORD(lparam) && HIWORD(lparam)) {
+            g_window_preferences.width=LOWORD(lparam);g_window_preferences.height=HIWORD(lparam);
+            g_window_preferences.maximized=false;
+        }
+    }
+    if(message==WM_EXITSIZEMOVE && g_open)video_save_settings();
     if (message == WM_CLOSE) {
+        if(g_open)video_save_settings();
         DestroyWindow(window);
         return 0;
     }
@@ -99,15 +112,15 @@ bool create_window(const char *title) {
     wc.lpszClassName = kWindowClass;
     RegisterClassA(&wc);
 
-    RECT rect{0, 0, static_cast<LONG>(g_settings.width),
-              static_cast<LONG>(g_settings.height)};
+    RECT rect{0, 0, static_cast<LONG>(g_window_preferences.width),
+              static_cast<LONG>(g_window_preferences.height)};
     AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
     g_window = CreateWindowA(kWindowClass, title, WS_OVERLAPPEDWINDOW,
                              CW_USEDEFAULT, CW_USEDEFAULT,
                              rect.right - rect.left, rect.bottom - rect.top,
                              nullptr, nullptr, instance, nullptr);
     if (!g_window) return false;
-    ShowWindow(g_window, SW_SHOW);
+    ShowWindow(g_window, g_window_preferences.maximized?SW_SHOWMAXIMIZED:SW_SHOW);
     UpdateWindow(g_window);
     g_open = true;
     return true;
@@ -393,6 +406,7 @@ bool video_load_settings(const char *path) {
     if (!file) return false;
 
     VideoSettings loaded;
+    WindowPreferences loaded_window;
     bool has_quality=false,legacy_upscaled=false;
     char line[160];
     while (std::fgets(line, sizeof(line), file)) {
@@ -404,12 +418,16 @@ bool video_load_settings(const char *path) {
         if (end == equals) continue;
         if (std::strcmp(line, "width") == 0) loaded.width = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "height") == 0) loaded.height = static_cast<uint32_t>(value);
+        else if(std::strcmp(line,"window_width")==0)loaded_window.width=static_cast<unsigned>(std::min(value,3840ul));
+        else if(std::strcmp(line,"window_height")==0)loaded_window.height=static_cast<unsigned>(std::min(value,2160ul));
+        else if(std::strcmp(line,"window_maximized")==0)loaded_window.maximized=value==1;
         else if (std::strcmp(line, "target_fps") == 0) loaded.target_fps = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "camera_zoom") == 0) loaded.camera_zoom = value<=3 ? static_cast<uint8_t>(value) : 0;
         else if (std::strcmp(line, "camera_mode") == 0) loaded.camera_mode = value<=1 ? static_cast<uint8_t>(value) : 0;
         else if (std::strcmp(line, "always_run") == 0) loaded.always_run = value == 1;
         else if (std::strcmp(line, "render_distance") == 0) loaded.render_distance = value<=3 ? static_cast<RenderDistance>(value) : RenderDistance::Minimum;
         else if (std::strcmp(line, "stay_in_stage_after_star") == 0) loaded.stay_in_stage_after_star = value == 1;
+        else if (std::strcmp(line, "brain_rot_text") == 0) loaded.brain_rot_text = value == 1;
         else if (std::strcmp(line, "anisotropic_filtering") == 0) loaded.anisotropic_filtering=static_cast<uint8_t>(std::min(value,255ul));
         else if (std::strcmp(line, "renderer") == 0) loaded.renderer=value==1?VideoRenderer::OpenGLSoftware:VideoRenderer::D3D11;
         else if (std::strcmp(line, "minigame_layout") == 0) loaded.minigame_layout=value<=2?static_cast<MinigameLayout>(value):MinigameLayout::TopBottom;
@@ -436,6 +454,9 @@ bool video_load_settings(const char *path) {
     if (loaded.target_fps != 60 && loaded.target_fps != 120 && loaded.target_fps != 240)
         loaded.target_fps = 60;
     g_settings = loaded;
+    loaded_window.width=std::max(320u,loaded_window.width);
+    loaded_window.height=std::max(240u,loaded_window.height);
+    g_window_preferences=loaded_window;
     rt_set_target_fps(g_settings.target_fps);
     texture_set_quality(g_settings.texture_quality);
     gpu_set_anisotropic_filtering(g_settings.anisotropic_filtering);
@@ -451,9 +472,10 @@ bool video_save_settings(const char *path) {
     FILE *file = std::fopen(temporary, "wb");
     if (!file) return false;
     const bool write_ok = std::fprintf(file,
-        "width=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
+        "window_width=%u\nwindow_height=%u\nwindow_maximized=%u\nwidth=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
-        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n",
+        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\nbrain_rot_text=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n",
+        g_window_preferences.width,g_window_preferences.height,g_window_preferences.maximized?1u:0u,
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
         static_cast<unsigned>(g_settings.minimap_scale),
@@ -463,7 +485,7 @@ bool video_save_settings(const char *path) {
         g_settings.minimap_hide_touch_target ? 1u : 0u,
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
-        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance)) >= 0;
+        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,g_settings.brain_rot_text ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance)) >= 0;
     const bool close_ok = std::fclose(file) == 0;
     if (!write_ok || !close_ok) { std::remove(temporary); return false; }
 #if defined(_WIN32)
@@ -486,24 +508,16 @@ void video_set_settings(const VideoSettings &settings) {
     rt_set_target_fps(g_settings.target_fps);
     texture_set_quality(g_settings.texture_quality);
     gpu_set_anisotropic_filtering(g_settings.anisotropic_filtering);
-#if defined(_WIN32)
-    if (g_window) {
-        RECT rect{0, 0, static_cast<LONG>(g_settings.width),
-                  static_cast<LONG>(g_settings.height)};
-        AdjustWindowRect(&rect, static_cast<DWORD>(GetWindowLongA(g_window, GWL_STYLE)), FALSE);
-        SetWindowPos(g_window, nullptr, 0, 0, rect.right - rect.left,
-                     rect.bottom - rect.top, SWP_NOMOVE | SWP_NOZORDER);
-    }
-#endif
+    // Render-target changes must never resize, move or restore the user's window.
     if (g_open) video_save_settings();
 }
 
-void video_cycle_resolution(VideoSettings &settings) {
+void video_cycle_resolution(VideoSettings &settings,int direction) {
     size_t index = 0;
     for (size_t i = 0; i < kResolutionPresets.size(); ++i) {
         if (settings.width == kResolutionPresets[i][0] &&
             settings.height == kResolutionPresets[i][1]) {
-            index = (i + 1) % kResolutionPresets.size();
+            index = (i + (direction<0?kResolutionPresets.size()-1:1)) % kResolutionPresets.size();
             goto found;
         }
     }
@@ -812,6 +826,17 @@ bool video_present_frame() {
     GetClientRect(g_window, &client);
     const int width = std::max(1L, client.right - client.left);
     const int height = std::max(1L, client.bottom - client.top);
+    if(const char *path=std::getenv("SM64DS_PC_WINDOW_CAPTURE")) {
+        static FILE *file=nullptr;static long previous[11]{};static bool observed=false;
+        RECT bounds{};GetWindowRect(g_window,&bounds);
+        const long state[]={long(g_settings.width),long(g_settings.height),width,height,
+            bounds.left,bounds.top,bounds.right,bounds.bottom,IsZoomed(g_window)?1L:0L,dual?1L:0L,long(g_settings.minigame_layout)};
+        if(!observed || std::memcmp(state,previous,sizeof(state))) {
+            observed=true;std::memcpy(previous,state,sizeof(state));
+            if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,internal_width,internal_height,client_width,client_height,left,top,right,bottom,maximized,dual,layout\n",file);}
+            if(file){std::fprintf(file,"%llu",static_cast<unsigned long long>(rt_frame()));for(long value:state)std::fprintf(file,",%ld",value);std::fputc('\n',file);std::fflush(file);}
+        }
+    }
     const Framebuffer &main_view = g_pause_screen && !dual ? g_bottom : g_top;
     g_output.assign(&main_view.px[0][0], &main_view.px[0][0] + SCREEN_W * SCREEN_H);
     g_output_width=SCREEN_W;g_output_height=SCREEN_H;

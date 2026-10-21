@@ -213,6 +213,16 @@ int main() {
     if (menu.row!=0) return 27;
 
     std::array<unsigned char,0x4000> font;
+    {
+        Menu native_menu;native_menu.page=Page::Display;
+        auto native_settings=settings;native_settings.width=256;native_settings.height=192;
+        char label[64];native_menu.line(0,native_settings,label,sizeof(label));
+        if(std::strcmp(label,"RESOLUTION NATIVE DS"))return 97;
+        native_menu.reset(0);native_menu.page=Page::Display;
+        if(native_menu.update(0x10,native_settings)!=Action::Changed || native_settings.width!=1280)return 98;
+        native_menu.update(0,native_settings);
+        if(native_menu.update(0x20,native_settings)!=Action::Changed || native_settings.width!=256)return 99;
+    }
     std::array<unsigned char,0x6020> chars;
     std::array<uint16_t,1024> text,panels;
     std::array<uint16_t,128> panel;
@@ -262,5 +272,39 @@ int main() {
         }
         if(hit_row(row_top-1,menu.rows())!=-1 || hit_row(row_top+menu.rows()*row_height,menu.rows())!=-1)return 87;
     }
-    std::puts("PASS: native pause settings navigation, repeat, every option, bounds, font tiles and page layout");
+    // The title font/metrics are copied before its scene frees the resource.
+    std::array<unsigned char,0x4f> widths; widths.fill(6);
+    const auto original_font=font;
+    if(cache_options_font(nullptr,0,widths.data()) || cache_options_font(font.data(),0x101,widths.data()))return 91;
+    if(!cache_options_font(font.data(),0,widths.data()) || !options_font_ready())return 92;
+    menu.page=Page::Display;
+    draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
+    const auto proportional_chars=chars;const auto proportional_text=text;
+    for(int page=0;page<=8;++page) {
+        menu.page=static_cast<Page>(page);menu.row=0;
+        draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
+        for(unsigned row=0;row<menu.rows();++row) {
+            const unsigned y=row_top/8+row*row_height/8;
+            int left=256,right=-1,top=16,bottom=-1;
+            for(unsigned py=0;py<16;++py)for(unsigned x=0;x<256;++x) {
+                const unsigned tile=text[(y+py/8)*32+x/8]&0x3ff;
+                const auto pair=chars[tile*32+(py%8)*4+(x%8)/2];
+                if((pair>>((x&1)*4))&15) {
+                    left=std::min(left,int(x));right=std::max(right,int(x));
+                    top=std::min(top,int(py));bottom=std::max(bottom,int(py));
+                }
+            }
+            if(right<left || std::abs(left+right-255)>1 || std::abs(top+bottom-15)>1)return 96;
+        }
+    }
+    menu.page=Page::Display;
+    widths.fill(1);font.fill(0); // source lifetime and metrics changes are isolated
+    // The destination scene's ink palette is independent of the cached source.
+    draw(menu,settings,chars.data(),text.data(),panels.data(),original_font.data(),panel.data(),0x3ff);
+    if(chars!=proportional_chars || text!=proportional_text)return 93;
+    widths[0]=0;
+    if(cache_options_font(font.data(),0,widths.data()) || !options_font_ready())return 94;
+    clear_options_font();
+    if(options_font_ready())return 95;
+    std::puts("PASS: native pause settings navigation, font cache lifetime, repeat, every option, bounds and page layout");
 }

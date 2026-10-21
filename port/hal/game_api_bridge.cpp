@@ -100,15 +100,9 @@ extern "C" void _ZN8dClipper13Func_020156DCEitii(
 extern "C" void _ZN15dMg3DEspModel_cC1Ev(void *self)
 { ::new (self) dMg3DEspModel_c(); }
 
-// These three helpers implement the ARM soft-float math used for scale
-// interpolation in the Kuri King actor. The host uses IEEE single precision;
-// the conversion retains the game's 12 fractional bits.
-extern "C" int func_01ffa344(int bits)
-{
-    union { unsigned int u; float f; } value;
-    value.u = (unsigned int)bits;
-    return (int)(value.f * 4096.0f);
-}
+// ARM soft-float arithmetic used for scale interpolation in Kuri King.
+// The shared float-to-integer conversion lives in float_bits.cpp; callers
+// already supply values in their required units, including fixed-point scales.
 extern "C" int func_01ffa594(int left, int right)
 {
     union { unsigned int u; float f; } a, b, result;

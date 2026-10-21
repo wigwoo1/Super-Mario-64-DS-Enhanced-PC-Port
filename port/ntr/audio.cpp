@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include "ntr/audio.h"
+#include "ntr/audio_output.h"
 #include "ntr/fs.h"
 #include "ntr/sdat.h"
 #include <algorithm>
@@ -35,6 +36,8 @@ struct State {
     uint64_t rendered=0,nonzero=0,capture_bytes=0,starts=0,completed=0;
     int peak=0;
     unsigned prepared=0;
+    bool output_muted=false;
+    uint64_t submitted_nonzero=0;
 };
 State *state=nullptr;
 void word(FILE *file,uint32_t value,unsigned count){for(unsigned i=0;i<count;++i)std::fputc(uint8_t(value>>(i*8)),file);}
@@ -58,7 +61,12 @@ void worker(State &s){
                 for(auto it=s.music.begin();it!=s.music.end();){
                     if(!s.engine.active(it->first)){
                         if(it->second)std::fprintf(stderr,"[native audio] sequence-completed key=%u rendered=%llu\n",it->first,s.rendered);
-                        if(!it->second)s.effects.erase(it->first);
+                        if(!it->second) {
+                            auto effect=s.effects.find(it->first);
+                            if(effect!=s.effects.end() && std::getenv("SM64DS_PC_AUDIO_TRACE"))
+                                std::fprintf(stderr,"[native audio] effect-completed archive=%u id=%u key=%u tick=%llu\n",effect->second.archive,effect->second.id,it->first,s.game_ticks);
+                            s.effects.erase(it->first);
+                        }
                         ++s.completed;it=s.music.erase(it);
                     }else ++it;
                 }
@@ -66,6 +74,7 @@ void worker(State &s){
             for(auto sample:s.buffers[i]){s.nonzero+=sample!=0;s.peak=std::max(s.peak,std::abs(int(sample)));}
             s.rendered+=frames;
             if(s.capture && s.capture_bytes+frames*4<=128*1024*1024){std::fwrite(s.buffers[i].data(),4,frames,s.capture);s.capture_bytes+=frames*4;}
+            s.submitted_nonzero+=audio_prepare_submission(s.buffers[i].data(),s.buffers[i].size(),s.output_muted);
             if(waveOutWrite(s.device,&s.headers[i],sizeof(WAVEHDR))!=MMSYSERR_NOERROR){
                 std::fprintf(stderr,"[native audio] device-write failed; silent completion fallback enabled\n");s.ready=false;s.running=false;
             }
@@ -79,6 +88,8 @@ bool audio_open(){
     if(!enabled || std::strcmp(enabled,"1"))return false; // diagnostic until gameplay acceptance
     if(state)return state->ready;
     auto s=std::make_unique<State>();
+    const char *muted=std::getenv("SM64DS_PC_AUDIO_MUTED");
+    s->output_muted=muted && std::strcmp(muted,"1")==0;
     const int id=fs_id_by_path("data/sound_data.sdat");
     const int bytes=fs_size(id);
     if(bytes<=0 || bytes>64*1024*1024){std::fprintf(stderr,"[native audio] local SDAT unavailable; silent fallback\n");return false;}
@@ -104,6 +115,7 @@ bool audio_open(){
     state=s.release();state->worker=std::thread(worker,std::ref(*state));
     waveOutRestart(state->device);
     std::fprintf(stderr,"[native audio] ready rate=48000 channels=2 bits=16 buffer_frames=2048 music_slots=%u effect_archives=%u\n",state->engine.sequence_slots(),state->engine.effect_archives());
+    std::fprintf(stderr,"[native audio] output_muted=%u (capture precedes device gate)\n",unsigned(state->output_muted));
     return true;
 }
 void audio_close(){
@@ -113,6 +125,7 @@ void audio_close(){
     const auto result=waveOutGetPosition(state->device,&time,sizeof time);
     std::fprintf(stderr,"[native audio] shutdown rendered=%llu nonzero=%llu peak=%d starts=%llu errors=%llu device_position_type=%u device_position=%u query=%u completed=%llu game_ticks=%llu\n",
         state->rendered,state->nonzero,state->peak,state->starts,state->engine.errors(),time.wType,time.u.sample,result,state->completed,state->game_ticks);
+    std::fprintf(stderr,"[native audio] submission output_muted=%u nonzero_samples=%llu\n",unsigned(state->output_muted),state->submitted_nonzero);
     cleanup(*state);delete state;state=nullptr;
 }
 bool audio_ready(){return state && state->ready;}

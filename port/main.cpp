@@ -147,6 +147,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 // Input-only course-route QA: decimal level:x:z:radius waypoints in world
 // units, with optional :1 to jump near the waypoint. Never writes player
 // positions, save flags, actors or scene state.
+static bool replay_course_route_complete;
 static bool replay_course_route() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -156,7 +157,7 @@ static bool replay_course_route() {
     for(unsigned i=0;i<waypoint && segment;++i) {
         const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
     }
-    if(!segment)return false;
+    if(!segment){replay_course_route_complete=true;return false;}
     int level=0,x=0,z=0,radius=0,consumed=0,jump=0,jump_consumed=0;
     if(std::sscanf(segment,"%d:%d:%d:%d%n",&level,&x,&z,&radius,&consumed)!=4 ||
        consumed<=0 || (segment[consumed] && segment[consumed]!=',' && segment[consumed]!=':') ||
@@ -313,6 +314,11 @@ static bool replay_rabbit_controls() {
     const char *enabled=std::getenv("SM64DS_PC_TEST_RABBIT_BOT");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1") || ntr::rt_frame()<6500)return false;
+    // The original intro can outlast the historical tick6500 handoff. Let
+    // the input-only route actually leave the locked door before taking over;
+    // its castle-to-maze navigation grid does not cover that doorway.
+    const char *route=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+    if(route && *route && !replay_course_route_complete)return false;
     auto *player=static_cast<Player *>(data_0209f394[0]);
     if(!player || player->aliveState!=1)return false;
     unsigned flags1=0,flags2=0;

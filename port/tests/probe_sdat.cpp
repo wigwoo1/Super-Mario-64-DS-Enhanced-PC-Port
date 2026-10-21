@@ -15,11 +15,33 @@ static void wav(FILE *f,unsigned frames){
     word(f,4,2);word(f,16,2);std::fwrite("data",1,4,f);word(f,frames*4,4);
 }
 int main(int argc,char **argv){
-    if(argc<3){std::puts("probe_sdat <local.sdat> --audit OR --effect <archive> <id> <seconds> <output.wav> OR <output.wav> <music-ID> [seconds]");return 2;}
+    if(argc<3){std::puts("probe_sdat <local.sdat> --audit OR --players OR --controls OR --effect <archive> <id> <seconds> <output.wav> OR <output.wav> <music-ID> [seconds]");return 2;}
     std::ifstream file(argv[1],std::ios::binary);
     std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)),{});
     ntr::SdatEngine engine;if(!engine.load(bytes.data(),bytes.size())){std::fprintf(stderr,"load failed: %s\n",engine.error().c_str());return 1;}
     std::vector<int16_t> buffer(2048);
+    if(!std::strcmp(argv[2],"--players")){
+        auto check=[](bool ok,const char *message){if(!ok)throw std::runtime_error(message);};
+        try {
+            const auto music=engine.play_sequence(0);
+            const auto motor=engine.play_effect(3,332,32);
+            check(music && motor,"original music/motor start");engine.render(buffer.data(),1024);
+            const auto stop=engine.play_effect(3,333,32);
+            check(stop && !engine.active(motor) && engine.active(music),"player15 replacement or music isolation");
+            engine.render(buffer.data(),1024);check(!engine.active(stop),"empty motor-stop cue completion");
+            engine.stop_all();const auto shot=engine.play_effect(3,335,32);
+            const auto flight=engine.play_effect(0,185);
+            check(shot && flight,"original launch/flight start");
+            unsigned shot_end=0,flight_end=0;
+            for(unsigned block=1;block<=240;++block){
+                engine.render(buffer.data(),1024);
+                if(!shot_end && !engine.active(shot))shot_end=block*1024;
+                if(!flight_end && !engine.active(flight))flight_end=block*1024;
+            }
+            check(shot_end && flight_end && !engine.errors(),"launch/flight natural completion");
+            std::printf("PASS: original player15 motor replacement, empty stop cue and independent music; cannon shot %.3fs/flight %.3fs complete naturally, errors=%llu\n",double(shot_end)/48000,double(flight_end)/48000,engine.errors());return 0;
+        } catch(const std::exception &e){std::fprintf(stderr,"player check failed: %s\n",e.what());return 1;}
+    }
     if(!std::strcmp(argv[2],"--effect")){
         if(argc<7)return 2;
         const unsigned group=unsigned(std::strtoul(argv[3],nullptr,0));

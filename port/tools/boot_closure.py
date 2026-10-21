@@ -14,6 +14,7 @@ import sys
 
 
 DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
+                 "daSBird_c_classInit", "_ZN9daSBird_cD1Ev",
                  "daCnn_c_classInit", "daWbm_c_classInit", "daTree_c_classInit",
                  "daObjMc_Metalnet_c_classInit",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
@@ -388,10 +389,18 @@ def main() -> int:
                 sys.path.insert(0, str(root / "port/tools"))
                 import hostgen  # pylint: disable=import-outside-toplevel
                 transformed, rewrites = hostgen.transform(markerless)
+                if path.name in ('d_a_s_bird.cpp','d_a_s_bird_head.cpp'):
+                    import bird_host
+                    transformed=bird_host.transform(root,transformed,path.name)
+                    rewrites+=1
+                if path.name=='Sound.cpp':
+                    import sound_host
+                    transformed=sound_host.transform(transformed,path.name)
+                    rewrites+=1
                 if path.stem in dsmt_veneers and 'ov007' in path.parts:
                     transformed=dsmt_host.transform_veneer(path.stem,dsmt_veneers[path.stem])
                     rewrites+=1
-                if path.name in ('dScBoot_c.cpp','dScDSMT_c.cpp','func_ov007_020aed98.cpp'):
+                if path.name in ('dScBoot_c.cpp','dScDSMT_c.cpp','func_ov007_020aed98.cpp','func_ov007_020b7eec.c','func_ov007_020b8548.c'):
                     import dsmt_host
                     transformed=dsmt_host.transform(transformed,path.name)
                     rewrites+=1

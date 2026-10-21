@@ -1,0 +1,28 @@
+Native coin tied-note release: sequencer verified, gameplay/listening pending
+
+The local original coin effect3:17 contains finite note waits, tie commands and
+an explicit END. It is not an embedded infinite sequence loop. The host player
+created an indefinite tied voice and left it held when END marked the track
+finished. A synthetic looping-instrument/tied-note regression reproduced this
+before the fix. END now releases tied voices belonging to that track through
+the existing instrument release envelope. Non-tied sample tails are preserved.
+The generated Sound.cpp removes the old arbitrary60-game-tick coin timeout.
+Matched source/header files are untouched; changes are under port only.
+
+Build, synthetic regression, independent-track isolation, ordinary sample-tail
+preservation and existing SDAT/mute tests pass. Local uncapped3:17 remains active
+after10seconds before the fix and completes at1.067seconds afterward. Initial
+0.73977seconds of PCM are identical; final seconds now silent. Local effects
+3:18,3:331,3:332,3:334 produce byte-identical10second WAVs before/after. Their
+completion times remain1.067,2.475,3.776,0.683seconds. No cannon timbre fix is
+claimed. Full audit83music(10s each) and1448effects(2s each) passes without decoder
+or execution errors; archive3's bank32 here is an explicit audit override.
+
+Two muted original-menu gameplay checks exit normally with zero mixererrors,
+but do not collect a coin: Battlefield route passes above the placed ground
+coin row while climbing the bridge; castle lobby route reaches the wall below
+the raised coin ledge. Those are incomplete pickup checks, not coin acceptance.
+Stop guessing approaches; derive a route up the main staircase before traversing
+the ledge, or use an already accepted input-only reward pickup fixture. Hearing
+and complete DS audio fidelity remain unverified. Main F installation is not
+promoted. Any separate diagnostic preview has private saves/settings.

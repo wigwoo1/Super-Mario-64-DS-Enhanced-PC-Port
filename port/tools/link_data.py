@@ -25,6 +25,7 @@ FILE_BACKED_AFTER_BSS = ((0x020994D4, 0x02099CE4),
 # production linker map showed C++ references landing in separate generated
 # ROM/BSS copies. Bind every recovered spelling to the live HAL object.
 HAL_OWNED_DATA = {
+    "g_profile_SBIRD", "data_ov009_02113c20", "data_ov009_02113c28", "data_ov009_02113c48", "data_ov009_021138fc",
     "data_020a1040", "data_020a1044", "data_020a1046", "data_020a1048",
     "data_020a104c", "data_020a104e", "data_020a1050", "data_020a1052",
     "data_020a1154", "data_020a1160", "data_020a1162", "data_020a1164",

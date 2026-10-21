@@ -62,15 +62,29 @@ static void reset_scene()
     ntr::gx_enable_lights(0x1);
 }
 
+static unsigned pose_hash(const ntr::GxTriangle *t,size_t n)
+{
+    unsigned h = 2166136261u;
+    auto bytes = [&h](const void *data,size_t size) {
+        const auto *b=static_cast<const unsigned char *>(data);
+        for(size_t i=0;i<size;++i)h=(h^b[i])*16777619u;
+    };
+    for(size_t i=0;i<n;++i) {
+        // Cache reloads may allocate identical pixels at a different address.
+        // Keep all geometry/material bytes, then hash texture presence/content
+        // instead of that process-local allocation address.
+        auto pose=t[i];pose.tex=nullptr;
+        bytes(&pose,sizeof(pose));
+        const bool textured=t[i].tex!=nullptr;bytes(&textured,sizeof(textured));
+        if(textured)bytes(t[i].tex,size_t(t[i].tw)*t[i].th*sizeof(uint32_t));
+    }
+    return n ? h : 0;
+}
+
 static unsigned tri_hash()
 {
-    size_t n = 0;
-    const ntr::GxTriangle *t = ntr::gx_polygons(n);
-    unsigned h = 2166136261u;
-    const unsigned char *b = (const unsigned char *)t;
-    for (size_t i = 0; i < n * sizeof(ntr::GxTriangle); ++i)
-        h = (h ^ b[i]) * 16777619u;
-    return n ? h : 0;
+    size_t n=0;const auto *triangles=ntr::gx_polygons(n);
+    return pose_hash(triangles,n);
 }
 
 // The game-shaped loop: the actor pattern verbatim -- advance the
@@ -93,6 +107,15 @@ static bool frame_hook(uint64_t) { return true; }
 int main(void)
 {
     PORT_INSTALL_FAULT_PROBE();
+    {
+        uint32_t first=0xff123456,second=first;
+        ntr::GxTriangle a{};a.tex=&first;a.tw=a.th=1;
+        auto b=a;b.tex=&second;
+        CHECK(pose_hash(&a,1)==pose_hash(&b,1));
+        second^=1;CHECK(pose_hash(&a,1)!=pose_hash(&b,1));
+        second=first;b.v[0].x=1;CHECK(pose_hash(&a,1)!=pose_hash(&b,1));
+        b=a;b.tex=nullptr;CHECK(pose_hash(&a,1)!=pose_hash(&b,1));
+    }
     if (!ntr::io_init()) { fprintf(stderr, "io_init failed\n"); return 2; }
     CHECK(_ZN4Heap13SetupRootHeapEv() != NULL);
     ident_fx(&data_0209b3ec);

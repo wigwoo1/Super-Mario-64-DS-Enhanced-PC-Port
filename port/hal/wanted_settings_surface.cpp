@@ -29,15 +29,26 @@ void WantedSurface::draw(const Menu &menu,const ntr::VideoSettings &settings) {
     std::fill(pal+1,pal+16,0x7fff); // original font ink, all nonzero indices
     for(unsigned bank=1;bank<=2;++bank) {
         pal[bank*16]=0;
-        pal[bank*16+1]=0x02df; // gold border
-        pal[bank*16+2]=bank==1?0x2884:0x4968;
+        pal[bank*16+1]=0x0842; // dark outer rim
+        pal[bank*16+2]=bank==1?0x0259:0x5bff; // orange / selected cream
+        pal[bank*16+3]=0x7bff; // bevel highlight
+        pal[bank*16+4]=0x0150; // bevel shadow
+        pal[bank*16+5]=0x02df; // gold inner edge
+        pal[bank*16+6]=bank==1?pal[bank*16+2]:0x0150; // selected arrow
     }
     auto *tiles=chars+0xc000;
     std::memset(tiles,0,10*32);
     for(unsigned tile=0;tile<9;++tile) for(unsigned y=0;y<8;++y) for(unsigned x=0;x<8;++x) {
-        const bool border=(tile%3==0 && x==0)||(tile%3==2 && x==7)||
-                          (tile/3==0 && y==0)||(tile/3==2 && y==7);
-        tiles[tile*32+y*4+x/2]|=(border?1:2)<<((x&1)*4);
+        const bool left=tile%3==0,right=tile%3==2,top=tile/3==0,bottom=tile/3==2;
+        unsigned color=2;
+        if((left&&x<3)||(right&&x>4)||(top&&y<3)||(bottom&&y>4))color=5;
+        if((left&&x==1)||(top&&y==1))color=3;
+        if((right&&x==6)||(bottom&&y==6))color=4;
+        if((left&&x==0)||(right&&x==7)||(top&&y==0)||(bottom&&y==7))color=1;
+        // The shared renderer keeps the top/bottom eight-pixel strips.
+        const unsigned py=top?y:bottom?y+8:16;
+        if(left && x>=3 && x<=6 && py<16 && unsigned(std::abs(int(py)-7))<=int(6-x))color=6;
+        tiles[tile*32+y*4+x/2]|=color<<((x&1)*4);
     }
     uint16_t panel[128];
     for(unsigned y=0;y<4;++y) for(unsigned x=0;x<32;++x)

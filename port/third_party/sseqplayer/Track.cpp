@@ -627,6 +627,11 @@ void Track::Run()
 					break;
 
 				case SSEQ_CMD_END:
+					// Tied notes have no finite gate. Release this track's held
+					// voice at its explicit end, allowing the instrument's tail.
+					// Non-tied sample tails retain their existing lifetime.
+					if (this->state[TS_TIEBIT])
+						this->ReleaseAllNotes();
 					this->state.set(TS_END);
 					return;
 

@@ -44,6 +44,17 @@ def owned_names(root):
             if low<=int(a,16)<high:names.append((n,int(a,16)))
     return names
 def transform(text,name):
+    if name=='func_ov007_020b8548.c':
+        anchor='    data_ov007_0210345c = p1;'
+        if text.count(anchor)!=1:raise ValueError('Title font capture anchor changed')
+        return ('extern void pc_settings_capture_title_font(const void *, unsigned int);\n'+
+                text.replace(anchor,anchor+'\n    pc_settings_capture_title_font((const void *)p1, (unsigned short)p2);',1))
+    if name=='func_ov007_020b7eec.c':
+        end=text.rfind('}')
+        if end<0 or 'void func_ov007_020b7eec(unsigned char *t)' not in text:
+            raise ValueError('Title option text renderer changed')
+        return ('void pc_title_text_label_draw(void);\n'+text[:end]+
+                '  pc_title_text_label_draw();\n'+text[end:])
     if name=='func_ov007_020aed98.cpp':
         anchors=[('    for (i = 0; i < 0x18; i++) {',0),('    for (i = 0; i < 9; i++) {',2)]
         # There are two 24-element loops: hit testing and the state step.
@@ -63,6 +74,16 @@ def transform(text,name):
         text=text.replace(load,load+'\n    if (pc_dsmt_requested()) { pc_dsmt_trace("boot message bank"); LoadMessageBankForLanguage(); }',1)
         return '#include "hal/dsmt_scene.h"\n'+text.replace(needle,'StartSceneFade(pc_dsmt_requested() ? 1 : 2, 0, 0);')
     if name=='dScDSMT_c.cpp':
+        # This title scene owns the actual native option command callback.
+        # Reuse its animated On/Off widgets for the persisted dialogue mode.
+        for old,new in [('        TurnBacklightOn();','        pc_title_text_mode_set(1);'),
+                        ('        TurnBacklightOff();','        pc_title_text_mode_set(0);'),
+                        ('((u8 *)data_0209b340)[9] = data_0208ee3c[0];',
+                         '((u8 *)data_0209b340)[9] = pc_title_text_mode_get();')]:
+            if text.count(old)!=1:raise ValueError('Title dialogue option anchor changed: '+old)
+            text=text.replace(old,new,1)
+        init='    func_ov007_020b7138(&data_ov007_02103290, data_0209b340);'
+        text=text.replace(init,'    ((u8 *)data_0209b340)[9] = pc_title_text_mode_get();\n'+init,1)
         input_block='    func_0203da9c();\n    {\n        u16 *p = func_0203dabc();\n        int arg4;\n        func_0203da9c();\n        arg4 = func_0203dae4();\n        result = func_ov007_020b7090(p[0], p[1], p[2], p[3], arg4);\n    }'
         if text.count(input_block)!=1:raise ValueError('DSMT input ABI anchor changed')
         text=text.replace(input_block,'    result = pc_dsmt_input_update();',1)

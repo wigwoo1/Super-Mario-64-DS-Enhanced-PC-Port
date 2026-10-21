@@ -1,0 +1,64 @@
+Native archive sound-player limits: cannon ride verified, listening pending
+
+Follow-up 2026-10-21: the original Mission2 player ride passes on both the
+canonical build and the actual F preview, SHA FE5D2906...E374EA8B. Original
+menu input confirms Mission2; aim, launch trajectory, cannon reset, grounded
+controls and unchanged isolated saves pass check_cannon_replay.py. Shot3:335
+and airborne0:185 complete naturally without a forced stop or preemption.
+Real PCM is captured; speaker submissions remain silent and mixer errors zero.
+Private combined evidence: work/cannon-entry-mission2-acceptance-20261021.json.
+No gameplay code change was needed: earlier failed routes selected Mission1.
+The failed routes below are historical diagnostics, not current ride results.
+Repeated rides and reentry now pass on the same build: two rides in visit1,
+original Exit Course/painting/mission selection, then a third ride in visit2.
+Full F trace verifies each aim/barrel/launch/landing/reset, fresh cannon actor,
+painting cleanup/cache reset, saved-open shutter and unchanged isolated saves.
+All six firing/airborne cues finish naturally; no mixer errors/speaker output.
+No gameplay change was necessary. Private launcher now includes required
+Buddy/painting tracing. Evidence: work/cannon-cycle-audio-acceptance-20261021.json.
+Second Battlefield cannon now also passes locally on the same build: normal
+Mission2 route, live cannon123, aim8763/launch8885/grounded idle9095. Initial
+route was knocked off the bridge by repeated Goomba hits. Existing opt-in
+jump avoidance fixes the private replay navigation without gameplay edits.
+Shot335/airborne185 naturally complete; no mixer errors, speaker output zero,
+isolated saves unchanged. Existing selected-cannon checker and audio smoke pass.
+Evidence: work/second-cannon-audio-acceptance-20261021.json. Other positions,
+actual F second-cannon replay and listening remain separate acceptance work.
+This does not establish complete DS audio fidelity.
+
+The original archive's PLAYER INFO records define maximum simultaneous
+sequences. Cannon motor effects3:331..334 share player15, which has one slot.
+Effect333 is an empty END cue: starting it replaces/stops the prior motor cue.
+The old PC adapter ignored these records and allowed motor332 to continue after
+333. The native backend now parses configured limits, retains separate player
+and channel priorities, rejects a lower-priority request when full, and replaces
+the oldest lowest-priority sequence when an equal/higher request can enter.
+Explicit handle restarts do not consume another slot. New-player validation
+precedes changes to existing voices. Missing records retain the old32-player
+fallback; a configured zero limit disables that player. Global shared16-channel
+arbitration, channel masks and heap limits remain separate unfinished work.
+
+Generated cannon source drops the older effect-number-based forced stop at the
+camera-ready cue. Original cue ordering and IDs remain intact; matched source
+and headers are unchanged. Metadata now controls replacement rather than a
+special-case timer/stop. Local player-limit tests use a synthetic asset only;
+priority rejection, oldest replacement, isolation, restart, zero limit and bad
+PLAYER pointer checks pass. Local original-asset probe verifies332->333 replaces
+the motor while music continues. Actual firing cue is3:335 (not334, a load cue).
+Firing335 and airborne0:185 complete naturally at0.917/1.451s in the offline
+probe. The recent tied-note END fix also applies to the airborne cue.
+
+Native build and full local83music/1448effect decode/execution audit pass.
+Wanted's original pause/resume/RecRoom audio replay passes with unchanged saves,
+real PCM capture and silent speaker output. Actual near-spawn motor cues now
+replace prior cues as player15 metadata specifies. Direct player cannon firing
+is NOT accepted: one input route stops at the first hole; the old second-cannon
+route drops below the bridge and hits the cliff. No shot was launched in those
+runs. Do not describe them as successful rides or full cannon sound acceptance.
+Use original collision geometry to derive the next route; do not keep guessing
+or relocate actors/players. Listening/timbre remains pending, as does shared
+hardware-channel arbitration. Full port goal remains incomplete.
+
+Format references (no third-party implementation copied):
+https://gota7.github.io/NitroStudio2/specs/soundData.html
+https://ndspy.readthedocs.io/en/latest/api/soundSequencePlayer.html

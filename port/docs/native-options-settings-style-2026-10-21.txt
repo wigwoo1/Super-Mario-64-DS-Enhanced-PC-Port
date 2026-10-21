@@ -1,0 +1,42 @@
+Original Options typography in custom PC settings: VERIFIED for scripted English menus.
+EXE SHA256 BE4F4B5DCC8763F8E7DE9C98A61D45A685D41BD99B88D55E488F0DDEC657B1E1
+
+The native title font initializer now copies its Latin glyph pixels and advance
+widths into a bounded PC-owned cache while the resource is alive. It retains
+no title heap pointer. Custom castle, Battlefield and Wanted settings use those
+glyphs and the original proportional spacing, four-pixel spaces and numeral-1
+bearing. They retain their destination scene's ink color, pixel-centered labels,
+16px buttons, 24px row pitch, existing touch targets and controller semantics.
+Direct development scenes that never load the title retain the existing font.
+The synthetic percent/dot glyphs remain for PC-only numeric settings.
+
+Castle/Battlefield retain their original cached gold pause button artwork and
+selection arrow. Wanted's private tiled settings surface now has beveled gold
+edges, orange/cream states and a small selected-row arrow. These extra panel
+tiles are code drawn, not a byte copy of title artwork. Closing it restores the
+borrowed VRAM, palette and registers. Matched src/ and include/ are unchanged.
+
+Native Release build passes. Five focused CTests pass (pause settings, Wanted
+surface, dialogue overrides, DSMT input, video). Additional Python regression
+checks the exact title-source hook and rejects an altered initialization anchor.
+Native tests exercise copied-resource lifetime, invalid inputs, every page's
+proportional-font centering, scratch bounds, bevel colors, moving the selection
+arrow and restoration of all borrowed screen memory.
+
+Muted original-menu replays on the exact SHA above:
+- Castle:4400 ticks, PC Options/Display/Gameplay/Minimap and other page changes,
+  fifth minimap row, changed/persisted settings, original pause/gameplay return.
+- Battlefield:7900 ticks, original castle/painting/course entry, corresponding
+  menus and fifth-row change, original native button offset0x60, gameplay return.
+- Wanted:4300 ticks, Rec Room -> Wanted -> pause -> PC settings, Display/Graphics/
+  Minimap navigation, fifth-row setting change and original pause return.
+All exit0. Seed save payload hashes are unchanged. Captures of Display (4 rows),
+Gameplay (4) and Minimap (5) measure within0.5 native DS pixels of both centers.
+Measurement uses actual font ink and excludes solid button-rim scanlines that
+share that color. PNG screenshots are pixel-identical to original BMP captures.
+
+Private evidence: work/native-options-style-{castle,battlefield,wanted}-final-
+muted-20261021/acceptance.json; work/check-options-style-20261021.py. Initial
+non-final probes missed the intended menu selections and are diagnostic only.
+No new physical controller test, every-language coverage or complete-port
+acceptance is claimed. Prior F7 dialogue preview remains frozen separately.

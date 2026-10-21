@@ -8,3 +8,7 @@ Zero-length note-wait now waits for the track's active voices to finish. Behavio
 reference: https://github.com/TetraSsky/DualRip (README's voice-chaining note).
 The SDAT/SSAR archive adapter and host device integration are separate port code.
 No game assets or proprietary sound driver binaries are included here.
+Local tied-note end fix: END releases the ending track's tied voice through
+its instrument envelope. Ordinary non-tied sample tails remain unchanged.
+Synthetic tests cover a looping tied voice, an independent second track and
+ordinary sample tails. The local coin cue now completes without a timed stop.

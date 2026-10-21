@@ -24,6 +24,11 @@ int main() {
     // Text is visible over its selected panel; the backdrop stays black.
     if(frame.px[32][88]!=0xffffffff || frame.px[0][0]!=0xff000000) return 2;
     if(frame.px[32][0]==0xff000000) return 3;
+    if(frame.px[24][10]==frame.px[25][10] || frame.px[25][10]==frame.px[26][10])return 5;
+    if(frame.px[31][3]==frame.px[31][10] || frame.px[55][3]!=frame.px[55][10])return 6;
+    menu.row=1;surface.draw(menu,settings);
+    ntr::ppu_begin_window_frame();ntr::ppu_scanout(ntr::ENGINE_B,frame);
+    if(frame.px[31][3]!=frame.px[31][10] || frame.px[55][3]==frame.px[55][10])return 7;
     menu.page=pc_pause::Page::Screens;surface.draw(menu,settings);
     surface.close();
     if(std::memcmp(reinterpret_cast<void *>(0x06200000),old_vram.data(),old_vram.size()) ||

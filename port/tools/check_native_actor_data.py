@@ -68,6 +68,7 @@ def main():
             ('g_profile_WANWAN', 'daWanwan_c_classInit', 14, 0x02114750),
             ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
+            ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('pc_door_profile', 'daDoor_c_classInit', 100, 0x02148164)):
         base, rom = overlay(module)
         native = pe_bytes(args.exe, named(name), 28)

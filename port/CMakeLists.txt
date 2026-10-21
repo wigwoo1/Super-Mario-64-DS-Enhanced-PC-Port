@@ -148,11 +148,19 @@ add_test(NAME smoke_input COMMAND smoke_input)
 add_executable(smoke_sdat tests/smoke_sdat.cpp)
 target_link_libraries(smoke_sdat PRIVATE ntr)
 add_test(NAME smoke_sdat COMMAND smoke_sdat)
+add_executable(smoke_audio_output tests/smoke_audio_output.cpp)
+target_link_libraries(smoke_audio_output PRIVATE ntr)
+add_test(NAME smoke_audio_output COMMAND smoke_audio_output)
 add_executable(probe_sdat tests/probe_sdat.cpp)
 target_link_libraries(probe_sdat PRIVATE ntr)
 add_executable(smoke_screen_layout tests/smoke_screen_layout.cpp)
 target_link_libraries(smoke_screen_layout PRIVATE ntr)
 add_test(NAME smoke_screen_layout COMMAND smoke_screen_layout)
+if(WIN32)
+    add_executable(smoke_video_window tests/smoke_video_window.cpp)
+    target_link_libraries(smoke_video_window PRIVATE ntr)
+    add_test(NAME smoke_video_window COMMAND smoke_video_window)
+endif()
 add_executable(smoke_pause_settings tests/smoke_pause_settings.cpp hal/pc_pause_settings_state.cpp)
 target_include_directories(smoke_pause_settings PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(smoke_pause_settings PRIVATE ntr)
@@ -220,6 +228,9 @@ add_test(NAME smoke_input_history COMMAND smoke_input_history)
 
 add_executable(smoke_video tests/smoke_video.cpp)
 target_link_libraries(smoke_video PRIVATE ntr)
+add_executable(smoke_dialogue_overrides tests/smoke_dialogue_overrides.cpp hal/dialogue_overrides.cpp)
+target_include_directories(smoke_dialogue_overrides PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+add_test(NAME smoke_dialogue_overrides COMMAND smoke_dialogue_overrides)
 add_executable(smoke_gpu tests/smoke_gpu.cpp)
 target_link_libraries(smoke_gpu PRIVATE ntr)
 add_test(NAME smoke_gpu COMMAND smoke_gpu)
@@ -959,6 +970,9 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/native_save_hooks.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/dsmt_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/dialogue_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/bird_host.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/lakitu_host.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/level_overlay_tables.py"
@@ -998,6 +1012,9 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/native_save_hooks.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/dsmt_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/dialogue_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/bird_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lakitu_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -1268,6 +1285,7 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     hal/cxxname_bridge.cpp hal/game_api_bridge.cpp hal/level_overlay.cpp hal/itcm_math.cpp hal/megachar_stub.cpp
     hal/demo_model_bridge.cpp hal/player_state_callbacks.cpp hal/float_bits.cpp
     hal/pc_session.cpp hal/pc_pause_settings.cpp hal/pc_pause_settings_state.cpp hal/touch_menu_navigation.cpp hal/course_clear_input.cpp hal/stage_options_input.cpp
+    hal/dialogue_overrides.cpp hal/dialogue_runtime.cpp
     hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp hal/distant_actor_shadows.cpp
     hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
     "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV001_IMAGE_CPP}"

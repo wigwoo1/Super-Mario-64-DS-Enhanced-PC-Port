@@ -1,0 +1,16 @@
+Animation wrap regression: texture allocation address removed from pose hash
+
+During build-kit refresh, full CTest reported60/61: smoke_modelanim failed the
+pose0/pose15 hash comparison intermittently. Isolated unchanged runs passed
+twice then failed; diagnostic comparison reproduced differing triangle bytes
+144..146, the texture pointer in the native x86 GxTriangle layout. The test
+hashed process-local allocation addresses, so cache reallocation could change
+the result even if rendered pixels and animation geometry matched.
+
+The test now hashes a copy of each triangle with its texture pointer normalized,
+then hashes texture presence and actual RGBA pixels. All other geometry/material
+bytes, animation timing, varying-pose, loop closure and frame-control assertions
+remain. Synthetic checks accept identical pixels at distinct addresses and
+reject changed pixels, changed vertex positions and missing texture bindings.
+Thirty independent repeated runs pass. The game binary is unchanged.
+This is a test comparison repair, not an animation or renderer gameplay change.

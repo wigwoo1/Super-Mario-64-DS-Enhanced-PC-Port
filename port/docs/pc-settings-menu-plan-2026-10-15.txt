@@ -482,7 +482,15 @@ Temporary actor probe changes were restored after generated-closure build errors
 Next: Sol Medium to obtain a stable unobstructed distant actor fixture and prove
 body/shadow pixels separately, or implement safe renderer-level instrumentation.
 
-Original / Brain Rot text and original menu styling (requested 2026-10-21): PLANNED.
+Original / Brain Rot text and original menu styling (requested 2026-10-21): PARTIAL.
+2026-10-21: Title Options BRAIN ROT On/Off choice is implemented and verified
+with controller/pointer input, restart persistence and independent sound modes.
+It replaces Backlight using the original font and native animated buttons.
+The approved replacement compiler/loader now exists in a local development
+build. English intro On/Off/missing-pack fallback is runtime verified; NPC,
+choice and multi-page runtime coverage is next. No user-authored content is
+installed. The first private draft is Peach's English intro letter, ID0x0000.
+Next: NPC/choice tests, user replacement entry and previews, then text inventory.
 Add a persistent ORIGINAL / BRAIN ROT text choice under OPTIONS on the original
 title screen, replacing its BACKLIGHT option. Apply it to character dialogue
 and eventually all written game text, with a completion inventory. Missing
@@ -499,5 +507,11 @@ artwork where practical. Retain centered labels/values, compact pages, the small
 selection arrow and decorative gold selection border already requested.
 Verify title/controller/mouse navigation, persistence, both text modes, fallback,
 long/multiline boxes, choices, page breaks and unchanged gameplay progression.
-Show screenshots of the settings and approved replacement boxes. This is queued
-work; the current tree integration does not implement the text mod.
+Show screenshots of the settings and approved replacement boxes. The title
+setting exists; the replacement text mod and custom-settings restyle are queued.
+
+2026-10-21 update: English NPC multi-page and both rabbit key save choices are now runtime accepted On/Off. Immediate text ID406 is runtime accepted. See native-dialogue-overrides-2026-10-21.txt. Next: user-authored replacement previews, remaining text-path inventory, custom-settings Options artwork restyle. Tests launch muted. No production replacement pack exists.
+
+2026-10-21 Options typography update: scripted English castle/Battlefield/Wanted PC settings now use a safe copy of original title glyphs/advance widths, compact centered labels and gold selection styling. Wanted bevels/arrow are code drawn; stage retains original artwork. See native-options-settings-style-2026-10-21.txt. Other-language coverage and full settings roadmap remain incomplete.
+
+2026-10-21 update: internal resolution/window independence and named Native DS are now runtime verified for castle/Wanted D3D11. Separate window client-size/maximized preferences persist. See native-internal-resolution-2026-10-21.txt. Text editing deferred by user; stop asking for replacement boxes for now. True high-refresh rendering, further native gameplay/audio and full roadmap remain open.

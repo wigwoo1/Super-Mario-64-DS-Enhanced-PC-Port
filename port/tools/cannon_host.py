@@ -2,6 +2,18 @@
 import re
 import struct
 
+def native_sound_lifetime(text):
+    old='''#if defined(SM64DS_PLATFORM_PC)
+        /* The cannon-rise loop spans the load/aim sequence in the host audio
+           player. End it when the original launch cue fires. */
+        ntr::audio_stop_effect(3,0x14c,4);
+#endif
+'''
+    if text.count(old)!=1:raise ValueError('Legacy cannon sound-stop anchor changed')
+    # Original player15 has one sequence slot. Its new cue replaces the motor
+    # through archive metadata, without stopping other cues by effect number.
+    return text.replace(old,'',1)
+
 
 def inventory(root, bomb=False):
     bounds=(root/'config/arm9/overlays/ov098/delinks.txt').read_text()
@@ -25,6 +37,7 @@ def transform(root,text,name):
             'if (data_0209e64c == 0) { func_0203e0ac(); return; }')
     if name not in ('d_a_cnn.cpp','daWbm_c.cpp'):return text
     bomb=name=='daWbm_c.cpp'
+    if not bomb:text=native_sound_lifetime(text)
     cls='daWbm_c' if bomb else 'daCnn_c'
     wrapper='WbmModelFilePtr' if bomb else 'CnnModelFilePtr'
     table='data_ov098_0213c930' if bomb else 'data_ov098_0213c8fc'

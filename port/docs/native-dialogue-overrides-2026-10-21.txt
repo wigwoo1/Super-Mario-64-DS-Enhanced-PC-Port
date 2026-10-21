@@ -1,0 +1,98 @@
+Approved dialogue overrides: PARTIALLY VERIFIED development milestone.
+Final EXE SHA256: 5E45409553D6D26E1E2363E4DF3154923C1502FDB5F82C9D87784E04C78BF230
+
+port/tools/dialogue_mod.py exports one identified original box to a private
+JSON draft. Reuse tools/message_bank.py's lossless SM64DS codec. Drafts include
+original text and ROM-derived metadata: never upload them or include them in
+public source/build kits. They belong outside the repository/public export.
+Compiler requires an explicit approved=true and user-supplied replacement.
+It confirms original text/info/checksum before producing SM64TXT1 packs.
+The supported Europe rev0 ARM9 load address is02004000, verified from the ROM
+header. Font widths are read from virtual0208f074 in arm9_dec.bin relative to
+that load address; an initial zero-based extraction was rejected by width
+validation and corrected before successful runtime testing.
+
+Binary format: 8-byte SM64TXT1 magic, little-endian u32 language and entry count.
+Each record is u32 message ID, u32 CRC32(info4+original encoded payload), u32
+replacement length, followed by encoded replacement bytes including FF end.
+Western language IDs1..5 map eng/frn/gmn/itl/spn. Runtime uses owner language
+and mods/brainrot/<language>.smbt. SM64DS_PC_DIALOGUE_FILE is an opt-in QA path.
+No pack is distributed by default. File limits:4MiB,4096 records,8192 bytes
+per message; duplicate IDs/truncation/trailing bytes invalidate the load.
+
+Core validates unchanged protected token sequence: FE commands with complete
+length, all FD line/page breaks, FF terminator, icons and unknown high glyphs.
+Original entry metadata is untouched. Replacement line widths cannot exceed
+the original box width or native255-pixel counter. A255-glyph line cap blocks
+zero-width glyph overflow. Mismatched/missing entries fall back to the original
+pointer. Native buffers stay alive throughout text advancement; file edits
+require a process restart to avoid invalidating an active message.
+
+Port-only initialization hooks resolve after the original pointer is set and
+before layout in Message::DisplayText, func_0201f138 (Peach letter), and
+func_0201f32c (actor dialogue). Original src/ is unchanged. Source-hook tests
+also reject declaration-only false positives. CMake watches the new transform.
+
+Verification: native Release build PASS; smoke_dialogue_overrides, smoke_video
+and smoke_dsmt_input PASS. Python tests verify explicit approval/original
+binding, protected controls/pages/icons, width/counter/duplicate rejection and
+all3 real source insertion points. Native core tests cover standard CRC32,
+stable pointers, missing IDs, stale originals, control/page edits, oversized
+lines, wrong languages, every truncated-file prefix and duplicate records.
+
+Final runtime:3 muted2100-tick original-menu/new-File-C intros, English message0.
+On+QA pack: native trace replacement=1 and six TEST lines visible in frame1600.
+Off+same pack: no resolver load and original text visible. On+missing pack:
+valid=0 entries=0 replacement=0 and original text visible. Both fallback
+images are byte-identical; On image differs. All exit0 on the exact final SHA.
+Earlier4000-tick candidates also continued through the intro, but that longer
+route was before the final native counter/high-glyph validation refinement.
+Private proof: work/native-dialogue-*-final-muted-20261021 and
+work/native-dialogue-acceptance-20261021.json. TEST is a diagnostic fixture,
+not authored Brain Rot wording; it is never copied to the normal F: game.
+
+Limitations/next: no user-approved replacement content. First private draft is
+English message0x0000, Peach's six-line intro letter; the exact text was shown
+to the user for their replacement. Actor/immediate hooks compile and are
+source-tested but need NPC/choice/multi-page runtime acceptance. Other languages,
+every written-text lookup path, dynamic wrapping and broad dialogue coverage
+remain incomplete. Sol Medium is suitable for these remaining checks; content
+entry can use Luna after the loader's NPC/choice behavior is verified.
+
+Deployment: newest loader is local C: development only. Old F: game was still
+running PID28260 at final observation. F: prepared AE146524... title-only build
+does not contain this loader. Previous installer must not bypass its SHA gate;
+it targets the older title build and current source has advanced. Preserve all
+ROM/user saves and prepare a new reviewed installation after runtime acceptance.
+Goal remains active and full port incomplete. All game testing stays muted.
+
+2026-10-21 NPC/choice acceptance update (supersedes next-checks above)
+User explicitly requests all test launches muted; keep SM64DS_PC_NATIVE_AUDIO=0.
+Current verified executable SHA256:
+F7C550E35F1FE2ADB6CA3D2FF63D7AAC3F53E70EDD4C40BDF4A064B7E6D2DB76
+Native Release build passed. Final focused rerun: 3 Python tests and 7 CTests passed.
+Muted final Buddy On/Off runs passed native entry, multi-page control matching,
+cannon opening, repeat talk, return of control and identical valid saves.
+Muted final rabbit On/Off runs passed catch/key award and Save and continue.
+Muted rabbit On/Off no-save runs passed Continue don't save (selection1),
+no saving notice or saved payload, key retirement and normal player control.
+Immediate Message::DisplayText runtime replacement ID406 is confirmed in the
+muted immediate replay; Buddy regression/save comparison also passed there.
+All six final cases exited0 and used the exact executable SHA above.
+Checker: port/tools/check_dialogue_npc.py; private evidence folders:
+work/native-dialogue-buddy-{on,off}-final-muted-20261021
+work/native-dialogue-rabbit-{on,off}-final-muted-20261021
+work/native-dialogue-rabbit-{on,off}-no-save-muted-20261021
+work/native-dialogue-immediate-final-muted-20261021
+The observer records Message::Update entry state, so native branch effects and
+actual save files establish the answer; final answer field may not be observed.
+Rabbit QA now waits for route completion before its input bot takes control.
+Older rabbit probes which took control too early are diagnostic, not acceptance.
+QA uses private TEST markers only. No authored Brain Rot text or production
+replacement pack has been installed. Await user replacement for Peach message0.
+Other languages, every text path and broad coverage still require work.
+Luna Medium is suitable for approved text entry and routine regression next;
+Sol Medium for investigating additional unsupported text paths.
+F deployment still needs a new frozen accepted snapshot; old title installer
+is stale and must never have its SHA check bypassed. Do not kill user game.
+Full goal remains active; do not pause solely for this completed test milestone.

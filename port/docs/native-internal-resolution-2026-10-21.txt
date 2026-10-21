@@ -1,0 +1,36 @@
+Internal resolution and independent window sizing: VERIFIED for tested D3D11 paths.
+EXE B643E0E2797C4D18BACF3978D4F40B1B0EC2551082E53F4B84D5A0B7AE19A3CD
+
+VideoSettings width/height select the internal raster only. Applying video or
+other PC settings no longer calls SetWindowPos, so current window position,
+client dimensions and maximized state survive changes. Native DS (256x192) is
+a named thirteenth resolution preset; forward/backward cycling share one table.
+The aspect helper now recognizes4:3. The original two PPU source buffers remain
+256x192, with existing75/25 minigame composition at the selected output target.
+
+Independent window_width/window_height/window_maximized preferences are saved
+with the INI. Normal resize records client dimensions, retaining the restored
+size while maximized. Resize-end and normal close save those preferences.
+Window startup uses these values, default1280x720 for old files with no keys,
+so selecting Native DS does not cause a tiny window on the next launch. The
+resolution setter performs no geometry/style change. A fullscreen toggle and
+window-position persistence across restarts are not added by this milestone.
+
+Build passes. Focused smoke_video/smoke_video_window/smoke_pause_settings/
+smoke_screen_layout tests pass. The real-window test controls only its own HWND
+and verifies user-like resizing, unchanged settings, actual GPU readback targets
+256x192/720p/1080p/4K, all three dual layouts, maximized state preservation and
+saved-size/maximized restart. Native DS labels, reverse cycling and INI render
+size roundtrip are covered. Optional SM64DS_PC_WINDOW_CAPTURE records changes
+in the game's own internal size/window bounds/layout for runtime acceptance.
+
+Muted original-menu castle4400 and Wanted4300 tick replays exit0. Both change
+Native DS ->720p ->1080p ->1440p ->4K with a constant1280x720 window and unchanged
+outer bounds/position. Actual captured raster dimensions match each preset.
+Both leave PC settings; castle resumes native player control, Wanted returns
+to its dual-screen game view. INI stores4K independently of1280x720 window size.
+Seed saves remain byte-identical. PNG captures retain exact BMP pixels.
+Private proof: work/native-options-style-{castle,wanted}-resolution-muted-
+20261021/resolution-acceptance.json and check-internal-resolution-20261021.py.
+No newly accepted physical mouse drag, every minigame, software-renderer runtime
+or true high-refresh interpolation claim is made. Full port remains unfinished.

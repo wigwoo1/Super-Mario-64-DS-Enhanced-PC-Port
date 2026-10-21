@@ -14,6 +14,39 @@ static SWAV wave(unsigned format,unsigned loop_offset,unsigned words,const std::
     bytes.insert(bytes.end(),samples.begin(),samples.end());
     PseudoFile file;file.data=&bytes;SWAV result;result.Read(file);return result;
 }
+static void put32(std::vector<uint8_t> &b,size_t p,unsigned n){for(unsigned i=0;i<4;++i)b[p+i]=uint8_t(n>>(8*i));}
+static void tag(std::vector<uint8_t> &b,size_t p,const char *s){for(unsigned i=0;i<4;++i)b[p+i]=uint8_t(s[i]);}
+static void header(std::vector<uint8_t> &b,const char *type){tag(b,0,type);put32(b,4,0x0100feff);put32(b,8,unsigned(b.size()));b[12]=16;b[14]=1;}
+// Entirely synthetic SDAT: silent resting sequences share an empty bank.
+// INFO defines player0 limit1, player1 limit2, player2 disabled.
+static std::vector<uint8_t> player_fixture(){
+    std::vector<uint8_t> info(40);tag(info,0,"INFO");
+    auto table=[&](unsigned index,unsigned count){
+        const auto at=info.size();put32(info,8+index*4,unsigned(at));
+        u32(info,count);info.resize(info.size()+count*4);return at;
+    };
+    auto seq=table(0,6);
+    const unsigned priorities[]={20,80,20,10,20,20};
+    const unsigned players[]={0,0,0,0,1,2};
+    for(unsigned i=0;i<6;++i){
+        put32(info,seq+4+i*4,unsigned(info.size()));u32(info,1);u16(info,0);
+        info.push_back(127);info.push_back(96);info.push_back(uint8_t(priorities[i]));info.push_back(uint8_t(players[i]));u16(info,0);
+    }
+    auto banks=table(2,1);put32(info,banks+4,unsigned(info.size()));u32(info,0);
+    for(unsigned i=0;i<4;++i)u16(info,0xffff);
+    auto policy=table(4,3);
+    for(unsigned i=0;i<3;++i){put32(info,policy+4+i*4,unsigned(info.size()));u16(info,i==0?1:i==1?2:0);u16(info,0);u32(info,0);}
+    put32(info,4,unsigned(info.size()));
+    std::vector<uint8_t> bank(60);header(bank,"SBNK");tag(bank,16,"DATA");put32(bank,20,44);
+    std::vector<uint8_t> sequence(32);header(sequence,"SSEQ");tag(sequence,16,"DATA");put32(sequence,20,16);put32(sequence,24,28);
+    sequence[28]=0x80;sequence[29]=0x87;sequence[30]=0x68;sequence[31]=0xff;
+    std::vector<uint8_t> fat(44);tag(fat,0,"FAT ");put32(fat,4,44);put32(fat,8,2);
+    const unsigned fat_at=64+unsigned(info.size()),bank_at=fat_at+44;
+    put32(fat,12,bank_at);put32(fat,16,unsigned(bank.size()));put32(fat,28,bank_at+unsigned(bank.size()));put32(fat,32,unsigned(sequence.size()));
+    std::vector<uint8_t> result(64);header(result,"SDAT");put32(result,0x18,64);put32(result,0x20,fat_at);
+    for(const auto *block:{&info,&fat,&bank,&sequence})result.insert(result.end(),block->begin(),block->end());
+    put32(result,8,unsigned(result.size()));return result;
+}
 int main(){
     ntr::AudioVolumeRamp ramp;
     ramp.set(0,4);CHECK(ramp.value()==127 && !ramp.done());
@@ -76,5 +109,45 @@ int main(){
     PcSdatPlayer overlap;overlap.sampleRate=48000;CHECK(overlap.Setup(&chain));
     overlap.GenerateSamples(out,0,1024);
     CHECK(!overlap.tracks[0].waitForVoices && overlap.tracks[0].state[TS_END]);
+    bool sample_tail=false;
+    for(const auto &channel:overlap.channels)sample_tail|=channel.state>CS_NONE;
+    CHECK(sample_tail); // End must preserve an ordinary sample's natural tail.
+    // A tied looping voice has an indefinite gate, so the track's end must
+    // release it. Otherwise an ended track keeps a sustained tone forever.
+    samples.swavs[0].loop=1;
+    chain.data={0xc8,1,60,127,12,0xff};
+    PcSdatPlayer tied;tied.sampleRate=48000;CHECK(tied.Setup(&chain));
+    for(unsigned block=0;block<96;++block)tied.GenerateSamples(out,0,1024);
+    CHECK(tied.tracks[0].state[TS_END]);
+    for(const auto &channel:tied.channels)CHECK(channel.state==CS_NONE);
+    // Ending the tied track must not release another track's finite note.
+    chain.data={0xfe,3,0,0x93,1,14,0,0,0xc8,1,60,127,12,0xff,60,127,120,0xff};
+    PcSdatPlayer independent;independent.sampleRate=48000;CHECK(independent.Setup(&chain));
+    for(unsigned block=0;block<24;++block)independent.GenerateSamples(out,0,1024);
+    CHECK(independent.nTracks==2 && independent.tracks[0].state[TS_END]);
+    bool other_track_active=false;
+    for(const auto &channel:independent.channels) {
+        if(channel.trackId==0)CHECK(channel.state==CS_NONE);
+        if(channel.trackId==1 && channel.state>CS_NONE)other_track_active=true;
+    }
+    CHECK(other_track_active);
+    auto archive=player_fixture();ntr::SdatEngine admission;
+    CHECK(admission.load(archive.data(),archive.size()));
+    CHECK(admission.play_sequence(0,100)==100);
+    CHECK(admission.play_sequence(4,200)==200);
+    CHECK(admission.play_sequence(1,101)==101);
+    CHECK(!admission.active(100) && admission.active(101) && admission.active(200));
+    CHECK(!admission.play_sequence(3,102) && admission.active(101)); // Lower priority rejected.
+    CHECK(admission.play_sequence(1,103)==103 && !admission.active(101)); // Equal priority replaces oldest.
+    CHECK(admission.play_sequence(4,201)==201 && admission.active(200));
+    CHECK(admission.play_sequence(4,202)==202 && !admission.active(200));
+    CHECK(admission.active(201) && admission.active(202));
+    CHECK(admission.play_sequence(4,201)==201 && admission.active(202)); // Explicit handle restart.
+    CHECK(!admission.play_sequence(5,203) && admission.errors()==0); // Disabled player.
+    std::vector<int16_t> stereo(2048);admission.render(stereo.data(),1024);
+    CHECK(admission.active(103) && admission.active(201) && admission.active(202));
+    // Corrupt the PLAYER table pointer: parser must reject it before playback.
+    put32(archive,64+8+4*4,unsigned(archive.size()-2));
+    ntr::SdatEngine malformed;CHECK(!malformed.load(archive.data(),archive.size()));
     std::puts("PASS: PCM8/16 and signed ADPCM vectors, loop lengths, invalid/truncated waves, archive fallback and bounded track execution");
 }

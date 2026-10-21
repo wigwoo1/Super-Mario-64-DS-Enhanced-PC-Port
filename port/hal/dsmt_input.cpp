@@ -98,9 +98,9 @@ static void controller_menu_touch(unsigned short &keys,unsigned short &x,unsigne
     if(consume_back)keys&=static_cast<unsigned short>(~2u);
     if(const char *path=std::getenv("SM64DS_PC_MENU_CAPTURE")) {
         static FILE *file=nullptr;
-        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,root,sub,dialog,focus,count,keys,touch,x,y,sound,backlight\n",file);}
+        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,root,sub,dialog,focus,count,keys,touch,x,y,sound,backlight,brain_rot_text\n",file);}
         if(file && (ntr::rt_frame()%10==0 || edge || touch)) {
-            std::fprintf(file,"%llu,%d,%d,%d,%d,%d,%u,%u,%u,%u,%d,%u\n",static_cast<unsigned long long>(ntr::rt_frame()),root[0],sub[0],data_ov007_02102ddc[1],focused,count,keys,touch?1u:0u,x,y,GetSoundMode(),unsigned(data_0208ee3c));
+            std::fprintf(file,"%llu,%d,%d,%d,%d,%d,%u,%u,%u,%u,%d,%u,%u\n",static_cast<unsigned long long>(ntr::rt_frame()),root[0],sub[0],data_ov007_02102ddc[1],focused,count,keys,touch?1u:0u,x,y,GetSoundMode(),unsigned(data_0208ee3c),ntr::video_get_settings().brain_rot_text?1u:0u);
             std::fflush(file);
         }
     }

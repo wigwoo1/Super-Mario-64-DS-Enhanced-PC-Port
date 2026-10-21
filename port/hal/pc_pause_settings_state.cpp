@@ -60,7 +60,7 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
     };
     switch (page) {
     case Page::Display:
-        if (row == 0) for (int i=0; i<(direction > 0 ? 1 : 11); ++i) ntr::video_cycle_resolution(s);
+        if (row == 0) ntr::video_cycle_resolution(s,direction);
         if (row == 1) s.target_fps = direction > 0
             ? (s.target_fps == 60 ? 120 : s.target_fps == 120 ? 240 : 60)
             : (s.target_fps == 60 ? 240 : s.target_fps == 240 ? 120 : 60);
@@ -119,7 +119,10 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
     switch (page) {
     case Page::Options: std::snprintf(out,size,"%s", i==0?"PC SETTINGS":i==1?"GAME OPTIONS":"BACK"); break;
     case Page::Display:
-        if (i==0) std::snprintf(out,size,"RESOLUTION %uX%u",s.width,s.height);
+        if (i==0) {
+            if(s.width==256 && s.height==192)std::snprintf(out,size,"RESOLUTION NATIVE DS");
+            else std::snprintf(out,size,"RESOLUTION %uX%u",s.width,s.height);
+        }
         if (i==1) std::snprintf(out,size,"FRAME RATE %u FPS",s.target_fps);
         if (i==2) std::snprintf(out,size,"TEXTURES %s%s",ntr::texture_quality_name(s.texture_quality),
             s.texture_quality==ntr::TextureQuality::Upscaled?" - NO PACK":"");
@@ -160,6 +163,22 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
     }
 }
 
+static unsigned char options_glyphs[0x4f*64], options_widths[0x4f];
+static bool have_options_font=false;
+void clear_options_font() { have_options_font=false; }
+bool options_font_ready() { return have_options_font; }
+bool cache_options_font(const unsigned char *font,unsigned base_tile,const unsigned char *widths) {
+    if(!font || !widths || base_tile>0x100)return false;
+    for(unsigned c=0;c<0x4f;++c)if(widths[c]<1 || widths[c]>8)return false;
+    for(unsigned c=0;c<0x4f;++c) {
+        const unsigned offset=(base_tile+(c&31)+(c>>5)*64)*32;
+        std::memcpy(options_glyphs+c*64,font+offset,32);
+        std::memcpy(options_glyphs+c*64+32,font+offset+0x400,32);
+        options_widths[c]=c==0x4d?4:widths[c];
+    }
+    std::memset(options_glyphs+0x4d*64,0,64); // native title skips the space tile
+    have_options_font=true;return true;
+}
 static unsigned glyph(char c) {
     if (c>='0' && c<='9') return c-'0';
     if (c>='A' && c<='Z') return c-'A'+0x0a;
@@ -183,6 +202,10 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     unsigned char ink=1;
     const auto *zero=chars+0x4000;
     for(unsigned i=0;i<64;++i) if(zero[i]) {ink=zero[i]&15?zero[i]&15:zero[i]>>4;break;}
+    if(have_options_font)for(unsigned c=0;c<0x4f;++c)for(unsigned b=0;b<64;++b) {
+        const unsigned source=options_glyphs[c*64+b];
+        chars[0x4000+c*64+b]=static_cast<unsigned char>((source&15?ink:0)|(source&0xf0?ink<<4:0));
+    }
     auto *percent_tiles=chars+0x4000+0x4f*64;
     for(unsigned y=0;y<16;++y) for(unsigned x=0;x<8;++x)
         if(percent[y]&(0x80>>x)) percent_tiles[y*4+x/2]|=ink<<((x&1)*4);
@@ -200,6 +223,12 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     unsigned cells=0;
     auto line = [text,chars,&glyphs,&cells](const char *label, unsigned y) {
         const unsigned count = std::min<size_t>(std::strlen(label),30);
+        unsigned positions[30]{},position=0;
+        for(unsigned i=0;i<count;++i) {
+            const unsigned g=glyph(label[i]);
+            positions[i]=position+(have_options_font && g==1?2:0); // original numeral-1 bearing
+            position+=have_options_font && g<0x4f?options_widths[g]:8;
+        }
         auto ink=[&](unsigned i,unsigned x,unsigned py) {
             const auto pair=glyphs[glyph(label[i])*64+py*4+x/2];
             return unsigned((pair>>((x&1)*4))&15);
@@ -207,7 +236,7 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
         int left=256,right=-1,top=16,bottom=-1;
         for(unsigned i=0;i<count;++i)for(unsigned py=0;py<16;++py)for(unsigned x=0;x<8;++x)
             if(ink(i,x,py)) {
-                left=std::min(left,int(i*8+x));right=std::max(right,int(i*8+x));
+                left=std::min(left,int(positions[i]+x));right=std::max(right,int(positions[i]+x));
                 top=std::min(top,int(py));bottom=std::max(bottom,int(py));
             }
         if(right<left)return;
@@ -216,7 +245,7 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
         unsigned char raster[16][128]{};
         for(unsigned i=0;i<count;++i)for(unsigned py=0;py<16;++py)for(unsigned x=0;x<8;++x)
             if(const auto color=ink(i,x,py)) {
-                const int dx=int(i*8+x)+offset_x,dy=int(py)+offset_y;
+                const int dx=int(positions[i]+x)+offset_x,dy=int(py)+offset_y;
                 if(dx>=0 && dx<256 && dy>=0 && dy<16)
                     raster[dy][dx/2]|=static_cast<unsigned char>(color<<((dx&1)*4));
             }

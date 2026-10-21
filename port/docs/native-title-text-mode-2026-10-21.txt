@@ -1,0 +1,59 @@
+Native title text-mode setting: menu milestone VERIFIED, full text mod incomplete.
+Executable SHA256: AE14652462FD587C1F30704D7AE7422BA97B91C3B79D0D724797B040131DFAB9
+
+Original title OPTIONS replaces BACKLIGHT with BRAIN ROT. On enables the saved
+preference; Off selects original mode. The native gold On/Off widgets keep their
+original animation, focus identities and controller/pointer hit areas. The
+caption reuses the native variable-width font, white ink and a black outline.
+The initial default is Off. Existing preferences and save progress are retained.
+
+Actual title path: overlay 7 func_ov007_020b50e8 invokes callback commands 4/5;
+func_ov007_020cc600 in dScDSMT_c handles those commands; func_ov007_020b7eec
+draws option values. The host transform routes commands 4/5 to the PC preference
+and seeds the menu's existing option-state byte from it. Sound commands retain
+their existing behavior. The fixed Backlight caption is in BG3's source map,
+x24..103/y80..95; only those cells are blanked. Native text is drawn in BG1.
+The matched src/ tree is not changed by this feature. An earlier overlay-75
+diagnosis was rejected; its unlinked handler is not needed for this title UI.
+
+Build: native Release build PASS. Focused CTest 6/6 PASS: native save, DSMT
+inline helpers/input/constructor/palette, video settings. Muted runtime:
+- controller, 3400 ticks: default Off; On; sound 0->2->1->0 and 0->1->2->0;
+  retained focus; B returns to title; enabled preference written to local INI.
+- reload-on, 2250 ticks: loads On; pointer selects Off; Back; saves Off.
+- reload-off, 2450 ticks: loads Off; pointer On then Off; Back; saves Off.
+- original File A, 4000 ticks: loads enabled preference and enters castle
+  grounds normally; native Yoshi reaches St_Wait_Main; trees/minimap visible.
+All four sessions exit 0. Runtime images reviewed. Menu replay checker verifies
+unchanged adventure payloads, valid save CRCs, unchanged minigame save, absent
+File C, screenshots, matching executable hashes and unchanged source ROM hash.
+Pointer automation uses the same touch latch as mouse input. Physical controller
+and physical mouse acceptance are not newly claimed by these scripted replays.
+
+Private evidence: work/native-title-text-mode-final-muted-20261021 and
+work/native-title-text-gameplay-final-muted-20261021. Full executables, ROM,
+extracted resources, saves, screenshots and logs stay local. The optional DSMT
+layer capture now skips old title-model assumptions when a specific tick is
+requested; this fixes the diagnostic-only crash seen in the first layer probe.
+
+Limitations: no approved replacements or override loader exists yet. Original
+dialogue still displays in either mode. Next implement stable message IDs,
+approved text loading and fallback without altering control tokens or story
+events, then ask the user for the first exact-box replacement. Original-style
+restyling of other custom PC settings is still on the roadmap. Sol Medium is
+appropriate for the override layer; routine content entry can use Luna after
+the loader and page/choice handling are verified. This milestone does not
+complete the full port. Installation requires a separate verified local record.
+
+F: outcome: the exact candidate also passes a 2100-tick muted Options replay
+from the prepared F: executable using the F: ROM and isolated C: QA saves.
+prepared-verification.json confirms matching candidate SHA and unchanged user
+ROM, settings and saves. Main replacement remains pending because the original
+F: game is running (PID 28260 at the final check). Do not terminate that user
+session. The old root executable remains 24A3D2F3...645EC31. Prepared candidate
+and launcher live under native-checkpoints/native-checkpoint-2026-10-21-title-text-mode/
+prepared-build/. The launcher requires the old game to close first and then
+uses normal F: settings/saves. Resume the reviewed private installer after the
+game closes; an installation-verification.json is required before claiming
+that the normal root executable was updated. No such successful main-install
+record exists at this checkpoint. The temporary incoming copy was removed.

@@ -1755,3 +1755,256 @@ Installed tree build24A3D2F3...645EC31 also passes a4000-tick native4K intro
 from F: with isolated saves/preferences. Screens2500/3500/3900 reviewed;
 Peach letter/crown, new trees and moat water render. Main ROM/settings/saves
 are verified unchanged; rollback is native-checkpoint-2026-10-21-trees.
+
+## 2026-10-21: Muted camera and FPS comparison
+
+Rebuilt the current `sm64ds_pc` and `smoke_input` targets with Visual Studio
+2026; Ninja reported no pending work. Replayed the same isolated Battlefield
+camera-orbit and movement route at 60, 120 and 240 target FPS with native audio
+disabled. All runs exited 0 and reached the same player coordinates: a 45.0013
+world-unit move between ticks 3300 and 3360, followed by `St_Wait_Main` at tick
+4000. The camera movement distance also matched (868.537 world units). This
+scripted route does not reproduce the reported speed increase; it does not
+establish smooth high-refresh rendering or physical-controller feel. No gameplay
+source or F: installation changed. Screenshots and logs remain private under
+`work/native-movement-AnalogFull-off-20261020-*-muted-20261021`. The camera replay
+helper now runs muted by default; `-Audio` is required to enable sound explicitly.
+## 2026-10-21: Brain Rot text preference foundation
+
+Added a persistent opt-in `brain_rot_text` PC preference, defaulting to off so
+existing installations keep original dialogue. The settings loader/saver round
+trip is covered by `smoke_video`; the native title Options replacement and the
+dialogue renderer are not wired yet. No replacement text has been authored.
+The targeted `smoke_video` CTest passes. No gameplay executable was launched.
+
+The first title-menu wiring attempt was rejected by a muted runtime replay: it
+still displayed BACKLIGHT and did not save the preference. Its hook targeted
+the stage Options text path, which the title Options screen does not use; that
+hook and its helper were removed. An initial overlay-75 lead was incorrect:
+the live title uses overlay 7. The actual callback is
+`func_ov007_020cc600` in `dScDSMT_c.cpp`; `func_ov007_020b50e8` dispatches
+the On/Off widgets and `func_ov007_020b7eec` draws their text. No missing
+overlay-75 handler needs to be added to this title path.
+
+## 2026-10-21: Native title Brain Rot mode choice
+
+Title Options now replaces BACKLIGHT with BRAIN ROT and retains the original
+animated On/Off controls, controller focus, gold border and pointer targets.
+The new heading uses the original variable-width font with a black outline.
+On saves `brain_rot_text=1`; Off saves 0 (original text). Both survive process
+restarts. Title sound mode remains independent. All adaptations are in port/
+and generated host code; the matched Message source is restored. The leftover
+stage Options refresh from the rejected hook was also restored to its baseline.
+
+Final native executable SHA256:
+AE14652462FD587C1F30704D7AE7422BA97B91C3B79D0D724797B040131DFAB9.
+Native build and six focused CTests pass. Three muted title sessions (8100
+ticks total) verify controller/pointer toggles, both reload states, sound
+cycling, Back and unchanged isolated saves. A separate muted 4000-tick original
+File A entry reaches castle grounds with Yoshi in St_Wait_Main while the mode
+is enabled. Captured menu and gameplay images were reviewed. ROM hash is
+unchanged. See native-title-text-mode-2026-10-21.txt for scope and limitations.
+
+No replacement dialogue has been authored or loaded. The setting is ready for
+the next milestone: an approved-text override layer, stable message IDs,
+original-text fallback and the user's one-box-at-a-time editing workflow.
+Restyling all custom PC settings remains planned. Full port goal is incomplete.
+
+## 2026-10-21: Approved dialogue compiler and native loader
+
+Added a source-bound replacement pack format, one-box draft exporter and
+explicit-approval compiler. The native loader uses the saved Brain Rot mode
+and preserves original entry metadata. It rejects stale source checksums,
+changed commands/icons/line breaks, overflowing text, native glyph-counter
+overflow, wrong languages and malformed packs. Missing entries/files use the
+original pointer. Replacement buffers stay stable during dialogue; restart
+the game to reload an edited pack. All adaptations remain in port/host code.
+
+Final local development EXE SHA256:
+5E45409553D6D26E1E2363E4DF3154923C1502FDB5F82C9D87784E04C78BF230.
+Native build PASS; three Python compiler/hook tests and three focused CTests
+PASS. Final three muted 2100-tick new-File-C intro replays exit0. With the mode
+On, an isolated six-line TEST fixture replaces message0. Off ignores the same
+pack; On with no pack falls back to the original. Off and missing-pack images
+are byte-identical. The QA fixture is not approved user dialogue and stays in
+private test folders; no production replacement has been authored/installed.
+
+Hooks cover actor dialogue initialization, immediate Message::DisplayText and
+Peach's letter, but only the intro hook is runtime accepted so far. NPC choices,
+multi-page dialogue, other languages and all-written-text coverage remain
+unverified. Native-title labels use a different lookup path and are not globally
+rewritten by this loader. The private first draft is English0x0000/Peach intro;
+the user was asked to supply its replacement. See native-dialogue-overrides-
+2026-10-21.txt. Sol Medium is appropriate for remaining NPC/choice tests.
+
+F: remains on its running old tree build. The prepared title-only AE146524...
+preview does not contain this newer loader. Do not run the old private title
+installer against the new C: build or bypass its expected-hash gate. A new
+installation candidate/acceptance record is needed after remaining tests.
+The original open F: game must be closed by the user before root replacement.
+
+
+## 2026-10-21: Native dialogue pages and choices accepted
+
+Current local build F7C550E35F1FE2ADB6CA3D2FF63D7AAC3F53E70EDD4C40BDF4A064B7E6D2DB76
+passes muted On/Off Buddy dialogue, repeated conversation, cannon opening,
+Save & Quit and identical valid save payloads. Rabbit catch/key dialogue passes
+both original save choices with replacement mode On/Off, preserved page/control
+sequences, correct save/no-save effects and normal control afterwards.
+Immediate Message::DisplayText replacement ID406 also runs successfully.
+The optional dialogue observer records entry state only; native branch effects
+and save payloads establish choice results. QA rabbit input now waits for its
+original route to finish. No gameplay actor or progression fields are injected.
+Three Python tests and seven focused CTests pass on the final build.
+All test launches stay muted at the user's request. TEST marker packs remain
+private QA fixtures; user-authored content is still pending. Other languages,
+all-written-text inventory and broader coverage remain unfinished.
+F root installation remains the user's open older game; prepare a separate
+muted preview with isolated saves, then verify it against F ROM/assets before
+claiming readiness. Full project goal remains active.
+
+2026-10-21 F preview deployment milestone VERIFIED
+Prepared frozen accepted F7C550E3...DDB76 EXE/map/SDL and28 hashed payload/source
+snapshot files under F:/AI Games/Mario 64 DS/native-checkpoints/
+native-checkpoint-2026-10-21-dialogue-loader/prepared-build.
+Launcher: Play Latest Preview Muted.cmd. Separate empty play-saves and explicit
+play-settings.ini. Uses original F ROM and pc-port-source assets. No QA packs.
+Source snapshot is incremental, not a standalone checkout. Do not merge it over
+older F source and claim a reproducible rebuild. C source remains canonical.
+Exact F preview EXE runtime:12000 ticks,exit0, muted, original title/new FileA
+through intro and Yoshi St_Wait_Main/control restored. ID0 plus later messages
+use original fallback with Brain Rot enabled and no pack. Screens1600/3900/11900
+reviewed; retained BMP and lossless PNG. ROM/all original saves/settings/main EXE
+hash-unchanged, save inventory unchanged. All28 candidate files hash-verified.
+Private proof work/native-dialogue-f-preview-muted-20261021/acceptance.json,
+and F candidate/runtime-verification.json. Candidate manifest status verified.
+Root old tree game PID28260 was open before preparation; never stopped. Root
+launcher still older tree build; preview is separate. Close other window before
+manual preview to avoid shared input. Physical controller acceptance not redone.
+No public publication performed. Prior goal turn was progress (test acceptance
+and durable evidence); this turn prepares and runtime-verifies the F preview.
+Next: await user-authored first text replacement; independently the remaining
+custom-settings Options artwork restyle/text inventory can proceed. Original
+text fallback stays active. Luna Medium suitable for bounded content/UI work;
+Sol Medium if uncovering another unsupported renderer/text path is difficult.
+Full goal active. Do not mark complete or pause automatically.
+
+## 2026-10-21: Original Options typography and Wanted button styling
+
+Accepted local build BE4F4B5DCC8763F8E7DE9C98A61D45A685D41BD99B88D55E488F0DDEC657B1E1
+copies the original title font/advance metrics before scene teardown. Castle,
+Battlefield and Wanted PC settings now use proportional spacing with centered
+ink and existing compact geometry. Stage menus preserve original gold panels;
+Wanted gains code-drawn gold bevels and a selected arrow. No matched src edits.
+Native Release build, five focused CTests and one Python hook regression pass.
+Three muted original-menu replays total16600 ticks and exit0. Verified pages,
+fifth minimap row changes/persistence, unchanged seed saves, stage gameplay
+return and Wanted original pause return. Sampled label bounds are centered to
+within0.5 DS pixels on both axes. Full evidence/limits in native-options-settings-
+style-2026-10-21.txt. F deployment requires a separate new frozen preview/runtime;
+do not overwrite the accepted prior F7 preview or the user's running main game.
+
+F Options-style preview now VERIFIED: exact BE4F EXE, F ROM/assets, separate C QA saves/settings,4400-tick castle settings/run exits0. Label centering/persistence/native pause restore and original user-file hashes pass. Root older installation remains unchanged. Preview uses its own empty play-saves/settings. See private native-options-style-handoff-20261021.txt and prepared runtime-verification.json.
+
+## 2026-10-21: Internal resolution independent of window size
+
+Accepted EXE B643E0E2797C4D18BACF3978D4F40B1B0EC2551082E53F4B84D5A0B7AE19A3CD
+removes the settings setter's window resize. Native DS is a named256x192 preset.
+Separate window client size/maximized preferences persist independently from
+render size. Native build and four relevant tests pass, including an actual
+owned-window test of resizing/maximizing/restart and GPU readback at Native DS,
+720p,1080p,4K/all dual layouts. Muted castle/Wanted original-menu replays pass
+with exact raster captures, unchanged1280x720 window bounds, setting persistence,
+menu/game return and unchanged seed saves. Full detail/limits in
+native-internal-resolution-2026-10-21.txt. True smooth60/120/240 remains separate.
+
+Text editing is deferred at the user's request. Their first English Peach
+replacement was privately compiled and On/Off runtime-previewed successfully;
+no production pack has been installed on F:. A later Yoshi-box wording is saved
+privately pending fit/preview. Do not ask for another text box until the user
+wants to resume text editing. No user text or ROM-derived draft is public source.
+
+B643 F root installation now VERIFIED. Main game had closed; rollback24A3 retained. Exact installed main EXE/F ROM/assets4400tick resolution replay exits0 with unchanged window bounds and original ROM/save/settings hashes+inventory. Root source mirror preserved. Seven final focused tests pass. Play Mario 64 DS Muted.cmd uses existing personal progress for manual play; agent runtime used isolated files. Text work deferred; no replacement pack installed. See private native-internal-resolution-handoff-20261021.txt.
+
+## 2026-10-21: Restored native walking sound events and muted audio capture
+
+Local build06D3611A0AAB8FED60D744583DBCAFBA3EAF4EFED78F4AE19350FA9A6F5781DF
+routes the animation-timed motion sound intermediary to the native backend.
+The same4000tick castle walking replay now emits50 original ground-footstep
+requests (IDs33/34) versus0 in baseline; all50 complete before the idle ending.
+Movement trace and seed saves are identical. Device-only mute captures real
+stereo48kHz PCM but queues only silence, verified by submission counters and
+WAV sample statistics. Native build, audio-output and SDAT tests, and the actual
+source-hook Python regression pass. Matched source remains untouched.
+Listening fidelity and DS speed/pitch/spatial controls are not accepted. Ambient,
+coin/cannon and other sound paths remain separate. See native-footsteps-
+2026-10-21.txt. Text work remains deferred. Main F build is still the accepted
+B643 resolution build until separate footstep-preview acceptance/preparation.
+
+Footstep F preview verification passed: exact06D EXE/F ROM/assets4000ticks,50original footstep events/all50complete, nonzero private PCM capture but submitted speaker samples0; movement/save hashes unchanged. All43candidate payload/source files hash-verified; original root ROM/save inventory/settings/B643main EXE unchanged. Optional manual audio preview supplied with separate saves. Listening fidelity remains pending; no root promotion.
+
+## 2026-10-21: Native castle birds and exit/re-entry regression
+
+Local diagnostic55405959 registers original bird actor343, original resources,
+typed state dispatch and host translation of the remaining ARM hatch. Original
+src/include unchanged. Build, actual PE profile/data audit, source-hook test and
+two focused audio CTests pass. Original FileA approach visibly spawns a three-
+bird flock, flies away, completes original chirp3:106 and cleans departingbirds.
+Separate6000tick castle entry/exit replay cleans both original leaders, reloads
+new leaders onreturn, then exercises the western flock/chirp again. Final player
+idle/controllable, saves unchanged, zero mixererrors, captured PCM real but all
+speaker submissions silent. Eastern flock approach remains unverified because
+walking routes encounter grate/pond and lack swim ascent inputs. Also pending:
+state2 runtime, flight comparison with DS and listening fidelity. No Fpromotion
+or publicrelease; see native-castle-birds-2026-10-21.txt for precise scope.
+
+## 2026-10-21: Coin cue releases tied note at track end
+
+Local diagnosticBD8CC531 fixes an ended track retaining its indefinite tied
+voice. Synthetic regression failed before and passes after; independent-track
+and ordinary sample-tail checks pass. Generated Sound.cpp removes the old60tick
+coin timeout. Original matched source/headers unchanged. Uncapped local3:17 now
+completes1.067s instead of remaining active after10s. Four control effects have
+byte-identical before/after WAVs. Full83music/1448effect execution audit, native
+build,2focusedCTest, source-hook and actual-PE profile audit pass. Gameplaycoin
+pickup remains unverified: routes pass above groundcoins or hit a raisedledge.
+MutedC/F startup runtimes pass with realPCM and zero speakeroutput, saves intact.
+Separate Fdiagnostic preview has optional manual sound launcher and private
+saves/settings,56files verified. MainrootB643 unchanged. Cannon audio unchanged,
+hearing/fidelity pending; see native-coin-note-release-2026-10-21.txt.
+
+## 2026-10-21: Original coin pickup and shared slide conversion fix
+
+Geometry-derived input route climbs castle stairs and jumps side rail to collect
+two original coins. It reproduced an unrelated slide bug: shared float-to-int
+helper multiplied by4096, turning original196608 target into805306368 and the
+exact observed805302272 adjusted speed, causing out-of-bounds/pitdeath. The
+recovered primitive has no scaling; native conversion now lives in float_bits
+with tested truncation/signed saturation. Original source/headers untouched.
+KuriKing scale table already has fixed-point integer magnitudes represented as
+floats; the same unscaled primitive is appropriate there. Native build,17new
+conversion vectors, ALL61CTest, sourcehook and actual-PE audit pass. Same4800tick
+original-menu replay now collects2coins/completes2cues and reaches controllable
+idle castle state without speedspike or death, on C and exact F preview. PCMreal
+but speakeroutput0; seed saves unchanged. New60file Fdiagnostic preview verified,
+main rootB643 preserved. Hearing/other slide surfaces/Goomboss/cannon remain
+unaccepted. See native-slide-conversion-2026-10-21.txt for evidence and limits.
+
+## 2026-10-21: Archive sound-player limits and cannon motor replacement
+
+DiagnosticFE5D2906 parses configured PLAYER maxSequences and separate channel/
+player priorities. Admission preserves other players, rejects lower priority,
+replaces oldest lowest-priority at capacity and supports explicit handle restart.
+Synthetic policy/parser tests pass. Actual motor cues3:331..334 share player15,
+limit1; empty333 now replaces332. Old baseline had9overlaps; C/F replays now
+observe10/3proper replacements, zero mixererrors, silent device submissions and
+unchanged saves. Generated cannon removes prior effect-number forced stop,
+matched source unchanged. Actual firing is3:335; offline335/airborne0:185 complete
+0.917/1.451s. Full build/61CTest,83music/1448effect audit and original-asset player/
+controls probes pass. Wanted pause3800/retry6300/RecRoom and audio cleanup pass;
+retry has51saturatedPCM samples, listening/mix fidelity pending. Actual player
+cannon ride remains UNVERIFIED: first-hole route blocked; second-cannon route
+falls below bridge. No shot launched in those checks. Stop route guesses and
+derive current collision/mission evidence. F65file separate diagnostic verified,
+mainrootB643 preserved. Shared16hardware channels/masks/heaps remain unfinished.
+See native-cannon-player-audio-2026-10-21.txt for exact scope.

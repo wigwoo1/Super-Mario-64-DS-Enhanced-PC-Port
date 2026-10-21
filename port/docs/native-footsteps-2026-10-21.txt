@@ -1,0 +1,38 @@
+Native player footsteps: event/capture/completion verified; listening fidelity pending.
+EXE06D3611A0AAB8FED60D744583DBCAFBA3EAF4EFED78F4AE19350FA9A6F5781DF
+
+The original walking animation calls func_0201251c at its foot-contact frames,
+passing ground sound type+0x20. That intermediary still followed the legacy
+sound selection/distance/DS-parameter path above Player_PlaySoundEffect's PC
+bridge. Its original four-byte ARM func_02048a18 helper is BX LR (returns its
+incoming sound ID), but its matched empty void C body does not express that
+cross-ABI return contract. The new host adaptation routes the intermediary's
+original ID into the existing native mixer when audio_ready; the silent/legacy
+fallback remains. Original Player timing, sound IDs and movement are untouched.
+This follows the existing PC Sound::Play path. Original DS speed/pitch and
+position-dependent attenuation are not newly implemented by this adapter;
+full spatial audio fidelity remains work. Matched src/include files are unchanged.
+
+SM64DS_PC_AUDIO_MUTED=1 adds a device-only gate with native audio enabled.
+The worker renders/analyzes/captures PCM before zeroing the block submitted to
+waveOut. Initial queued buffers are zero. Voice timing/completion and gameplay
+sound waits still advance. Logs separately count rendered/captured sound and
+nonzero samples submitted to the device. This does not change system volume.
+This gate is used for agent audio tests; WAV files are not played to speakers.
+
+Native Release build passes. smoke_audio_output and smoke_sdat pass; a Python
+test validates the actual Sound.cpp transform and rejects a changed anchor.
+Private baseline/fixed original FileA/castle replays each4000 ticks exit0 with
+engine enabled/output muted. Baseline has no ground-footstep IDs32..47. Fixed
+has50 effects (IDs33/34), all50 complete with no footstep remaining near the
+idle end. Captured stereo48kHz PCM sample counts/peak agree with mixer stats;
+submitted nonzero device samples=0 and audio errors=0. Movement state/position/
+speed trace is identical between runs. Isolated seed save hashes are unchanged.
+Screens2300/2600/3900 retained as lossless PNGs. No listening-based correctness
+or complete ambience/coin/cannon/other-actor audio acceptance is claimed.
+
+Private proof: work/native-muted-audio-walk-{baseline,footsteps}-20261021,
+check-muted-footsteps-20261021.py and run-muted-audio-walk-20261021.ps1.
+The first baseline executable is8FECB418...98E4A (device mute only); it is not
+the accepted footstep-fix binary. Full EXEs/ROM/assets/audio/saves/screens/logs
+stay private. A separate F preview/runtime check is required before distribution.

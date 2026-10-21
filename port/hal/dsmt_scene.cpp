@@ -14,6 +14,7 @@
 #include "ntr/rt.h"
 #include "ntr/gx.h"
 #include "ntr/video.h"
+#include "hal/pc_pause_settings_state.h"
 extern "C" {extern void *data_0209d4a8;extern void *data_0209d524;}
 static_assert(sizeof(dScDSMT_c)==0x64,"Native DSMT scene layout");
 static_assert(sizeof(dScDSMT_c::graphCallback_c)==4,"Native DSMT graphics callback layout");
@@ -32,6 +33,63 @@ void pc_dsmt_phase(int phase){
         controller[0],controller[1],controller[2],controller[3],state[0],state[1],state[2],state[3],panel[8]);
 }
 bool pc_dsmt_requested(){const char *v=std::getenv("SM64DS_PC_ORIGINAL_MENU");return v && v[0]=='1';}
+int pc_title_text_mode_get(){return ntr::video_get_settings().brain_rot_text ? 1 : 0;}
+void pc_title_text_mode_set(int enabled){
+    auto settings=ntr::video_get_settings();
+    if(settings.brain_rot_text==(enabled!=0))return;
+    settings.brain_rot_text=enabled!=0;
+    ntr::video_set_settings(settings);
+}
+extern "C" {
+extern int data_ov007_02102dd8,data_ov007_02103464,data_ov007_02103468;
+extern unsigned char data_ov007_02102df8[];
+extern unsigned char *data_ov007_02103478[];
+void func_ov007_020b8b80(int,const unsigned char *,int);
+void func_ov007_020c0638(void *,int,int,unsigned short);
+}
+extern "C" void pc_settings_capture_title_font(const void *font,unsigned base_tile) {
+    const bool valid=pc_pause::cache_options_font(static_cast<const unsigned char *>(font),base_tile,data_ov007_02102df8);
+    std::fprintf(stderr,"[settings typography] original Options font captured=%u base_tile=%u\n",unsigned(valid),base_tile);
+}
+extern "C" void pc_title_text_label_draw(){
+    auto *context=static_cast<unsigned char *>(data_ov007_0210342c);
+    if(!context)return;
+    auto *entry=*reinterpret_cast<unsigned char **>(context+0xcc);
+    if(!entry)return;
+    auto *layer=*reinterpret_cast<unsigned char **>(entry+4);
+    if(!layer)return;
+    auto *map=*reinterpret_cast<unsigned short **>(layer+0x14);
+    const unsigned width=*reinterpret_cast<unsigned short *>(layer+0x1c);
+    const unsigned height=*reinterpret_cast<unsigned short *>(layer+0x1e);
+    if(!map || width!=32 || height<12)return;
+    // BG3's original Backlight caption occupies x24..103, y80..95.
+    // Remove only its map cells; draw the new heading through the original
+    // variable-width menu font in BG1, alongside the original On/Off text.
+    const unsigned short blank=map[0];
+    for(unsigned y=10;y<12;++y)for(unsigned x=3;x<13;++x)map[y*width+x]=blank;
+    func_ov007_020c0638(layer,0,0,0);
+    static const unsigned char label[]={0x0b,0x1b,0x0a,0x12,0x17,0x4d,0x1b,0x18,0x1d,0xff};
+    const int pal=data_ov007_02102dd8,x=data_ov007_02103464,y=data_ov007_02103468;
+    data_ov007_02102dd8=0xf;data_ov007_02103464=64;data_ov007_02103468=10;
+    func_ov007_020b8b80(0,label,0);
+    // Palette 14/15 are the original menu's white/black text inks. Outline
+    // this small caption so it stays readable over the moving character.
+    auto *pixels=data_ov007_02103478[0];
+    auto offset=[](unsigned px,unsigned py){return (py/8*32+px/8)*32+(py%8)*4+(px%8)/2;};
+    auto get=[&](unsigned px,unsigned py){return (pixels[offset(px,py)]>>((px&1)*4))&15;};
+    auto put=[&](unsigned px,unsigned py,unsigned ink){
+        auto &v=pixels[offset(px,py)];const unsigned shift=(px&1)*4;
+        v=static_cast<unsigned char>((v&~(15u<<shift))|(ink<<shift));
+    };
+    bool ink[18][82]={};
+    for(unsigned py=79;py<97;++py)for(unsigned px=23;px<105;++px)ink[py-79][px-23]=get(px,py)==15;
+    for(unsigned py=80;py<96;++py)for(unsigned px=24;px<104;++px)if(ink[py-79][px-23]) {
+        for(int dy=-1;dy<=1;++dy)for(int dx=-1;dx<=1;++dx)
+            if(!ink[py+dy-79][px+dx-23])put(px+dx,py+dy,15);
+        put(px,py,14);
+    }
+    data_ov007_02102dd8=pal;data_ov007_02103464=x;data_ov007_02103468=y;
+}
 void pc_dsmt_trace(const char *step){const char *v=std::getenv("SM64DS_PC_DSMT_TRACE");if(v && v[0]=='1'){std::fprintf(stderr,"[native DSMT] %s\n",step);std::fflush(stderr);}}
 void *pc_create_dsmt_scene(){
     pc_dsmt_trace("native factory");
@@ -65,7 +123,8 @@ extern "C" void pc_dsmt_graph_prepare(){
         static_cast<dScDSMT_c::graphCallback_c *>(active_graph)->GraphCallback2();
         static bool captured=false;
         const char *prefix=std::getenv("SM64DS_PC_DSMT_DUMP");
-        if(prefix && prefix[0] && ntr::rt_frame()==2980) {
+        const char *layer_tick=std::getenv("SM64DS_PC_DSMT_LAYER_TICK");
+        if(prefix && prefix[0] && !layer_tick && ntr::rt_frame()==2980) {
             static ntr::Framebuffer text_layer;
             ntr::ppu_scanout(ntr::ENGINE_A,text_layer,true,0x02);
             char path[2048];std::snprintf(path,sizeof(path),"%s-dialog-bg1.bmp",prefix);
@@ -78,7 +137,7 @@ extern "C" void pc_dsmt_graph_prepare(){
         }
         // Compare the same animation moments across software and GPU captures.
         // This observes original state without calling any update functions.
-        if(prefix && prefix[0] && (ntr::rt_frame()==300 || ntr::rt_frame()==600 || ntr::rt_frame()==1180)) {
+        if(prefix && prefix[0] && !layer_tick && (ntr::rt_frame()==300 || ntr::rt_frame()==600 || ntr::rt_frame()==1180)) {
             char path[2048];
             std::snprintf(path,sizeof(path),"%s-frame-%llu.csv",prefix,(unsigned long long)ntr::rt_frame());
             if(FILE *out=std::fopen(path,"w")) {
@@ -143,11 +202,16 @@ extern "C" void pc_dsmt_graph_prepare(){
             for(int i=0;i<12;++i)std::fprintf(stderr,"%s%d",i?",":"",matrix[i]);
             std::fputc('\n',stderr);
         }
-        if(prefix && prefix[0] && ((!captured && ntr::rt_frame()>=300) || ntr::rt_frame()==1780)) {
+        const bool requested_layer=layer_tick && ntr::rt_frame()==std::strtoull(layer_tick,nullptr,10);
+        if(prefix && prefix[0] && ((!layer_tick && ((!captured && ntr::rt_frame()>=300) || ntr::rt_frame()==1780)) || requested_layer)) {
             captured=true;
             char frame_prefix[2048];
             if(ntr::rt_frame()==1780) {
                 std::snprintf(frame_prefix,sizeof(frame_prefix),"%s-file-select",prefix);
+                prefix=frame_prefix;
+            }
+            if(requested_layer) {
+                std::snprintf(frame_prefix,sizeof(frame_prefix),"%s-requested",prefix);
                 prefix=frame_prefix;
             }
             char path[2048];

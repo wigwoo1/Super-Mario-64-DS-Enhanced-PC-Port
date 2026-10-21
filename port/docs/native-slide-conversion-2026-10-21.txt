@@ -1,0 +1,29 @@
+Native slide conversion and original coin pickup
+
+The geometry-derived castle replay climbs the main stairs and jumps the side
+rail before collecting two original coins. It exposed a shared conversion bug:
+the PC func_01ffa344 implementation multiplied every float-to-integer result by
+4096. The recovered ITCM primitive converts without scaling. Original airborne
+slide steering passes0x48400000 (196608.0); the wrong result805306368 becomes
+805302272 after the next speed adjustment. This produced the exact observed
+speed spike and position saturation at world +/-32000, followed by a pit death.
+
+The conversion moved from game_api_bridge.cpp to float_bits.cpp with unscaled
+truncation and signed saturation matching the recovered primitive's default
+behavior. Host casts outside the valid integer range are avoided. DS floating
+exception status/traps and non-default rounding controls are not emulated.
+The only original call sites are the slide worker and KuriKing scale workers.
+The actual linked KuriKing table contains12288,9557,6826,4096 as float values;
+these already represent fixed-point scale units and must not be scaled again.
+Matched source/headers remain untouched. No slide speed cap or position reset.
+
+Build and three focused tests pass, including17 conversion vectors, existing
+float comparisons, audio decoder/track release tests and output mute test.
+The exact same4800tick original-menu/stairs/jump replay now collects2coins,
+completes both original3:17 sound voices, reaches both ledge targets and remains
+idle/controllable in castle level2 instead of dying/returning outside. Original
+seed saves unchanged; PCM48kHz captured with only silence submitted to speakers.
+See private runtime acceptance for exact hashes/counters and separate F check.
+This verifies coin credit/sound completion and this slide regression, not all
+sliding surfaces, Goomboss gameplay or subjective audio timbre. The full port
+remains incomplete and audio is still diagnostic. Text editing is deferred.

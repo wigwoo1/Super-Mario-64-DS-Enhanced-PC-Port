@@ -18,6 +18,10 @@ inline bool cache_button_panel(const uint16_t *map,unsigned offset,uint16_t *pan
     return true;
 }
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks);
+// Copy while the title owns its font resource; never retain its heap pointer.
+bool cache_options_font(const unsigned char *font, unsigned base_tile, const unsigned char *widths);
+void clear_options_font();
+bool options_font_ready();
 struct Menu {
     Page page = Page::Options;
     unsigned row = 0;

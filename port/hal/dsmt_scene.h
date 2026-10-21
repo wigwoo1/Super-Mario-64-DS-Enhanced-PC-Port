@@ -1,4 +1,6 @@
 #pragma once
+int pc_title_text_mode_get();
+void pc_title_text_mode_set(int enabled);
 bool pc_dsmt_requested();
 bool pc_dsmt_active();
 void *pc_create_dsmt_scene();

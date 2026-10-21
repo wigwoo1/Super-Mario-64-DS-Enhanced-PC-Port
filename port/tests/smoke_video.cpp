@@ -213,17 +213,25 @@ int main() {
 #endif
 
     const double expected[] = {16.0 / 9.0, 16.0 / 10.0, 21.0 / 9.0};
-    for (int i = 0; i < 12; ++i) {
+    for (int i = 0; i < 13; ++i) {
         if (settings.width > 3840 || settings.height > 2160 ||
             settings.width < 256 || settings.height < 192) return 1;
         const double ratio = static_cast<double>(settings.width) / settings.height;
         const int group = i / 4;
-        if (std::abs(ratio - expected[group]) > 0.035) return 2;
+        if (i<12 && std::abs(ratio - expected[group]) > 0.035) return 2;
+        if(i==12 && (settings.width!=256 || settings.height!=192))return 28;
         ntr::video_cycle_resolution(settings);
     }
     if (settings.width != 1280 || settings.height != 720) return 3;
+    ntr::video_cycle_resolution(settings,-1);
+    if(settings.width!=256 || settings.height!=192)return 29;
+    ntr::video_cycle_resolution(settings);
 
     const char *settings_path = "sm64ds-video-settings-smoke.ini";
+    settings.width=256;settings.height=192;ntr::video_set_settings(settings);
+    if(!ntr::video_save_settings(settings_path))return 33;
+    ntr::video_set_settings(ntr::VideoSettings{});
+    if(!ntr::video_load_settings(settings_path) || ntr::video_get_settings().width!=256 || ntr::video_get_settings().height!=192)return 34;
     settings.width = 3840;
     settings.height = 2160;
     settings.target_fps = 240;
@@ -238,7 +246,7 @@ int main() {
     settings.texture_quality = ntr::TextureQuality::Upscaled;
     settings.minimap_rotate_with_player = true;
     settings.minimap_hide_touch_target = false;
-    settings.stay_in_stage_after_star = true; settings.camera_zoom=3; settings.camera_mode=1; settings.always_run=true;
+    settings.stay_in_stage_after_star = true; settings.brain_rot_text=true; settings.camera_zoom=3; settings.camera_mode=1; settings.always_run=true;
     settings.render_distance=ntr::RenderDistance::EntireMap;
     ntr::video_set_settings(settings);
     if (!ntr::video_save_settings(settings_path)) return 16;
@@ -248,7 +256,7 @@ int main() {
     settings.renderer = ntr::VideoRenderer::D3D11;
     settings.minimap_rotate_with_player = false;
     settings.minimap_hide_touch_target = true;
-    settings.stay_in_stage_after_star = false; settings.camera_zoom=0; settings.always_run=false;
+    settings.stay_in_stage_after_star = false; settings.brain_rot_text=false; settings.camera_zoom=0; settings.always_run=false;
     settings.render_distance=ntr::RenderDistance::Minimum;
     ntr::video_set_settings(settings);
     if (!ntr::video_load_settings(settings_path)) return 17;
@@ -258,7 +266,7 @@ int main() {
         loaded.renderer!=ntr::VideoRenderer::OpenGLSoftware || loaded.minimap || loaded.minimap_opacity != 137 ||
         loaded.minimap_scale != 310 || loaded.minimap_x != 420 || loaded.minimap_y != 170 ||
         !loaded.upscale_2d || loaded.texture_quality!=ntr::TextureQuality::Upscaled || !ntr::texture_upscaled() ||
-        !loaded.minimap_rotate_with_player || loaded.minimap_hide_touch_target || !loaded.stay_in_stage_after_star || loaded.camera_zoom!=3 || loaded.camera_mode!=1 || !loaded.always_run || loaded.render_distance!=ntr::RenderDistance::EntireMap) return 18;
+        !loaded.minimap_rotate_with_player || loaded.minimap_hide_touch_target || !loaded.stay_in_stage_after_star || !loaded.brain_rot_text || loaded.camera_zoom!=3 || loaded.camera_mode!=1 || !loaded.always_run || loaded.render_distance!=ntr::RenderDistance::EntireMap) return 18;
     // Every saved quality overrides the historical toggle, in either key order.
     for(unsigned quality=0;quality<6;++quality) {
         settings.texture_quality=static_cast<ntr::TextureQuality>(quality);
@@ -296,6 +304,6 @@ int main() {
     std::fclose(isolated);std::remove("smoke-isolated-settings.ini");
     _putenv_s("SM64DS_PC_SETTINGS_FILE","");
 #endif
-    std::puts("video smoke: 16:9, 16:10, 21:9 presets through 4K pass");
+    std::puts("video smoke: Native DS, 16:9, 16:10, 21:9 presets through 4K pass");
     return 0;
 }

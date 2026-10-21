@@ -139,6 +139,8 @@ def transform(text):
     """Return (new_text, n_rewrites)."""
     import minigame_host
     original = text
+    import dialogue_host
+    text = dialogue_host.transform(text)
     import goomba_host
     text = goomba_host.transform(text)
     import reward_host

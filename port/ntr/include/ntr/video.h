@@ -11,7 +11,7 @@ enum class VideoRenderer : uint8_t { D3D11, OpenGLSoftware };
 enum class RenderDistance : uint8_t { Minimum, Low, Medium, EntireMap };
 
 struct VideoSettings {
-    uint32_t width = 1280;
+    uint32_t width = 1280; // internal raster size, independent of the window
     uint32_t height = 720;
     uint32_t target_fps = 60;
     uint8_t anisotropic_filtering = 0; // 0=off, otherwise 2/4/8/16x
@@ -30,6 +30,7 @@ struct VideoSettings {
     uint8_t camera_mode = 0; // 0=retail camera, 1=free orbit with right stick
     bool always_run = false; // digital movement; analog speed follows stick travel
     bool stay_in_stage_after_star = false; // retain original castle exit by default
+    bool brain_rot_text = false; // opt-in dialogue replacement mode; missing entries fall back to original
     RenderDistance render_distance = RenderDistance::Minimum;
 };
 
@@ -45,8 +46,8 @@ const char *video_renderer_notice();
 // application's working directory (the executable folder in the PC build).
 bool video_load_settings(const char *path = nullptr);
 bool video_save_settings(const char *path = nullptr);
-// Cycle through the supported 16:9, 16:10, and 21:9 output presets up to 4K.
-void video_cycle_resolution(VideoSettings &settings);
+// Internal presets up to 4K, including Native DS (256x192); direction is +/-1.
+void video_cycle_resolution(VideoSettings &settings, int direction=1);
 uint16_t video_minimap_angle(uint16_t camera_heading);
 void video_set_minimap_gameplay(bool active);
 // Peach's 2D letter text follows the widened projection of its 3D panel.

@@ -1,0 +1,30 @@
+Native castle birds: diagnostic integration, partial acceptance
+
+The original castle level now has the SBIRD343 profile registered with its
+native factory. Original model/animation resources and flock logic are linked.
+The host transform replaces the mixed member/free-function state table with a
+typed switch and translates the remaining ARM hatch to host C++.
+The generic host transform owns resource handle construction/destruction.
+Matched source and headers are unmodified. Layout and original profile metadata
+are checked against the local extraction; no extracted assets are public inputs.
+
+Build, source-hook test, native PE profile/data audit, SDAT and output-mute smoke
+tests pass. Original File A/castle approach replay spawns leader+two followers,
+shows birds taking flight, starts and completes original chirp effect3:106, and
+cleans the departed flock. Runtime exits normally with zero mixer errors and
+unchanged isolated seed saves. Real PCM captured before an output-only mute gate;
+every submitted speaker buffer is silent. Listening fidelity is not accepted.
+
+Follow-up: a6000tick original-menu replay enters the castle, cleans both level
+leaders, returns outside and reloads them with fresh IDs. The western flock
+then renders/flies/cleans and completes its chirp again. Final Yoshi idle and
+controllable, seed saves unchanged, zero mixer errors and silent submissions.
+Source-hook and two focused audio tests pass on the same unchanged executable.
+Eastern-flock walking routes hit the cannon grate or enter the pond without
+swim ascent inputs. They do not establish a bird failure or successful approach.
+
+Remaining: other flock, state2 runtime coverage,
+comparison of follower flight trajectories against DS. This does not constitute
+complete castle ambience or a stable-install promotion. Main installed build
+remains the earlier accepted internal-resolution build; full embedded executables,
+PCM captures, ROM assets, screenshots and private saves are never release files.

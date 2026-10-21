@@ -8,6 +8,8 @@
 #include <tuple>
 #include <vector>
 #include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 namespace ntr {
 namespace {
@@ -22,7 +24,7 @@ struct Bytes {
     Bytes slice(size_t p,size_t n) const {span(p,n);return {{data.begin()+p,data.begin()+p+n}};}
 };
 int bounded_volume(int n) {return std::max(0,std::min(127,n));}
-struct Entry {unsigned file=0,bank=0,volume=127,priority=64,player=0;bool present=false;};
+struct Entry {unsigned file=0,bank=0,volume=127,priority=64,channel_priority=64,player=0;bool present=false;};
 struct Effect {std::vector<uint8_t> data;std::vector<Entry> entries;std::vector<unsigned> offsets;};
 struct Voice {
     uint32_t slot=0;
@@ -30,6 +32,7 @@ struct Voice {
     bool stopping=false;
     bool paused=false;
     unsigned player_id=0;
+    unsigned priority=0;
     std::shared_ptr<SSEQ> sequence;
     std::unique_ptr<PcSdatPlayer> player;
 };
@@ -41,6 +44,7 @@ struct SdatEngine::Impl {
     std::vector<Bytes> files;
     std::vector<Entry> sequences;
     std::vector<Effect> effects;
+    std::vector<unsigned> player_limits;
     std::vector<std::unique_ptr<SWAR>> waves;
     std::vector<std::shared_ptr<SBNK>> banks;
     std::map<std::tuple<int,unsigned,unsigned>,std::shared_ptr<SSEQ>> cache;
@@ -69,7 +73,7 @@ struct SdatEngine::Impl {
         Entry e;if(!offset)return e;
         archive.span(offset,10);
         e.present=true;e.file=archive.u32(offset);e.bank=archive.u16(offset+4);
-        e.volume=archive.data[offset+6];e.priority=archive.data[offset+8];e.player=archive.data[offset+9];
+        e.volume=archive.data[offset+6];e.channel_priority=archive.data[offset+7];e.priority=archive.data[offset+8];e.player=archive.data[offset+9];
         return e;
     }
     Bytes &file(unsigned id) {
@@ -92,6 +96,12 @@ struct SdatEngine::Impl {
         if(count>65536)throw std::runtime_error("SDAT FAT count");
         archive.span(fat+12,size_t(count)*16);
         for(unsigned i=0;i<count;++i)files.push_back(archive.slice(archive.u32(fat+12+i*16),archive.u32(fat+16+i*16)));
+        const auto players=table(info,4);
+        player_limits.assign(players.size(),32); // Legacy fallback for absent records.
+        for(unsigned i=0;i<players.size();++i)if(players[i]) {
+            archive.span(players[i],8);
+            player_limits[i]=archive.u16(players[i]);
+        }
         const auto wave_table=table(info,3);
         waves.resize(wave_table.size());
         for(unsigned i=0;i<wave_table.size();++i)if(wave_table[i])waves[i]=resource<SWAR>(archive.u32(wave_table[i]),"SWAR");
@@ -125,7 +135,7 @@ struct SdatEngine::Impl {
             for(unsigned i=0;i<entries;++i) {
                 const size_t p=0x20+i*12;const unsigned address=bytes.u32(p);
                 Entry e;e.present=address!=0xffffffff;e.bank=bytes.u16(p+4);
-                e.volume=bytes.data[p+6];e.priority=bytes.data[p+8];e.player=bytes.data[p+9];
+                e.volume=bytes.data[p+6];e.channel_priority=bytes.data[p+7];e.priority=bytes.data[p+8];e.player=bytes.data[p+9];
                 if(e.present && address>=effect.data.size())throw std::runtime_error("SSAR entry outside event data");
                 effect.entries.push_back(e);effect.offsets.push_back(address);
             }
@@ -153,18 +163,33 @@ struct SdatEngine::Impl {
                 found=cache.emplace(key,std::move(seq)).first;
             }
             if(!slot)slot=next_slot++;
-            voices.erase(std::remove_if(voices.begin(),voices.end(),[slot](const Voice &v){return v.slot==slot;}),voices.end());
-            // Bound simultaneous host players; original player priorities are
-            // retained within each sequence. Global channel arbitration is a
-            // separate compatibility check, not claimed by this adapter.
-            if(voices.size()>=32)throw std::runtime_error("SDAT concurrent player limit");
-            Voice v;v.slot=slot;v.volume.set(bounded_volume(volume),0);v.sequence=found->second;v.player_id=e.player;
+            const unsigned limit=e.player<player_limits.size()?player_limits[e.player]:32;
+            if(!limit)return 0;
+            unsigned occupied=0;const Voice *victim=nullptr;
+            for(const auto &old:voices)if(old.slot!=slot && old.player_id==e.player) {
+                ++occupied;
+                // The vector is in start order: equal priorities replace oldest.
+                if(!victim || old.priority<victim->priority)victim=&old;
+            }
+            uint32_t replace=0;
+            if(occupied>=limit) {
+                if(!victim || victim->priority>e.priority)return 0;
+                replace=victim->slot;
+            }
+            const auto removed=std::count_if(voices.begin(),voices.end(),[&](const Voice &old){return old.slot==slot || old.slot==replace;});
+            // Shared hardware-channel arbitration remains a separate check.
+            if(voices.size()-removed>=32)throw std::runtime_error("SDAT concurrent player limit");
+            Voice v;v.slot=slot;v.volume.set(bounded_volume(volume),0);v.sequence=found->second;v.player_id=e.player;v.priority=e.priority;
             v.player=std::make_unique<PcSdatPlayer>();v.player->sampleRate=rate;
-            v.player->prio=uint8_t(e.priority);v.player->interpolation=INTERPOLATION_LINEAR;
+            v.player->prio=uint8_t(e.channel_priority);v.player->interpolation=INTERPOLATION_LINEAR;
             v.player->sseqVol=Cnv_Sust(uint8_t(e.volume));
             if(!v.player->Setup(v.sequence.get()))throw std::runtime_error("SDAT track allocation");
             auto &track=v.player->tracks[v.player->trackIds[0]];
             track.pos=v.sequence->data.data()+offset;
+            // Validate/setup the new player before changing existing playback.
+            if(replace && std::getenv("SM64DS_PC_AUDIO_TRACE"))
+                std::fprintf(stderr,"[native audio arbitration] player=%u limit=%u replaced=%u by=%u priority=%u\n",e.player,limit,replace,slot,e.priority);
+            voices.erase(std::remove_if(voices.begin(),voices.end(),[&](const Voice &old){return old.slot==slot || old.slot==replace;}),voices.end());
             voices.push_back(std::move(v));return slot;
         } catch(const std::exception &e) {last_error=e.what();++error_count;return 0;}
     }

@@ -19,14 +19,19 @@ game assets, personal saves, or proprietary compiler is included here.
 - The Windows renderer offers resolutions up to 3840x2160, a repositionable
   minimap, and other PC settings. Render-distance presets have a verified native
   4K distant-Goomba body/shadow case and a 720p Bob-omb body/shadow and red-coin
-  body case. Coin-shadow pixels, Chain Chomp/fence integration and broader actor
-  coverage remain incomplete. Game logic remains at
+  body case. Internal resolution can change independently of window size and
+  includes Native DS (256x192). Coin-shadow pixels and broader actor coverage
+  remain incomplete. Game logic remains at
   the original scene rate; higher presentation targets repeat frames, and
   interpolation is future work.
 - Native audio can be enabled with `SM64DS_PC_NATIVE_AUDIO=1`. It plays original
   sequences and effects in selected tested scenes, but remains opt-in and
   diagnostic. Listening fidelity, spatial effects, shared voice/channel
   behavior and coverage across the game remain incomplete.
+  `SM64DS_PC_AUDIO_MUTED=1` silences device output while keeping the engine
+  running for tests. Castle footsteps/birds, coin sound completion, and two
+  Battlefield cannon positions have bounded checks; this does not establish
+  listening accuracy or complete sound compatibility.
 - Original title/course entry, selected cannon and water-bomb encounters,
   repeat Star credit, pause/re-entry and selected audio flows have isolated
   runtime checks. See the dated `port/docs/` checkpoints for exact coverage and
