@@ -1,6 +1,7 @@
 #include "ntr/input.h"
 #include "ntr/video.h"
 #include "ntr/controller_bindings.h"
+#include "ntr/sdl_gamepad.h"
 #include "ntr/mmio.h"
 
 #include <algorithm>
@@ -27,6 +28,7 @@ unsigned long long g_input_poll_count = 0;
 bool g_auto_confirm_logged = false;
 bool g_menu_navigation = true;
 bool g_camera_zoom_pending = false;
+bool g_camera_mode_pending = false;
 bool g_test_controls=false;uint16_t g_test_buttons=0;int16_t g_test_x=0,g_test_y=0;
 
 uint16_t scripted_buttons(unsigned long long poll, const char *schedule, unsigned limit=0x0fff) {
@@ -89,7 +91,14 @@ void input_poll() {
     ++g_input_poll_count;
     load_xinput();
     XINPUT_STATE pad{};
-    if (g_xinput_get_state && g_xinput_get_state(0, &pad) == ERROR_SUCCESS) {
+    bool xbox=false;
+    if(g_xinput_get_state)for(DWORD index=0;index<4 && !xbox;++index)
+        xbox=g_xinput_get_state(index,&pad)==ERROR_SUCCESS;
+    if (sdl_gamepad_poll(g_state)) {
+        // SDL supplies the same normalized state, including native Nintendo
+        // HID over Bluetooth. Keep one active pad so translated devices cannot
+        // generate duplicate buttons through both SDL and XInput.
+    } else if (xbox) {
         g_state.buttons = pad.Gamepad.wButtons;
         g_state.left_x = pad.Gamepad.sThumbLX;
         g_state.left_y = pad.Gamepad.sThumbLY;
@@ -137,6 +146,17 @@ void input_poll() {
         write_touch_latch(false, 0, 0);
         g_state.buttons=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_PAD_BUTTONS"),0xffff);
         pressed |= controller_face_buttons(g_state.buttons,g_menu_navigation);
+        // The regular hardware path maps these XInput-compatible directional
+        // bits before this automation block. Reapply them after replacing the
+        // pad state so replayed controller D-pad input follows the same path.
+        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_RIGHT) pressed |= 1u << 4;
+        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_LEFT) pressed |= 1u << 5;
+        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_UP) pressed |= 1u << 6;
+        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_DOWN) pressed |= 1u << 7;
+        if (g_state.buttons & XINPUT_GAMEPAD_START) pressed |= 1u << 3;
+        if (g_state.buttons & XINPUT_GAMEPAD_BACK) pressed |= 1u << 2;
+        if (g_state.buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) pressed |= 1u << 9;
+        if (g_state.buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) pressed |= 1u << 8;
     }
     // Replay taps use the same hardware latch as mouse input. Restrict this
     // test interface to isolated automation; each valid tap lasts five polls.
@@ -232,6 +252,20 @@ void input_poll() {
             }
             const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
         }
+        // Free-camera QA only: decimal start:end:x:y records for the right
+        // stick, isolated behind the same automation opt-in as route replay.
+        segment=std::getenv("SM64DS_PC_TEST_RIGHT_STICK_SCHEDULE");
+        while(segment && *segment) {
+            unsigned long long begin=0,end=0;long x=0,y=0;int consumed=0;
+            if(std::sscanf(segment,"%llu:%llu:%ld:%ld%n",&begin,&end,&x,&y,&consumed)==4 &&
+               consumed>0 && (!segment[consumed] || segment[consumed]==',') &&
+               begin>0 && end>begin && x>=-32768 && x<=32767 && y>=-32768 && y<=32767 &&
+               g_input_poll_count>=begin && g_input_poll_count<end) {
+                g_state.right_x=static_cast<int16_t>(x);
+                g_state.right_y=static_cast<int16_t>(y);
+            }
+            const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
+        }
     }
     pressed |= scripted_buttons(g_input_poll_count, std::getenv("SM64DS_PC_TEST_BUTTONS"));
     const char *bot_controls=std::getenv("SM64DS_PC_TEST_BOSS_BOT");
@@ -242,14 +276,22 @@ void input_poll() {
         (star_controls && std::strcmp(star_controls,"1")==0))) {
         pressed |= g_test_buttons;g_state.left_x=g_test_x;g_state.left_y=g_test_y;
     }
-    static bool previous_zoom=false;
+    static bool previous_zoom=false,previous_camera_mode=false;
     bool zoom_down=(g_state.buttons & XINPUT_GAMEPAD_RIGHT_THUMB)!=0;
+    bool mode_down=(g_state.buttons & XINPUT_GAMEPAD_LEFT_THUMB)!=0;
     if(automation_only && automation_only[0]=='1')
         zoom_down=zoom_down || scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_CAMERA_ZOOM"))!=0;
+    if(automation_only && automation_only[0]=='1')
+        mode_down=mode_down || scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_CAMERA_MODE"))!=0;
     g_state.camera_zoom_pressed=zoom_down && !previous_zoom;
-    if(g_menu_navigation) g_camera_zoom_pending=false;
-    else if(g_state.camera_zoom_pressed) g_camera_zoom_pending=true;
+    g_state.camera_mode_pressed=mode_down && !previous_camera_mode;
+    if(g_menu_navigation) { g_camera_zoom_pending=false; g_camera_mode_pending=false; }
+    else {
+        if(g_state.camera_zoom_pressed) g_camera_zoom_pending=true;
+        if(g_state.camera_mode_pressed) g_camera_mode_pending=true;
+    }
     previous_zoom=zoom_down;
+    previous_camera_mode=mode_down;
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);
 
     g_state.touch = g_touch;
@@ -272,6 +314,11 @@ InputState input_state() { return g_state; }
 bool input_take_camera_zoom() {
     const bool pending=g_camera_zoom_pending;
     g_camera_zoom_pending=false;
+    return pending;
+}
+bool input_take_camera_mode() {
+    const bool pending=g_camera_mode_pending;
+    g_camera_mode_pending=false;
     return pending;
 }
 

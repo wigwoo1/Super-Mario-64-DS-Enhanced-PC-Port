@@ -40,6 +40,10 @@
  */
 
 #include "common.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 #include "daObjMcWater_c.h"
 #include "SharedFilePtr.h"
 #include "dBgW.h"
@@ -51,22 +55,80 @@ struct CLPS_Block;
 
 extern "C" {
 void func_ov009_02111b1c(daObjMcWater_c *self);
+void *pc_overlay9_address(unsigned int address);
+void func_02017acc(void *handle, unsigned int fileID);
 void _ZN18TextureTransformer7SetFileER8BTA_Filei5Fix12IiEj(
     void *self, void *bta, int a, int fix, unsigned b);
 void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
     void *self, void *kcl, void *mtx, int fix, short s, void *clps);
 
-extern void *data_ov009_02113c68[];
-extern SharedFilePtr data_ov009_02113c70;
-extern BTA_File data_ov009_02112bc4;
-extern CLPS_Block data_ov009_02112c38;
-extern Vector3 data_ov009_02113d8c[];
-extern Vector3 data_ov009_02113de0[];
-extern Vector3 data_ov009_02113e34[];
 extern unsigned char data_0209f2d8[];
 extern int data_0209caa0[];
 extern int data_0209f32c;
 }
+
+/* The retail overlay owns these handles and point tables in ov009 .bss/.data.
+ * Static constructors do not run when the native PC build links the overlay's
+ * image as data, so initialize the exact recovered addresses on first use. */
+static void pc_water_initialize_overlay_data()
+{
+    static bool initialized;
+    if (initialized) return;
+    initialized = true;
+
+    void *modelHandle = pc_overlay9_address(0x02113c68);
+    void *collisionHandle = pc_overlay9_address(0x02113c70);
+    func_02017acc(modelHandle, 0x693);
+    ((SharedFilePtr *)collisionHandle)->Construct(0x694);
+
+    static const unsigned int splashPoints[3][7][3] = {
+        {
+            {0xfe94e000, (unsigned int)-0x5a000, 0xff60a000},
+            {0xfea20000, (unsigned int)-0x5a000, 0xff52e000},
+            {(unsigned int)-0x1540000, (unsigned int)-0x5a000, 0xff43e000},
+            {0xfeb56000, (unsigned int)-0x5a000, 0xff344000},
+            {0xfebb0000, (unsigned int)-0x5a000, 0xff236000},
+            {0xfebe2000, (unsigned int)-0x5a000, 0xff114000},
+            {0xfebe2000, (unsigned int)-0x5a000, 0xfeff2000},
+        },
+        {
+            {0xfeb2e000, 0xffbd2000, (unsigned int)-0x960000},
+            {0xfebf6000, 0xffbd2000, 0xff5ce000},
+            {0xfec96000, 0xffbd2000, 0xff4e8000},
+            {0xfed0e000, 0xffbd2000, 0xff3ee000},
+            {0xfed7c000, 0xffbd2000, 0xff2f4000},
+            {0xfed9a000, 0xffbd2000, 0xff1e6000},
+            {0xfed72000, 0xffbd2000, 0xff0ce000},
+        },
+        {
+            {0xfead4000, (unsigned int)-0x320000, 0xff682000},
+            {0xfebb0000, (unsigned int)-0x320000, 0xff5ba000},
+            {0xfec5a000, (unsigned int)-0x320000, (unsigned int)-0xc30000},
+            {0xfecdc000, (unsigned int)-0x320000, 0xff4d4000},
+            {0xfed54000, (unsigned int)-0x320000, 0xff2cc000},
+            {0xfed54000, (unsigned int)-0x320000, 0xff25e000},
+            {0xfed68000, (unsigned int)-0x320000, 0xff1aa000},
+        },
+    };
+    static const unsigned int tableAddresses[3] = {
+        0x02113d8c, 0x02113de0, 0x02113e34,
+    };
+    for (int table = 0; table < 3; ++table) {
+        unsigned int *points = (unsigned int *)pc_overlay9_address(tableAddresses[table]);
+        for (int point = 0; point < 7; ++point)
+            for (int axis = 0; axis < 3; ++axis)
+                points[point * 3 + axis] = splashPoints[table][point][axis];
+    }
+}
+
+static void **pc_water_model_handle()
+{ return (void **)pc_overlay9_address(0x02113c68); }
+static SharedFilePtr *pc_water_collision_handle()
+{ return (SharedFilePtr *)pc_overlay9_address(0x02113c70); }
+static BTA_File *pc_water_bta()
+{ return (BTA_File *)pc_overlay9_address(0x02112bc4); }
+static CLPS_Block *pc_water_clps()
+{ return (CLPS_Block *)pc_overlay9_address(0x02112c38); }
 
 /* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
@@ -83,6 +145,15 @@ extern "C" daObjMcWater_c *daObjMcWater_c_classInit()
 // @symbol _ZN14daObjMcWater_c13InitResourcesEv
 int daObjMcWater_c::InitResources()
 {
+    pc_water_initialize_overlay_data();
+#if defined(SM64DS_PLATFORM_PC)
+    const char *trace = getenv("SM64DS_PC_WATER_TRACE");
+    if (trace && trace[0] == '1')
+        fprintf(stderr, "[castle water] InitResources pos=%d,%d,%d area=%d model=%p collision=%p bta=%p clps=%p\n",
+            mPosX, mPosY, mPosZ, mAreaId,
+            (void *)pc_water_model_handle(), (void *)pc_water_collision_handle(),
+            (void *)pc_water_bta(), (void *)pc_water_clps());
+#endif
     int b = (int)(data_0209f2d8[0] == 1);
     if (b == 0) {
         if (data_0209caa0[2] & 0x80000) {
@@ -90,20 +161,20 @@ int daObjMcWater_c::InitResources()
         }
     }
     {
-        BMD_File *bmd = (BMD_File *)Model::LoadFile(*(SharedFilePtr *)data_ov009_02113c68);
+        BMD_File *bmd = (BMD_File *)Model::LoadFile(*(SharedFilePtr *)pc_water_model_handle());
         mModel.SetFile(bmd, 1, 0x14);
     }
-    TextureTransformer::Prepare(*(BMD_File *)data_ov009_02113c68[1], data_ov009_02112bc4);
+    TextureTransformer::Prepare(*(BMD_File *)pc_water_model_handle()[1], *pc_water_bta());
     /* 6az: header SetFile takes Fix12<int> by value. */
     _ZN18TextureTransformer7SetFileER8BTA_Filei5Fix12IiEj(
-        &mTexTransformer, &data_ov009_02112bc4, 0, 0x1000, 0);
+        &mTexTransformer, pc_water_bta(), 0, 0x1000, 0);
     UpdateModelPosAndRotY();
     UpdateClsnPosAndRot();
     {
-        KCL_File *kcl = (KCL_File *)dBgW_Kc::LoadFile(data_ov009_02113c70);
+        KCL_File *kcl = (KCL_File *)dBgW_Kc::LoadFile(*pc_water_collision_handle());
         /* 6az: header SetFile takes Fix12<int> by value. */
         _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
-            &mMeshCollider, kcl, &mClsnMat, 0x1000, mAngleY, &data_ov009_02112c38);
+            &mMeshCollider, kcl, &mClsnMat, 0x1000, mAngleY, pc_water_clps());
     }
     mMeshCollider.Enable(this);
     {
@@ -139,8 +210,8 @@ int daObjMcWater_c::Render()
 // @symbol _ZN14daObjMcWater_c16CleanupResourcesEv
 int daObjMcWater_c::CleanupResources()
 {
-    ((SharedFilePtr *)data_ov009_02113c68)->Release();
-    data_ov009_02113c70.Release();
+    ((SharedFilePtr *)pc_water_model_handle())->Release();
+    pc_water_collision_handle()->Release();
     if (mMeshCollider.IsEnabled())
         mMeshCollider.Disable();
     return 1;
@@ -156,9 +227,10 @@ extern "C" void func_ov009_02111b1c(daObjMcWater_c *self)
     int b = (int)(data_0209f2d8[0] == 1);
     if (b != 0) {
         if (self->mPosX > 0) return;
-        vec = data_ov009_02113de0;
+        vec = (Vector3 *)pc_overlay9_address(0x02113de0);
     } else {
-        vec = (data_0209caa0[2] & 0x80000) ? data_ov009_02113e34 : data_ov009_02113d8c;
+        vec = (Vector3 *)pc_overlay9_address(
+            (data_0209caa0[2] & 0x80000) ? 0x02113e34 : 0x02113d8c);
     }
     for (i = 0; i < 7; i++) {
         dActor_c::Spawn(0xc5, 0, vec[i], 0, self->mAreaId, -1);

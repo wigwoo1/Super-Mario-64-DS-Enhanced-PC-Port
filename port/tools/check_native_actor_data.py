@@ -35,6 +35,16 @@ def main():
         base = int(re.search(r'\.text\s+start:0x([\da-f]+)', text)[1], 16)
         return base, (ROOT / f'extracted/overlays/overlay_{number:04d}.bin').read_bytes()
 
+    # Dialogue cleanup must reach the original camera restore worker. A legacy
+    # actor-smoke no-op previously hid its alternate C symbol in shipping builds.
+    restore = named('func_0200d81c')
+    owners = [line for line in args.map.read_text().splitlines()
+              if re.search(r'\s_func_0200d81c\s', line)]
+    if len(owners) != 1 or not owners[0].rstrip().endswith('dCamera_c.cpp.obj'):
+        raise ValueError('Dialogue camera restore is not owned by the original camera TU')
+    if pe_bytes(args.exe, restore, 1) == b'\xc3':
+        raise ValueError('Dialogue camera restore still links an empty placeholder')
+
     message_targets = message_text_callbacks(ROOT)
     actual = struct.unpack('<3I', pe_bytes(args.exe, named('MSG_GEN_TEXT_FUNCS'), 12))
     if actual != tuple(named(target) for target in message_targets):
@@ -55,6 +65,9 @@ def main():
             ('g_profile_COIN', 'daCoin_c_classInit_COIN', 2, 0x02108790),
             ('g_profile_RED_COIN', 'daCoin_c_classInit_RED_COIN', 2, 0x021087ac),
             ('g_profile_BLUE_COIN', 'daCoin_c_classInit_BLUE_COIN', 2, 0x021087c8),
+            ('g_profile_WANWAN', 'daWanwan_c_classInit', 14, 0x02114750),
+            ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
+            ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('pc_door_profile', 'daDoor_c_classInit', 100, 0x02148164)):
         base, rom = overlay(module)
         native = pe_bytes(args.exe, named(name), 28)
@@ -63,6 +76,11 @@ def main():
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
 
+    from chomp_host import CALLBACKS
+    for descriptor,target in CALLBACKS:
+        native=struct.unpack('<II',pe_bytes(args.exe,named(f'data_ov014_{descriptor:08x}'),8))
+        if native != (named(f'pc_chomp_{target:08x}'),0):
+            raise ValueError('Chain Chomp native callback target/adjustment mismatch')
     from buddy_host import inventory as buddy_inventory
     base98, rom98 = overlay(98)
     if pe_bytes(args.exe, named('data_ov098_0213bf90'), 10) != rom98[0x0213bf90-base98:0x0213bf90-base98+10]:

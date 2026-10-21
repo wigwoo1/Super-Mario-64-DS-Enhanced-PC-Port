@@ -17,8 +17,10 @@ game assets, personal saves, or proprietary compiler is included here.
   Game Options, course-clear and minigame menus. Physical Xbox hardware and all
   menu/game combinations have not been accepted.
 - The Windows renderer offers resolutions up to 3840x2160, a repositionable
-  minimap, and other PC settings. The Entire Map render-distance choice is
-  present, but its visible effect has not been verified. Game logic remains at
+  minimap, and other PC settings. Render-distance presets have a verified native
+  4K distant-Goomba body/shadow case and a 720p Bob-omb body/shadow and red-coin
+  body case. Coin-shadow pixels, Chain Chomp/fence integration and broader actor
+  coverage remain incomplete. Game logic remains at
   the original scene rate; higher presentation targets repeat frames, and
   interpolation is future work.
 - Native audio can be enabled with `SM64DS_PC_NATIVE_AUDIO=1`. It plays original
@@ -29,9 +31,12 @@ game assets, personal saves, or proprietary compiler is included here.
   repeat Star credit, pause/re-entry and selected audio flows have isolated
   runtime checks. See the dated `port/docs/` checkpoints for exact coverage and
   limitations; no single checkpoint establishes a complete port.
-- The stay-in-stage-after-Star preference, free camera, HD texture packs,
-  online VS and browser Download Play remain incomplete or planned. Requested AI
-  texture generation and replacement also remain future work.
+- Native Chain Chomp, its stump/fence release and Star reward, plus castle and
+  Battlefield tree visibility/reload, have selected isolated runtime checks.
+  The stay-after-Star option and free camera also have bounded tests, but broader
+  all-course acceptance remains incomplete. HD texture packs, online VS and
+  browser Download Play remain planned; requested AI texture generation and
+  replacement also remain future work.
 
 ## Downloading a development build
 

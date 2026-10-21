@@ -15,11 +15,37 @@ static void wav(FILE *f,unsigned frames){
     word(f,4,2);word(f,16,2);std::fwrite("data",1,4,f);word(f,frames*4,4);
 }
 int main(int argc,char **argv){
-    if(argc<3){std::puts("probe_sdat <local.sdat> --audit OR <output.wav> <music-ID> [seconds]");return 2;}
+    if(argc<3){std::puts("probe_sdat <local.sdat> --audit OR --effect <archive> <id> <seconds> <output.wav> OR <output.wav> <music-ID> [seconds]");return 2;}
     std::ifstream file(argv[1],std::ios::binary);
     std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)),{});
     ntr::SdatEngine engine;if(!engine.load(bytes.data(),bytes.size())){std::fprintf(stderr,"load failed: %s\n",engine.error().c_str());return 1;}
     std::vector<int16_t> buffer(2048);
+    if(!std::strcmp(argv[2],"--effect")){
+        if(argc<7)return 2;
+        const unsigned group=unsigned(std::strtoul(argv[3],nullptr,0));
+        const unsigned id=unsigned(std::strtoul(argv[4],nullptr,0));
+        const unsigned seconds=unsigned(std::strtoul(argv[5],nullptr,0));
+        if(!seconds || seconds>30 || !engine.has_effect(group,id))return 2;
+        const int bank=group==3?32:-1;
+        const auto voice=engine.play_effect(group,id,bank);
+        if(!voice){std::fprintf(stderr,"effect %u:%u failed: %s\n",group,id,engine.error().c_str());return 1;}
+        const unsigned frames=48000*seconds;
+        FILE *output=std::fopen(argv[6],"wb");if(!output)return 1;
+        wav(output,frames);
+        uint64_t nonzero=0;int peak=0;unsigned completed_frame=0;
+        for(unsigned offset=0;offset<frames;offset+=1024){
+            const auto count=std::min(1024u,frames-offset);
+            engine.render(buffer.data(),count);
+            for(unsigned i=0;i<count*2;++i){nonzero+=buffer[i]!=0;peak=std::max(peak,std::abs(int(buffer[i])));}
+            std::fwrite(buffer.data(),4,count,output);
+            if(!completed_frame && !engine.active(voice))completed_frame=offset+count;
+        }
+        std::fclose(output);
+        std::printf("effect=%u:%u bank=%d completed_after_seconds=",group,id,bank);
+        if(completed_frame)std::printf("%.3f",double(completed_frame)/48000.0);else std::printf(">%u",seconds);
+        std::printf(" nonzero=%llu peak=%d active_after=%u errors=%llu\n",nonzero,peak,unsigned(engine.active(voice)),engine.errors());
+        return engine.errors()?1:0;
+    }
     if(!std::strcmp(argv[2],"--controls")){
         auto check=[](bool ok,const char *message){if(!ok)throw std::runtime_error(message);};
         auto silent=[&](){return std::all_of(buffer.begin(),buffer.end(),[](int16_t x){return x==0;});};

@@ -613,7 +613,15 @@ void PlayBank0(u32 id, const Vector3 &pos)
 void Play(unsigned int j1, unsigned int j2, const Vector3 &v)
 {
 #if defined(SM64DS_PLATFORM_PC)
-    if(ntr::audio_ready()) {ntr::audio_effect(j1,j2,j1==3?data_0208e428:-1);return;}
+    if(ntr::audio_ready()) {
+        const int bank=j1==3?data_0208e428:-1;
+        /* SSAR event 0x11 is the red/yellow coin pickup. The DS sound player
+           treats this as a bounded pickup cue; the host SSEQ player otherwise
+           follows its embedded loop indefinitely. Cap only this one-shot. */
+        if(j1==3 && j2==0x11)ntr::audio_effect_timed(j1,j2,bank,60);
+        else ntr::audio_effect(j1,j2,bank);
+        return;
+    }
     // PC startup leaves the sound engine disabled. Match the lower-level
     // playback guard before looking up banks that have not been initialized.
     if (data_0209b480 == 0) return;

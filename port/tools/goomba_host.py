@@ -3,6 +3,14 @@ import re
 
 
 def transform(text):
+    for actor, hidden, matrix in (
+            ('daCoin_c', '!(mCoinFlags&1)', '&mCommonModel1.mat4x3'),
+            ('daBmb_c', '!mShouldRender', '&mModelAnim.mat4x3')):
+        render='int '+actor+'::Render()\n{'
+        if render in text and 'pc_render_probe::Scope renderProbe' not in text:
+            if text.count(render)!=1:raise ValueError(actor+' render entry changed')
+            text=text.replace(render,render+'\n    pc_render_probe::Scope renderProbe(this,'+hidden+','+matrix+');')
+            text=text.replace('#include "common.h"','#include "common.h"\n#include "hal/actor_render_probe.h"',1)
     if 'int func_ov002_020d674c(char* c)' in text and 'o->vt[0x12](o)' in text:
         return ('extern int pc_actor_yoshi_try_eat(void *);\n'+
                 text.replace('o->vt[0x12](o)', 'pc_actor_yoshi_try_eat(o)'))
@@ -45,6 +53,10 @@ def transform(text):
     anchor = 'typedef void (daKrb_c::*StateHandler)();'
     if anchor not in text:
         return text
+    render='int daKrb_c::Render()\n{'
+    if text.count(render)!=1:raise ValueError('Goomba render entry changed')
+    text='#include "hal/actor_render_probe.h"\n'+text.replace(render,render+
+        '\n    pc_render_probe::Scope renderProbe(this,mIsDormant,&mModelAnim.mat4x3);')
     init='int daKrb_c::InitResources()\n{'
     if text.count(init)!=1:raise ValueError('Goomba resource initializer changed')
     text='#include "hal/pc_session.h"\n'+text.replace(init,init+

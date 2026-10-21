@@ -6,6 +6,8 @@ void audio_close();
 bool audio_ready();
 uint32_t audio_sequence(uint32_t key,unsigned id);
 uint32_t audio_effect(unsigned archive,unsigned id,int bank=-1,uint32_t key=0);
+uint32_t audio_effect_timed(unsigned archive,unsigned id,int bank,unsigned max_game_ticks);
+void audio_stop_effect(unsigned archive,unsigned id,int fade_game_ticks=0);
 uint32_t audio_long_effect(uint32_t key,unsigned archive,unsigned id,int bank=-1);
 void audio_tick();
 bool audio_active(uint32_t key);

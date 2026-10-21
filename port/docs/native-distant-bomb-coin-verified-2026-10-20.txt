@@ -1,0 +1,94 @@
+Native distant Bob-omb and coin checkpoint - 2026-10-20, Sol Medium
+
+Status: VERIFIED for the bounded Bob-omb body/shadow and distant red-coin body
+case. Coin-shadow pixels, Chain Chomp/fence and broad actor/map coverage remain
+unverified. This is an unfinished local development build.
+
+Executable SHA256:
+43772095D6F8E71E460EC78006A8C27B7DD7E63236FD0C02BF2264E0BC2DC3C2
+Previous installed executable A8A94390...C1EB8A is retained at installation.
+
+Fixed the opt-in geometry probe's matrix include-order conflict: read the
+translation bytes at the measured 0x24 offset without selecting a Matrix4x3
+header definition. Insert coin/Bob-omb probes once, after common.h, through
+the existing host transform. Six host-transform regression checks pass,
+including duplicate-hook and include-order checks. Native Release build and
+56/56 CTest pass (82.19 seconds). Matched src/include remain unchanged.
+
+Extended Stage-before-shadow-drain preparation to eligible loaded native
+Bob-ombs206 and coins288..290. Use the original Bob-omb shadow-only worker and
+coin visual worker. The latter refreshes far coin matrices/rotation as well as
+shadows; its clip-radius update is restored so Behavior still owns that field.
+Preserve area/lifecycle/mouth/dormant/dead/block/floor gates, exact actor flags,
+frozen queue and duplicate-link safety. AI, collision and progression are not
+expanded. Full placement workers with particle/carry/cap side effects are not
+called merely to render a distant actor.
+
+Runtime acceptance (native D3D11, 1280x720, minimap hidden):
+- Fresh Minimum and Entire Map runs both exit0 at11000ticks, with original
+  title/FileA/course entry, castle exit and mission1 course reentry.
+- Fixed mission confirmation synchronizes Battlefield despite a few title-load
+  ticks of variation. Every captured row from4500 onward matches:651 scene,
+  1380 Goomba,60786 Bob-omb,484130 reward/coin and30037 water-bomb rows.
+- Same records through6700 match the prior body-only build. All isolated slot1
+  and minigame saves remain byte-identical to the QA seeds.
+- At6459 regular Bob-omb206/UID82 appears in Entire Map and is absent Minimum.
+  Its body-only/complete-shadow comparison adds151 ground-shadow pixels, bounds
+  [121,179,150,188], while its upper body pixels remain unchanged. A second
+  frame6615 adds179 shadow pixels under the same target.
+- At5645 red coin289/UID175 contributes82 visible pixels beyond its original
+  clipping limit (depth3158798 versus3145728). The visual worker also repairs
+  its stale distant model orientation. Actual geometry and same-tick captures
+  identify the actors; draw callback success alone is not acceptance.
+- Fresh identities and shadow queues after reentry exclude the old actors.
+- Six additional6000tick paired before/after captures have identical pixels.
+  Coin shadows are queued, but these samples do not prove visible coin-shadow
+  pixels. Do not label that part visually verified. The yellow-coin body samples
+  are hidden by terrain; retain real occlusion.
+
+Private evidence and strict checker remain local:
+work/native-distant-bomb-coin-{bodyonly,final-entire,final-minimum}-20261020-sol
+work/native-distant-coin-shadow-{before,after}-20261020-sol
+work/check-distant-bomb-coin-sol.py
+work/distant-bomb-coin-acceptance-20261020-sol.json
+The checker pins the executable and validates actual pixels, geometry, matching
+states, save hashes, shadow queue uniqueness and exit/reentry.80 BMP captures
+were converted to lossless PNG, decoded-pixel checked, then redundant BMPs
+removed (412881120 bytes). Full EXEs, ROM/assets, saves, images and logs stay local.
+
+Earlier diagnostic correction: the pink cannon figures were Bob-omb Buddies,
+not regular Bob-ombs. The small earlier screenshot differences included the
+already-verified distant Goomba behind the translucent minimap. Adding the
+probe before common.h caused the compiler conflict; stale matrix field syntax
+in the original actor was not itself the underlying cause.
+
+User acceptance landmark for the next native actor milestone:
+From Battlefield spawn, look at the white doorway and fenced Star. Entire Map
+should show the Chain Chomp, chain, stump and shadow there. The recovered
+source exists, but the native registry does not bind the Chomp or fence.
+Integrate their original profiles/resources/callbacks and gameplay first; then
+check spawn/approach/return views, stump interaction, fence release and Star.
+Sol High is recommended before this larger native-actor integration.
+
+User check: launch Play Mario 64 DS.cmd, enter Battlefield, then Pause >
+Options > PC Settings > Graphics > Render Distance. Select Entire Map.
+All four preset choices remain available; this checkpoint's new pixel acceptance
+covers Minimum/Entire Map. It does not establish all-course or all-actor coverage.
+
+Installation and native4K acceptance:
+Installed the exact43772095...C2DC3C2 EXE/map on F: with rollback ofA8A94390...C1EB8A
+under native-checkpoints/native-checkpoint-2026-10-20-distant-bobomb-coins.
+The actual F: executable completed6700ticks at3840x2160, exit0, with isolated
+QA saves. Four captures have verified3840x2160 pixel dimensions, including the
+regular Bob-omb/shadow and red coin. Matching course records:221 scene,555
+Goomba,24211 Bob-omb,191487 coin/reward and11005 water-bomb rows. Only the two
+expected output resolution fields differ from the720p reference.
+First installed run used the app's720p defaults because it reads settings beside
+its executable; retained as DIAGNOSTIC_ONLY, not4K evidence. Corrected harness
+used a temporaryF: configuration; original absent settings state restored in
+finally and independently checked. ROM/launcher hashes unchanged, personal
+saves untouched. The strict installed checker validates pixels, settings
+restoration, protected files and gameplay: check-installed-distant-4k-20261020.py.
+Runtime evidence native-distant-bomb-coin-installed-4k-verified-20261020-sol;
+report installed-distant-4k-acceptance-20261020-sol.json. All remain private.
+No GitHub source push, kit publication or stable full-port promotion this task.

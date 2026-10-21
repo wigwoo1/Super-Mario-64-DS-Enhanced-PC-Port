@@ -45,6 +45,7 @@ int main() {
     _putenv_s("SM64DS_PC_AUTOMATION_ONLY", "1");
     _putenv_s("SM64DS_PC_AUTOCONFIRM_POLL", "2");
     _putenv_s("SM64DS_PC_TEST_CAMERA_ZOOM", "2:1");
+    _putenv_s("SM64DS_PC_TEST_CAMERA_MODE", "45:1");
     _putenv_s("SM64DS_PC_AUTOCONFIRM_REPEAT", "0");
     _putenv_s("SM64DS_PC_AUTODOWN_POLL", "0");
     _putenv_s("SM64DS_PC_TEST_STICK_X", "");
@@ -104,6 +105,18 @@ int main() {
         if(ntr::input_keyinput()!=0xfff)return 15;
     }
     _putenv_s("SM64DS_PC_TEST_TOUCH", "");
+    // Left-stick click switches the camera once on a press edge, then becomes
+    // available again after release. Menu navigation consumes no camera click.
+    ntr_input_set_menu_navigation(0);
+    for(int poll=42;poll<=51;++poll) {
+        ntr::input_poll();
+        if(ntr::input_state().camera_mode_pressed!=(poll==45))return 89;
+        if(ntr::input_take_camera_mode()!=(poll==45))return 90;
+    }
+    _putenv_s("SM64DS_PC_TEST_CAMERA_MODE", "52:1");
+    ntr_input_set_menu_navigation(1);ntr::input_poll();
+    if(!ntr::input_state().camera_mode_pressed || ntr::input_take_camera_mode())return 91;
+    ntr_input_set_menu_navigation(0);
     // Adaptive gameplay replays must be impossible during ordinary play.
     _putenv_s("SM64DS_PC_TEST_COURSE_ROUTE", "");
     _putenv_s("SM64DS_PC_TEST_BOSS_BOT", "0");

@@ -27,6 +27,7 @@ struct VideoSettings {
     bool upscale_2d = false;        // crisp pixel-preserving window upscaling
     TextureQuality texture_quality = TextureQuality::Original;
     uint8_t camera_zoom = 0; // Original, 0.75x, 0.5x, 0.25x; inverse distance
+    uint8_t camera_mode = 0; // 0=retail camera, 1=free orbit with right stick
     bool always_run = false; // digital movement; analog speed follows stick travel
     bool stay_in_stage_after_star = false; // retain original castle exit by default
     RenderDistance render_distance = RenderDistance::Minimum;
@@ -48,6 +49,8 @@ bool video_save_settings(const char *path = nullptr);
 void video_cycle_resolution(VideoSettings &settings);
 uint16_t video_minimap_angle(uint16_t camera_heading);
 void video_set_minimap_gameplay(bool active);
+// Peach's 2D letter text follows the widened projection of its 3D panel.
+void video_set_cutscene_letter(bool active);
 bool video_minimap_visible();
 // Present the original bottom-screen pause/options interface as the main view.
 void video_set_pause_screen(bool active, bool custom_settings = false);

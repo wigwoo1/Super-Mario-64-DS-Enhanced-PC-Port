@@ -1,0 +1,75 @@
+Native distant Goomba body/shadow acceptance - 2026-10-20, Sol High
+
+VERIFIED for the measured original Battlefield Goomba and the checks below.
+The complete port and all-actor render-distance coverage remain unfinished.
+
+The earlier identical screenshots did not establish a rendering failure: their
+capture times missed the interval where the distant Goomba was visible. An
+opt-in native model probe now measures the actor's original clip limit, depth,
+extended-render marker, submitted triangles and clipped screen bounds. In the
+accepted view, original actor200/unique77 submits214 triangles at its correct
+model position, beyond its original distance limit. It is absent at Minimum
+and visible at Low, Medium and Entire Map. No actor placement fixture is used.
+
+A real shadow omission was also repaired. The Stage drains its shadow queue
+before Goomba body rendering. Clearing distance flags around the body callback
+therefore could not restore the missing shadow. A PC-only hook now prepares
+eligible, already-loaded distant Goomba shadows before that drain. It preserves
+the original area, dormant, mouth/death and lifecycle gates, the selected range,
+and the original frozen-queue behavior, and prevents duplicate links. Only the persistent visual
+matrix and shadow queue are updated. The complete original placement helper is
+deliberately avoided because it also changes cap-release flags. Enemy behavior,
+activation distance, collision and cap progression are not expanded.
+
+Matched cartridge sources/headers are unchanged by this milestone. Host changes
+are in distant_actor_shadows.cpp, the Stage host generator, the Goomba diagnostic
+adapter/header and the PC target source list.
+
+Validation:
+- Explicit native Release target builds successfully.
+- CTest56/56 PASS58.38seconds; Goomba adapter5/5 and backlight host2/2 PASS.
+- All four distance values are exercised using isolated native runs. Low and
+  Medium match the Entire Map body/shadow captures at the measured distance.
+  Existing settings tests cover all four menu values and cycling.
+- Native4K3840x2160 Minimum/Entire Map runs4700ticks exit0. At tick4540 exactly
+ 4430 RGB pixels change within the projected Goomba/body-shadow region; at4600
+ 4142 pixels change. The rest of each frame matches. Geometry submission and the
+  extended distance gate are independently recorded; a callback success alone
+  is insufficient. Minimap is hidden in these QA views to expose the target.
+- Shadow-only720p comparison against the prior body-only build changes40pixels
+  directly beneath that Goomba. The new body and shadow are visible in4K detail.
+- 4K Minimum/Entire Map have identical complete gameplay state records and60
+  matching Goomba position/state/alive/eaten/death/flag samples.
+- Entire Map11000tick original-title/FileA/course/pause/exit/castle/mission1
+  reentry run exits0. All1101 state rows match the prior accepted route after
+  excluding only the QA minimap visibility setting. Old Goomba shadow IDs cease
+  and fresh IDs are queued after reentry. Isolated slot/minigame saves are
+  byte-identical to the QA seeds in every accepted case.
+- The final standalone4K Entire Map replay takes79.090seconds for4700scheduled
+  60Hz ticks including startup, loading and captures on the tested RTX5070 laptop.
+  This is one route, not a general performance benchmark.
+- Three negative verifier probes reject identical captures, a missing target,
+  and a target without an extended-render marker. Screenshots shown in chat.
+
+Executable SHA256:
+a8a943907ed51de98c58524b6d7f6e7abf7462cb08e230481c0f4fbf43c1eb8a
+
+User check: launch Play Mario 64 DS.cmd from the local install folder. Pause >
+Options > PC Settings > Graphics > Render Distance. Choose Minimum, Low, Medium
+or Entire Map. Move/hide the minimap if it covers the distant view. Native wall
+and terrain occlusion still applies; the setting does not reveal enemies through
+walls or create actors from unloaded areas.
+
+Limits: the ground-shadow preparation covers the Goomba class IDs200..202, but
+runtime pixel acceptance here is for an ordinary ID200 Goomba. Other enemies,
+pickups, scenery, shadows and unloaded/streamed areas need further dedicated
+coverage. Physical Xbox input and broad performance/gameplay parity remain open.
+Full executables, ROM data, private saves/logs and screenshots stay local.
+
+Installation follow-up: the exact executable/map are installed locally with the
+previous build retained for rollback. The installed executable itself completed
+an isolated2500tick original-title/FileA/castle startup run, exit0, with matching
+gameplay samples and unchanged copied QA saves. ROM/launcher hashes match and
+no personal settings/save files were created or changed. No new public build kit
+is claimed.47 test captures were losslessly converted and pixel-checked as PNGs;
+431311230 redundant BMP bytes were removed, preserving referenced aliases.

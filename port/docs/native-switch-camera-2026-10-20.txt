@@ -1,0 +1,90 @@
+2026-10-21 LATEST: menu centering FIXED and verified on f26ff21b...1c20fc7.
+Root cause was wrong cached button ORIGIN, not different native button heights.
+Native castle0x80/Battlefield0x60 offsets now used; complete bevels retained.
+Pixel-accurate visible ink centering,57CTest, actual castle/Battlefield/Wanted
+replays pass. Read native-menu-text-alignment-2026-10-21.txt. Failed diagnostic
+statuses below are historical and superseded; no rejected candidate installed.
+
+HISTORICAL CHECKPOINT NOTES:
+LATEST STATUS: PARTIALLY VERIFIED. DO NOT PROMOTE CENTERING CANDIDATE.
+Installed8BFA0D62 preserves tested gold UI, Star toggle, sound and controller.
+DiagnosticCDAE5B19 passes57CTests but castle-only centering succeeds; Battlefield
+boxes remain too short and text crosses bottom edges. Actual tile-pixel scan did
+not fix it. Later implementation descriptions below are NOT visual acceptance.
+Read work/CURRENT-GAMEPLAY-HANDOFF.txt before continuing/publication.
+
+Native Switch controller, dialogue camera and compact settings - 2026-10-20
+
+Camera: the original Player talk cleanup called an empty native placeholder
+func_0200d81c. The shipping game now links the recovered dCamera_c worker;
+the small actor smoke keeps its camera-free stub. Added PE/map ownership audit.
+Fresh original-menu/new-file replay goes through wake-up, locked castle door,
+second Lakitu talk and walk-away without position or progression injection.
+Baseline camera remained in209b0d8; fixed camera restores209b008 at control
+return and follows movement/idle. Evidence native-fresh-door-second-talk-fixed-
+20261020/acceptance.json. That bounded camera replay used AEE6F78B...E3125FA,
+before the additive sound cue/menu artwork changes. No matched src/include edits.
+
+Input: optional dynamically loaded SDL3.2.28 Windows x86 HID backend supports
+Nintendo Switch Pro; existing XInput remains fallback. Pin official SDK archive
+SHA256 dc8328a923643a19a53e54ca418e8e2ac49f3cf6c95e90bbebf758cd3a00c2fb.
+Physical Nintendo labels: A jump/confirm, B attack/back, X sprint, Y camera,
+right-stick click PC zoom. Virtual Nintendo test verifies buttons, sticks,
+triggers, D-pad, click and disconnect. Outside-sandbox hardware probe detected
+the user's actual Nintendo Switch Pro and read axes. Actual physical button
+presses/title/save use still require user acceptance; no buttons were pressed
+during the hardware probe. Runtime scripts use injected logical controls.
+
+Zoom sound: original Sound::Play2D archive2 id7 on outward options, id6 when
+returning to Original. Only successful zoom changes play, with existing edge
+latch/pause/cutscene gating. native-camera-zoom-sound-20261020 used1AF89500...
+E702EF18: changes1550/1750/1950/2150/2600 each have matching successful audio
+events; paused2350 click does not change or play; audio shutdown errors0.
+Audio remains diagnostic/opt-in; the Audio Preview launcher enables it.
+
+Compact shared settings: seven pages, four Display rows, five Minimap rows.
+Keep original 8x16 font, remove blank top bearing to center visible ink in
+retail16px buttons,24px row pitch. Shared touch geometry excludes8px gaps.
+Gameplay / STAY AFTER STAR ON/OFF explicitly labels the existing saved choice;
+defaultOFF retains castle exit. Original eligible-Star policy excludes VS,
+non-course and special transition Stars. Shared menu focus now uses a beveled
+gold frame, diamond corner studs and an outlined pointer; applied at native DS
+resolution, so it follows title/save/minigame screens and custom pause layout.
+
+Tests/evidence: latest acceptance and install hashes recorded in work/
+CURRENT-GAMEPLAY-HANDOFF.txt and private case acceptance.json files. Full suite
+must pass after final edits. native-compact-gold-settings-20261020 contains
+menu screenshots/toggle/touch/persistence replay. native-title-gold-focus-
+20261020 covers original options navigation/artwork. native-star-stay-compact-
+20261020 verifies repeat ordinary Star returns control in level6 without extra
+credit. native-star-return-compact-20261020 checks original exit withOFF.
+These QA cases use isolated save copies; Power Star spawned by explicit test
+hook. Broad first/second-Star, death/boss/manual-exit matrix remains incomplete.
+
+Known limits: original Stage logic is30updates/sec; display60/120/240 currently
+repeats states. True smooth high-FPS rendering remains open. Internal resolution
+without resizing window and Native DS256x192 are planned, not implemented.
+No public full EXE/assets upload; a new ROM-free kit still requires clean-folder
+reconstruction with the new pinned SDL dependency recipe and runtime acceptance.
+
+Centering follow-up: CDAE5B198D50FA64F86E45B3A64CDE03BF038C27981465C47ED201DB5DE1858C.
+Castle cached panels are32px high while course panels are16px. Compact both
+using their original first/last painted tile rows. Detect actual nontransparent
+tile pixels: an earlier tile-ID comparison chose a transparent course tile and
+was rejected after screenshot inspection. Draw16px and leave8px clear. Native
+font ink shifted up2px to remove its blank top bearing. Latest cases:
+native-centered-pixels-{castle,battlefield}-20261020. Original title/file gold
+border replays exit0. Final CTest log work/ctest-centered-pixels-20261020.log.
+Native Star sequence (8BFA0D62 build) collects IDs2 and3 then repeats2, retaining
+level6 and control at totals1/2/3/3, masks2/6/14/14; explicit spawned QA Stars,
+input-only contact and original save handlers. Separate file path override
+SM64DS_PC_SETTINGS_FILE isolates installed QA runs; normal defaults unchanged.
+
+Installed cache audit found1030 existing zero-byte extracted files (10,450,962
+bytes missing). Restored only those files from verified local cache, checked all
+written SHA256s; original ROM and saves untouched. First repaired8BFA F replay
+exited0 and showed title/gameplay/settings; it created a QA INI in app directory
+because main changes working directory. Preserved that known QA-created file
+privately and restored its originally absent state. Subsequent tests use an
+explicit C: QA settings file; before/after user save/settings hashes required.
+Rollback/asset manifests under native-checkpoint-2026-10-20-switch-camera.

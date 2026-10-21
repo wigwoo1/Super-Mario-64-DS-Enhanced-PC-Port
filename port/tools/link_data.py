@@ -33,6 +33,10 @@ HAL_OWNED_DATA = {
     "data_ov098_0213c8fc", "data_ov098_0213c930",
     "data_ov084_02130da4", "data_ov084_02130d9c", "data_ov084_02130dc4",
     "data_ov002_0210e12c", "data_ov002_0210e124",
+    "g_profile_WANWAN", "g_profile_PILE", "g_profile_WANWAN_SHUTTER",
+    "data_ov014_02114968", "data_ov014_02114978", "data_ov014_02114980", "data_ov014_02114970",
+    "data_ov014_021149c0", "data_ov014_021149b8", "data_ov091_02135654", "data_ov091_0213564c",
+    "data_ov014_0211476c",
     "data_0209b3ec",  # shared camera/view matrix, also read by native paintings
     "data_02082214",  # sine table already has canonical romdata.c storage
     "gTouchHeld", "gTouchEdge", "gTouchX", "gTouchY",
@@ -87,6 +91,12 @@ HAL_OWNED_DATA = {
     "data_ov002_02110574", "data_ov002_021105bc",
     "data_ov002_0211007c", "data_ov002_021103f4", "data_ov002_0211040c",
 }
+
+# These objects have real C++ definitions and resource constructors. Generated
+# Native Chain Chomp descriptors contain host function pointers.
+HAL_OWNED_DATA.update(f'data_ov014_{address:08x}' for address in (
+    0x021146e0,0x021146b8,0x021146f0,0x021146c0,0x021146a8,0x021146a0,
+    0x021146f8,0x021146b0,0x021146d8,0x021146c8,0x021146e8,0x021146d0))
 
 # These objects have real C++ definitions and resource constructors. Generated
 # C spellings must reference those objects rather than create empty handles.

@@ -1499,3 +1499,259 @@ Two diagnostic input-only runs investigated course exit with active projectiles.
 ## 2026-10-19: Mission1 selection and water-bomb lifecycle verified
 
 Fixed QA replay by observing the original STAR_SELECT highlight/navigation/fade state before player/dialogue branches. Normal Left inputs activate navigation and select mission1; A confirms only highlight0/phase2. Original game fields/progress remain authoritative.11000-frame replay exits with falling bomb217 active, cleans old actors in castle6795, confirms mission1 again, recreates droppers374/375 and cannons376/380, fires new projectiles and restores grounded Yoshi control7402. Strict lifecycle checker and eight negative probes pass; saves byte-identical. Release,53CTest22.69s,3 new star-select transform tests and native-data audit pass. Screenshots shown. See native-waterbomb-reentry-verified-2026-10-19.txt. Normal F:691DD302 unchanged; QA candidateAD881D92 remains private. Prior mission2 diagnostics stay rejected. Full port unfinished. Recommend Luna Medium for refreshing the ROM-free kit with established fresh reconstruction/runtime checks; pause for this downgrade.
+## 2026-10-21: Castle-grounds cannon grate and 150-star gate verified
+
+- The original ov009 `daObjMc_Metalnet_c` source already implements the retail
+  gate: with a normal authored parameter it removes itself at 150 stars; with
+  parameter `0xff` it follows save unlock bit `0x80000`. It explicitly remains
+  in mode 1. The PC actor table had no profile 339, so this castle-grounds
+  grate was unavailable to native scene spawning.
+- Registered reconstructed profile 339 and rooted its class factory in the PC
+  boot closure. The actor's CLPS block is at ov009 `0x02112bf8`; linked the
+  existing generated overlay-9 image and resolve that data through its
+  relocation-aware address helper rather than copying raw DS pointers.
+- Runtime verification used the local extracted European Rev 0 ROM and two
+  isolated folders, each with its own save directory. The zero-star Yoshi replay
+  completes 13,000 ticks and exits 0. Actor census at the outside cannon shows
+  cannon actor207 and metal net actor339 `param=0000ff01`; Yoshi stays grounded
+  at the grate position and never enters `St_Cannon_Main`.
+- A separate checksummed QA save has exactly 150 star bits and Yoshi selected.
+  The matching 13,000-tick replay exits 0, retains actor207, removes the
+  `param=0000ff01` metal net, and reaches `St_Cannon_Main` at the same cannon.
+  Other actor339 instances with `param=0000ffff` remain, matching their
+  separate save-bit gate. These runs verify the intended zero/150 boundary;
+  they do not claim a full save-progress playthrough.
+- Captures: `work/native-metalnet-extended-20261021/ground-12000.bmp`,
+  `work/native-metalnet-150stars-20261021/ground-11000.bmp`, and
+  `work/native-metalnet-150stars-20261021/ground-12000.bmp`. The zero-star
+  image shows Yoshi over the grate; the 150-star approach shows the opened
+  cannon mouth and its later image is captured in cannon mode.
+  User saves were not used or changed. After both checks passed, the tested
+  EXE and matching map were installed to `F:\AI Games\Mario 64 DS`; SHA-256
+  hashes match the tested outputs (`427C43A6...965CC5` and
+  `5C7BF331...9A8E4A39`). The prior EXE/map/status are preserved in
+  `F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-21-metalnet`.
+  The installed INI, ROM, saves, SDL3 dependency, and launchers were preserved.
+- Release build succeeded on 2026-10-21 with Visual Studio 18 x86/Ninja:
+  `cmake --build build/port --target sm64ds_pc -j 4`. The map includes the
+  metalnet factory/profile and CLPS source. This is compile/link evidence only;
+  collision, visible grate, cannon blocking, and 150-star disappearance have
+  not yet been verified in the running game. Overall port remains unfinished.
+- Added `smoke_overlay9`, which checks all 176 self-relocations remain inside
+  the host image, validates the overlay address limits, and checks the exact
+  CLPS record and model handle addresses used by the grate. Fresh Release game
+  and smoke builds succeeded; the smoke executable and CTest check both pass
+  (`smoke_overlay9: 176 self-relocations and metal-net CLPS/model bounds pass`).
+  This covers data-image integrity, not live collision or star-count behavior.
+- `port/tools/check_metalnet_star_gate_replay.py` passes on both isolated runtime
+  folders, checking actor census, star counts, grounded-vs-cannon player states,
+  screenshots, and the 150-star QA save checksum.
+
+## 2026-10-22: Zero-star cannon entry attempt replay
+
+- Replayed the installed `427C43A6...965CC5` executable from an empty isolated
+  save folder through the original game menu and an input-only route to the
+  castle-grounds cannon. The runtime trace reports zero collected stars.
+- Repeated A presses at the cannon area did not enter `St_Cannon_Main`; Yoshi
+  returned to `St_Wait_Main`. Process exit was 0. The 150-star replay above
+  still enters the cannon, so the two save thresholds behave differently in
+  the tested runtime.
+- Captures are in `work/native-metalnet-entry-attempt-4-20261022/` at ticks
+  11000, 13000, 14000, 15000, and 16000. The 14000 image shows Yoshi standing
+  in the cannon opening area. The visible grate is not clear enough in this
+  image to certify its appearance or prove the collision boundary by itself.
+- No code or installed files changed during this check; the ROM and user saves
+  were untouched. Since the user's star count at the time of entry is unknown,
+  their reported cannon ride is not yet reconciled with the zero/150-star test.
+
+## 2026-10-22: Castle water actor integration handoff
+
+- The exterior moat and grounds-cannon basin use recovered profile 338,
+  `CASTLE_WATER` (`daObjMcWater_c`, overlay 9). The actor source exists at
+  `src/game/actors/d_a_obj_mc_water.cpp`, but the PC actor registry does not
+  currently construct it. The basement-water profile is a separate actor and
+  does not address the missing exterior water.
+- Two constrained build attempts were reverted: registering the profile alone
+  left the actor class-init symbols unresolved; adding the actor and overlay
+  initializer sources then exposed 50 unresolved overlay-9 data symbols. The
+  baseline `sm64ds_pc` target successfully rebuilt after reverting both
+  attempts. No incomplete water changes were retained or installed.
+- Next investigation should adapt this actor's overlay-9 globals through the
+  existing `pc_overlay9_address()` image bridge, including the shared model /
+  collision handles and splash-position table initialized by
+  `__sinit_ov009_02112524`, then register profile 338. Verify the resulting
+  build and live water rendering at both the moat and castle-grounds cannon
+  before installing it. Screenshot evidence of the current absence is in
+  `work/native-metalnet-entry-attempt-4-20261022/gate-14000.bmp`.
+- Follow-up source inspection confirmed the bridge is already linked as
+  `ov009_image.cpp`, and the metal-net actor already reads overlay data through
+  it. The water TU should resolve handles/data by address rather than declaring
+  unresolved `data_ov009_*` globals: model handle `0x02113c68` (file `0x693`),
+  collision handle `0x02113c70` (file `0x694`), BTA `0x02112bc4`, and CLPS
+  `0x02112c38`. Its splash points are three contiguous seven-`Vector3` tables
+  beginning at `0x02113d8c`, `0x02113de0`, and `0x02113e34`; values and
+  fixed-point units are specified in `src/unnamed/ov009/__sinit_ov009_02112524.c`.
+  A once-only PC initializer can construct the two shared handles and populate
+  those BSS tables before the water actor first loads. Profile 338's recovered
+  descriptor is at `0x021139f4`, with factory `0x02111d8c`, priorities 338,
+  flags 0, clip offset 0, radius `0x00320000`, distance `0x01f40000`, and far
+  distance `0x00050000` (`symbols/profile_reconstruction_registry.json`).
+- Implemented the bridge-backed Castle Water actor and registered profile 338
+  in the native actor table. The actor now initializes model/collision handles
+  and the recovered splash-point BSS tables using `pc_overlay9_address()`;
+  optional `SM64DS_PC_WATER_TRACE=1` logs the actor's initialization position
+  for diagnostic runs. The baseline production link succeeds, and focused
+  `smoke_overlay9` passes (1/1).
+- An isolated 16,000-frame run completed with exit code 0 and used a fresh QA
+  save folder. A follow-up 6,500-frame traced run also exited 0 and confirmed
+  `InitResources` ran, reporting position `(0,0,0)`, area 0. Screenshots and
+  logs are in `work/native-castle-water-20261022/` and
+  `work/native-castle-water-trace-20261022/`. The captures do not clearly show
+  the moat or cannon basin, so visible water rendering is not yet verified and
+  this diagnostic build has not been installed on F:.
+
+- Follow-up replay navigated through the castle door to the moat cannon basin
+  and captured frames at ticks 12,000, 14,000, 16,000, and 18,000. Water is
+  visible around the basin and land edges in all four captures; the 16,000 and
+  18,000 views retain the same framing while Yoshi is stationary. Evidence is
+  in `work/native-castle-water-basin-20261022/`. This confirms water rendering
+  at this basin, but does not reproduce the user's reported small idle zoom.
+- Added a saved Gameplay setting `CAMERA PRESET/FREE`. Free mode uses continuous
+  right-stick yaw/pitch orbit with the selected distance-zoom scale and the
+  existing camera-solid ray clip. The right-stick click remains the zoom-cycle
+  binding. The Windows production build and six focused CTest cases pass, and
+  `test_camera_host.py` passes 2/2. A live right-stick camera replay has not
+  yet been completed, so the free-camera behavior remains diagnostic and is
+  not installed on F:.
+
+
+## 2026-10-22: In-game free-camera toggle
+
+- Added Xbox-style left-stick click (L3) as a press-edge toggle between the saved
+  Free Camera and Preset/original camera behavior. The click is ignored during
+  menu navigation, plays the existing camera-mode cue, and saves the new mode.
+  Right-stick movement affects the view only while Free Camera is active.
+- Refreshed CMake generation so the produced camera adapter includes this new
+  handler, then rebuilt `sm64ds_pc.exe` successfully. Focused CTest results:
+  `smoke_input`, `smoke_pause_settings`, `smoke_input_state`,
+  `smoke_input_history`, and `smoke_video` all pass (5/5).
+- A fresh-save 14,200-frame runtime replay exited 0. The trace records Free at
+  tick 10,000, right-stick orbit movement, then Preset at tick 12,000; no orbit
+  updates follow the return to Preset while right-stick input continues. Both
+  mode changes saved successfully. Evidence: `work/native-free-camera-mode-toggle-verified-qa-20261022/`.
+- This validates the toggle and free-camera input path. The separate small zoom
+  reported when Yoshi stops moving is still not reproduced or fixed; it remains
+  open for the next camera investigation. Nothing was installed on F:.
+
+## 2026-10-22: Second Lakitu talk and idle camera trace
+
+- Replayed the user's wake-up, locked-door approach, second Lakitu talk, and
+  walk-away sequence using the refreshed production executable, 12,500 frames,
+  and isolated fresh saves. Runtime exited 0. Camera trace, state capture, and
+  screenshots are in `work/native-fresh-door-idle-zoom-20261022/`.
+- The view intentionally moves closer while Yoshi is in `St_Talk_Main` (about
+  865 to 377 world units in this replay). After the talk, it returns to normal
+  tracking as Yoshi walks away (about 857 units at tick 11,000). Once Yoshi
+  stops at the final route point, distance grows from about 785 to 810 units
+  across the initial settling frames, then remains far framed. This does not
+  reproduce the reported zoom-in on an ordinary stop; it confirms directed
+  dialogue framing followed by an outward camera settle on this route.
+- No camera code or user installation changed in this check. Keep the reported
+  general idle zoom as an open issue until a runtime case reproduces the inward
+  movement. Do not remove the dialogue framing based on this trace.
+
+## 2026-10-22: F: camera test copy
+
+- Created `F:\AI Games\Mario 64 DS\camera-test-current-20261022` as a separate diagnostic folder; the installed game, root ROM, main settings, and personal saves were not changed. Its `sm64ds_pc.exe` SHA256 is `A1DF0142A7C8838C413B3C76AA1860D3D471F3C503364A1CBF99ED401AA5E944`, identical to the C: executable that passed the 14,200-frame Free/Preset runtime replay.
+- The folder launcher uses the user ROM on F:, the current source/assets root on C:, and creates saves only under `play-saves`. F: ROM hash matches the verified local ROM copy.
+- F: runtime startup smoke passed 900 frames (exit 0), mounted the supplied ROM, and captured 1280x720 frames at ticks 300/600/900. Screenshot: `f-drive-smoke-900.bmp`.
+- An additional F: long camera replay was stopped at tick 8,760 because verbose trace output grew beyond 82 MB on the slow volume before reaching the scheduled mode inputs. It is not counted as a Free Camera pass. The equivalent exact executable hash was previously verified on C: for Free toggle/orbit/Preset return.
+- The slight idle zoom remains unresolved; the exact second-Lakitu route still settles outward, so no camera behavior was changed.
+
+## 2026-10-23: Free-camera movement, speed, and idle-distance repair
+
+- Free Camera now rotates at 0.052 radians per full right-stick unit per render
+  update horizontally and 0.035 vertically, up from 0.012/0.008. A scripted
+  20,000-unit right-stick turn changed the camera angle by about 8,276 angle
+  units (45 degrees) during the test interval.
+- Player movement now receives the angle difference between the free camera's
+  world-facing angle and the native camera angle through `GetAngleToCamera`.
+  Runtime state captured Yoshi's forward heading at 24,492 while the free
+  camera angle was -8,276, the expected 180-degree actor-forward convention.
+  Yoshi did move under the rotated view; the scripted route led into a steep
+  hill and entered the existing stomach-slide state, so this verifies angle
+  alignment but is not a clean open-ground traversal acceptance test.
+- The render hook now remembers the largest native gameplay camera distance
+  up to 900 world units per camera and collision-checks outward placement. This
+  filters large transition spikes. In the Free replay, the rendered distance
+  remained at 900 while Yoshi stood still instead of expanding to 4,115 units.
+  A separate Preset replay showed no pull-in after stopping; sampled native
+  camera distance settled outward from roughly 635 to 874 units over the
+  observation window.
+- Build: `sm64ds_pc` and `smoke_input_history` built successfully with the
+  Visual Studio 2026 x86 toolchain. Checks: `port.tests.test_camera_host` passed
+  2/2 and CTest `smoke_input_history` passed 1/1. Both isolated runtime replays
+  exited 0. Free-camera screenshots and traces are in
+  `work/native-camera-free-relative-final-20261023/`; the preset idle replay is
+  in `work/native-camera-preset-idle-final-20261023/`.
+- The rebuilt executable remains a local diagnostic build; no files on F: were
+  replaced. The angle mapping is runtime-verified, but a clear, unobstructed
+  manual-style movement pass and Xbox hardware feel still need confirmation.
+
+Camera follow-up: open-ground movement and installation
+- Two 4000-tick Battlefield replays exited successfully, covering right-stick
+  orbit followed by forward/backward movement and idle. Ground height remained
+  unchanged and Yoshi returned to the idle state. Forward travel agreed with
+  camera-relative heading within 0.053 degrees of fixed-point position error.
+- Input/settings/video CTest subset passed 5/5. No further camera code changed.
+- Installed executable D90129B8B82F4AB54B2CE0076A598A52A26F1C38A9CD7243B5F19C1BE52D37C0
+  on F:, with rollback under native-checkpoints/camera-relative-open-ground-verified.
+  Installation preserved ROM, settings and save hashes. Physical controller
+  sensitivity remains subject to user feedback.
+- Installed F: executable/ROM/assets check exited0 at2200 ticks and reached
+  Battlefield with122 actors. Screenshot movement-2100.bmp inspected; saves
+  and settings for this test were isolated on C:.
+
+CASTLE MOAT WATER REPLAY - 2026-10-21
+Verified the exact installed F: executable (SHA256 D90129B8B82F4AB54B2CE0076A598A52A26F1C38A9CD7243B5F19C1BE52D37C0) with the F: ROM/assets, using isolated C: saves. The replay reached castle-grounds route waypoint4 at tick11431, initialized Castle Water, and exited0 after18000 ticks. Frames at12000,14000,16000,18000 show the water surface continuously spanning the moat/grounds-cannon basin; stationary Yoshi and matching framing persist from12000 through18000. No water rendering failure reproduced, so no water fix or install was needed. Evidence: work/native-castle-moat-followup-20261021/, acceptance.json. Original ROM, user saves, and main settings were untouched.
+
+NEXT USER-REPORTED RENDER ISSUE - PEACH INTRO
+User screenshot codex-clipboard-5036ed7b-23bb-4b78-b359-22c98322c484.png shows the intro letter's text beginning left of its translucent panel and spilling across the panel border; Peach's crown/forehead geometry overlaps her face. Reproduce the Peach intro on the installed build, then trace DS 2D screen placement/text coordinates separately from Peach model animation/camera or material transforms. The issue is not yet fixed or accepted; current F: build is unchanged.
+
+
+MOAT WATER VERIFIED; PEACH INTRO ISSUE REPRODUCED, NEEDS SOL HIGH
+
+Moat replay: installed F: executable D90129B8B82F4AB54B2CE0076A598A52A26F1C38A9CD7243B5F19C1BE52D37C0, F: ROM/assets, private C: saves, 18000 frames, exit0. Castle Water actor initialized and route waypoint4 reached at tick11431. Screens at12000-18000 show continuous water across moat/cannon basin. No water code change or install required. acceptance.json is in work/native-castle-moat-followup-20261021/.
+
+Peach intro: current base build reproduces misplaced letter text (starts left of translucent letter panel) and oversized yellow crown geometry crossing Peach's forehead. Evidence: work/native-castle-moat-followup-20261021/intro-2000.bmp (prior installed build), peach-offset3-2000.bmp and peach-offset3-2500.bmp (rebuilt source replay), all at 1280x720; private test saves only. A targeted +11 DS pixel patch in Message::DisplayText did not move the text; source was reverted and native build restored/relinked. Runtime probe in that function emitted no call trace at the offending intro frame, so this intro uses another display path. No lasting code change for Peach. Crown appears to be a separate model/animation/render transform issue and is still unresolved.
+
+MODEL UPGRADE RECOMMENDED: current Luna Medium; use Sol High to trace the actual intro BG/text composition and Peach mesh/animation transforms, then make a narrowly scoped fix and replay the opening. Two focused text-path attempts failed to reach the intro renderer; stop speculative edits. Current source tree has been restored. `cmake --build build/port --target sm64ds_pc --parallel 4` succeeded with the Visual Studio 2026 x86 environment after restoration. No CTest run because no functional change remains. F: install, ROM, saves, and main settings were not modified. Current user goal remains incomplete.
+
+
+PEACH INTRO FIX - 2026-10-21 - VERIFIED
+Letter BG3 follows its perspective panel in widescreen; intro cloud minimap hidden. Added translucent same-ID rejection across D3D11/OpenGL/software, fixing Peach crown/forehead overlaps during alpha28/id22 fade. All targets plus game build;58/58CTest pass.4K5200-tick and software2520-tick isolated replays exit0; screenshots inspected. Source assets and matched src/include unchanged. Details: port/docs/native-peach-intro-2026-10-21.txt.
+
+
+Installed F: verification: B8C990983D618934AC02DDD7624121AA3E69D54ED2E12493D9C36FAC3D7B629B completed4000 ticks at3840x2160, exit0. Private QA preferences/saves remained on C:. Letter lifecycle trace enables at1953 and disables at2675; frame3200 confirms the following Lakitu shot. Installed frame2500 has letter ink bounds761,810..1807,1833 inside the panel; prior gold artifact sample254,171,37 becomes correct skin231,205,191. Screenshots were inspected and shown in chat. Rollback: F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-21-peach-intro. Source mirror includes only the reviewed port changes. ROM/settings/save preservation is recorded in installation.json; no stable full-game completion claim.
+
+
+## Native trees integrated and runtime checked (2026-10-21)
+
+TREE286 now uses native shared resources, billboard models, collision and course
+cleanup. Fixed DS-only position-slot dispatch in tree grab/climb/handstand and
+routed the trunk-jump callback through the existing native character resolver.
+All default/game targets build;58/58 tests pass. The final24A3D2F3...645EC31
+build passes castle climb/headstand/jump and separate trunk jumps (5700 ticks
+each), plus11000-tick original course exit/re-entry. Castle21 nodes cleaned;
+Battlefield17 nodes cleaned and17 freshly loaded. Isolated saves only.
+See native-trees-2026-10-21.txt and private acceptance/installation records.
+Luna Medium can handle bounded tree renderer and Battlefield regressions next.
+Original/Brain Rot dialogue toggle replacing title Options Backlight, and
+original-menu font/border styling for custom PC settings, are queued in
+pc-settings-menu-plan-2026-10-15.txt. Replacements will be written by the user,
+one exact original text box at a time; none were authored or installed now.
+
+Installed tree build24A3D2F3...645EC31 also passes a4000-tick native4K intro
+from F: with isolated saves/preferences. Screens2500/3500/3900 reviewed;
+Peach letter/crown, new trees and moat water render. Main ROM/settings/saves
+are verified unchanged; rollback is native-checkpoint-2026-10-21-trees.

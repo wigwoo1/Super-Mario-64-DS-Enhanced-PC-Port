@@ -14,8 +14,10 @@ import sys
 
 
 DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
-                 "daCnn_c_classInit", "daWbm_c_classInit",
+                 "daCnn_c_classInit", "daWbm_c_classInit", "daTree_c_classInit",
+                 "daObjMc_Metalnet_c_classInit",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
+                 "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
                  "daChScene_c_classInit", "daDoor_c_classInit", "dMap_c_classInit",
                  "daPicGate_c_classInit", "_ZN11daPicGate_cD1Ev", "_ZN11daPicGate_c19func_ov080_021261f4Ev",
@@ -414,6 +416,10 @@ def main() -> int:
                 import texture_consumer_hooks
                 transformed,consumer_hooks=texture_consumer_hooks.transform(transformed,path.name)
                 rewrites+=consumer_hooks
+                if path.name in ('func_0201f138.cpp', 'func_0201ef38.c', 'func_0201eaac.c'):
+                    import intro_host
+                    transformed = intro_host.transform(transformed, path.name)
+                    rewrites += 1
                 if path.name in texture_hooks:
                     signature,statement=texture_hooks[path.name]
                     transformed='#include "ntr/texture_assets.h"\n'+transformed
@@ -462,6 +468,22 @@ def main() -> int:
                                  'func_02038324.cpp','func_0203842c.cpp','func_0203859c.cpp','func_02038ea4.cpp'):
                     import buddy_host
                     transformed = buddy_host.transform(root, transformed, path.name)
+                    rewrites += 1
+                if path.name in ('dActor_c.cpp','d_a_wanwan.cpp','daObjPile_c.cpp','d_a_obj_wanwan_shutter.cpp'):
+                    import chomp_host
+                    transformed = chomp_host.transform(root, transformed, path.name)
+                    rewrites += 1
+                if path.name == '_ZN6Player16St_WallJump_MainEv.cpp':
+                    import tree_host
+                    transformed = tree_host.transform_walljump(transformed)
+                    rewrites += 1
+                if path.name == 'Player.cpp':
+                    import tree_host
+                    transformed = tree_host.transform_player(transformed)
+                    rewrites += 1
+                if path.name == 'd_a_tree.cpp':
+                    import tree_host
+                    transformed = tree_host.transform(root, transformed)
                     rewrites += 1
                 if path.name == 'IsCannonOpenInCurLevel.c':
                     transformed = transformed.replace('void IsCannonOpenInCurLevel(void)', 'int IsCannonOpenInCurLevel(void)').replace('(void)IsCannonOpenInLevel(data_0209f2f8);', 'return IsCannonOpenInLevel(data_0209f2f8);')

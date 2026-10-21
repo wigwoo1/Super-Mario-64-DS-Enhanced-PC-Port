@@ -19,7 +19,11 @@ void _ZN15dExtFrameCtrl_c8LoadFileER13SharedFilePtr(void *ptr)
     dExtFrameCtrl_c::LoadFile(*static_cast<SharedFilePtr *>(ptr));
 }
 
+#if !defined(SM64DS_GAME_TARGET)
+// The small actor smoke slice has no camera. The shipping game must resolve
+// this name to dCamera_c.cpp's original player-scoped state restoration.
 void func_0200d81c(void *, int) {}
+#endif
 }
 
 extern "C" {

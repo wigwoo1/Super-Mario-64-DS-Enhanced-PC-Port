@@ -267,11 +267,16 @@ extern "C" unsigned char g_profile_KURIBO[], g_profile_KURIBO_S[], g_profile_KUR
 extern "C" void pc_goomba_init_resources();
 extern "C" void pc_bombking_init_resources();
 extern "C" void pc_buddy_init_resources(), pc_shutter_init_resources();
+extern "C" void pc_chomp_init_resources(), pc_pile_init_resources(), pc_wanwan_fence_init_resources();
+extern "C" unsigned char g_profile_WANWAN[], g_profile_PILE[], g_profile_WANWAN_SHUTTER[];
 extern "C" void *daRedBombhei_c_classInit();
 extern "C" void *daCnn_c_classInit(), *daWbm_c_classInit();
+extern "C" void *daObjMc_Metalnet_c_classInit();
+extern "C" void *daObjMcWater_c_classInit();
 extern "C" void pc_cannon_init_resources(), pc_waterbomb_init_resources();
 extern "C" unsigned char g_profile_CANNON_SHUTTER[];
 extern "C" unsigned char g_profile_BOMBKING[];
+extern "C" unsigned char g_profile_TREE[];
 extern "C" unsigned char g_profile_BOMBHEI[];
 extern "C++" { extern SharedFilePtr data_ov102_0214e9c0, data_ov102_0214e9c8; }
 extern "C" void *daYegg_c_classInit();
@@ -291,6 +296,18 @@ static PcNativeActorProfile pc_buddy_profile = { (void *)&daRedBombhei_c_classIn
 // ov098 descriptors 0213c67c/0213c74c, with native constructor pointers.
 static PcNativeActorProfile pc_cannon_profile = { (void *)&daCnn_c_classInit,207,47,3,0xc8000,0xc8000,0x1000000,0 };
 static PcNativeActorProfile pc_waterbomb_profile = { (void *)&daWbm_c_classInit,208,48,2,0x64000,0x64000,0x1000000,0x640000 };
+// MC_METALNET (339), reconstructed ov009 profile. This net surrounds the
+// castle-grounds cannon and removes itself only when the save has all 150
+// stars (or its author-selected unlock bit is set).
+static PcNativeActorProfile pc_metalnet_profile = {
+    (void *)&daObjMc_Metalnet_c_classInit,339,339,0x2u,
+    0,0x500000,0x1000000,0
+};
+// CASTLE_WATER (338), recovered from the mixed ov009 actor profile registry.
+static PcNativeActorProfile pc_castle_water_profile = {
+    (void *)&daObjMcWater_c_classInit,338,338,0,
+    0,0x00320000,0x01f40000,0x00050000
+};
 static void *pc_power_star_factory() { return new daStar_c(); }
 static void *pc_silver_star_factory() { return new daStar_c(); }
 static void *pc_star_marker_factory() { return new daStarBase_c(); }
@@ -406,9 +423,16 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[229] = &pc_rabbit_key_profile;
     pc_rabbit_init_resources();
     pc_buddy_init_resources();pc_shutter_init_resources();
+    pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
+    data_020a4bb8_storage[219] = g_profile_WANWAN;
+    data_020a4bb8_storage[27] = g_profile_PILE;
+    data_020a4bb8_storage[41] = g_profile_WANWAN_SHUTTER;
     pc_cannon_init_resources();pc_waterbomb_init_resources();
     data_020a4bb8_storage[207] = &pc_cannon_profile;
     data_020a4bb8_storage[208] = &pc_waterbomb_profile;
+    data_020a4bb8_storage[339] = &pc_metalnet_profile;
+    data_020a4bb8_storage[338] = &pc_castle_water_profile;
+    data_020a4bb8_storage[286] = g_profile_TREE;
     data_020a4bb8_storage[181] = &pc_buddy_profile;
     const char *qa_no_shutter=getenv("SM64DS_PC_TEST_NO_SHUTTER");
     const char *qa_only=getenv("SM64DS_PC_AUTOMATION_ONLY");

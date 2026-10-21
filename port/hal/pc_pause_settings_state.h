@@ -6,6 +6,17 @@
 namespace pc_pause {
 enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens, Gameplay };
 enum class Action { None, Changed, GameOptions, BackPause, SaveProgress };
+// Shared pixel geometry for drawing and both stage/minigame touch handling.
+constexpr unsigned row_top = 24, row_height = 24;
+inline int hit_row(unsigned y, unsigned count) {
+    return y >= row_top && y < row_top + count * row_height && (y-row_top)%row_height<16
+        ? static_cast<int>((y-row_top)/row_height) : -1;
+}
+inline bool cache_button_panel(const uint16_t *map,unsigned offset,uint16_t *panel) {
+    if(offset%32 || offset>1024-128)return false;
+    for(unsigned i=0;i<128;++i)panel[i]=map[offset+i];
+    return true;
+}
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks);
 struct Menu {
     Page page = Page::Options;

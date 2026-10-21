@@ -4,6 +4,7 @@ namespace ntr {
 bool glsw_open(void *window);
 void glsw_close();
 void glsw_set_menu_scene(bool active);
+void glsw_set_letter_overlay(bool active);
 void glsw_set_anisotropic_filtering(uint8_t level);
 uint8_t glsw_anisotropic_filtering();
 bool glsw_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,

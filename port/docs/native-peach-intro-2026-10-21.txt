@@ -1,0 +1,42 @@
+PEACH INTRO - VERIFIED - 2026-10-21
+
+Fixed letter alignment and Peach's forehead/crown in the native PC renderer.
+
+Letter: func_0201f138 draws text on BG3 over a perspective 3D letter panel.
+The widescreen frustum narrowed/repositioned the panel but the 2D foreground
+still stretched across the entire output. intro_host.py marks the dedicated
+letter lifecycle. D3D11/OpenGL apply the same centered horizontal projection
+to its foreground; DS 4:3 output stays unchanged. Message reset, letter fade
+and leaving Stage clear the flag. The minimap is hidden during this letter,
+removing the empty cloud overlay. Original src/include files are unchanged.
+
+Peach: runtime polygon dump identified 798 Peach triangles at alpha28/id22,
+not opaque geometry. Raw model bytes match the original ROM, raw decoded
+vertex coordinates agree across 1292 vertices, matrices agree for head parts,
+and decoded atlas alpha/RGB agree with independent ROM decoding. Crown's
+interior faces are farther than the face surface but were blended over it
+because translucent same-ID rejection was missing. D3D11/OpenGL now use a
+stencil validity bit plus six-bit ID; software retains a per-pixel translucent
+ID. The first blended surface hides later overlapping surfaces from that
+same object, while matching opaque IDs still allow a first blend. Existing
+shadow-mask bit and rules are preserved. No mesh or texture asset was edited.
+
+Build: all default targets plus sm64ds_pc build successfully with VS2026 x86.
+CTest: 58/58 pass (58.16s), including D3D11, OpenGL CPU, shadow and partial-alpha
+checks. Added cases for IDs0/22/63, matching opaque IDs, overlap/nonoverlap,
+depth failures, alpha1/15/28/30, texture alpha and letter projection across
+DS/16:9/ultrawide layouts. The independent software comparison also agrees.
+
+Runtime: verified-4k (3840x2160,5200 ticks) and verified-reference (software
+256x192,2520 ticks) exit0 with isolated saves. Opening menu, translucent and
+near-opaque Peach letter at2000/2500, and transition frames3200/5000 captured.
+Screenshots show letter inside panel and crown/hair/forehead correctly covered.
+Private evidence: work/native-peach-intro-solhigh-20261021/.
+Temporary vertex/texture extraction probes were removed from shipping code.
+Final EXE B8C990983D618934AC02DDD7624121AA3E69D54ED2E12493D9C36FAC3D7B629B
+adds only opt-in lifecycle logging to the visually verified functional build;
+the exact installed executable is checked again using private QA preferences.
+Full port and unrelated reported issues remain incomplete.
+
+Installed F: verification: B8C990983D618934AC02DDD7624121AA3E69D54ED2E12493D9C36FAC3D7B629B completed4000 ticks at3840x2160, exit0. Private QA preferences/saves remained on C:. Letter lifecycle trace enables at1953 and disables at2675; frame3200 confirms the following Lakitu shot. Installed frame2500 has letter ink bounds761,810..1807,1833 inside the panel; prior gold artifact sample254,171,37 becomes correct skin231,205,191. Screenshots were inspected and shown in chat. Rollback: F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-21-peach-intro. Source mirror includes only the reviewed port changes. ROM/settings/save preservation is recorded in installation.json; no stable full-game completion claim.
+

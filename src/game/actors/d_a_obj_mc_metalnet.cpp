@@ -36,7 +36,7 @@ struct McMetalnetClsnFileHandle : SharedFilePtr {
 extern "C" {
 extern McMetalnetModelFilePtr data_ov009_02113e90;   /* the net's BMD        */
 extern McMetalnetClsnFileHandle data_ov009_02113e88; /* its collision KCL    */
-extern CLPS_Block    data_ov009_02112bf8;
+void *pc_overlay9_address(unsigned int address);
 
 /* The global mode byte. Unnamed in config; compared against 1 in fifty-odd
    places across the tree, always to mean "not the ordinary single-player run". */
@@ -97,7 +97,7 @@ s32 daObjMc_Metalnet_c::InitResources()
        the ROM does not have. */
     _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
         &mMeshCollider, kcl, &mClsnMat, 0x1000, mAngleY,
-        &data_ov009_02112bf8);
+        (CLPS_Block *)pc_overlay9_address(0x02112bf8));
 
     if ((param1 & 0xff) == 0xff) {
         int b = (int)(data_0209f2d8 == 1);

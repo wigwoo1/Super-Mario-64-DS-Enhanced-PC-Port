@@ -109,11 +109,16 @@ def transform(text):
     text = text.replace('// @symbol _ZN9dCamera_c6RenderEv',
                         'static void pc_camera_zoom(dCamera_c *, s32 *);\n\n// @symbol _ZN9dCamera_c6RenderEv')
     text = ('#include "ntr/video.h"\n#include "ntr/input.h"\n#include "ntr/rt.h"\n'
-            '#include <cmath>\n#include <climits>\n' + text)
+            '#include <algorithm>\n#include <cmath>\n#include <climits>\n' + text)
     text += r'''
+extern "C" int pc_chomp_release_target(int *);
+extern "C" void pc_camera_set_movement_yaw_offset(short, int);
+
 // Native distance zoom, using the camera's own background collision filter.
 static void pc_camera_zoom(dCamera_c *camera, s32 *view)
 {
+    static double orbit_yaw = 0.0, orbit_pitch = 0.0;
+    static bool orbit_active = false, orbit_initialized = false;
     // Player.h pins actorID at 0xc and control-disabled/no-control bytes at
     // 0x6f6/0x709. Avoid importing its collision classes into this C shard.
     auto *player = reinterpret_cast<unsigned char *>(camera->mTargetPlayer);
@@ -121,6 +126,44 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
     const bool allowed = is_player &&
         !player[0x6f6] && !player[0x709] &&
         !data_0209fc48 && !data_0209f294 && !data_0209f20c && !data_0209f2c4;
+    int chomp[3];
+    if(is_player && (player[0x6f6] || player[0x709]) &&
+       !data_0209f2c4 && pc_chomp_release_target(chomp)) {
+        // Retail actor tracking keeps the eye fixed and skips its normal
+        // distance/collision branch (02009e70). Keep the original look target
+        // but frame the moving head outside its conservative 350-unit shadow
+        // footprint. This only adjusts the temporary render eye, not gameplay.
+        const double dx=double(view[3])-view[0],dy=double(view[4])-view[1],dz=double(view[5])-view[2];
+        const double distance=std::sqrt(dx*dx+dy*dy+dz*dz);
+        const double half_angle=*reinterpret_cast<const short *>(reinterpret_cast<const char *>(camera)+0x17a)*6.283185307179586/65536.0;
+        const double minimum=350.0*4096/std::sin(half_angle>0.1?half_angle:0.1);
+        if(distance>1 && distance<minimum) {
+            Vec3 start={view[3],view[4],view[5]};
+            Vec3 end={view[0]+static_cast<int>(dx*minimum/distance),
+                      view[1]+static_cast<int>(dy*minimum/distance),
+                      view[2]+static_cast<int>(dz*minimum/distance)};
+            dBgCh_Lin line;
+            _ZN9dBgCh_LinC1Ev(&line);
+            func_0200897c(camera,&line);
+            _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&line,&start,&end,nullptr);
+            const bool blocked=_ZN9dBgCh_Lin10DetectClsnEv(&line)!=0;
+            if(blocked) {
+                Vec3 hit;_ZN9dBgCh_Lin10GetClsnPosEv(&hit,&line);
+                const double hx=double(hit.x)-start.x,hy=double(hit.y)-start.y,hz=double(hit.z)-start.z;
+                const double length=std::sqrt(hx*hx+hy*hy+hz*hz);
+                const double fraction=length>32*4096?(length-32*4096)/length:0;
+                end.x=start.x+static_cast<int>(hx*fraction);
+                end.y=start.y+static_cast<int>(hy*fraction);
+                end.z=start.z+static_cast<int>(hz*fraction);
+            }
+            _ZN9dBgCh_LinD1Ev(&line);
+            view[3]=end.x;view[4]=end.y;view[5]=end.z;
+            if(std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE"))
+                std::fprintf(stderr,"[chomp camera] tick=%llu blocked=%d base=%d,%d,%d eye=%d,%d,%d target=%d,%d,%d chomp=%d,%d,%d\n",
+                    static_cast<unsigned long long>(ntr::rt_frame()),int(blocked),start.x,start.y,start.z,
+                    end.x,end.y,end.z,view[0],view[1],view[2],chomp[0],chomp[1],chomp[2]);
+        }
+    }
     static dCamera_c *previous_camera=nullptr;
     static bool recenter_from_no_control=false;
     if(previous_camera!=camera) {previous_camera=camera;recenter_from_no_control=false;}
@@ -164,37 +207,136 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
             }
             settings.camera_zoom = static_cast<unsigned char>((settings.camera_zoom+1)%4);
             ntr::video_set_settings(settings);
+            // Original camera-mode cues: outward zoom / return to normal.
+            func_02012790(settings.camera_zoom ? 7u : 6u);
             const bool saved = ntr::video_save_settings();
             std::fprintf(stderr,"[camera zoom] tick=%llu option=%u saved=%d\n",
                 handled,unsigned(settings.camera_zoom),int(saved));
         }
     }
-    if (!allowed || !settings.camera_zoom || settings.camera_zoom>3) return;
+    static unsigned long long mode_handled=~0ull;
+    if(ntr::input_take_camera_mode() && mode_handled!=ntr::rt_frame()) {
+        mode_handled=ntr::rt_frame();
+        if(allowed) {
+            settings.camera_mode^=1;
+            ntr::video_set_settings(settings);
+            const bool saved=ntr::video_save_settings();
+            // Keep the familiar camera-mode cue when switching to or from free orbit.
+            func_02012790(settings.camera_mode ? 7u : 6u);
+            orbit_active=false;orbit_initialized=false;
+            std::fprintf(stderr,"[camera mode] tick=%llu mode=%s saved=%d\n",
+                mode_handled,settings.camera_mode?"free":"preset",int(saved));
+        }
+    }
+    if (!allowed) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; return; }
+    const auto input = ntr::input_state();
+    if(settings.camera_mode!=1) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; }
+    // Free camera uses the camera object's stable tracked pose as its anchor.
+    // Never derive distance from the previous render-only view: that view was
+    // already orbited/zoomed and would compound every render pass.
+    const Vec3 target={camera->lookAt.x,camera->lookAt.y,camera->lookAt.z};
+    const Vec3 native_eye={camera->pos.x,camera->pos.y,camera->pos.z};
+    const double native_dx=double(native_eye.x)-target.x;
+    const double native_dy=double(native_eye.y)-target.y;
+    const double native_dz=double(native_eye.z)-target.z;
+    const double native_distance=std::sqrt(native_dx*native_dx+native_dy*native_dy+native_dz*native_dz);
+    // Keep the farthest normal gameplay distance seen in this camera session.
+    // Retail pulls the camera inward when Yoshi stops, which reads as a zoom.
+    // Collision checks below can still shorten this distance when obstructed.
+    static dCamera_c *distance_camera=nullptr;
+    static double distance_floor=0.0;
+    if(distance_camera!=camera) { distance_camera=camera; distance_floor=0.0; }
+    const double max_gameplay_distance=900.0*4096.0;
+    distance_floor=std::max(distance_floor,std::min(native_distance,max_gameplay_distance));
+    const auto current_yaw = std::atan2(native_dz,native_dx);
+    if (!orbit_initialized) {
+        orbit_yaw=current_yaw;
+        orbit_pitch=std::asin(std::clamp(native_dy/std::max(1.0,native_distance),-1.0,1.0));
+        orbit_initialized=true;
+    }
+    if(settings.camera_mode==1 && (std::abs(input.right_x)>6500 || std::abs(input.right_y)>6500)) {
+        orbit_active=true;
+        // A full deflection should turn at a comfortable desktop-camera pace;
+        // the host polls several times during some DS presentation frames.
+        orbit_yaw += double(input.right_x)/32767.0*0.052;
+        orbit_pitch += double(input.right_y)/32767.0*0.035;
+        orbit_pitch=std::clamp(orbit_pitch,-1.15,1.15);
+        orbit_active=true;
+    }
+    if(settings.camera_mode==1) {
+        // Match the game's own horizontal-angle convention (atan2(x,z)),
+        // which is the opposite orientation of the render-space atan2(z,x).
+        const int free_camera_angle=static_cast<int>(std::lround(
+            (1.5707963267948966-orbit_yaw)*65536.0/6.283185307179586));
+        const int native_camera_angle=static_cast<int>(camera->mAngleY)+
+            *reinterpret_cast<const short *>(reinterpret_cast<const char *>(camera)+0x188);
+        const int movement_offset=((free_camera_angle-native_camera_angle+32768)&0xffff)-32768;
+        pc_camera_set_movement_yaw_offset(static_cast<short>(std::clamp(movement_offset,-32768,32767)),1);
+        const int denominator[]={4,3,2,1};
+        const double distance=settings.camera_zoom>0 && settings.camera_zoom<4
+            ? distance_floor*4.0/denominator[settings.camera_zoom] : distance_floor;
+        Vec3 start=native_eye;
+        Vec3 desired={target.x+static_cast<int>(std::cos(orbit_pitch)*std::cos(orbit_yaw)*distance),
+                      target.y+static_cast<int>(std::sin(orbit_pitch)*distance),
+                      target.z+static_cast<int>(std::cos(orbit_pitch)*std::sin(orbit_yaw)*distance)};
+        dBgCh_Lin line;
+        _ZN9dBgCh_LinC1Ev(&line);func_0200897c(camera,&line);
+        _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&line,&start,&desired,nullptr);
+        const bool blocked=_ZN9dBgCh_Lin10DetectClsnEv(&line)!=0;
+        if(blocked) {
+            Vec3 hit;_ZN9dBgCh_Lin10GetClsnPosEv(&hit,&line);
+            const double dx=double(hit.x)-start.x,dy=double(hit.y)-start.y,dz=double(hit.z)-start.z;
+            const double length=std::sqrt(dx*dx+dy*dy+dz*dz);
+            const double fraction=length>32*4096?(length-32*4096)/length:0;
+            desired={start.x+static_cast<int>(dx*fraction),start.y+static_cast<int>(dy*fraction),start.z+static_cast<int>(dz*fraction)};
+        }
+        _ZN9dBgCh_LinD1Ev(&line);
+        view[0]=target.x;view[1]=target.y;view[2]=target.z;
+        view[3]=desired.x;view[4]=desired.y;view[5]=desired.z;
+        if(std::getenv("SM64DS_PC_CAMERA_ORBIT_TRACE")) {
+            static long long last_x=0,last_z=0;static unsigned long long last=0;
+            const long long dx=static_cast<long long>(view[3])-view[0],dz=static_cast<long long>(view[5])-view[2];
+            if(last==0 || ntr::rt_frame()>=last+30) {
+                std::fprintf(stderr,"[camera orbit] tick=%llu stick=%d,%d distance=%.2f angle=%lld,%lld changed=%d moveYaw=%d cameraAngle=%d nativeAngle=%d\n",
+                    static_cast<unsigned long long>(ntr::rt_frame()),int(input.right_x),int(input.right_y),
+                    std::sqrt(double(view[3]-view[0])*(view[3]-view[0])+double(view[4]-view[1])*(view[4]-view[1])+double(view[5]-view[2])*(view[5]-view[2]))/4096.0,
+                    dx,dz,int(dx!=last_x || dz!=last_z),movement_offset,free_camera_angle,native_camera_angle);
+                last_x=dx;last_z=dz;last=ntr::rt_frame();
+            }
+        }
+        return;
+    }
+    if (settings.camera_zoom>3) return;
     const int denominator[] = {4,3,2,1};
     Vec3 start = {view[3],view[4],view[5]}, end;
-    int *desired = &end.x;
-    for (int i=0;i<3;++i) {
-        const long long value = view[i]+(static_cast<long long>(view[i+3])-view[i])*4/denominator[settings.camera_zoom];
-        desired[i]=static_cast<int>(value<INT_MIN?INT_MIN:value>INT_MAX?INT_MAX:value);
+    const double dx=double(start.x)-view[0],dy=double(start.y)-view[1],dz=double(start.z)-view[2];
+    const double current_distance=std::sqrt(dx*dx+dy*dy+dz*dz);
+    const double distance=distance_floor*4.0/denominator[settings.camera_zoom];
+    if(current_distance<1 || distance<1) return;
+    end={view[0]+static_cast<int>(dx*distance/current_distance),
+         view[1]+static_cast<int>(dy*distance/current_distance),
+         view[2]+static_cast<int>(dz*distance/current_distance)};
+    bool blocked=false;
+    if(distance>current_distance) {
+        // Extend the engine's collision-adjusted eye ray and retain a small
+        // clearance from any wall or camera-solid surface.
+        dBgCh_Lin line;
+        _ZN9dBgCh_LinC1Ev(&line);
+        func_0200897c(camera,&line);
+        _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&line,&start,&end,nullptr);
+        blocked=_ZN9dBgCh_Lin10DetectClsnEv(&line)!=0;
+        if (blocked) {
+            Vec3 hit;
+            _ZN9dBgCh_Lin10GetClsnPosEv(&hit,&line);
+            const double hx=double(hit.x)-start.x,hy=double(hit.y)-start.y,hz=double(hit.z)-start.z;
+            const double length=std::sqrt(hx*hx+hy*hy+hz*hz);
+            const double fraction=length>32*4096 ? (length-32*4096)/length : 0;
+            end={start.x+static_cast<int>(hx*fraction),
+                 start.y+static_cast<int>(hy*fraction),
+                 start.z+static_cast<int>(hz*fraction)};
+        }
+        _ZN9dBgCh_LinD1Ev(&line);
     }
-    // Trace only the extension beyond the already collision-adjusted retail
-    // eye. Keep 32 world units of clearance from the first camera-solid face.
-    dBgCh_Lin line;
-    _ZN9dBgCh_LinC1Ev(&line);
-    func_0200897c(camera,&line);
-    _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&line,&start,&end,nullptr);
-    bool blocked = _ZN9dBgCh_Lin10DetectClsnEv(&line)!=0;
-    if (blocked) {
-        Vec3 hit;
-        _ZN9dBgCh_Lin10GetClsnPosEv(&hit,&line);
-        const double dx=double(hit.x)-start.x,dy=double(hit.y)-start.y,dz=double(hit.z)-start.z;
-        const double length=std::sqrt(dx*dx+dy*dy+dz*dz);
-        const double fraction=length>32*4096 ? (length-32*4096)/length : 0;
-        end.x=start.x+static_cast<int>(dx*fraction);
-        end.y=start.y+static_cast<int>(dy*fraction);
-        end.z=start.z+static_cast<int>(dz*fraction);
-    }
-    _ZN9dBgCh_LinD1Ev(&line);
     view[3]=end.x;view[4]=end.y;view[5]=end.z;
     if (std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE") && ntr::rt_frame()%30==0)
         std::fprintf(stderr,"[camera zoom view] tick=%llu option=%u blocked=%d base=%d,%d,%d eye=%d,%d,%d target=%d,%d,%d\n",

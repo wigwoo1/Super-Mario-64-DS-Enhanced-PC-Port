@@ -15,6 +15,7 @@ struct InputState {
     uint8_t left_trigger = 0;
     uint8_t right_trigger = 0;
     bool camera_zoom_pressed = false; // rising edge of Xbox right-stick click
+    bool camera_mode_pressed = false; // rising edge of Xbox left-stick click
     bool touch = false;
     uint16_t touch_x = 0;  // 0..255 in bottom-screen coordinates
     uint16_t touch_y = 0;  // 0..191
@@ -27,6 +28,8 @@ void input_test_controls(bool enabled, uint16_t buttons, int16_t x, int16_t y);
 InputState input_state();
 // Retain a host click across the scene's intervening VBlank(s), consume once.
 bool input_take_camera_zoom();
+// Retain a gameplay camera-mode click across the scene's intervening VBlank(s).
+bool input_take_camera_mode();
 
 // Set the mouse stylus position in bottom-screen coordinates. The host also
 // updates the DS touch-sample latch consumed by the original touch callback.

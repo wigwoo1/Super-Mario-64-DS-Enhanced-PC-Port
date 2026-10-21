@@ -1,0 +1,18 @@
+HISTORICAL DIAGNOSTIC: superseded by native-distant-bomb-coin-verified-2026-10-20.txt.
+Correction: the pink cannon characters in the earlier screenshot are Bob-omb Buddies, not regular Bob-ombs. The small earlier changes included the previously verified distant Goomba behind the translucent minimap. Actor geometry probing now identifies regular Bob-omb206 and coins288/289 separately.
+
+# Distant Bob-omb and coin visibility check — 2026-10-20
+
+Status: PARTIALLY VERIFIED; no code fix or F: install.
+
+Used the last verified native executable A8A943907ED51DE98C58524B6D7F6E7ABF7462CB08E230481C0F4FBF43C1EB8A in matched fresh-save Battlefield runs. Minimum (mode 0) and Entire Map (mode 3) both exited 0 through tick 7000. Their state.csv and goomba-state.csv are byte-identical. The seed save copies were isolated under each case folder.
+
+Cases:
+- work/native-render-distance-bomb-coin-min-final-20261020
+- work/native-render-distance-bomb-coin-entire-20261020
+
+Actual runtime captures at 4540, 4600, 4650 and 6500 were inspected. Distant Bob-ombs are visible with ground shadows in the Minimum screenshot at tick 4540. The same two settings show 494, 462 and 376 changed RGB pixels in frames 4540, 4600 and 4650, respectively; these changes are small and lie in the upper-right minimap area, so they do not establish actor-body or shadow differences. Frame 6500 is pixel-identical. The Entire Map render trace records 1,704 Bob-omb (206), 2,502 regular coin (288), and 2,108 red-coin (289) visibility checks, with successful draw callbacks for each class; this is diagnostic evidence only and does not prove those actors are on-screen.
+
+An earlier 11000-tick Minimum run exited 0 and reached course re-entry, but it is not paired and is not used for acceptance. The current direct closure does not have actor geometry probes for Bob-omb/coin. Attempts to add those probes through the generated-source transform were abandoned after build errors from transform insertion/matrix layout conflicts. Temporary probe edits were restored. The last verified executable and F: installation were not modified. No new gameplay behavior was changed.
+
+Next: with Sol Medium, identify a stable, unobstructed distant Bob-omb and coin view (or add a safe renderer-level probe in the actual closure generator), capture same-tick screenshots under Minimum and Entire Map, and compare the body and shadow pixels separately while confirming actor position/state and isolated save hashes. Do not claim all-object coverage until accepted.

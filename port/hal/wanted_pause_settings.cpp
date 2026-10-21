@@ -46,7 +46,7 @@ extern "C" int pc_wanted_settings_update(void *raw) {
     if(tapped) {
         if(input.touch_y>=168) keys|=input.touch_x<64?0x200:input.touch_x>=192?0x100:2;
         else for(unsigned row=0;row<menu.rows();++row)
-            if(input.touch_y>=32+row*40 && input.touch_y<64+row*40) {
+            if(pc_pause::hit_row(input.touch_y,menu.rows())==static_cast<int>(row)) {
                 menu.row=row;
                 keys|=menu.page==pc_pause::Page::Options || menu.page==pc_pause::Page::Save?
                     1:input.touch_x<128?0x20:0x10;

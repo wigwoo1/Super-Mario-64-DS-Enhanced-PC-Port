@@ -23,6 +23,9 @@
 #include "daObjCannonShutter_c.h"
 #include "daCnn_c.h"
 #include "daWbm_c.h"
+#include "daWanwan_c.h"
+#include "daObjPile_c.h"
+#include "daObjWanwanShutter_c.h"
 #include "SaveData.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
@@ -198,6 +201,27 @@ static bool replay_course_route() {
         const double dx=x*4096.0-player->mPosX,dz=z*4096.0-player->mPosZ;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        // Optional input-only tree acceptance: keep climbing after the route
+        // reaches the trunk, rest at its top, then jump off. No actor/state
+        // placement or save edits are involved.
+        const char *tree_test=std::getenv("SM64DS_PC_TEST_TREE_CLIMB");
+        if(tree_test && !std::strcmp(tree_test,"1")) {
+            static uint64_t attached_at=0;
+            static const char *last_state=nullptr;
+            if(!attached_at && player->mIsAirborne && !std::strcmp(state,"St_Climb_Main"))attached_at=tick;
+            if(attached_at) {
+                const auto elapsed=tick-attached_at;
+                if(!last_state || std::strcmp(last_state,state)) {
+                    std::fprintf(stderr,"[native tree replay] tick=%llu elapsed=%llu state=%s y=%d attachment=%p\n",
+                        static_cast<unsigned long long>(tick),static_cast<unsigned long long>(elapsed),
+                        state,player->mPosY,*reinterpret_cast<void **>(reinterpret_cast<char *>(player)+0x37c));
+                    last_state=state;
+                }
+                ntr::input_test_controls(true,elapsed>=650 && elapsed<660 ? 2:0,
+                    0,(elapsed<500 || (elapsed>=540 && elapsed<600)) ? 32767:0);
+                return true;
+            }
+        }
         const char *dodge=std::getenv("SM64DS_PC_TEST_ROUTE_DODGE_GOOMBAS");
         if(dodge && !std::strcmp(dodge,"1") && !player->mIsAirborne && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
@@ -209,7 +233,8 @@ static bool replay_course_route() {
                 }
             if(close) {jump_until=tick+12;next_jump=tick+60;}
         }
-        if(jump && std::hypot(dx,dz)<320*4096.0 && tick>=next_jump &&
+        const double jump_range=tree_test && !std::strcmp(tree_test,"1") ? 120.0:320.0;
+        if(jump && std::hypot(dx,dz)<jump_range*4096.0 && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
             jump_until=tick+12;next_jump=tick+75;
         }
@@ -937,8 +962,130 @@ static void trace_actor_census(uint64_t frame)
     std::fflush(stderr);
 }
 
+// QA controller only: approach the live original stump, jump, then press
+// crouch while airborne over it. No actor, collision or save mutation.
+extern "C" unsigned short *data_0209214c[3];
+static uint16_t chomp_replay_button(unsigned action) {
+    // The save can select Standard, Touch or Dual-Hand control. Use the
+    // original live mapping rather than assuming Standard DS button bits.
+    const unsigned mode=data_0209f4ae[0];
+    if(mode>2)return 0;
+    for(unsigned bit=0;bit<12;++bit)if(data_0209214c[mode][bit]==action)return uint16_t(1u<<bit);
+    return 0;
+}
+static bool replay_chomp_controls() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_CHOMP");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!mode || (std::strcmp(mode,"release") && std::strcmp(mode,"release-local") && std::strcmp(mode,"spawn-view")) || !automation || std::strcmp(automation,"1") ||
+       data_0209f2f8!=6 || ntr::rt_frame()<4800)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    auto *c=static_cast<daWanwan_c *>(dActor_c::FindWithActorID(219,nullptr));
+    auto *s=c?static_cast<daObjPile_c *>(dActor_c::FindWithID(c->mStumpUniqueID)):nullptr;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    static bool released=false;
+    if(c && c->mState==3 && c->mChainBroken)released=true;
+    if(released && !c && std::getenv("SM64DS_PC_TEST_CHOMP_STAR")) {
+        // Input-only approach through the opened fence to the original Star.
+        // The release-local fixture's one initial player travel is unchanged.
+        auto *f=static_cast<daObjWanwanShutter_c *>(dActor_c::FindWithActorID(41,nullptr));
+        if(p && p->aliveState==1 && f && f->mDisabled &&
+           !p->mIsNoControl && !p->mIsControlDisabled && !data_0209d660) {
+            for(auto *a=dActor_c::FindWithActorID(178,nullptr);a;a=dActor_c::FindWithActorID(178,a)) {
+                auto *star=static_cast<daStar_c *>(a);
+                if(star->aliveState!=1 || star->param1!=7 || star->mState!=4)continue;
+                const double dx=double(star->mPosX)-p->mPosX,dz=double(star->mPosZ)-p->mPosZ;
+                const double distance=std::hypot(dx,dz);
+                if(distance>15*4096.0) {
+                    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    const double magnitude=distance<180*4096.0?12000:22000;
+                    sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+                }
+                if(distance<200*4096.0 && star->mPosY>p->mPosY+100*4096 && ntr::rt_frame()%60<10)
+                    buttons=chomp_replay_button(2);
+                break;
+            }
+        } else if(data_0209d660 && ntr::rt_frame()%45<3)buttons=1;
+        ntr::input_test_controls(true,buttons,sx,sy);return true;
+    }
+    uint64_t travel_tick=4800;
+    if(const char *value=std::getenv("SM64DS_PC_TEST_CHOMP_TRAVEL_TICK")) {
+        const auto requested=std::strtoull(value,nullptr,10);
+        if(requested>=4800 && requested<=20000)travel_tick=requested;
+    }
+    const bool before_travel=!std::strcmp(mode,"release-local") && ntr::rt_frame()<travel_tick;
+    static bool local_travel=false;
+    if(!std::strcmp(mode,"release-local") && !before_travel && !local_travel && p && s && p->aliveState==1 &&
+       !p->mIsNoControl && !p->mIsControlDisabled) {
+        local_travel=true;
+        p->mPosX=p->mPrevPosX=p->mPreClsnPosX=s->mPosX;
+        p->mPosY=p->mPrevPosY=p->mPreClsnPosY=s->mPosY+220*4096;
+        p->mPosZ=p->mPrevPosZ=p->mPreClsnPosZ=s->mPosZ;
+        p->mHorzSpeed=p->mVertSpeed=0;
+        std::fprintf(stderr,"[native chomp QA travel] tick=%llu stump=%u player=%d,%d,%d; encounter state untouched, subsequent input only\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),s->uniqueID,p->mPosX,p->mPosY,p->mPosZ);
+    }
+    if(!std::strcmp(mode,"spawn-view") || before_travel) {
+        const auto tick=ntr::rt_frame();
+        if(p && c && tick<4810) {
+            const double angle=std::atan2(double(c->mPosX)-p->mPosX,double(c->mPosZ)-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(angle)*15000);
+            sy=static_cast<int16_t>(-std::cos(angle)*15000);
+        }
+        if(tick>=4820 && tick<4900)buttons=chomp_replay_button(0x4000);
+        ntr::input_test_controls(true,buttons,sx,sy);return true;
+    }
+    static bool at_stump_area=false;
+    if(p && s && p->mPosY>s->mPosY-200*4096 &&
+       std::hypot(double(s->mPosX)-p->mPosX,double(s->mPosZ)-p->mPosZ)<2200*4096.0)at_stump_area=true;
+    if(!at_stump_area)return false; // original input-only route crosses the bridge first
+    if(p && p->aliveState==1 && s && s->mStepsLeft && !p->mIsNoControl && !p->mIsControlDisabled && !data_0209d660) {
+        const auto tick=ntr::rt_frame();
+        const double dx=double(s->mPosX)-p->mPosX,dz=double(s->mPosZ)-p->mPosZ;
+        const double distance=std::hypot(dx,dz);
+        static uint64_t jump_tick=0,next_jump=0;
+        const char *state=pc_player_state_name(p);
+        const bool ground=!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main");
+        if(ground && tick>=next_jump && distance<260*4096.0) {
+            jump_tick=tick;next_jump=tick+40;
+        }
+        if(jump_tick && tick<jump_tick+10)buttons|=chomp_replay_button(2);
+        if(p->mIsAirborne && distance<18*4096.0 && p->mPosY>s->mPosY+210*4096 &&
+           !std::strcmp(state,"St_Jump_Main"))buttons|=chomp_replay_button(0x400);
+        if(distance>20*4096.0 && std::strcmp(state,"St_GroundPound_Main")) {
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const double magnitude=distance<130*4096.0?12000:22000;
+            sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+            sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+        }
+    } else if(data_0209d660 && ntr::rt_frame()%45<3)buttons=1;
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
+
 static bool trace_script_progress(uint64_t frame)
 {
+    // Opt-in, read-only observations of the original three-actor encounter.
+    if(const char *path=std::getenv("SM64DS_PC_CHOMP_CAPTURE")) {
+        static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
+        const auto tick=ntr::rt_frame();
+        if(file && last!=tick && tick%5==0) {
+            if(last==~uint64_t(0))std::fputs("tick,id,kind,alive,x,y,z,state,step,broken,stump,fence,steps,cooldown,busy,disabled,collision,player_x,player_y,player_z,player_state,airborne,no_control,health,flags,area,camera_x,camera_y,camera_z,clip_result\n",file);
+            last=tick;
+            auto *p=static_cast<Player *>(data_0209f394[0]);
+            for(unsigned kind:{219u,27u,41u})
+            for(auto *a=dActor_c::FindWithActorID(kind,nullptr);a;a=dActor_c::FindWithActorID(kind,a)) {
+                int state=-1,step=-1,broken=-1,stump=-1,fence=-1,steps=-1,cooldown=-1,busy=-1,disabled=-1,collision=-1;
+                if(kind==219) {auto *c=static_cast<daWanwan_c *>(a);state=c->mState;step=c->mReleaseStep;broken=c->mChainBroken;stump=c->mStumpUniqueID;fence=c->mFenceUniqueID;}
+                if(kind==27) {auto *s=static_cast<daObjPile_c *>(a);steps=s->mStepsLeft;cooldown=s->mAttackCooldown;busy=s->mBusy;collision=s->mMeshCollider.IsEnabled();}
+                if(kind==41) {auto *f=static_cast<daObjWanwanShutter_c *>(a);disabled=f->mDisabled;collision=f->mMeshCollider.IsEnabled();}
+                std::fprintf(file,"%llu,%u,%u,%u,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%u,%u,%u,%u,%d,%d,%d,%d,%u\n",
+                    static_cast<unsigned long long>(tick),a->uniqueID,kind,a->aliveState,a->mPosX,a->mPosY,a->mPosZ,state,step,broken,stump,fence,steps,cooldown,busy,disabled,collision,
+                    p?p->mPosX:0,p?p->mPosY:0,p?p->mPosZ:0,pc_player_state_name(p),p?p->mIsAirborne:0,p?p->mIsNoControl:0,p?p->GetHealth():0,
+                    a->mFlags,int(a->mAreaId),a->mCamSpacePosX,a->mCamSpacePosY,a->mCamSpacePosZ,unsigned(a->mClipResult));
+            }
+            std::fflush(file);
+        }
+    }
     // The host callback is paced at presentation FPS (and may repeat a game
     // state), while route diagnostics are specified in simulation ticks.
     trace_actor_census(ntr::rt_frame());
@@ -1036,7 +1183,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

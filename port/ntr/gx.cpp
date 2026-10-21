@@ -795,9 +795,10 @@ void gx_read_toon_table(uint32_t colors[32],bool &highlight) {
 
 void gx_render(Framebuffer &fb) {
     static float depth[SCREEN_H][SCREEN_W];
-    static uint8_t polygon_id[SCREEN_H][SCREEN_W],shadow_mask[SCREEN_H][SCREEN_W];
+    static uint8_t polygon_id[SCREEN_H][SCREEN_W],shadow_mask[SCREEN_H][SCREEN_W],translucent_id[SCREEN_H][SCREEN_W];
     std::memset(polygon_id,0,sizeof(polygon_id));
     std::memset(shadow_mask,0,sizeof(shadow_mask));
+    std::memset(translucent_id,0xff,sizeof(translucent_id));
     for (int y = 0; y < SCREEN_H; ++y)
         for (int x = 0; x < SCREEN_W; ++x) depth[y][x] = 1e30f;
 
@@ -903,7 +904,7 @@ void gx_render(Framebuffer &fb) {
                     if(polygon_id[y][x]==id) { shadow_mask[y][x]=0;continue; }
                     if(!shadow_mask[y][x] || !depth_pass) continue;
                     shadow_mask[y][x]=0;
-                } else if(!depth_pass) continue;
+                } else if(!depth_pass || (pixel_alpha<31 && translucent_id[y][x]==id)) continue;
 
                 // Round, do not truncate: barycentrics sum to 0.9999 rather than
                 // exactly 1, and a truncating cast bands a flat surface 255/254.
@@ -924,6 +925,7 @@ void gx_render(Framebuffer &fb) {
                         (color*(pixel_alpha+1)+((fb.px[y][x]>>sh)&255)*(31-pixel_alpha)+16)/32;
                 };
                 if(!shadow && (pixel_alpha==31 || (source.attributes&(1u<<11)))) depth[y][x] = z;
+                if(!shadow)translucent_id[y][x]=pixel_alpha<31?static_cast<uint8_t>(id):0xff;
                 polygon_id[y][x]=static_cast<uint8_t>(id);
                 fb.px[y][x] = 0xFF000000u | (ch(16) << 16) | (ch(8) << 8) | ch(0);
             }

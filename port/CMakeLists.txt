@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.16)
 project(sm64ds-port C CXX ASM_MASM)
 include(CTest)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+if(WIN32)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/sdl3_dependency.py"
+        "${CMAKE_BINARY_DIR}/controller-deps" RESULT_VARIABLE SDL3_RESULT OUTPUT_VARIABLE SDL3_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT SDL3_RESULT EQUAL 0)
+        message(FATAL_ERROR "Could not prepare the pinned SDL gamepad SDK")
+    endif()
+    file(TO_CMAKE_PATH "${SDL3_SDK}" SDL3_SDK)
+    configure_file("${SDL3_SDK}/lib/x86/SDL3.dll" "${CMAKE_BINARY_DIR}/SDL3.dll" COPYONLY)
+    configure_file("${SDL3_SDK}/LICENSE.txt" "${CMAKE_BINARY_DIR}/SDL3-LICENSE.txt" COPYONLY)
+endif()
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /MAP")
 add_compile_options(/Oy-)
 
@@ -115,10 +125,11 @@ add_library(ntr STATIC
     ntr/texture_assets.cpp
     hal/oam_buffers.asm
     hal/controller_state.asm
-    ntr/io.cpp ntr/gx.cpp ntr/gpu.cpp ntr/gl_software.cpp ntr/texture.cpp ntr/ppu.cpp ntr/video.cpp ntr/input.cpp ntr/lz77.cpp
+    ntr/io.cpp ntr/gx.cpp ntr/gpu.cpp ntr/gl_software.cpp ntr/texture.cpp ntr/ppu.cpp ntr/video.cpp ntr/input.cpp ntr/sdl_gamepad.cpp ntr/lz77.cpp
     ntr/rt.cpp ntr/runtime.cpp ntr/fs.cpp ntr/bmd.cpp ntr/screen_layout.cpp)
 target_include_directories(ntr PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 if(MSVC)
+    target_include_directories(ntr PRIVATE "${SDL3_SDK}/include")
     target_compile_options(ntr PRIVATE /wd4311 /wd4312)
     target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 dxgi d3dcompiler winmm)
 endif()
@@ -127,6 +138,12 @@ endif()
 # continuous mapping into the SM64DS virtual joystick's normalized vector.
 add_executable(smoke_input tests/smoke_input.cpp)
 target_link_libraries(smoke_input PRIVATE ntr)
+if(WIN32)
+    add_executable(smoke_sdl_gamepad tests/smoke_sdl_gamepad.cpp)
+    target_include_directories(smoke_sdl_gamepad PRIVATE "${SDL3_SDK}/include")
+    target_link_libraries(smoke_sdl_gamepad PRIVATE ntr "${SDL3_SDK}/lib/x86/SDL3.lib")
+    add_test(NAME smoke_sdl_gamepad COMMAND smoke_sdl_gamepad)
+endif()
 add_test(NAME smoke_input COMMAND smoke_input)
 add_executable(smoke_sdat tests/smoke_sdat.cpp)
 target_link_libraries(smoke_sdat PRIVATE ntr)
@@ -198,6 +215,7 @@ add_executable(smoke_input_history tests/smoke_input_history.cpp hal/input_state
     "${CMAKE_CURRENT_SOURCE_DIR}/../src/GetAngleToCamera.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/../src/GetPlayerFlagByte.c")
 target_include_directories(smoke_input_history PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_compile_definitions(smoke_input_history PRIVATE SM64DS_PLATFORM_PC)
 add_test(NAME smoke_input_history COMMAND smoke_input_history)
 
 add_executable(smoke_video tests/smoke_video.cpp)
@@ -485,6 +503,7 @@ add_custom_command(OUTPUT "${OV009_IMAGE_CPP}"
             "${PORT_REPO_ROOT_ABS}/config/arm9/overlays/ov009/delinks.txt"
             "${PORT_REPO_ROOT_ABS}/extracted/overlays/overlay_0009.bin"
     COMMENT "Overlay 9 stage-data image and relocations from the local ROM extraction")
+add_executable(smoke_overlay9 tests/smoke_overlay9.cpp "${OV009_IMAGE_CPP}")
 
 # Course data is loaded from the mounted ROM into a separate host image for
 # each level. Emit relocation metadata only; ARM overlay code is never run.
@@ -933,6 +952,8 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/boot_closure.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/buddy_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/tree_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/chomp_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py"
@@ -943,6 +964,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/level_overlay_tables.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/minigame_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/intro_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/goomba_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/reward_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/bombking_host.py"
@@ -969,6 +991,8 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR NOT EXISTS "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/boot_closure.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/buddy_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/tree_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/chomp_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -978,6 +1002,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/minigame_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/intro_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/goomba_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/reward_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/bombking_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -1147,6 +1172,8 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     # recovered callbacks in the production game target; the generic closure
     # does not discover C-linkage factories from profile tables automatically.
     "${PORT_REPO_ROOT_ABS}/src/game/actors/d_a_sound_obj.cpp"
+    # Castle moat and grounds cannon water use mixed actor overlay 9 data.
+    "${PORT_REPO_ROOT_ABS}/src/game/actors/d_a_obj_mc_water.cpp"
     "${PORT_REPO_ROOT_ABS}/src/_ZN6PlayerC1Ev.cpp"
     # Emit the native Player vftable used by PlayerC1's PC-side vtable alias.
     "${PORT_REPO_ROOT_ABS}/src/_ZN6PlayerD1Ev.cpp"
@@ -1241,11 +1268,11 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     hal/cxxname_bridge.cpp hal/game_api_bridge.cpp hal/level_overlay.cpp hal/itcm_math.cpp hal/megachar_stub.cpp
     hal/demo_model_bridge.cpp hal/player_state_callbacks.cpp hal/float_bits.cpp
     hal/pc_session.cpp hal/pc_pause_settings.cpp hal/pc_pause_settings_state.cpp hal/touch_menu_navigation.cpp hal/course_clear_input.cpp hal/stage_options_input.cpp
-    hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp
+    hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp hal/distant_actor_shadows.cpp
     hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
     "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV001_IMAGE_CPP}"
     "${LEVEL_OVERLAY_TABLE_CPP}" "${OV002_DATA_CPP}" "${TITLE_OVERLAY_DATA_CPP}"
-    "${LEVEL_OVERLAY_DATA_CPP}")
+    "${LEVEL_OVERLAY_DATA_CPP}" "${OV009_IMAGE_CPP}")
 target_include_directories(sm64ds_pc BEFORE PRIVATE "${CMAKE_BINARY_DIR}/pc-host-include")
 target_include_directories(sm64ds_pc PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -1347,6 +1374,7 @@ if(BUILD_TESTING)
         smoke_fs
         smoke_actor
         smoke_overlay8
+        smoke_overlay9
         smoke_video)
     foreach(smoke_target IN LISTS PORT_SMOKE_TARGETS)
         add_test(NAME ${smoke_target} COMMAND $<TARGET_FILE:${smoke_target}>)

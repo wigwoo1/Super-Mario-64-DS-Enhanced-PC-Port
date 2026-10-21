@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <utility>
 namespace {
 int failures;
 #define CHECK(value) do { if(!(value)) { std::fprintf(stderr,"FAIL %d: %s\n",__LINE__,#value);++failures; } } while(0)
@@ -101,6 +102,30 @@ int main(int argc,char **argv) {
     CHECK(pixels[(height/2)*width+width/20]==0xffffffff);
     CHECK(pixels[(height/2)*width+width*19/20]==0xffffffff);
     ntr::gpu_set_menu_scene(false);
+    // Peach's letter is 2D ink placed over a perspective panel. Its original
+    // DS coordinates must use the same centered horizontal projection at
+    // every aspect, including native DS and ultrawide, in both GPU backends.
+    static ntr::Framebuffer letter;
+    for(auto &row:letter.px)for(auto &p:row)p=0;
+    for(int y=48;y<144;++y)for(int x=24;x<120;++x)letter.px[y][x]=0xffff0000;
+    for(auto dimensions:{std::pair<unsigned,unsigned>{256,192},{1280,720},{960,400}}) {
+        s.width=dimensions.first;s.height=dimensions.second;setup();
+        ntr::gpu_set_letter_overlay(true);
+        CHECK(ntr::gpu_render(base,nullptr,s,true,&letter.px[0][0]));
+        CHECK(ntr::gpu_readback(pixels,width,height));
+        unsigned left=width,right=0;
+        for(unsigned x=0;x<width;++x)if(pixels[(height/2)*width+x]==0xffff0000) {
+            left=std::min(left,x);right=x;
+        }
+        const double scale=height/192.0;
+        CHECK(std::abs(double(left)-(width-256*scale)/2-24*scale)<=1);
+        CHECK(std::abs(double(right+1)-(width-256*scale)/2-120*scale)<=1);
+        ntr::gpu_set_letter_overlay(false);
+        CHECK(ntr::gpu_render(base,nullptr,s,true,&letter.px[0][0]));
+        CHECK(ntr::gpu_readback(pixels,width,height));
+        CHECK(pixels[(height/2)*width+width/10]==0xffff0000);
+    }
+    s.width=3840;s.height=2160;setup();rectangle(-1,-1,1,1,-2,0x001f10c0,0x7fff);
     CHECK(ntr::gpu_render(base,nullptr,s,true));CHECK(ntr::gpu_readback(pixels,width,height));
     CHECK(pixels[(height/2)*width+width/20]==0xff101820);
     setup();ntr::gx_write_port(0x04000500,0);
@@ -179,11 +204,33 @@ int main(int argc,char **argv) {
         rectangle(-.6f,-.6f,.6f,.6f,-3,0x040f10c0,0x03e0);read();
         CHECK(sample(0)==(update?0xff800080:0xff408040));
     }
+    // DS translucent-ID rejection is per pixel and differs from opaque IDs.
+    // A fading head must hide its later crown/hair layers. IDs0 and63 also
+    // need a validity bit; neither may collide with the cleared stencil.
+    for(unsigned id:{0u,22u,63u}) {
+        setup();rectangle(-.9f,-.9f,.9f,.9f,-4,(id<<24)|0x001f10c0,0x7c00);
+        rectangle(-.6f,-.6f,.2f,.6f,-2,(id<<24)|0x000f10c0,0x001f);
+        rectangle(0,-.6f,.6f,.6f,-3,(id<<24)|0x000f10c0,0x03e0);read();
+        CHECK(sample(.1f)==0xff800080); // Matching opaque ID allows first blend.
+        CHECK(sample(.4f)==0xff008080); // Uncovered pixels of same object draw.
+        setup();floor();rectangle(-.6f,-.6f,.6f,.6f,-4,(id<<24)|0x000f10c0,0x001f);
+        rectangle(-.6f,-.6f,.6f,.6f,-2,(id<<24)|0x000f10c0,0x03e0);read();
+        CHECK(sample(.1f)==0xff80ff80); // Depth failure did not mark the ID.
+    }
+    for(unsigned alpha:{1u,15u,28u,30u}) {
+        setup();floor();rectangle(-.6f,-.6f,.6f,.6f,-2,0x160010c0|(alpha<<16),0x001f);read();
+        const auto once=sample(.1f);
+        rectangle(-.6f,-.6f,.6f,.6f,-1.5f,0x160010c0|(alpha<<16),0x03e0);read();
+        CHECK(sample(.1f)==once); // Repeat IDs are suppressed even when nearer.
+    }
     // Partial texture alpha is split into opaque/translucent pixel passes.
     setup();floor();const uint32_t half_red=0x80ff0000;
     ntr::gx_bind_texture(&half_red,1,1);
     rectangle(-.6f,-.6f,.6f,.6f,-2,0x031f10c0,0x7fff);read();
     CHECK(sample(.4f)==0xffff7878);
+    const auto half_once=sample(.4f);
+    rectangle(-.6f,-.6f,.6f,.6f,-1.5f,0x031f10c0,0x7fff);read();
+    CHECK(sample(.4f)==half_once); // Texel alpha also participates in ID rejection.
     // The same volume rules must work at actual native 4K resolution.
     s.width=3840;s.height=2160;setup();floor();volume();player();read();
     CHECK(sample(0)==0xffff0000 && sample(.4f)==0xff808080);

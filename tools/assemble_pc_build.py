@@ -48,6 +48,16 @@ def main():
     build = ROOT / 'build/port'
     host = build / 'host-src'
     host.mkdir(parents=True, exist_ok=True)
+    for dependency in metadata.get('runtime_dependencies', []):
+        if dependency['id'] != 'sdl3':
+            sys.exit('Unsupported runtime dependency: ' + dependency['id'])
+        sys.path.insert(0, str(ROOT / 'port/tools'))
+        import sdl3_dependency
+        if dependency['version'] != sdl3_dependency.VERSION or dependency['sdk_sha256'] != sdl3_dependency.SHA256:
+            sys.exit('SDL dependency recipe does not match the verified kit')
+        sdk = sdl3_dependency.prepare(build / 'controller-deps')
+        shutil.copyfile(sdk / 'lib/x86/SDL3.dll', build / 'SDL3.dll')
+        shutil.copyfile(sdk / 'LICENSE.txt', build / 'SDL3-LICENSE.txt')
     (ROOT / 'extracted/overlays').mkdir(parents=True, exist_ok=True)
     cartridge = ndspy.rom.NintendoDSRom.fromFile(str(rom))
     (ROOT / 'extracted/arm9_dec.bin').write_bytes(ndspy.codeCompression.decompress(cartridge.arm9))

@@ -11,6 +11,7 @@
 #include "hal/dsmt_scene.h"
 #include "hal/wanted_pause_settings.h"
 #include "hal/touch_menu_navigation.h"
+#include "hal/pc_pause_settings_state.h"
 #include "dScMgLuigi_c.h"
 #include "Player.h"
 extern "C" dScMgBase_c::graphCallback_c data_ov004_020beb74;
@@ -133,6 +134,16 @@ void pc_stage_graph_prepare()
     }
     else {ntr_input_set_menu_navigation(1);pc_dsmt_graph_prepare();}
     pc_touch_menus_prepare();
+    static bool settings_focus=false;
+    const int settings_row=pc_pause_settings_row();
+    if(pc_pause_settings_page()>0 && settings_row>=0) {
+        const int y=pc_pause::row_top+settings_row*pc_pause::row_height;
+        ntr::video_set_menu_focus(8,y,248,y+16);
+        settings_focus=true;
+    } else if(settings_focus) {
+        ntr::video_set_menu_focus(-1,0,0,0);
+        settings_focus=false;
+    }
 #endif
 }
 }

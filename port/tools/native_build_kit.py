@@ -13,7 +13,7 @@ import shutil
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DATA_SOURCES = {'minigame_menu_data.asm', 'dsmt_data.asm', 'pc_link_data.cpp',
                 'romdata.c', 'ov002_data.cpp', 'ov001_image.cpp',
-                'level_overlay_tables.cpp', 'title_overlay_data.cpp',
+                'ov009_image.cpp', 'level_overlay_tables.cpp', 'title_overlay_data.cpp',
                 'level_overlay_data.cpp'}
 SOURCE_ADAPTERS = {'pc_boot_dsmt.cpp', 'pc_title_session.cpp', 'player_render.cpp'}
 
@@ -80,7 +80,9 @@ def main():
     libraries = re.search(r'  LINK_LIBRARIES = (.+)', link_block)[1].split()
     libraries = [x for x in libraries if x.lower() != 'ntr.lib']
     assert all(re.fullmatch(r'[A-Za-z0-9_]+\.lib', x) for x in libraries)
-    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete native port. Original title/file/course entry, Star rewards/course clear, controller menu paths, selected cannon/water-bomb encounters, and selected native-audio scenes are verified in local isolated runs. Native audio remains opt-in and diagnostic; listening fidelity, shared voice/channel behavior and broad scene coverage are incomplete. Entire Map render-distance visual improvement is not yet verified. HD texture replacement, online/download-play VS, other courses/actors and other requested roadmap features remain incomplete.',
+    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete native port. Original title/file/course entry, Star rewards/course clear, controller menu paths, selected cannon/water-bomb encounters, and selected native-audio scenes are verified in local isolated runs. Native audio remains opt-in and diagnostic; listening fidelity, shared voice/channel behavior and broad scene coverage are incomplete. A distant Battlefield Goomba body/shadow is verified in native 4K; Bob-omb body/shadow and red-coin body are verified at720p. Native Chain Chomp, stump/fence release and Star reward, and castle/Battlefield trees have selected runtime checks; broader actor/shadow/course coverage remains incomplete. HD texture replacement, online/download-play VS and other requested roadmap features remain incomplete.',
+                'runtime_dependencies': [{'id': 'sdl3', 'version': '3.2.28',
+                    'sdk_sha256': 'dc8328a923643a19a53e54ca418e8e2ac49f3cf6c95e90bbebf758cd3a00c2fb'}],
                 'prebuilt': prebuilt, 'local_objects': local, 'generators': generators,
                 'system_libraries': libraries, 'root_fallback': 'Compiled local checkout paths replaced with dot; launcher sets SM64DS_ASSET_ROOT.'}
     (kit / 'manifest.json').write_text(json.dumps(metadata, indent=2) + '\n')

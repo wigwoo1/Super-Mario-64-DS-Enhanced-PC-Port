@@ -3175,3 +3175,4 @@ unresolved external symbol _data_ov080_02127834 referenced in function "public: 
 unresolved external symbol "struct Matrix4x3 data_0209b3ec" (?data_0209b3ec@@3UMatrix4x3@@A) referenced in function "public: void __thiscall daPicGate_c::func_ov080_02125fd0(void)" (?func_ov080_02125fd0@daPicGate_c@@QAEXXZ)
 unresolved external symbol "char * data_ov080_021277a8" (?data_ov080_021277a8@@3PADA) referenced in function "public: void __thiscall daPicGate_c::func_ov080_02125de0(int,int,int)" (?func_ov080_02125de0@daPicGate_c@@QAEXHHH@Z)
 unresolved external symbol _data_ov002_0210d7f4 referenced in function "public: virtual int __thiscall daObjCannonShutter_c::InitResources(void)" (?InitResources@daObjCannonShutter_c@@UAEHXZ)
+unresolved external symbol _data_ov002_0210d874 referenced in function daObjPile_c::InitResources

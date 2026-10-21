@@ -15,6 +15,7 @@ bool gpu_render(const Framebuffer &base, const uint32_t *minimap,
                 bool engine_a_on_top = true, bool cache_gameplay = false);
 // Screen-authored menus use their original full-frame projection.
 void gpu_set_menu_scene(bool active);
+void gpu_set_letter_overlay(bool active);
 bool gpu_present(unsigned width, unsigned height, bool preserve_aspect = false);
 bool gpu_readback(std::vector<uint32_t> &pixels, unsigned &width, unsigned &height);
 // Last gameplay frame before the minimap was composited; read only on editor entry.

@@ -71,7 +71,7 @@ GLuint gameplay_image=0,gameplay_framebuffer=0;
 unsigned gameplay_width=0,gameplay_height=0;
 GLint u_polygon=-1,u_alpha=-1,u_pass=-1,u_mode=-1,u_toon=-1,u_highlight=-1;
 unsigned target_width=0,target_height=0,triangle_count=0;
-bool menu_scene=false,force_scan=false,readback_ready=false;
+bool menu_scene=false,letter_overlay=false,force_scan=false,readback_ready=false;
 float max_aniso=1;uint8_t anisotropic=0;
 char adapter_name[200]={};
 std::vector<uint32_t> readback_pixels,raw_pixels;
@@ -233,7 +233,8 @@ bool geometry(bool dual) {
         } else {
             gl.DepthMask(!pass||(d.attributes&(1u<<11))?GL_TRUE:GL_FALSE);
             if(pass)gl.Enable(GL_BLEND);else gl.Disable(GL_BLEND);
-            gl.StencilMask(0x3f);gl.StencilFunc(GL_ALWAYS,id,0x3f);gl.StencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);emit();
+            gl.StencilMask(0xbf);gl.StencilFunc(pass?GL_NOTEQUAL:GL_ALWAYS,pass?(0x80|id):id,0xbf);
+            gl.StencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);emit();
         }
     }
     gl.PolygonMode(GL_FRONT_AND_BACK,GL_FILL);
@@ -380,6 +381,7 @@ void close_worker() {
     readback_pixels.clear();raw_pixels.clear();readback_ready=false;anisotropic=0;stats={};
 }
 void glsw_set_menu_scene(bool active){menu_scene=active;}
+void glsw_set_letter_overlay(bool active){letter_overlay=active;}
 void glsw_set_anisotropic_filtering(uint8_t value){anisotropic=value==2||value==4||value==8||value==16?uint8_t(std::min<float>(value,max_aniso)):0;}
 uint8_t glsw_anisotropic_filtering(){return anisotropic;}
 bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,
@@ -402,7 +404,9 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
     if(draw_geometry&&!geometry(screens!=nullptr))return false;
     if(draw_geometry&&foreground){
         gl.BindTexture(GL_TEXTURE_2D,base_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,foreground);
-        overlay_state(true);quad(base_image);
+        const float aspect=letter_overlay && !screens && !menu_scene
+            ? float(SCREEN_W)*s.height/(float(SCREEN_H)*s.width) : 1.0f;
+        overlay_state(true);quad(base_image,false,-aspect,1,aspect,-1);
     }
     if(screens){
         if(!sub)return false;

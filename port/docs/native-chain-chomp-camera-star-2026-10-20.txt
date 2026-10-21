@@ -1,0 +1,59 @@
+Native Chain Chomp release camera and fenced Star - 2026-10-20
+Status: VERIFIED for the release camera and first original-Star collection.
+Not installed or published as a build kit. See remaining checks below.
+
+The recovered camera tracking branch in func_02009e70 skips the ordinary eye
+distance/collision work when an actor target is present. Chomp's release keeps
+that target active while jumping toward the fixed eye. The native release
+therefore produced a mouth-filling close-up during phase 6.
+
+PC-only presentation safeguard in port/tools/camera_host.py: while a live,
+released Chomp is in state 3/phases 0..8 and the player is under no-control,
+extend the temporary render eye to frame a conservative 350-world-unit radius
+(the original head shadow footprint) using the original camera half-FOV.
+Preserve the original look target and tracking state. Trace the eye extension
+with the original camera background filter and retain 32 units of clearance
+from blocking scenery. This is an intentional PC presentation adjustment,
+not a claim of byte-identical retail camera behavior. Gameplay state, actor
+scale, release timers, stump damage and fence breaking are not overridden.
+
+port/tools/chomp_host.py supplies a read-only live target query; it does not
+cache actor pointers across destruction/course changes. The original camera's
+one-frame target is cleared in Behavior, so it cannot be reused at Render.
+Matched src/ and include/ were not changed for this repair.
+
+Final native EXE SHA256:
+6b999105975dbfe3f0f667e71ef9851800f1b88d3bf3cf0afb124b5bc8cfdccd
+Release build PASS;56/56 CTest PASS (58.29 seconds);2 camera and5 Chomp adapter
+tests PASS; native actor/camera profile/callback/mode-table audit PASS.
+
+Private isolated-save runtime acceptance:
+- Original title/File A/castle/mission 1 route, then one explicitly logged QA
+  travel of Yoshi onto the original stump. All subsequent actions are ordinary
+  mapped input. No actor, hit, camera, Star or save credit is injected.
+- Three ground pounds at5750/5835/6170 sink the stump by60 units each.
+- Fence breaks/disables its collider at6860; Chomp removed after7120.
+- Original encounter actor trajectory, stump steps and fence state match the
+  previous build. Camera-dependent visibility/collider registration differs;
+  Yoshi remains about20 units higher on the stump after6830, alive and controlled.
+-159 render-eye adjustments; none terrain-blocked in this route. Minimum
+  corrected eye-to-head distance705.21 world units. Captures show an exterior
+  head view, visible fence break and the exposed Star. The view remains a close
+  shot and can crop the head near an edge; it no longer intersects the mouth.
+- Normal stick movement crosses the opened fence and a jump collects original
+  Star UID186/param7 at7327. Star states4->5->6->7, course mask0x02->0x82, total
+  Stars1->2. Exactly one credit through10000 ticks. Castle return at7615, then
+  the normal course-clear/save prompt. This run intentionally leaves that prompt
+  awaiting input; on-disk isolated saves remain unchanged.
+- Runtime cases exit0. Final build's release screenshots are pixel-identical
+  to the standalone release-camera run at5200/6500/6800/6860/6900.
+
+Remaining checks suitable for a lower model:
+1. Accept Save & Continue at the original course-clear menu, reload the saved
+   game, and verify the fenced Star's credit persists.
+2. Re-enter the course, repeat release/collection and verify no duplicate credit.
+3. Verify installation/rollback on F: after those checks; then refresh the
+   ROM-free kit with the required fresh-folder reconstruction/runtime workflow.
+Natural approach from spawn, alternate release camera angles, terrain-blocked
+extension and isolated distant Chomp shadow pixels are not accepted here.
+No user ROM/save, F: installation, public repository or release was modified.

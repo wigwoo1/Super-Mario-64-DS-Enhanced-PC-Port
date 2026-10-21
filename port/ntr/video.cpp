@@ -8,6 +8,7 @@
 #include "ntr/rt.h"
 #include "ntr/texture.h"
 #include "ntr/minimap_drag.h"
+#include "ntr/menu_focus.h"
 
 #include <algorithm>
 #include <array>
@@ -46,6 +47,7 @@ bool g_editor_suppress_pointer=false;
 uint64_t g_editor_cache_tick=~uint64_t(0);
 MinimapDrag g_editor_drag;
 bool g_minimap_gameplay = false;
+bool g_cutscene_letter = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
 bool g_minigame_active = false;
@@ -376,6 +378,7 @@ void video_close() {
 #endif
     g_open = false;
     g_minigame_active = false;
+    video_set_cutscene_letter(false);
     g_output.clear();
 }
 
@@ -384,7 +387,8 @@ VideoSettings video_get_settings() { return g_settings; }
 const char *video_renderer_notice() {return g_renderer_failed?"OPENGL CPU UNAVAILABLE":"";}
 
 bool video_load_settings(const char *path) {
-    const char *filename = path && path[0] ? path : "sm64ds_pc.ini";
+    const char *filename = path && path[0] ? path : std::getenv("SM64DS_PC_SETTINGS_FILE");
+    if(!filename || !*filename)filename="sm64ds_pc.ini";
     FILE *file = std::fopen(filename, "rb");
     if (!file) return false;
 
@@ -402,6 +406,7 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line, "height") == 0) loaded.height = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "target_fps") == 0) loaded.target_fps = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "camera_zoom") == 0) loaded.camera_zoom = value<=3 ? static_cast<uint8_t>(value) : 0;
+        else if (std::strcmp(line, "camera_mode") == 0) loaded.camera_mode = value<=1 ? static_cast<uint8_t>(value) : 0;
         else if (std::strcmp(line, "always_run") == 0) loaded.always_run = value == 1;
         else if (std::strcmp(line, "render_distance") == 0) loaded.render_distance = value<=3 ? static_cast<RenderDistance>(value) : RenderDistance::Minimum;
         else if (std::strcmp(line, "stay_in_stage_after_star") == 0) loaded.stay_in_stage_after_star = value == 1;
@@ -438,7 +443,8 @@ bool video_load_settings(const char *path) {
 }
 
 bool video_save_settings(const char *path) {
-    const char *filename = path && path[0] ? path : "sm64ds_pc.ini";
+    const char *filename = path && path[0] ? path : std::getenv("SM64DS_PC_SETTINGS_FILE");
+    if(!filename || !*filename)filename="sm64ds_pc.ini";
     char temporary[1024];
     const int length = std::snprintf(temporary, sizeof(temporary), "%s.tmp", filename);
     if (length < 0 || static_cast<size_t>(length) >= sizeof(temporary)) return false;
@@ -447,7 +453,7 @@ bool video_save_settings(const char *path) {
     const bool write_ok = std::fprintf(file,
         "width=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
-        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\ncamera_zoom=%u\nalways_run=%u\nrender_distance=%u\n",
+        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n",
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
         static_cast<unsigned>(g_settings.minimap_scale),
@@ -457,7 +463,7 @@ bool video_save_settings(const char *path) {
         g_settings.minimap_hide_touch_target ? 1u : 0u,
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
-        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance)) >= 0;
+        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance)) >= 0;
     const bool close_ok = std::fclose(file) == 0;
     if (!write_ok || !close_ok) { std::remove(temporary); return false; }
 #if defined(_WIN32)
@@ -514,6 +520,7 @@ uint16_t video_minimap_angle(uint16_t camera_heading) {
 }
 
 void video_set_minimap_gameplay(bool active) {
+    if (!active) video_set_cutscene_letter(false);
     if(!active && g_minimap_gameplay) {
         g_editor_map_ready=false;g_editor_background.clear();g_editor_cache_tick=~uint64_t(0);
     }
@@ -523,7 +530,14 @@ void video_set_menu_focus(int left,int top,int right,int bottom) {
     g_focus_left=left;g_focus_top=top;g_focus_right=right;g_focus_bottom=bottom;
 }
 bool video_minimap_visible() {
-    return g_settings.minimap && g_minimap_gameplay && !g_pause_screen && !g_minigame_active;
+    return g_settings.minimap && g_minimap_gameplay && !g_pause_screen && !g_minigame_active && !g_cutscene_letter;
+}
+void video_set_cutscene_letter(bool active) {
+    if(g_cutscene_letter!=active && std::getenv("SM64DS_PC_INTRO_TRACE"))
+        std::fprintf(stderr,"[intro letter] tick=%llu active=%u\n",
+            static_cast<unsigned long long>(rt_frame()),active?1u:0u);
+    g_cutscene_letter = active;
+    gpu_set_letter_overlay(active);
 }
 void video_set_pause_screen(bool active, bool custom_settings) {
     if(active && !g_pause_screen && g_minimap_gameplay && g_gpu) {
@@ -788,10 +802,7 @@ bool video_present_frame() {
     if(video_bottom_objects_visible()) ppu_scanout_obj(ENGINE_B, g_bottom);
     if(g_focus_left>=0) {
         auto draw_focus=[&](Framebuffer &frame) {
-            const int l=std::clamp(g_focus_left-2,0,255),r=std::clamp(g_focus_right+2,0,255);
-            const int t=std::clamp(g_focus_top-2,0,191),b=std::clamp(g_focus_bottom+2,0,191);
-            for(int x=l;x<=r;++x){frame.px[t][x]=0xffffdc40;frame.px[b][x]=0xffffdc40;}
-            for(int y=t;y<=b;++y){frame.px[y][l]=0xffffdc40;frame.px[y][r]=0xffffdc40;}
+            draw_menu_focus(frame,g_focus_left,g_focus_top,g_focus_right,g_focus_bottom);
         };
         if(engine_a_on_top)draw_focus(g_bottom);
         else {draw_focus(g_top);draw_focus(g_foreground);foreground_mask|=1;}
@@ -938,3 +949,7 @@ bool video_present_frame() {
 }
 
 }  // namespace ntr
+
+extern "C" void pc_cutscene_letter_state(int active) {
+    ntr::video_set_cutscene_letter(active != 0);
+}

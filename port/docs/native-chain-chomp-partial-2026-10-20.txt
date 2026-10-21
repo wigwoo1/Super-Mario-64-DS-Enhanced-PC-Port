@@ -1,0 +1,61 @@
+Native Chain Chomp integration - 2026-10-20
+Status: PARTIALLY VERIFIED. Local diagnostic build; not promoted to installation.
+
+Recovered original actors now bound to native factories:
+  219 daWanwan_c, 27 daObjPile_c, 41 daObjWanwanShutter_c.
+port/tools/chomp_host.py reads original profile/callback records from the local
+ROM and emits native build copies. Twelve callbacks use native eight-byte
+records; the six state rows retain their original 20-byte stride. Resource
+construction is deferred until the filesystem is ready. Chomp uses its native
+C++ constructor instead of installing an ARM vtable. Its raw-offset layout is
+pinned at0x620. Stump/fence explicitly pin MSVC base-tail-padding divergence;
+both their own methods and Chomp access those extra fields by native names.
+Matched src/ and include/ files were not edited for this milestone.
+
+The original distance gate kept newly loaded Chomp/stump/fence hidden until
+first visiting retail range. The PC adapter allows a first distant draw only
+for these three profiles, in a showing area with a valid camera-space position.
+It restores all original flags after drawing. Distant head/link placement and
+shadow preparation use the original visual worker, preserving AI, collisions,
+release timers and shadow-queue guards. Unrelated actors retain their existing
+hide-bit behavior, including changes made during their own Render methods.
+
+Reviewed EXE SHA256:
+1f908bd828062d7f7bc9553fb1cd29868431e0d58f284152e505537c0d115979
+Native Release build passed.56/56 CTest passed44.95s.5/5 Chomp host tests and
+6/6 Goomba host tests passed. PE audit verifies all three original profiles,
+native factory addresses and twelve Chomp callback targets/adjustments.
+One symbol-only CLPS dependency added to build-support metadata. Fresh local
+link-data generation is byte-identical to the development output. This is not
+a fresh full kit reconstruction; no new public kit/release was produced.
+
+Private isolated runtime evidence (kept outside the public export):
+Paired Minimum/Entire Map spawn replays both exit0, with1477 identical actor
+gameplay observations and1101 identical scene/player records. At tick5200 the
+Chomp submits182 clipped triangles and646 changed pixels in its landmark ROI.
+Original zoom crops the elevated Chomp at the upper edge; existing wider zoom
+settings show more of it. Chomp shadow pixels were not separately accepted.
+The reviewed build's tick5200 capture is pixel-identical to that paired check.
+
+Reviewed8500tick original title/File A/castle/mission1 replay exits0. A single
+explicit QA travel moves only Yoshi onto the original stump at5500; subsequent
+actions are original mapped controller input. It does not inject stump hits,
+health, release state, camera state, save flags or actor placement. Three real
+ground pounds sink the stump by60units each at5750/5835/6170. The original
+release sequence breaks the fence at6860, disables its collider, removes Chomp
+after7120, and restores normal living-player idle/control (health5). The
+original fenced Power Star remains available. Isolated save hashes unchanged.
+Natural approach navigation and collecting that Star were not accepted here.
+Earlier direct/lower routes hit terrain; don't keep guessing route coordinates.
+The seed uses Dual-Hand controls; QA buttons resolve through the live original
+control map instead of assuming Standard DS bits.
+
+Remaining visual failure: release phase6 can place the rendered eye inside the
+Chomp mouth (reviewed tick6800). Gameplay/cutscene completion succeeds, but the
+camera needs investigation before installation. Inspect the original tracked
+actor at camera+0x118, fixed-eye behavior, actor/model coordinate scales, face
+culling and safe camera clearance. Do not shrink the model or rewrite cutscene
+state without evidence. Replay and capture the fence break, player-control
+return, original Star collection and course reentry after repairing the view.
+Recommended next model: Astra Low for that focused native-camera investigation.
+F: remains on the previously verified43772095 build; no user saves/ROM changed.

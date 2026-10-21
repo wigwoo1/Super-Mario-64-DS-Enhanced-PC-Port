@@ -1,0 +1,54 @@
+NATIVE TREES - VERIFIED - 2026-10-21
+
+Native TREE actor286 is registered using the original ov002 profile and all
+five locally reconstructed resource IDs. Variant4 is a valid compressed member
+of ar1.narc (0x9c10); variants0..3 use normal file handles. Lists, billboard
+rendering, opacity fading and cylinders use recovered game behavior. Native
+actor/model/node layouts are compile-time checked (0x264/0x50/0x4c).
+The native adapter constructs dCcPos_c with placement new and owns canonical
+shared-list storage. Rejected duplicate actor instances leave their nodes with
+the first resource owner, as in the original. Cleanup frees only owned variants.
+Trees use the existing Minimum/Low/Medium/Entire Map render-distance policy;
+frustum/area tests and the original close fade remain active.
+
+The first real grab exposed Player's DS slot2 GetPos calls: native MSVC's single
+destructor puts that method at another slot. tree_host.py binds the contact,
+climb entry/main and handstand paths through typed dCc_c::GetPos calls.
+A trunk jump then exposed St_WallJump_Main's raw ARM character callback target.
+It now uses the existing checked pc_player_jump_callback native resolver, as
+normal jumps already do. Matched src/include and game assets are unchanged.
+
+Build: explicit CMake regeneration, all default targets plus sm64ds_pc pass.
+CTest58/58 passes. An earlier controller smoke picked a connected physical Xbox
+instead of its virtual Switch fixture; an isolated rerun passed, then the final
+full suite also passed58/58. This is not a physical-controller acceptance test.
+Executable SHA256:24A3D2F33E880D03069723A56F3A8FEEA85666CFE3018FF540F1D29EE645EC31.
+
+Runtime, final executable, isolated saves/preferences:
+- Castle complete5700 ticks, exit0: actual input-only approach and airborne grab,
+  sustained climb to full500-unit height, headstand, SideFlip jump and landing;
+  ends Wait with attachment0 and normal control. Screens4000/4500 show climb
+  and headstand. Earlier ground-level grabs intentionally drop back to walking;
+  they were not accepted as sustained-climb coverage.
+- Trunk jump pulses5700 ticks, exit0: actual Climb -> WallJump -> Land, twice,
+  no guest-address execution; ends Wait with attachment0.
+- Original castle -> inside -> Battlefield, exit -> inside -> Battlefield again:
+  11000 ticks, exit0. All21 castle nodes cleaned. Battlefield17 nodes loaded,
+  all17 cleaned on exit,17 freshly loaded on re-entry (two resource owners over
+  two entries). Return8097/re-entry9070/completion9176. Screens6500/10500 show
+  visible native trees before/after re-entry. No direct scene or actor injection
+  for tree acceptance; the existing water-bomb replay controls its other fixture.
+- Native1280x720 D3D11 gameplay. Installed F: executable also passed a fresh
+  4000-tick3840x2160 D3D11 intro, exit0; screenshots2500/3500/3900 inspected.
+  The repaired Peach letter/crown, castle trees and moat water are visible.
+  No FPS measurement is claimed. OpenGL/software tree runtime, additional tree
+  variants/courses, physical pad input and audio are not newly accepted.
+
+Private evidence: work/native-trees-20261021/acceptance.json and runtime folders.
+Install script backs up the previous B8C99098... build and reviewed source files,
+verifies new copies, and checks unchanged ROM, user saves and main settings.
+See installation.json for installation outcome; this file alone is not proof
+that F: installation completed. Current full executables remain private.
+Next: Luna Medium is suitable for bounded renderer/Battlefield tree regressions.
+The full PC-port goal remains incomplete. Added the user's Original/Brain Rot
+text toggle and original-font/border settings restyle to the settings plan.

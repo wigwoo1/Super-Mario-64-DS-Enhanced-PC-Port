@@ -152,6 +152,12 @@ def transform(text):
     text = minigame_host.transform(text)
     minigame_hooks = 0
     if text != original: minigame_hooks += 1
+    if 'int dScStage_c::Render() {' in text and 'pc_prepare_extended_shadows();' not in text:
+        shadow_drain='    dExtShadowModel_c::RenderAll();'
+        if text.count(shadow_drain)!=1: raise ValueError('Stage shadow drain changed')
+        text='extern "C" void pc_prepare_extended_shadows();\n'+text.replace(
+            shadow_drain,'    pc_prepare_extended_shadows();\n'+shadow_drain)
+        minigame_hooks+=1
     if 'int func_0205f9ac(int a, int b) {' in text and 'pc_backlight_sync' not in text:
         # DS synchronous backlight commands wait for an ARM7 FIFO reply.
         # PC has no second processor/physical DS backlights. Keep the SDK's

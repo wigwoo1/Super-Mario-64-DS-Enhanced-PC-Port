@@ -24,6 +24,21 @@ class CameraHostTests(unittest.TestCase):
         self.assertIn('player+0x6ce) &= ~4u', adapted)
         self.assertIn('recenter_from_no_control',adapted)
         self.assertIn('recenter-exit tick=',adapted)
+        self.assertIn('settings.camera_mode==1',adapted)
+        self.assertIn('input_take_camera_mode()',adapted)
+        self.assertIn('[camera mode] tick=',adapted)
+        self.assertIn('settings.camera_mode^=1',adapted)
+        self.assertIn('input.right_x',adapted)
+        self.assertIn('input.right_y',adapted)
+        self.assertIn('native_eye={camera->pos.x,camera->pos.y,camera->pos.z}',adapted)
+        self.assertIn('distance=%.2f angle=',adapted)
+        self.assertIn('pc_camera_set_movement_yaw_offset(static_cast<short>', adapted)
+        self.assertIn('input.right_x)/32767.0*0.052', adapted)
+        self.assertIn('input.right_y)/32767.0*0.035', adapted)
+        self.assertIn('distance_floor=std::max(distance_floor,std::min(native_distance,max_gameplay_distance))', adapted)
+        self.assertIn('distance_floor*4.0/denominator[settings.camera_zoom]', adapted)
+        self.assertIn('(1.5707963267948966-orbit_yaw)*65536.0/6.283185307179586', adapted)
+        self.assertIn('max_gameplay_distance=900.0*4096.0', adapted)
 
     def test_changed_anchor_is_rejected(self):
         with self.assertRaises(ValueError):

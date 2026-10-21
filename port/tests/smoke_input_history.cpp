@@ -8,6 +8,7 @@ extern unsigned char data_020a1154[], data_020a1160[], data_020a1162[], data_020
 void func_0203dafc(int angle);
 void func_0203e0ac();
 short GetAngleToCamera(int player);
+void pc_camera_set_movement_yaw_offset(short offset, int active);
 unsigned char GetPlayerFlagByte(int player,int index);
 }
 int main() {
@@ -37,5 +38,10 @@ int main() {
         std::memcpy(data_020a1154+player*0x24+0x10,&heading,2);
     }
     for(int player=0;player<4;++player)if(GetAngleToCamera(player)!=-23000+player*11000)return 5;
-    std::puts("PASS: original camera setter -> offline history -> four camera-angle/key/flag readers share complete records");
+    pc_camera_set_movement_yaw_offset(8192,1);
+    if(GetAngleToCamera(0)!=-14808)return 6;
+    for(int player=1;player<4;++player)if(GetAngleToCamera(player)!=-23000+player*11000)return 7;
+    pc_camera_set_movement_yaw_offset(0,0);
+    for(int player=0;player<4;++player)if(GetAngleToCamera(player)!=-23000+player*11000)return 8;
+    std::puts("PASS: original camera history and PC free-camera movement yaw remain isolated to player 0");
 }

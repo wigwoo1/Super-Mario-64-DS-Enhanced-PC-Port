@@ -4,6 +4,8 @@
 #include <cstring>
 
 namespace pc_pause {
+static constexpr Page pages[]={Page::Display,Page::Graphics,Page::Map,
+    Page::Position,Page::Save,Page::Screens,Page::Gameplay};
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks) {
     uint16_t pressed = keys & ~previous;
     previous = keys;
@@ -18,10 +20,12 @@ uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &t
 }
 void Menu::reset(uint16_t held) { *this = Menu{}; previous = held; }
 unsigned Menu::rows() const {
+    if(page==Page::Display) return 4;
+    if(page==Page::Map) return 5;
     if(page==Page::Position || page==Page::Save) return 2;
     if(page==Page::Graphics) return 3;
     if(page==Page::Screens) return 1;
-    return 3;
+    return page==Page::Gameplay ? 4 : 3;
 }
 
 Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
@@ -39,8 +43,9 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         page = Page::Display; row = 0; return Action::None;
     }
     if (edge & 0x300) {
-        int next = static_cast<int>(page) + ((edge & 0x100) ? 1 : -1);
-        page = static_cast<Page>(next > 8 ? 1 : next < 1 ? 8 : next);
+        unsigned current=0;
+        while(current<7 && pages[current]!=page) ++current;
+        page=pages[(current+(edge & 0x100 ? 1 : 6))%7];
         row = 0; return Action::None;
     }
     if(page==Page::Save) {
@@ -60,6 +65,7 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
             ? (s.target_fps == 60 ? 120 : s.target_fps == 120 ? 240 : 60)
             : (s.target_fps == 60 ? 240 : s.target_fps == 240 ? 120 : 60);
         if (row == 2) s.texture_quality = ntr::texture_cycle_quality(s.texture_quality,direction);
+        if (row == 3) s.upscale_2d = !s.upscale_2d;
         break;
     case Page::Visual:
         if (row == 0) s.upscale_2d = !s.upscale_2d;
@@ -85,6 +91,8 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         if (row == 0) s.minimap_opacity = static_cast<uint8_t>(step(s.minimap_opacity, 16, 0, 255));
         if (row == 1) s.minimap_scale = static_cast<uint16_t>(step(s.minimap_scale, 10, 100, 500));
         if (row == 2) s.minimap_hide_touch_target = !s.minimap_hide_touch_target;
+        if (row == 3) s.minimap = !s.minimap;
+        if (row == 4) s.minimap_rotate_with_player = !s.minimap_rotate_with_player;
         break;
     case Page::Screens:
         s.minigame_layout=static_cast<ntr::MinigameLayout>((static_cast<unsigned>(s.minigame_layout)+(direction>0?1:2))%3);
@@ -92,7 +100,8 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
     case Page::Gameplay:
         if(row==0) s.stay_in_stage_after_star = !s.stay_in_stage_after_star;
         else if(row==1) s.camera_zoom=static_cast<uint8_t>((s.camera_zoom+(direction>0?1:3))%4);
-        else s.always_run=!s.always_run;
+        else if(row==2) s.always_run=!s.always_run;
+        else s.camera_mode^=1;
         break;
     case Page::Position:
         if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000-s.minimap_scale));
@@ -114,6 +123,7 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         if (i==1) std::snprintf(out,size,"FRAME RATE %u FPS",s.target_fps);
         if (i==2) std::snprintf(out,size,"TEXTURES %s%s",ntr::texture_quality_name(s.texture_quality),
             s.texture_quality==ntr::TextureQuality::Upscaled?" - NO PACK":"");
+        if (i==3) std::snprintf(out,size,"2D SCALING %s",s.upscale_2d?"CRISP":"SMOOTH");
         break;
     case Page::Visual:
         if (i==0) std::snprintf(out,size,"2D SCALING %s",s.upscale_2d?"CRISP":"SMOOTH");
@@ -132,6 +142,8 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         if (i==0) std::snprintf(out,size,"OPACITY %u%%",(unsigned(s.minimap_opacity)*100+127)/255);
         if (i==1) std::snprintf(out,size,"MAP SIZE %u%%",s.minimap_scale/10);
         if (i==2) std::snprintf(out,size,"HIDE TOUCH TARGET %s",s.minimap_hide_touch_target?on:off);
+        if (i==3) std::snprintf(out,size,"MINIMAP %s",s.minimap?on:off);
+        if (i==4) std::snprintf(out,size,"MAP ROTATION %s",s.minimap_rotate_with_player?"CAMERA":"UPRIGHT");
         break;
     case Page::Position:
         std::snprintf(out,size,"MAP %s POSITION %u%%",i==0?"X":"Y",
@@ -141,9 +153,10 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
     case Page::Screens:
         std::snprintf(out,size,"MINIGAME VIEW %s",ntr::screen_layout_name(s.minigame_layout));break;
     case Page::Gameplay:
-        if(i==0) std::snprintf(out,size,"%s",s.stay_in_stage_after_star?"STAY IN STAGE":"RETURN TO CASTLE");
+        if(i==0) std::snprintf(out,size,"STAY AFTER STAR %s",s.stay_in_stage_after_star?on:off);
         else if(i==1) std::snprintf(out,size,"CAMERA ZOOM %s",s.camera_zoom==1?"0.75X":s.camera_zoom==2?"0.5X":s.camera_zoom==3?"0.25X":"ORIGINAL");
-        else std::snprintf(out,size,"ALWAYS RUN %s",s.always_run?on:off);break;
+        else if(i==2) std::snprintf(out,size,"ALWAYS RUN %s",s.always_run?on:off);
+        else std::snprintf(out,size,"CAMERA %s",s.camera_mode?"FREE":"PRESET");break;
     }
 }
 
@@ -176,28 +189,71 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     auto *dot_tiles=chars+0x4000+0x50*64;
     for(unsigned y=12;y<14;++y) for(unsigned x=3;x<5;++x)
         dot_tiles[y*4+x/2]|=ink<<((x&1)*4);
+    // Center visible ink at pixel precision, including odd-length labels and
+    // the font's asymmetric blank bearings. Deduplicate composed8x16 cells
+    // within Message's existing256-tile scratch area (127cells + blank tiles).
+    unsigned char glyphs[0x51*64];
+    std::memcpy(glyphs,chars+0x4000,sizeof(glyphs));
+    std::memset(chars+0x4000,0,0x2000);
     std::fill(text,text+1024,0x2ff);
     std::fill(panels,panels+1024,blank_panel);
-    auto line = [text](const char *label, unsigned y) {
+    unsigned cells=0;
+    auto line = [text,chars,&glyphs,&cells](const char *label, unsigned y) {
         const unsigned count = std::min<size_t>(std::strlen(label),30);
-        const unsigned x = (32-count)/2;
-        for (unsigned i=0;i<count;++i) {
-            const unsigned tile = 0x200+glyph(label[i])*2;
-            text[y*32+x+i] = static_cast<uint16_t>(tile);
-            text[(y+1)*32+x+i] = static_cast<uint16_t>(tile+1);
+        auto ink=[&](unsigned i,unsigned x,unsigned py) {
+            const auto pair=glyphs[glyph(label[i])*64+py*4+x/2];
+            return unsigned((pair>>((x&1)*4))&15);
+        };
+        int left=256,right=-1,top=16,bottom=-1;
+        for(unsigned i=0;i<count;++i)for(unsigned py=0;py<16;++py)for(unsigned x=0;x<8;++x)
+            if(ink(i,x,py)) {
+                left=std::min(left,int(i*8+x));right=std::max(right,int(i*8+x));
+                top=std::min(top,int(py));bottom=std::max(bottom,int(py));
+            }
+        if(right<left)return;
+        const int offset_x=(256-(right-left+1))/2-left;
+        const int offset_y=(16-(bottom-top+1))/2-top;
+        unsigned char raster[16][128]{};
+        for(unsigned i=0;i<count;++i)for(unsigned py=0;py<16;++py)for(unsigned x=0;x<8;++x)
+            if(const auto color=ink(i,x,py)) {
+                const int dx=int(i*8+x)+offset_x,dy=int(py)+offset_y;
+                if(dx>=0 && dx<256 && dy>=0 && dy<16)
+                    raster[dy][dx/2]|=static_cast<unsigned char>(color<<((dx&1)*4));
+            }
+        for(unsigned x=0;x<32;++x) {
+            unsigned char cell[64];bool visible=false;
+            for(unsigned py=0;py<16;++py)for(unsigned bx=0;bx<4;++bx) {
+                cell[py*4+bx]=raster[py][x*4+bx];visible|=cell[py*4+bx]!=0;
+            }
+            if(!visible)continue;
+            unsigned slot=0;
+            while(slot<cells && std::memcmp(chars+0x4000+slot*64,cell,64))++slot;
+            if(slot==cells) {
+                if(cells==127)continue; // never overwrite scratch/blank tiles
+                std::memcpy(chars+0x4000+cells++*64,cell,64);
+            }
+            text[y*32+x]=static_cast<uint16_t>(0x200+slot*2);
+            text[(y+1)*32+x]=static_cast<uint16_t>(0x201+slot*2);
         }
     };
     char label[64];
-    if (m.page==Page::Options) line("OPTIONS",1);
-    else { std::snprintf(label,sizeof(label),"PC SETTINGS %u/8",static_cast<unsigned>(m.page)); line(label,1); }
-    if(m.page==Page::Gameplay) line("R3 CYCLES CAMERA ZOOM",18);
+    if (m.page==Page::Options) line("OPTIONS",0);
+    else {
+        unsigned index=0;while(index<7 && pages[index]!=m.page)++index;
+        const char *names[]={"DISPLAY","GRAPHICS","MINIMAP","MAP POSITION","SAVE","SCREENS","GAMEPLAY"};
+        std::snprintf(label,sizeof(label),"%s %u/7",index<7?names[index]:"VISUAL",index+1);
+        line(label,0);
+    }
+    if(m.page==Page::Gameplay) line("R3 CYCLES CAMERA ZOOM",15);
     if(m.page==Page::Screens) line("TOP 75%  BOTTOM 25%",15);
     if(m.page==Page::Graphics && ntr::video_renderer_notice()[0])line(ntr::video_renderer_notice(),15);
+    // The caller caches a complete four-row button from its native position.
+    // Keep its top and bottom bevels; omit the two middle rows to fit16px.
     for (unsigned i=0;i<m.rows();++i) {
-        const unsigned y=4+i*5;
-        for (unsigned j=0;j<128;++j)
-            panels[y*32+j] = static_cast<uint16_t>((panel[j]&0x0fff)|(i==m.row?0x2000:0x1000));
-        m.line(i,s,label,sizeof(label)); line(label,y+1);
+        const unsigned y=row_top/8+i*row_height/8;
+        for (unsigned dy=0;dy<2;++dy) for(unsigned x=0;x<32;++x)
+            panels[(y+dy)*32+x] = static_cast<uint16_t>((panel[(dy?3:0)*32+x]&0x0fff)|(i==m.row?0x2000:0x1000));
+        m.line(i,s,label,sizeof(label)); line(label,y);
     }
     if(m.page==Page::Save) {
         if(m.save_status)line(m.save_status>0?"PROGRESS SAVED":"SAVE FAILED - TRY AGAIN",16);
@@ -205,8 +261,8 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     }
     else if (m.page==Page::Options) line(touch_navigation?"TAP ROW    BACK    B BACK":"A SELECT  B BACK",21);
     else {
-        line(touch_navigation?"TAP VALUE OR LEFT/RIGHT":"L/R PAGE  LEFT/RIGHT CHANGE",20);
-        line(touch_navigation?"L PAGE    BACK    R PAGE":"A CHANGE  B BACK",22);
+        line(touch_navigation?"TAP VALUE OR LEFT/RIGHT":"L/R PAGE  LEFT/RIGHT CHANGE",18);
+        line(touch_navigation?"L PAGE    BACK    R PAGE":"A CHANGE  B BACK",21);
     }
 }
 }

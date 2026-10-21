@@ -3,6 +3,8 @@
 #include "hal/touch_menu_navigation.h"
 #include "hal/course_clear_input.h"
 #include <array>
+#include <algorithm>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 
@@ -94,10 +96,10 @@ int main() {
     if(settings.texture_quality!=ntr::TextureQuality::Original) return 35;
     press(0x20);
     if(settings.texture_quality!=ntr::TextureQuality::Upscaled) return 36;
-    press(0x100);
-    if (menu.page!=Page::Visual || menu.row!=0) return 10;
-    press(1); press(0x80); press(1); press(0x80); press(1);
-    if (!settings.upscale_2d || settings.minimap || !settings.minimap_rotate_with_player) return 11;
+    press(0x80);
+    if(menu.rows()!=4 || menu.row!=3)return 10;
+    press(1);
+    if(!settings.upscale_2d)return 11;
     press(0x100);
     if(menu.page!=Page::Graphics || menu.rows()!=3)return 43;
     const uint8_t filters[]={2,4,8,16,0};
@@ -141,6 +143,8 @@ int main() {
     if (settings.minimap_hide_touch_target) return 16;
     menu.line(2,settings,map_label,sizeof(map_label));
     if(std::strcmp(map_label,"HIDE TOUCH TARGET OFF"))return 53;
+    press(0x80);press(1);press(0x80);press(1);
+    if(menu.rows()!=5 || settings.minimap || !settings.minimap_rotate_with_player)return 84;
     press(0x100);
     if(menu.page!=Page::Position)return 48;
     settings.minimap_x=0; press(0x20);
@@ -161,20 +165,27 @@ int main() {
     if(menu.update(1,settings)!=Action::None)return 39; // Held A must not write repeatedly.
     press(0x80);if(press(1)!=Action::None || menu.page!=Page::Options)return 40;
     press(1);press(0x200);
-    if(menu.page!=Page::Gameplay || menu.rows()!=3)return 67;
+    if(menu.page!=Page::Gameplay || menu.rows()!=4)return 67;
     char gameplay_label[64];menu.line(0,settings,gameplay_label,sizeof(gameplay_label));
-    if(std::strcmp(gameplay_label,"RETURN TO CASTLE"))return 68;
+    if(std::strcmp(gameplay_label,"STAY AFTER STAR OFF"))return 68;
     if(press(1)!=Action::Changed || !settings.stay_in_stage_after_star)return 69;
     menu.line(0,settings,gameplay_label,sizeof(gameplay_label));
-    if(std::strcmp(gameplay_label,"STAY IN STAGE"))return 70;
+    if(std::strcmp(gameplay_label,"STAY AFTER STAR ON"))return 70;
     if(press(0x20)!=Action::Changed || settings.stay_in_stage_after_star)return 71;
     press(0x80);
     for(unsigned i=1;i<=4;++i) if(press(1)!=Action::Changed || settings.camera_zoom!=i%4)return 73;
     if(press(0x20)!=Action::Changed || settings.camera_zoom!=3)return 74;
     menu.line(1,settings,gameplay_label,sizeof(gameplay_label));
     if(std::strcmp(gameplay_label,"CAMERA ZOOM 0.25X"))return 75;
-    press(0x80);
-    if(press(1)!=Action::Changed || !settings.always_run)return 76;
+    while(menu.row<3){press(0x80);}
+    auto free_action=press(1);
+    if(free_action!=Action::Changed)return 80;
+    char camera_mode_label[64]; menu.line(3,settings,camera_mode_label,sizeof(camera_mode_label));
+    if(settings.camera_mode!=1 || std::strcmp(camera_mode_label,"CAMERA FREE"))return 81;
+    while(menu.row>2)press(0x40);
+    while(menu.row<2)press(0x80);
+    auto run_action=press(1);
+    if(run_action!=Action::Changed || !settings.always_run)return 76;
     menu.line(2,settings,gameplay_label,sizeof(gameplay_label));
     if(std::strcmp(gameplay_label,"ALWAYS RUN ON"))return 77;
     if(press(0x20)!=Action::Changed || settings.always_run)return 78;
@@ -208,10 +219,24 @@ int main() {
     for (size_t i=0;i<font.size();++i) font[i]=static_cast<unsigned char>(i*7);
     chars.fill(0xa5); panel.fill(0x1123);
     draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
-    if (chars[0x4000+0xa*64]!=font[0xa*32] ||
-        chars[0x4000+0xa*64+32]!=font[0xa*32+0x400]) return 28;
+    bool ink_visible=false;
+    for(unsigned i=0x4000;i<0x6000;++i)ink_visible|=chars[i]!=0;
+    if(!ink_visible)return 28;
     for (unsigned i=0x6000;i<chars.size();++i) if (chars[i]!=0xa5) return 29;
-    if (panels[4*32]!=0x2123 || panels[9*32]!=0x1123 || text[0]!=0x2ff) return 30;
+    if (panels[3*32]!=0x2123 || panels[6*32]!=0x1123 || text[0]!=0x2ff) return 30;
+    // Native pause layouts put their first button on different tile rows.
+    // Capture its declared position, then keep both original bevel edges.
+    std::array<uint16_t,1024> original_map;
+    for(unsigned offset:{0x60u,0x80u}) {
+        original_map.fill(0x3ff);
+        for(unsigned y=0;y<4;++y)for(unsigned x=0;x<32;++x)
+            original_map[offset+y*32+x]=static_cast<uint16_t>(0x100+y);
+        if(!cache_button_panel(original_map.data(),offset,panel.data()))return 88;
+        draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
+        if(panels[3*32]!=0x2100 || panels[4*32]!=0x2103 || panels[5*32]!=0x3ff)return 89;
+    }
+    if(cache_button_panel(original_map.data(),1,panel.data()) ||
+       cache_button_panel(original_map.data(),928,panel.data()))return 90;
     for (int page=0;page<=8;++page) {
         menu.page=static_cast<Page>(page); menu.row=0;
         draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
@@ -220,7 +245,22 @@ int main() {
         for (unsigned row=0;row<menu.rows();++row) {
             menu.line(row,settings,line,sizeof(line));
             if (std::strlen(line)>30) return 32;
+            const unsigned y=row_top/8+row*row_height/8;
+            int left=256,right=-1,top=16,bottom=-1;
+            for(unsigned py=0;py<16;++py)for(unsigned x=0;x<256;++x) {
+                const unsigned tile=text[(y+py/8)*32+x/8]&0x3ff;
+                const auto pair=chars[tile*32+(py%8)*4+(x%8)/2];
+                if((pair>>((x&1)*4))&15) {
+                    left=std::min(left,int(x));right=std::max(right,int(x));
+                    top=std::min(top,int(py));bottom=std::max(bottom,int(py));
+                }
+            }
+            if(right<left || std::abs(left+right-255)>1 || std::abs(top+bottom-15)>1)return 85;
+            if(hit_row(row_top+row*row_height,menu.rows())!=static_cast<int>(row) ||
+               hit_row(row_top+row*row_height+15,menu.rows())!=static_cast<int>(row) ||
+               hit_row(row_top+row*row_height+16,menu.rows())!=-1)return 86;
         }
+        if(hit_row(row_top-1,menu.rows())!=-1 || hit_row(row_top+menu.rows()*row_height,menu.rows())!=-1)return 87;
     }
     std::puts("PASS: native pause settings navigation, repeat, every option, bounds, font tiles and page layout");
 }

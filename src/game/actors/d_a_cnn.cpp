@@ -58,6 +58,9 @@
 #include "SharedFilePtr.h"
 #include "Player.h"
 #include "Sound.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "ntr/audio.h"
+#endif
 
 typedef void (daCnn_c::*State)();
 
@@ -483,6 +486,11 @@ void daCnn_c::func_ov098_0213aa28()
             break;
         if (!func_ov002_020df300(mPlayer))
             break;
+#if defined(SM64DS_PLATFORM_PC)
+        /* The cannon-rise loop spans the load/aim sequence in the host audio
+           player. End it when the original launch cue fires. */
+        ntr::audio_stop_effect(3,0x14c,4);
+#endif
         Sound::PlayBank3(0x14e, *(const Vector3 *)&mCamSpacePosX);
         mTimer = 0;
         mLoadStep++;

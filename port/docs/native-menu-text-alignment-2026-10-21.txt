@@ -1,0 +1,61 @@
+Native PC settings text alignment - VERIFIED IN BOUNDS - 2026-10-21
+
+Accepted EXE SHA256:
+f26ff21b2b6766810189914737aa2bbbb1cbf698a383f4a8d4a44745e1c20fc7
+
+Root cause: pc_pause_settings.cpp cached the original pause button from fixed
+tilemap offset0x80. The castle first button starts there, but Battlefield's starts
+at0x60, one tile row earlier. The old copy omitted the course button's top bevel
+and included the gap below. Tile-ID/pixel scans of that incomplete rectangle
+could not recover its missing top. Actual MMIO/VRAM/palette dumps and original
+dScStage_c::UpdateMenuButtons agree: data_0209f360[0] is the native button offset.
+
+Fix: cache all four rows at that original offset, with alignment/range guards.
+Keep top/bottom bevel rows for a16px button, followed by an8px gap. Restore the
+original full panel map when leaving settings. Invalid original offsets safely
+return to the original pause flow. No matched src/include changes.
+
+Visible font ink is centered at pixel precision in both directions. This handles
+blank glyph bearings, punctuation/percent signs, and odd-length strings that
+were previously displaced left by half a character cell. Composed8x16 cells are
+deduplicated inside the existing8KiB Message glyph scratch region. Font size,
+gold frame/arrow, controller semantics, touch targets and seven pages retained.
+No private game textures are added as source assets.
+
+Verification on the exact accepted executable:
+- Native game/all smoke targets build;57/57CTest pass80.31sec.
+- Unit regression:0x60/0x80 button origins, preserved bevels/blank gap, invalid
+  offsets, all settings pages and options, scratch bounds, decoded text pixels
+  centered horizontally/vertically within half a DS pixel.
+- Native PE/actor/camera-data audit passes.
+- Original title/FileA/castle pause and Gameplay page replay exits0; source
+  button offset0x80 and full cached bytes checked against original tilemap.
+- Battlefield replay exits0; offset0x60 verified. Display4 rows, Gameplay3 and
+  Minimap5 measured; controller page navigation, fifth-row touch selection and
+  settings persistence pass. No stage/input/actor injections for these menus.
+- Wanted enters through original Rec Room, opens Options -> PC Settings,
+  navigates Display/Graphics/Minimap, closes back to pause and resumes.5 minimap
+  labels centered; audio shutdown errors0. This covers the shared minigame UI.
+- Screen captures measured in native DS coordinates: every tested label center
+  is within0.5px of its box center horizontally and vertically.
+
+Private evidence (not for public packaging):
+work/native-aligned-castle-solhigh-20261020/alignment-acceptance.json
+work/native-aligned-battlefield-solhigh-20261020/alignment-acceptance.json
+work/native-aligned-wanted-options-solhigh-20261020/alignment-acceptance.json
+work/check-menu-alignment-20261021.py
+work/ctest-aligned-solhigh-20261020.log
+work/native-aligned-audit-solhigh-20261020.txt
+Latest castle installed-2400.png, Battlefield zoom-2450.png, Wanted wanted-
+2950.png show accepted artwork. Cases began October20; acceptance October21.
+
+Installed build and preservation evidence are recorded by the F: checkpoint
+native-checkpoint-2026-10-21-menu-alignment and its installation-verification.json,
+plus the isolated installed executable runtime. ROM, personal saves and user
+preferences must retain their original hashes; QA uses separate saves and an
+explicit SM64DS_PC_SETTINGS_FILE because main changes working directory.
+
+Limits: accepted for these scene/layout paths, not every translated string or
+minigame. True smooth60/120/240 rendering and resolution/window independence
+remain separate unfinished requests. No full port-completion claim. A new public
+ROM-free kit still requires a fresh-folder reconstruction/runtime acceptance.

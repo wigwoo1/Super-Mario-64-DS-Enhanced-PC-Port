@@ -2,6 +2,7 @@
 #include "ntr/texture.h"
 #include "ntr/rt.h"
 #include "ntr/minimap_drag.h"
+#include "ntr/menu_focus.h"
 
 #include <cmath>
 #include <cstdio>
@@ -60,6 +61,18 @@ static bool write_test_png(const char *path) {
 
 int main() {
     {
+        ntr::Framebuffer frame{};
+        ntr::draw_menu_focus(frame,32,48,224,64);
+        if(frame.px[47][100]!=0xffffef9c || frame.px[65][100]!=0xffffbd32 ||
+           frame.px[56][20]!=0xff704016 || frame.px[56][128]!=0)return 240;
+        // All sides clip safely, and hidden/invalid selections leave it alone.
+        ntr::draw_menu_focus(frame,0,0,256,192);
+        const auto corner=frame.px[0][0];
+        ntr::draw_menu_focus(frame,-1,0,100,100);
+        ntr::draw_menu_focus(frame,100,100,50,50);
+        if(frame.px[0][0]!=corner)return 241;
+    }
+    {
         ntr::MinimapDrag drag;uint16_t x=710,y=35;
         if(drag.update(true,800,100,260,x,y) || !drag.active)return 200;
         if(!drag.update(true,300,400,260,x,y) || x!=210 || y!=335)return 201;
@@ -111,6 +124,11 @@ int main() {
                 ntr::video_set_pause_screen(paused!=0);
                 if(ntr::video_minimap_visible() != (enabled && gameplay && !paused)) return 30;
             }
+    ntr::video_set_pause_screen(false);
+    ntr::video_set_minimap_gameplay(true);
+    ntr::video_set_cutscene_letter(true);
+    if(ntr::video_minimap_visible())return 40;
+    ntr::video_set_cutscene_letter(false);
     settings=ntr::VideoSettings{};
     ntr::video_set_minimap_gameplay(false);
     ntr::video_set_pause_screen(false);
@@ -220,7 +238,7 @@ int main() {
     settings.texture_quality = ntr::TextureQuality::Upscaled;
     settings.minimap_rotate_with_player = true;
     settings.minimap_hide_touch_target = false;
-    settings.stay_in_stage_after_star = true; settings.camera_zoom=3; settings.always_run=true;
+    settings.stay_in_stage_after_star = true; settings.camera_zoom=3; settings.camera_mode=1; settings.always_run=true;
     settings.render_distance=ntr::RenderDistance::EntireMap;
     ntr::video_set_settings(settings);
     if (!ntr::video_save_settings(settings_path)) return 16;
@@ -240,7 +258,7 @@ int main() {
         loaded.renderer!=ntr::VideoRenderer::OpenGLSoftware || loaded.minimap || loaded.minimap_opacity != 137 ||
         loaded.minimap_scale != 310 || loaded.minimap_x != 420 || loaded.minimap_y != 170 ||
         !loaded.upscale_2d || loaded.texture_quality!=ntr::TextureQuality::Upscaled || !ntr::texture_upscaled() ||
-        !loaded.minimap_rotate_with_player || loaded.minimap_hide_touch_target || !loaded.stay_in_stage_after_star || loaded.camera_zoom!=3 || !loaded.always_run || loaded.render_distance!=ntr::RenderDistance::EntireMap) return 18;
+        !loaded.minimap_rotate_with_player || loaded.minimap_hide_touch_target || !loaded.stay_in_stage_after_star || loaded.camera_zoom!=3 || loaded.camera_mode!=1 || !loaded.always_run || loaded.render_distance!=ntr::RenderDistance::EntireMap) return 18;
     // Every saved quality overrides the historical toggle, in either key order.
     for(unsigned quality=0;quality<6;++quality) {
         settings.texture_quality=static_cast<ntr::TextureQuality>(quality);
@@ -270,6 +288,14 @@ int main() {
     settings.render_distance=static_cast<ntr::RenderDistance>(255);ntr::video_set_settings(settings);
     if(ntr::video_get_settings().render_distance!=ntr::RenderDistance::Minimum)return 32;
     std::remove(settings_path);
+#if defined(_WIN32)
+    _putenv_s("SM64DS_PC_SETTINGS_FILE","smoke-isolated-settings.ini");
+    if(!ntr::video_save_settings() || !ntr::video_load_settings())return 242;
+    FILE *isolated=std::fopen("smoke-isolated-settings.ini","rb");
+    if(!isolated)return 243;
+    std::fclose(isolated);std::remove("smoke-isolated-settings.ini");
+    _putenv_s("SM64DS_PC_SETTINGS_FILE","");
+#endif
     std::puts("video smoke: 16:9, 16:10, 21:9 presets through 4K pass");
     return 0;
 }

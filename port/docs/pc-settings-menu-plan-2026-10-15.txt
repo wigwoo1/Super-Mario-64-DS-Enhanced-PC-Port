@@ -1,3 +1,41 @@
+2026-10-21 VERIFIED: settings alignment in castle/Battlefield/Wanted. Cache
+original button at native data_0209f360[0] (0x80 castle,0x60 Battlefield); retain
+compact16px bevels/24px row pitch. Center visible text ink in both directions,
+including odd-length labels. Controller/touch navigation and preference saving
+pass; Display4 rows, Minimap5 retained.57CTest plus native data audit pass.
+See native-menu-text-alignment-2026-10-21.txt. Previous failed centering candidate
+was never installed; current accepted EXE f26ff21b...1c20fc7.
+
+Requested display behavior (2026-10-20): changing the Resolution setting must
+change the INTERNAL render target only. Preserve the user's current window
+client size and position, maximized/fullscreen state and layout. Resizing the
+window must not silently change the chosen internal resolution. Add a named
+"Native DS (256 x 192)" resolution option:256x192 per original DS screen (both
+screens keep that source resolution in dual-screen layouts), scaled into the
+user's chosen window. "Native DS" does not mean desktop/monitor resolution.
+Acceptance: drag-resize the window, cycle Native DS/720p/1080p/4K, and verify
+unchanged window bounds with actual internal targets256x192 through3840x2160;
+verify window resize, pause/settings, both minigame screens and persistence.
+Planned; not implemented or runtime-accepted yet.
+
+Bob-omb/coin follow-up (2026-10-20, Sol Medium): native Release and56CTest
+pass. Distant regular Bob-omb body/ground shadow and red-coin body have matched
+720p pixel acceptance, identical captured gameplay/actor state and unchanged
+QA saves through course exit/reentry. Coin-shadow pixels remain unverified;
+Chain Chomp/fence native integration is missing. See
+native-distant-bomb-coin-verified-2026-10-20.txt. Earlier partial check below
+is historical; pink cannon figures are Buddies, not regular Bob-ombs.
+
+Render-distance visual acceptance (2026-10-20, Sol High): VERIFIED for the
+original distant Battlefield Goomba body and ground shadow. Earlier captures
+missed the visible interval; targeted4K Minimum/Entire Map shots now prove
+actual added pixels. Fixed distant Goomba shadow preparation before the Stage
+drains its queue, preserving AI/collision/cap flags and area/dormant gates.
+All four presets, matching gameplay/Goomba state samples, unchanged isolated
+saves and11000tick course exit/reentry pass.56/56CTest pass. See
+native-distant-goomba-verified-2026-10-20.txt. Coverage of other actor classes,
+their shadows and unloaded areas remains open; this is not full-map acceptance.
+
 Stage Game Options controller milestone (2026-10-20): D-pad Up/Down focuses
 Sound/Backlight, A advances/toggles and Left/Right changes Sound; B returns.
 The original native option handlers process the controls, real touch retains
@@ -32,7 +70,7 @@ two isolated replays;55CTest and9transform tests pass. Other games, Rec Room
 categories/pages and stage course-clear menus still need acceptance. Read
 native-touch-menu-controller-2026-10-20.txt for precise scope.
 
-Enemy/object visibility request (2026-10-20): PLANNED, not implemented.
+Enemy/object visibility request (2026-10-20): PARTIALLY IMPLEMENTED.
 Extend the saved render-distance settings (Minimum / Low / Medium / Entire Map)
 to enemies, pickups, scenery and other objects, not just level geometry.
 Entire Map should show every currently loaded, relevant actor at any distance
@@ -45,7 +83,16 @@ need an explicit loading strategy, not a claim that clipping alone loads them.
 Test far-away enemies, moving objects, pickups, shadows, course reentry, all
 distance choices, saved settings, and performance at 4K. Show distant-view shots.
 
-Implementation progress (2026-10-21): four choices are saved in the native
+User acceptance landmark (2026-10-20): from Bob-omb Battlefield's spawn area,
+look toward the white doorway and the fenced Power Star. Entire Map should
+show the Chain Chomp guarding that fence in the distance. Verify its body,
+chain, stump and shadow with real camera/gameplay captures, then approach it
+and return to spawn. The current native registry does not bind daWanwan_c or
+the Chain Chomp fence; recovered source alone does not make the actors run.
+Integrate these native actors before using this landmark to accept visibility.
+
+Historical diagnostic progress (superseded by the2026-10-20 acceptance above):
+Four choices are saved in the native
 Graphics page. PC dActor_c::BeforeRender rechecks the camera frustum with a
 longer depth limit; BeforeBehavior and the area/story gate are unchanged. The
 distance and shadow bits are temporarily cleared only around the synchronous
@@ -407,3 +454,50 @@ and one-shot jingles can finish. Choose and document MP3 decoding/distribution
 after the original audio integration is accepted. Keep replacement files local
 unless their distribution is explicitly authorized. Test both modes, persistence,
 missing/corrupt files, switching tracks/modes, loops, jingles and scene changes.
+
+Surround output (requested 2026-10-20): PLANNED.
+Add 5.1 and 7.1 choices alongside the existing audio-mode choices in the
+native settings menu. Keep the current stereo mode available as the default
+and fallback when the selected Windows audio device does not expose enough
+channels. Map each game channel to the correct speaker layout, including
+center, LFE and surround/rear channels; do not claim surround support by merely
+duplicating stereo samples. Preserve volume, effects/music balance, pause and
+device-change behavior. Verify channel routing with per-channel test tones on
+stereo, 5.1 and 7.1 output devices, then test game audio in each mode and confirm
+that unsupported layouts fail back cleanly. This setting controls output
+channels; it does not replace or remaster the game's music.
+Distant Bob-omb and coin check (2026-10-20, Luna Medium): PARTIALLY VERIFIED.
+Matched fresh Battlefield Minimum/Entire Map runs exit 0 through tick 7000 with
+byte-identical gameplay and Goomba state. Entire Map recorded successful draw
+callbacks for Bob-ombs and coins, but callbacks do not prove on-screen pixels.
+At tick 4540 the Minimum screenshot already shows distant Bob-ombs and ground
+shadows. Matched captures differ by 494/462/376 RGB pixels at ticks4540/4600/4650,
+but those changes are in the upper-right minimap; tick6500 is pixel-identical.
+Thus there is no accepted distant body/shadow improvement or regression. A
+11000-tick Minimum route completed but has no paired comparison. See
+native-distant-bomb-coin-checked-2026-10-20.txt and private cases
+work/native-render-distance-bomb-coin-{min-final,entire}-20261020. Existing
+A8A94390...C1EB8A executable/install preserved. No gameplay fix or install.
+Temporary actor probe changes were restored after generated-closure build errors.
+Next: Sol Medium to obtain a stable unobstructed distant actor fixture and prove
+body/shadow pixels separately, or implement safe renderer-level instrumentation.
+
+Original / Brain Rot text and original menu styling (requested 2026-10-21): PLANNED.
+Add a persistent ORIGINAL / BRAIN ROT text choice under OPTIONS on the original
+title screen, replacing its BACKLIGHT option. Apply it to character dialogue
+and eventually all written game text, with a completion inventory. Missing
+replacements fall back to the unchanged original text.
+When this milestone starts, show the exact original text of one identified box
+at a time: speaker/context, message ID, language, and page breaks. The user
+writes each replacement. Do not invent Brain Rot wording or silently rewrite
+submissions. Track approved/completed boxes; preserve control tokens, choices
+and story/event triggers. Preview wrapping, supported font characters and safe
+pagination. Keep original-text exports and ROM-derived lookup data private and
+outside the public source/release allowlist.
+Restyle the earlier custom PC settings with the original Options font and border
+artwork where practical. Retain centered labels/values, compact pages, the small
+selection arrow and decorative gold selection border already requested.
+Verify title/controller/mouse navigation, persistence, both text modes, fallback,
+long/multiline boxes, choices, page breaks and unchanged gameplay progression.
+Show screenshots of the settings and approved replacement boxes. This is queued
+work; the current tree integration does not implement the text mod.

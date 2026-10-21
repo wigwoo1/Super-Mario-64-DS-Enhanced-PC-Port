@@ -54,7 +54,7 @@ ComPtr<ID3D11Buffer> draw_params;
 ComPtr<ID3D11Query> retirement_query;
 ComPtr<ID3D11SamplerState> texture_samplers[16],anisotropic_samplers[4][16],nearest_clamp,linear_clamp;
 ComPtr<ID3D11DepthStencilState> depth_on,depth_off;
-ComPtr<ID3D11DepthStencilState> normal_depth[2][2],shadow_mask[2],shadow_draw[2],shadow_exclude,shadow_clear;
+ComPtr<ID3D11DepthStencilState> normal_depth[2][2],translucent_depth[2][2],shadow_mask[2],shadow_draw[2],shadow_exclude,shadow_clear;
 ComPtr<ID3D11BlendState> blend_on,blend_off,color_off;
 ComPtr<ID3D11RasterizerState> rasterizer,wireframe;
 Texture base_texture,map_texture,white_texture;
@@ -257,7 +257,7 @@ FrameMaterial *material(const GxTriangle &t,std::map<FrameKey,FrameMaterial> &fr
     }
     return &frame_cache.emplace(pointer,m).first->second;
 }
-bool menu_scene=false;
+bool menu_scene=false,letter_overlay=false;
 bool geometry(bool dual_screen=false) {
     if(const char *path=std::getenv("SM64DS_PC_POLYGON_DUMP")) {
         static bool dumped=false;
@@ -376,7 +376,10 @@ bool geometry(bool dual_screen=false) {
             }
         } else {
             const unsigned write_depth=!pass || (group.attributes&(1u<<11));
-            context->OMSetDepthStencilState(normal_depth[write_depth?1:0][equal].Get(),id);
+            // Bit7 distinguishes a previous translucent pixel from an opaque
+            // receiver with the same six-bit ID. DS rejects repeat blending
+            // within one translucent object, including Peach during her fade.
+            context->OMSetDepthStencilState(pass?translucent_depth[write_depth?1:0][equal].Get():normal_depth[write_depth?1:0][equal].Get(),pass?(0x80|id):id);
             context->OMSetBlendState(pass?blend_on.Get():blend_off.Get(),nullptr,~0u);
             context->Draw(group.count,group.first);
         }
@@ -515,10 +518,12 @@ float4 ps_main(Output i):SV_TARGET {
         D3D11_DEPTH_STENCIL_DESC n{};
         n.DepthEnable=TRUE;n.DepthWriteMask=write?D3D11_DEPTH_WRITE_MASK_ALL:D3D11_DEPTH_WRITE_MASK_ZERO;
         n.DepthFunc=equal?D3D11_COMPARISON_EQUAL:D3D11_COMPARISON_LESS;
-        n.StencilEnable=TRUE;n.StencilReadMask=0x3f;n.StencilWriteMask=0x3f;
+        n.StencilEnable=TRUE;n.StencilReadMask=0xbf;n.StencilWriteMask=0xbf;
         n.FrontFace={D3D11_STENCIL_OP_KEEP,D3D11_STENCIL_OP_KEEP,D3D11_STENCIL_OP_REPLACE,D3D11_COMPARISON_ALWAYS};
         n.BackFace=n.FrontFace;
         if(FAILED(device->CreateDepthStencilState(&n,&normal_depth[write][equal]))) { gpu_close();return false; }
+        n.FrontFace.StencilFunc=n.BackFace.StencilFunc=D3D11_COMPARISON_NOT_EQUAL;
+        if(FAILED(device->CreateDepthStencilState(&n,&translucent_depth[write][equal]))) { gpu_close();return false; }
     }
     for(unsigned equal=0;equal<2;++equal) {
         D3D11_DEPTH_STENCIL_DESC n{};
@@ -570,13 +575,14 @@ void gpu_close() {
     for(auto &level:anisotropic_samplers) for(auto &sampler:level) sampler.Reset();
     anisotropic_level=0;
     nearest_clamp.Reset();linear_clamp.Reset();depth_on.Reset();depth_off.Reset();
-    for(unsigned i=0;i<2;++i) { shadow_mask[i].Reset();shadow_draw[i].Reset();for(auto &state:normal_depth[i]) state.Reset(); }
+    for(unsigned i=0;i<2;++i) { shadow_mask[i].Reset();shadow_draw[i].Reset();for(auto &state:normal_depth[i]) state.Reset();for(auto &state:translucent_depth[i]) state.Reset(); }
     shadow_exclude.Reset();shadow_clear.Reset();
     blend_on.Reset();blend_off.Reset();color_off.Reset();rasterizer.Reset();wireframe.Reset();context.Reset();device.Reset();
     target_width=target_height=window_width=window_height=buffer_capacity=triangles_drawn=0;
     adapter_name[0]=0;
 }
 void gpu_set_menu_scene(bool active) {menu_scene=active;glsw_set_menu_scene(active);}
+void gpu_set_letter_overlay(bool active) {letter_overlay=active;glsw_set_letter_overlay(active);}
 void gpu_set_anisotropic_filtering(uint8_t level) {
     if(using_gl_software){glsw_set_anisotropic_filtering(level);return;}
     if(level!=2 && level!=4 && level!=8 && level!=16) level=0;
@@ -627,7 +633,9 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
     if(draw_geometry && foreground) {
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
         context->UpdateSubresource(base_texture.resource.Get(),0,nullptr,foreground,SCREEN_W*4,0);
-        if(!quad(base_texture.view.Get(),nearest_clamp.Get())) return false;
+        const float aspect=letter_overlay && !screens && !menu_scene
+            ? float(SCREEN_W)*s.height/(float(SCREEN_H)*s.width) : 1.0f;
+        if(!quad(base_texture.view.Get(),nearest_clamp.Get(),-aspect,1,aspect,-1)) return false;
     }
     if(screens) {
         const auto &r=engine_a_on_top?screens->bottom:screens->top;
@@ -715,6 +723,7 @@ void gpu_set_anisotropic_filtering(uint8_t) {}
 uint8_t gpu_anisotropic_filtering() { return 0; }
 bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool) { return false; }
 void gpu_set_menu_scene(bool) {}
+void gpu_set_letter_overlay(bool) {}
 bool gpu_present(unsigned,unsigned,bool) { return false; }
 bool gpu_readback(std::vector<uint32_t> &,unsigned &,unsigned &) { return false; }
 bool gpu_readback_gameplay(std::vector<uint32_t> &,unsigned &,unsigned &) { return false; }

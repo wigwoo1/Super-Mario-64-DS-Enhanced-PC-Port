@@ -21,6 +21,17 @@ class GoombaHostTest(unittest.TestCase):
     def test_unrelated_source_unchanged(self):
         self.assertEqual(goomba_host.transform('int f(){return 1;}'),'int f(){return 1;}')
 
+    def test_actor_probe_preserves_include_order_and_is_idempotent(self):
+        # These actors deliberately need common.h's flat matrix definition.
+        # Reinstrumentation used to create duplicate local declarations.
+        for actor in ('daCoin_c','daBmb_c'):
+            source=(ROOT/f'src/actors/{actor}.cpp').read_text()
+            result=goomba_host.transform(source)
+            self.assertEqual(result.count('pc_render_probe::Scope renderProbe'),1)
+            self.assertLess(result.index('#include "common.h"'),
+                            result.index('#include "hal/actor_render_probe.h"'))
+            self.assertEqual(goomba_host.transform(result),result)
+
     def test_collision_veneer_forwards_receiver(self):
         for rel in ('src/unnamed/arm9/0203/func_02038414.c',
                     'src/dBgCh_Actr_UpdateDiscreteNoLava_veneer.c'):

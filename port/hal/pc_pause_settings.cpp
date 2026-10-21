@@ -18,6 +18,8 @@ unsigned short *GetBG1ScrPtr();
 extern "C" {
 extern unsigned char data_0209f2c4, data_0209f248, data_0209f1ec, data_0209f2e0;
 extern unsigned char data_0209f2b4, data_0209f22c;
+// local extern: the original pause button offsets are TU-only globals.
+extern unsigned short data_0209f360[];
 extern unsigned short data_0209f300;
 extern signed char data_0209f2f8;
 extern int data_0208ee44;
@@ -69,13 +71,33 @@ void draw() {
     auto *panels = G2S::GetBG1ScrPtr();
     if (!saved_panel) {
         std::memcpy(old_panels,panels,sizeof(old_panels));
-        std::memcpy(button_panel,panels+0x80,sizeof(button_panel));
+        if(!pc_pause::cache_button_panel(panels,data_0209f360[0],button_panel)) {
+            std::fprintf(stderr,"[settings artwork] invalid native button offset %u\n",data_0209f360[0]);
+            back_to_pause();return;
+        }
         saved_panel = true;
     }
     // Follow Message::AddChar's active-font selection. Pause can use the
     // sub-engine font even though the gameplay scene originally loaded mode 0.
     const void *font = data_0209d698==2 ? data_0209d6f8 : reinterpret_cast<void *>(
         data_0209d698==1 ? G2S::GetBG1CharPtr() : func_02054d88());
+    if(const char *prefix=std::getenv("SM64DS_PC_SETTINGS_ART_DUMP")) {
+        static bool dumped=false;
+        if(!dumped && *prefix) {
+            dumped=true;
+            auto save=[prefix](const char *kind,const void *p,size_t bytes) {
+                char path[2048];std::snprintf(path,sizeof(path),"%s-%s.bin",prefix,kind);
+                if(FILE *f=std::fopen(path,"wb")){std::fwrite(p,1,bytes,f);std::fclose(f);}
+            };
+            save("regs",reinterpret_cast<const void *>(0x04001000),0x70);
+            save("vram",reinterpret_cast<const void *>(0x06200000),0x20000);
+            save("palette",reinterpret_cast<const void *>(0x05000400),0x200);
+            save("panels",old_panels,sizeof(old_panels));
+            save("button",button_panel,sizeof(button_panel));
+            std::fprintf(stderr,"[settings artwork] char0=%08x char1=%08x map0=%08x map1=%p font=%p blank=%04x button_offset=%04x\n",
+                G2S::GetBG0CharPtr(),G2S::GetBG1CharPtr(),G2S::GetBG0ScrPtr(),panels,font,old_panels[0],data_0209f360[0]);
+        }
+    }
     pc_pause::draw(menu,ntr::video_get_settings(),
         reinterpret_cast<unsigned char *>(G2S::GetBG0CharPtr()),
         reinterpret_cast<uint16_t *>(G2S::GetBG0ScrPtr()),panels,
@@ -101,6 +123,16 @@ extern "C" int pc_pause_settings_update() {
     ntr_input_get_menu_keys(&keys);
     const auto edge = pc_pause::events(keys,nav_previous,nav_repeat,nav_ticks);
     const auto input = ntr::input_state();
+    if(const char *path=std::getenv("SM64DS_PC_SETTINGS_NAV_TRACE")) {
+        static FILE *trace=nullptr;
+        if(!trace) {trace=std::fopen(path,"w");if(trace)std::fputs("tick,state,active,page,row,keys,edge,pad\n",trace);}
+        if(trace && (active || keys || edge)) {
+            std::fprintf(trace,"%llu,%u,%u,%u,%u,%u,%u,%u\n",
+                static_cast<unsigned long long>(ntr::rt_frame()),unsigned(data_0209f1ec),
+                unsigned(active),unsigned(menu.page),menu.row,unsigned(keys),unsigned(edge),
+                unsigned(input.buttons));std::fflush(trace);
+        }
+    }
     const bool tapped = input.touch && !touch_was_down;
     touch_was_down = input.touch;
     if (data_0209f2c4 != 1) return 0;
@@ -151,7 +183,7 @@ extern "C" int pc_pause_settings_update() {
     uint16_t menu_keys = keys;
     if (tapped && !ntr::video_minimap_editor_active() && input.touch_x>=8 && input.touch_x<248) {
         for (unsigned row=0;row<menu.rows();++row) {
-            if (input.touch_y>=32+row*40 && input.touch_y<64+row*40) {
+            if (pc_pause::hit_row(input.touch_y,menu.rows())==static_cast<int>(row)) {
                 menu.row = row;
                 menu_keys |= menu.page==pc_pause::Page::Options || menu.page==pc_pause::Page::Save ? 1 : input.touch_x<128 ? 0x20 : 0x10;
             }
