@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 # Super Mario 64 DS Enhanced PC Port
 
 An **unfinished, experimental native Windows PC port**, based on

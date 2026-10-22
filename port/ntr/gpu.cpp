@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 // Native-resolution D3D11 rasterization of the recovered game's geometry.
 // DS command decode, lighting, clipping, UVs and original textures stay shared
 // with the software reference. Only rasterization/presentation run on the GPU.

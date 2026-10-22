@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 Original-art minimap HUD, 2026-10-22
 
 Implemented Star, coin, health and life rows beside the minimap. Each icon is decoded from original game OBJ resources and OAM templates, not substitute artwork. Life art follows Player::mCharacter; health uses the original nine health templates and palette thresholds, driven by the active player's original health value. Icon size follows minimap size; counters remain visible when the map is off. Existing position settings still place the HUD alongside the map.

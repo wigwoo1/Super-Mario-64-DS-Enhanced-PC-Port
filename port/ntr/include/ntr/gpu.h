@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 #ifndef NTR_GPU_H
 #define NTR_GPU_H
 #include "ntr/ppu.h"

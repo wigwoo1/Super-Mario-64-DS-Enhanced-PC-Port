@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 # port/ntr -- the host DS platform layer
 
 Imported 2026-08-02 from the port research repo (MIT, project-internal;

@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 ## Current native build installed and launched from F: (2026-10-16)
 
 - The current Release build was up to date; `cmake --build build/port --target sm64ds_pc --parallel 4` completed with no work required. CTest passed45/45 (25.01s).

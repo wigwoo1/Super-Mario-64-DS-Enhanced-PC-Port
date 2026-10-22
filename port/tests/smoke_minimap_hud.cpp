@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 #include "ntr/minimap_hud.h"
 #include <algorithm>
 #include <array>

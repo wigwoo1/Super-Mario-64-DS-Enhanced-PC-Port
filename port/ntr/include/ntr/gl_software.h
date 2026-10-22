@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 #pragma once
 #include "ntr/gpu.h"
 namespace ntr {

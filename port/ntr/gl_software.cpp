@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 // OpenGL rasterization through an explicitly loaded Mesa llvmpipe runtime.
 // Geometry decoding/clipping and texture identities stay shared with D3D11.
 #include "ntr/gl_software.h"

@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 #include "ntr/gpu.h"
 #include "ntr/gx.h"
 #include "ntr/mmio.h"

@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 {
   "format": 1,
   "upstream": "https://github.com/tangosdev/sm64ds-decomp",
