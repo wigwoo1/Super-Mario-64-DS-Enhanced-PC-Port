@@ -17,14 +17,18 @@ game assets, personal saves, or proprietary compiler is included here.
   Game Options, course-clear and minigame menus. Physical Xbox hardware and all
   menu/game combinations have not been accepted. Recent player feedback reports
   that A does not confirm selections in the in-game pause menu. The October22
-  checkpoint includes separate menu-input handling and a camera lens repair;
+  checkpoint adds a keyboard/controller Controls page through Controller Modes,
+  configurable gameplay bindings and separate stick deadzones, with selected
+  muted menu/gameplay checks. It does not establish every pause-menu action;
   physical Nintendo Switch Pro acceptance remains pending.
 - The Windows renderer offers resolutions up to 3840x2160, a repositionable
   minimap, and other PC settings. Render-distance presets have a verified native
   4K distant-Goomba body/shadow case and a 720p Bob-omb body/shadow and red-coin
   body case. Internal resolution can change independently of window size and
-  includes Native DS (256x192). Coin-shadow pixels and broader actor coverage
-  remain incomplete. Game logic remains at
+  includes Native DS (256x192), 360p (640x360), and 480p (854x480). Native DS
+  and HD window independence have runtime checks; the new lower presets have a
+  focused build/cycle check but no separate visual acceptance run yet.
+  Coin-shadow pixels and broader actor coverage remain incomplete. Game logic remains at
   the original scene rate; higher presentation targets repeat frames, and
   interpolation is future work.
 - Native audio can be enabled with `SM64DS_PC_NATIVE_AUDIO=1`. It plays original
@@ -73,8 +77,9 @@ game assets, personal saves, or proprietary compiler is included here.
   inversion and Off/Gentle/Smooth acceleration. Selected menu/gameplay checks
   pass; physical Nintendo Switch Pro acceptance remains pending.
   Broader all-course acceptance remains incomplete. Star, coin and life counters
-  positioned beside the minimap, with icon size linked to minimap size, are
-  requested roadmap work. HD texture packs, online VS and browser Download Play
+  are displayed beside the minimap with placeholder icons. Reusing original
+  game sprites, adding a health counter, and linking icon size to minimap size
+  remain roadmap work. HD texture packs, online VS and browser Download Play
   remain planned; requested AI texture generation and replacement also remain
   future work.
 

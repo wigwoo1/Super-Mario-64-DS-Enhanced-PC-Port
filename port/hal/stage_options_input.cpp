@@ -10,6 +10,7 @@ extern unsigned char data_0209f1ec;
 extern unsigned short data_020a0e5a[];
 int pc_stage_options_take_action();
 int pc_stage_pause_take_action();
+void pc_pause_settings_open_controller_bindings();
 extern unsigned char data_0209f2ec;
 int GetSoundMode();
 }
@@ -24,6 +25,10 @@ Frame::Frame() {
     if(pause_buttons) {
         const int row=pc_stage_pause_take_action();
         if(gTouchHeld[slot] || row<0 || row>=4)return;
+        if(row==1) {
+            pc_pause_settings_open_controller_bindings();
+            return;
+        }
         saved[0]=gTouchHeld[slot];saved[1]=gTouchEdge[slot];
         saved[2]=gTouchX[slot];saved[3]=gTouchY[slot];
         gTouchHeld[slot]=gTouchEdge[slot]=1;

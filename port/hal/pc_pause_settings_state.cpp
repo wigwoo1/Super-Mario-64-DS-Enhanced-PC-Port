@@ -27,12 +27,26 @@ unsigned Menu::rows() const {
     if(page==Page::Graphics) return 3;
     if(page==Page::Screens) return 1;
     if(page==Page::Gameplay)return 5;
+    if(page==Page::Controls)return 5;
+    if(binding_page())return std::min(5u,ntr::binding_count-binding_bank*5);
     return page==Page::Camera ? 4 : 3;
 }
 
 Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
+    if(capture)return Action::None;
     const auto edge = events(keys, previous, repeat, ticks);
+    if(binding_page()) {
+        if(edge&(2|8)){page=Page::Controls;row=0;return Action::None;}
+        if(edge&0x300){binding_bank=(binding_bank+(edge&0x100?1:2))%3;row=0;return Action::None;}
+        if(edge&0x40)row=(row+rows()-1)%rows();
+        if(edge&0x80)row=(row+1)%rows();
+        if(edge&1){capture=1;capture_ticks=0;}
+        return Action::None;
+    }
+    if(page==Page::Controls && row==4 && reset_confirm && (edge&(2|8))) {reset_confirm=false;return Action::None;}
+    if(edge&0xf0)reset_confirm=false;
     if (edge & (2 | 8)) {
+        if(page==Page::Controls)return Action::BackPause;
         if (page == Page::Options) return Action::BackPause;
         page = Page::Options; row = 0; return Action::None;
     }
@@ -45,6 +59,7 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         page = Page::Display; row = 0; return Action::None;
     }
     if (edge & 0x300) {
+        if(page==Page::Controls)return Action::None;
         unsigned current=0;
         while(current<page_count && pages[current]!=page) ++current;
         page=pages[(current+(edge & 0x100 ? 1 : page_count-1))%page_count];
@@ -112,6 +127,16 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         else if(row==2)s.camera_invert_y=!s.camera_invert_y;
         else s.camera_acceleration=static_cast<uint8_t>((s.camera_acceleration+(direction>0?1:2))%3);
         break;
+    case Page::Controls:
+        if(row==2 || row==3) {page=row==2?Page::Keyboard:Page::Gamepad;binding_bank=row=0;return Action::None;}
+        if(row==4) {
+            if(!(edge&1))return Action::None;
+            if(!reset_confirm){reset_confirm=true;return Action::None;}
+            reset_confirm=false;s.bindings=ntr::InputBindings{};s.left_stick_deadzone=24;s.right_stick_deadzone=20;break;
+        }
+        if(row==0)s.left_stick_deadzone=static_cast<uint8_t>(step(s.left_stick_deadzone,2,0,50));
+        else s.right_stick_deadzone=static_cast<uint8_t>(step(s.right_stick_deadzone,2,0,50));
+        break;
     case Page::Position:
         if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000-s.minimap_scale));
         if (row == 1) s.minimap_y = static_cast<uint16_t>(step(s.minimap_y, 10, 0, 1000-s.minimap_scale));
@@ -121,6 +146,21 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
     s.minimap_x = std::min<uint16_t>(s.minimap_x, 1000-s.minimap_scale);
     s.minimap_y = std::min<uint16_t>(s.minimap_y, 1000-s.minimap_scale);
     return Action::Changed;
+}
+
+Action Menu::binding_sample(uint32_t value,bool cancel,ntr::VideoSettings &s) {
+    if(!capture)return Action::None;
+    if(cancel || ++capture_ticks>600) {capture=0;previous=0xffff;return Action::None;}
+    if(capture==1){if(!value)capture=2;return Action::None;}
+    const unsigned index=binding_bank*5+row;
+    if(page==Page::Gamepad) {
+        if(!ntr::valid_pad_binding(value))return Action::None;
+        ntr::swap_binding(s.bindings.pad,index,value);
+    } else {
+        if(!ntr::valid_key_binding(value))return Action::None;
+        ntr::swap_binding(s.bindings.keys,index,static_cast<uint16_t>(value));
+    }
+    capture=0;previous=0xffff;return Action::Changed;
 }
 
 void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size) const {
@@ -175,6 +215,19 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         else if(i==1)std::snprintf(out,size,"INVERT X %s",s.camera_invert_x?on:off);
         else if(i==2)std::snprintf(out,size,"INVERT Y %s",s.camera_invert_y?on:off);
         else std::snprintf(out,size,"ACCELERATION %s",s.camera_acceleration==0?"OFF":s.camera_acceleration==2?"SMOOTH":"GENTLE");
+        break;
+    case Page::Keyboard: case Page::Gamepad: {
+        if(capture && i==row){std::snprintf(out,size,"%s",capture==1?"RELEASE BUTTONS":page==Page::Keyboard?"PRESS NEW KEY":"PRESS NEW BUTTON");break;}
+        const unsigned index=binding_bank*5+i;char value[24];
+        ntr::binding_name(page==Page::Gamepad,page==Page::Gamepad?s.bindings.pad[index]:s.bindings.keys[index],value,sizeof(value));
+        std::snprintf(out,size,"%s  %s",ntr::binding_action(index),value);break;
+    }
+    case Page::Controls:
+        if(i==2){std::snprintf(out,size,"KEYBOARD BINDINGS");break;}
+        if(i==3){std::snprintf(out,size,"CONTROLLER BINDINGS");break;}
+        if(i==4){std::snprintf(out,size,"%s",reset_confirm?"CONFIRM RESET DEFAULTS":"RESET CONTROL DEFAULTS");break;}
+        if(i==0)std::snprintf(out,size,"LEFT DEADZONE %u%%",unsigned(s.left_stick_deadzone));
+        else std::snprintf(out,size,"RIGHT DEADZONE %u%%",unsigned(s.right_stick_deadzone));
         break;
     }
 }
@@ -286,7 +339,9 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     else {
         unsigned index=0;while(index<page_count && pages[index]!=m.page)++index;
         const char *names[]={"DISPLAY","GRAPHICS","MINIMAP","MAP POSITION","SAVE","SCREENS","FREE CAMERA","GAMEPLAY"};
-        std::snprintf(label,sizeof(label),"%s %u/%u",index<page_count?names[index]:"VISUAL",index+1,page_count);
+        if(m.binding_page())std::snprintf(label,sizeof(label),"%s %u/3",m.page==Page::Keyboard?"KEYBOARD":"CONTROLLER",m.binding_bank+1);
+        else if(m.page==Page::Controls)std::snprintf(label,sizeof(label),"CONTROLS");
+        else std::snprintf(label,sizeof(label),"%s %u/%u",index<page_count?names[index]:"VISUAL",index+1,page_count);
         line(label,0);
     }
     if(m.page==Page::Camera) line("L3 FREE / R3 ZOOM",15);
@@ -300,7 +355,12 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
             panels[(y+dy)*32+x] = static_cast<uint16_t>((panel[(dy?3:0)*32+x]&0x0fff)|(i==m.row?0x2000:0x1000));
         m.line(i,s,label,sizeof(label)); line(label,y);
     }
-    if(m.page==Page::Save) {
+    if(m.binding_page()) {
+        line(m.capture?"ESC / BACK CANCEL":"GAMEPLAY - MENU KEYS FIXED",18);
+        line(m.capture?"WAITING FOR INPUT":"L/R PAGE  A BIND  B BACK",21);
+    }
+    else if(m.page==Page::Controls) {line("LEFT/RIGHT DEADZONE",18);line("A SELECT  B BACK",21);}
+    else if(m.page==Page::Save) {
         if(m.save_status)line(m.save_status>0?"PROGRESS SAVED":"SAVE FAILED - TRY AGAIN",16);
         line(touch_navigation?"L PAGE    BACK    R PAGE":"L/R PAGE  A SELECT  B BACK",21);
     }

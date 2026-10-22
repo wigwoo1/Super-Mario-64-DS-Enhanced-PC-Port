@@ -87,8 +87,9 @@ def main():
         'Chain Chomp release and Wanted flows have isolated checks. October22 camera '
         'lens/menu-input fixes and original-menu audio/stage-bank routing have selected '
         'muted checks; physical Nintendo Switch Pro and listening fidelity are unverified. '
-        'Some mixed audio still clips. Lakitu cloud timbre, mountain/all-course warp coverage, minimap-side '
-        'counters and broader gameplay remain open. Native audio remains opt-in/diagnostic. '
+        'Some mixed audio still clips. Lakitu cloud timbre, mountain/all-course warp coverage, minimap '
+        'original-icon/health integration and broader gameplay remain open. Star/coin/life digits with '
+        'placeholder icons are present beside the minimap. Native audio remains opt-in/diagnostic. '
         'High-refresh presentation repeats original-rate game frames; interpolation, '
         'HD texture packs, online/browser VS and other roadmap features remain unfinished.')
     validate_manifest(metadata)

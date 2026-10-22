@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "ntr/texture.h"
+#include "ntr/input_bindings.h"
 #include "ntr/screen_layout.h"
 
 namespace ntr {
@@ -11,6 +12,7 @@ enum class VideoRenderer : uint8_t { D3D11, OpenGLSoftware };
 enum class RenderDistance : uint8_t { Minimum, Low, Medium, EntireMap };
 
 struct VideoSettings {
+    InputBindings bindings;
     uint32_t width = 1280; // internal raster size, independent of the window
     uint32_t height = 720;
     uint32_t target_fps = 60;
@@ -31,6 +33,8 @@ struct VideoSettings {
     uint16_t camera_sensitivity = 100; // free-camera speed, 25..300 percent
     bool camera_invert_x = false, camera_invert_y = false;
     uint8_t camera_acceleration = 1; // 0=off, 1=gentle, 2=smooth
+    uint8_t left_stick_deadzone = 24; // radial deadzone as percent of full travel
+    uint8_t right_stick_deadzone = 20; // free-camera axial deadzone as percent
     bool always_run = false; // digital movement; analog speed follows stick travel
     bool stay_in_stage_after_star = false; // retain original castle exit by default
     bool brain_rot_text = false; // opt-in dialogue replacement mode; missing entries fall back to original

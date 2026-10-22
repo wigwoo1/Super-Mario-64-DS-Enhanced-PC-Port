@@ -1,0 +1,47 @@
+# Complete native actor and level-object coverage
+
+Requested 2026-10-22. Status: PLANNED; missing-object reports are not yet
+reproduced or fixed. This milestone remains part of the full PC-port goal.
+
+Player report: bridges, metal gates, buttons/switches and other objects are
+missing in some levels. Audit every course, castle area, sub-area and minigame
+for the actors and scenery expected in the original game. Cover enemies,
+platforms, bridges, doors, gates, switches, interactive objects, collectibles,
+effects, and objects created dynamically by other actors or scripts.
+
+1. Build a coverage inventory from the user's local ROM scene/object records
+   and the native actor registry. Track course, area, mission, actor type and
+   variant, native implementation/resource status, and the original conditions
+   under which it should exist. Keep ROM-derived scene inventories private.
+   Treat missing static geometry, textures or render submissions separately
+   when an apparently missing object is not an actor-spawn failure.
+2. Record unsupported profiles, missing factories/callbacks, unavailable
+   overlays/resources, initialization failures and failed dynamic spawns with
+   enough scene/actor context to reproduce them. Do not silently discard an
+   actor or count a placeholder as implemented. Distinguish absent actors from
+   actors that exist but are invisible, culled, misplaced or missing collision.
+3. Prioritize bridges, metal gates and switches because they can block access
+   and progression. Integrate their original behavior through the existing
+   native closure and resource system, preserving dependencies between actors.
+   Preserve original mission, character, Star, save and event spawn conditions;
+   do not spawn every conditional object simultaneously to satisfy coverage.
+4. Verify each integration with a native build and relevant profile/data,
+   adapter and behavior checks. In muted runtime tests with isolated QA saves,
+   demonstrate visible objects, correct placement, collision, interaction,
+   animation and linked effects (for example a switch opening its gate).
+   Test dynamic creation/destruction, area transitions and course re-entry.
+   Check saving/reloading and reward credit where those actors affect progress.
+5. Maintain per-course/area/mission coverage and unresolved entries, including
+   dynamically created actors and minigames. Record exact build and replay
+   evidence, and show screenshots in the chat. Registry entries or successful
+   draw callbacks alone do not prove that an object appears and works in play.
+
+Acceptance: all expected actor types/variants and required scenery have native
+support, original conditional behavior is retained, and level/mission coverage
+demonstrates appearance and gameplay function. Unchecked content stays marked
+unverified; no claim that all actors spawn based only on one course or mission.
+
+Preserve the original ROM and user saves. Full executables, extracted assets,
+scene inventories, private traces and screenshots remain local under the
+existing publication rules. Refresh ROM-free build support only through the
+reviewed reconstruction and publication workflow when source closure grows.

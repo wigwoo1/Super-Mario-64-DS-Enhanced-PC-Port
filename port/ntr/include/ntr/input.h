@@ -22,6 +22,9 @@ struct InputState {
 };
 
 void input_poll();
+// Raw capture uses labeled pad buttons, matching Nintendo and Xbox mappings.
+uint32_t input_binding_candidate(bool pad);
+bool input_binding_cancel();
 // Isolated adaptive replays send the same raw DS buttons/stick as schedules.
 // Accepted only with both AUTOMATION_ONLY=1 and TEST_BOSS_BOT=1.
 void input_test_controls(bool enabled, uint16_t buttons, int16_t x, int16_t y);
@@ -44,6 +47,7 @@ uint16_t input_keyinput();
 void input_left_stick(float *x, float *y);
 // Pure conversion used by input_left_stick and host-side calibration checks.
 void normalize_stick(int16_t raw_x, int16_t raw_y, float *x, float *y);
+void normalize_stick(int16_t raw_x, int16_t raw_y, float deadzone_percent, float *x, float *y);
 
 }  // namespace ntr
 

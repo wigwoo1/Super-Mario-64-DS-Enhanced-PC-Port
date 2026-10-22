@@ -63,10 +63,11 @@ bool g_forced_software = false,g_renderer_failed = false;
 VideoRenderer g_active_renderer=VideoRenderer::D3D11;
 unsigned g_output_width=SCREEN_W,g_output_height=SCREEN_H;
 
-constexpr std::array<std::array<uint32_t, 2>, 13> kResolutionPresets{{
+constexpr std::array<std::array<uint32_t, 2>, 15> kResolutionPresets{{
     {{1280, 720}}, {{1920, 1080}}, {{2560, 1440}}, {{3840, 2160}},
     {{1280, 800}}, {{1920, 1200}}, {{2560, 1600}}, {{3456, 2160}},
     {{1280, 549}}, {{2560, 1097}}, {{3440, 1474}}, {{3840, 1646}},
+    {{854, 480}}, {{640, 360}},
     {{256,192}},
 }};
 
@@ -347,6 +348,13 @@ void clamp_settings(VideoSettings &s) {
     if(s.camera_zoom>3) s.camera_zoom=0;
     s.camera_sensitivity=std::clamp<uint16_t>(s.camera_sensitivity,25,300);
     if(s.camera_acceleration>2)s.camera_acceleration=1;
+    const InputBindings defaults;
+    for(unsigned i=0;i<binding_count;++i) {
+        if(!valid_key_binding(s.bindings.keys[i]))s.bindings.keys[i]=defaults.keys[i];
+        if(!valid_pad_binding(s.bindings.pad[i]))s.bindings.pad[i]=defaults.pad[i];
+    }
+    s.left_stick_deadzone=std::min<uint8_t>(s.left_stick_deadzone,50);
+    s.right_stick_deadzone=std::min<uint8_t>(s.right_stick_deadzone,50);
     if(static_cast<unsigned>(s.render_distance)>3) s.render_distance=RenderDistance::Minimum;
     if(static_cast<unsigned>(s.texture_quality)>5) s.texture_quality=TextureQuality::Original;
     if(s.anisotropic_filtering!=2 && s.anisotropic_filtering!=4 &&
@@ -421,6 +429,16 @@ bool video_load_settings(const char *path) {
         char *end = nullptr;
         const unsigned long value = std::strtoul(equals, &end, 10);
         if (end == equals) continue;
+        unsigned binding_index=0;int consumed=0;
+        if(std::sscanf(line,"key_bind_%u%n",&binding_index,&consumed)==1 && line[consumed]==0 && binding_index<binding_count) {
+            if(valid_key_binding(value))loaded.bindings.keys[binding_index]=static_cast<uint16_t>(value);
+            continue;
+        }
+        consumed=0;
+        if(std::sscanf(line,"pad_bind_%u%n",&binding_index,&consumed)==1 && line[consumed]==0 && binding_index<binding_count) {
+            if(value<=0x3ffff && valid_pad_binding(value))loaded.bindings.pad[binding_index]=static_cast<uint32_t>(value);
+            continue;
+        }
         if (std::strcmp(line, "width") == 0) loaded.width = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "height") == 0) loaded.height = static_cast<uint32_t>(value);
         else if(std::strcmp(line,"window_width")==0)loaded_window.width=static_cast<unsigned>(std::min(value,3840ul));
@@ -433,6 +451,8 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line,"camera_invert_x")==0) loaded.camera_invert_x=value==1;
         else if (std::strcmp(line,"camera_invert_y")==0) loaded.camera_invert_y=value==1;
         else if (std::strcmp(line,"camera_acceleration")==0) loaded.camera_acceleration=value<=2?static_cast<uint8_t>(value):1;
+        else if (std::strcmp(line,"left_stick_deadzone")==0) loaded.left_stick_deadzone=static_cast<uint8_t>(std::min(value,50ul));
+        else if (std::strcmp(line,"right_stick_deadzone")==0) loaded.right_stick_deadzone=static_cast<uint8_t>(std::min(value,50ul));
         else if (std::strcmp(line, "always_run") == 0) loaded.always_run = value == 1;
         else if (std::strcmp(line, "render_distance") == 0) loaded.render_distance = value<=3 ? static_cast<RenderDistance>(value) : RenderDistance::Minimum;
         else if (std::strcmp(line, "stay_in_stage_after_star") == 0) loaded.stay_in_stage_after_star = value == 1;
@@ -481,11 +501,11 @@ bool video_save_settings(const char *path) {
     if (length < 0 || static_cast<size_t>(length) >= sizeof(temporary)) return false;
     FILE *file = std::fopen(temporary, "wb");
     if (!file) return false;
-    const bool write_ok = std::fprintf(file,
+    bool write_ok = std::fprintf(file,
         "window_width=%u\nwindow_height=%u\nwindow_maximized=%u\nwidth=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
         "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\nbrain_rot_text=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n"
-        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\npause_music_rec_room=%u\n",
+        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\nleft_stick_deadzone=%u\nright_stick_deadzone=%u\npause_music_rec_room=%u\n",
         g_window_preferences.width,g_window_preferences.height,g_window_preferences.maximized?1u:0u,
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
@@ -497,7 +517,9 @@ bool video_save_settings(const char *path) {
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
         static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,g_settings.brain_rot_text ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance),
-        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.pause_music_rec_room)) >= 0;
+        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.left_stick_deadzone),unsigned(g_settings.right_stick_deadzone),unsigned(g_settings.pause_music_rec_room)) >= 0;
+    for(unsigned i=0;i<binding_count;++i)
+        write_ok=(std::fprintf(file,"key_bind_%u=%u\npad_bind_%u=%u\n",i,unsigned(g_settings.bindings.keys[i]),i,unsigned(g_settings.bindings.pad[i]))>=0) && write_ok;
     const bool close_ok = std::fclose(file) == 0;
     if (!write_ok || !close_ok) { std::remove(temporary); return false; }
 #if defined(_WIN32)

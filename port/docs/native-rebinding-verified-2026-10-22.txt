@@ -1,0 +1,68 @@
+Native keyboard/controller rebinding, 2026-10-22
+
+Implementation/restart replay EXE SHA256:
+1D4E2B481BAEE0408F75111ABF2D636C5C854A08289179FE0D257A855F0D331F
+Final full-width touch-hitbox EXE SHA256:
+BCCAB12C1C62F5CF1B510D5AB70C96E29AA3C7D472E6A7E1A133728E30329E25
+Status: verified in selected automated paths; physical Switch Pro pending.
+
+Pause > Controller Modes now opens native Controls for controller confirmation
+and pointer/touch clicks, bypassing the unsupported retail Controller Modes
+screen. Left/right deadzones are independent (0..50 percent, step 2), default
+24/20. Left applies to movement, right to free camera. Keyboard and Controller
+subpages expose twelve game buttons plus camera zoom and free-camera toggle.
+L/R changes binding pages; A begins capture. Release the activating button,
+then press one new input. Escape or controller Back cancels; capture times out.
+Controller capture supports labeled buttons, D-pad, shoulders, stick clicks
+and triggers. Assigning an occupied input swaps its old action. Reset Defaults
+requires a second confirmation and restores bindings and both deadzones.
+Gameplay bindings are configurable; UI controls stay fixed for recovery:
+controller labeled A confirm/B back, D-pad or left stick to navigate; keyboard
+W/S and A/D navigate, Space confirms, left Shift backs out, Enter pauses.
+Bindings persist in existing settings with atomic replacement; legacy settings
+retain defaults. Invalid serialized bindings fall back safely. Axes remain
+assigned to their existing movement/camera functions; chords are not supported.
+
+Build/link and nine focused CTests pass: rebinding, input, SDL gamepad, pause
+settings, camera controls, Wanted settings surface, input state/history and
+DSMT input. New checks exercise capture release/cancel/conflict swap, paging,
+defaults, malformed settings, trigger mapping, persistent keyboard/pad dispatch
+and fixed UI mapping. No matched src/ or shared include/ edits were made.
+
+Three exact-build isolated QA cases passed, audio enabled with device muted:
+- native-rebinding-castle-final-20261022: 7650 ticks. Controller enters Controls,
+  edits deadzones to 26/22, captures Jump J and labeled X; both jump in play.
+- native-rebinding-battlefield-final-20261022: 3650 ticks. Loads prior bindings,
+  navigates all three controller pages, returns to play; X and J both jump.
+- native-rebinding-reload-touch-final-20261022: 6600 ticks. Fresh restart loads
+  saved settings; clicking original Controller Modes opens Controls without
+  a crash or accidental value change. X/J jump after returning to play.
+All exit 0, end in normal controllable Wait, retain isolated save hashes, have
+zero mixer errors and submit zero nonzero samples to the output device.
+Screenshots/CSV/logs/acceptance JSON stay local in those work directories.
+An earlier run caught held A adjusting deadzone on menu entry; the final entry
+now seeds held-key history and preserves the current touch latch.
+
+Physical Nintendo Bluetooth/USB acceptance remains open. The old original
+CONTROLLER MODES button artwork still has a distorted letter; new menu text
+is rendered with the cached original Options font. No cosmetic fix to that
+original button is claimed. This is a local experimental playtest build.
+Full executable/ROM-derived data remain private. Rebuild and verify the ROM-free
+kit separately before publication. Full actor coverage and the broader roadmap
+remain unfinished.
+
+Final touch-boundary audit widened interception from the middle of the button
+to its original full width, x 8..247. Shared bounds checks cover castle/course
+and other pause layouts. Nine focused CTests pass again on this final build.
+The final exact-build Battlefield replay native-rebinding-button-edges-final-
+20261022 runs 3200 ticks, clicks (8,64) and (247,95), opens Controls both times,
+retains bindings/deadzones, returns to play and jumps with X and J. Exit 0,
+normal Wait, saves unchanged, mixer errors 0, device nonzero output 0. Earlier
+three implementation/restart replays above used the preceding recorded hash;
+the final change only broadens the intercepted button rectangle.
+
+Separate F: playtest destination:
+F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-22-rebinding-final
+The latest-test launcher points there after hash-verified installation. Previous
+preview saves/settings are copied, preserving their original files. This is
+diagnostic playtest availability, not stable-install or all-course acceptance.

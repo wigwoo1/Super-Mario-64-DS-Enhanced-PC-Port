@@ -1,0 +1,23 @@
+# Coin pickup HUD and sound correlation — 2026-10-22
+
+A muted 3,700-frame isolated castle replay on the current native build reached
+the original stair ledge and collected two yellow coins through normal player
+movement. At runtime frame 3253, coin UIDs 88 and 89 changed into the collected
+state and the native audio trace recorded two starts for the coin pickup cue
+(archive 3, effect 17). Both cues completed naturally at audio tick 2321, 31
+audio ticks after starting at tick 2290. The run ended with zero mixer errors.
+The output-device gate was muted and submitted zero nonzero samples; PCM capture
+was generated, so this verifies cue triggering and finite completion, not
+whether the sound is subjectively accurate when heard.
+
+At runtime frame 3253 the HUD still showed 0 coins; at frame 3260 it showed 2.
+Screenshots `coin-3250.bmp` and `coin-3260.bmp` show the before/after state.
+The isolated slot save and its backup both retained SHA256
+`7C81CE82DBCE712CCCA599357BF7838E5D261B7F54359BE40A1DB64D01902E60`.
+The replay exited with code 0. Diagnostic log, CSV traces, PCM and screenshots
+remain local in `work/native-coin-audio-hud-rtframe-20261022`.
+
+This closes the actual coin-contact/HUD/sound-start-and-completion check. It
+does not verify audible sound quality or other coin types, and it is not player
+acceptance. Continue muted testing with isolated saves. The port remains
+experimental and incomplete.

@@ -33,5 +33,9 @@ int main() {
     if(response.update(32767,32767,settings,0).yaw!=0)return 10;
     settings.camera_acceleration=2;
     if(!(turn(60,settings)<normal))return 11;
+    settings.camera_acceleration=0;settings.right_stick_deadzone=30;response.reset();
+    if(response.update(9000,0,settings,1.0/60).yaw!=0)return 12;
+    response.reset();
+    if(response.update(16000,0,settings,1.0/60).yaw<=0)return 13;
     std::puts("PASS free-camera sensitivity, independent inversion, gentle ramp, deadzone, immediate stop, and 30/60/240 update-rate invariance");
 }

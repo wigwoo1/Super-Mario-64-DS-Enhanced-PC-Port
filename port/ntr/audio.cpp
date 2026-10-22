@@ -4,6 +4,7 @@
 #include <mmsystem.h>
 #include "ntr/audio.h"
 #include "ntr/audio_output.h"
+#include "ntr/music_tracks.h"
 #include "ntr/fs.h"
 #include "ntr/sdat.h"
 #include "ntr/pause_music.h"
@@ -136,13 +137,16 @@ uint32_t audio_sequence(uint32_t key,unsigned id){
     if(!audio_ready())return 0;std::lock_guard<std::mutex> lock(state->mutex);
     const auto voice=state->engine.play_sequence(id,key);
     if(voice){state->music[voice]=true;state->pause_music.music_started(voice);++state->starts;}
-    if(state->starts<3000)std::fprintf(stderr,"[native audio] sequence id=%u key=%u result=%u error=%s tick=%llu\n",id,key,voice,voice?"":state->engine.error().c_str(),state->game_ticks);
+    if(state->starts<3000)std::fprintf(stderr,"[native audio] sequence id=%u name=%s key=%u result=%u error=%s tick=%llu\n",id,ntr::music_track_name(id)?ntr::music_track_name(id):"other",key,voice,voice?"":state->engine.error().c_str(),state->game_ticks);
     return voice;
 }
 static uint32_t start_effect(unsigned group,unsigned id,int bank,unsigned max_game_ticks,uint32_t key){
     if(!audio_ready())return 0;std::lock_guard<std::mutex> lock(state->mutex);
     const auto voice=state->engine.play_effect(group,id,bank,key);
     if(voice){state->music[voice]=false;state->effects[voice]={group,id,max_game_ticks?state->game_ticks+max_game_ticks:0};++state->starts;}
+    if(voice && group==3 && id==17 && std::getenv("SM64DS_PC_AUDIO_TRACE"))
+        std::fprintf(stderr,"[native audio event] coin-pickup start key=%u runtime_frame=%llu audio_tick=%llu\n",
+            voice,static_cast<unsigned long long>(rt_frame()),static_cast<unsigned long long>(state->game_ticks));
     if(state->starts<3000)std::fprintf(stderr,"[native audio] effect archive=%u id=%u bank=%d result=%u error=%s tick=%llu\n",group,id,bank,voice,voice?"":state->engine.error().c_str(),state->game_ticks);
     return voice;
 }

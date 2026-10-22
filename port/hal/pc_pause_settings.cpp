@@ -123,6 +123,16 @@ extern "C" int pc_stage_pause_take_action() {
 }
 extern "C" int pc_pause_settings_render() { if (!active) return 0; draw(); return 1; }
 
+extern "C" void pc_pause_settings_open_controller_bindings() {
+    active=true;legacy=false;
+    uint16_t held=0;ntr_input_get_ui_keys(&held);
+    menu.reset(held);
+    menu.page=pc_pause::Page::Controls;
+    nav_previous=held;nav_repeat=0;nav_ticks=0;touch_was_down=ntr::input_state().touch;
+    data_0209f248=data_0209f1ec=10;
+    data_0209f22c=0;
+}
+
 extern "C" int pc_pause_settings_update() {
     stage_pause_action=-1;
     uint16_t keys = 0;
@@ -143,6 +153,11 @@ extern "C" int pc_pause_settings_update() {
     touch_was_down = input.touch;
     if (data_0209f2c4 != 1) return 0;
     const unsigned state = data_0209f1ec;
+    if(!active && (state==1 || state==3 || state==13) && !data_0209f300 && tapped) {
+        if(pc_pause::controller_modes_hit(state,input.touch_x,input.touch_y)) {
+            pc_pause_settings_open_controller_bindings();draw();return 1;
+        }
+    }
     // Add ordinary button navigation to the recovered touch-oriented menu.
     if (!active && (state==1 || state==3 || state==13) && !data_0209f300) {
         legacy = false;
@@ -194,15 +209,16 @@ extern "C" int pc_pause_settings_update() {
     if (!active) return 0;
     auto settings = ntr::video_get_settings();
     uint16_t menu_keys = keys;
-    if (tapped && !ntr::video_minimap_editor_active() && input.touch_x>=8 && input.touch_x<248) {
+    if (!menu.capture && tapped && !ntr::video_minimap_editor_active() && input.touch_x>=8 && input.touch_x<248) {
         for (unsigned row=0;row<menu.rows();++row) {
             if (pc_pause::hit_row(input.touch_y,menu.rows())==static_cast<int>(row)) {
                 menu.row = row;
-                menu_keys |= menu.page==pc_pause::Page::Options || menu.page==pc_pause::Page::Save ? 1 : input.touch_x<128 ? 0x20 : 0x10;
+                menu_keys |= menu.page==pc_pause::Page::Options || menu.page==pc_pause::Page::Save || menu.page==pc_pause::Page::Controls && menu.row>=2 || menu.binding_page() ? 1 : input.touch_x<128 ? 0x20 : 0x10;
             }
         }
     }
-    const auto action = menu.update(menu_keys,settings);
+    const bool capturing=menu.capture!=0;
+    const auto action = capturing ? menu.binding_sample(ntr::input_binding_candidate(menu.page==pc_pause::Page::Gamepad),ntr::input_binding_cancel(),settings) : menu.update(menu_keys,settings);
     if (action==pc_pause::Action::SaveProgress) menu.save_status=SaveData::SaveCurrentFile()?1:-1;
     if (action==pc_pause::Action::Changed) ntr::video_set_settings(settings);
     if (action==pc_pause::Action::GameOptions) {

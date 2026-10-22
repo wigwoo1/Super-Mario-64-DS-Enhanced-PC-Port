@@ -40,6 +40,12 @@ int main() {
     // Intermediate travel remains analog instead of becoming a digital key.
     ntr::normalize_stick(20000, 0, &x, &y);
     if (!(x > 0.0f && x < 1.0f && y == 0.0f)) return 6;
+    ntr::normalize_stick(6000,0,20.0f,&x,&y);
+    if(x!=0.0f || y!=0.0f)return 26;
+    ntr::normalize_stick(10000,0,20.0f,&x,&y);
+    if(x<=0.0f || x>=1.0f || y!=0.0f)return 27;
+    ntr::normalize_stick(6000,0,10.0f,&x,&y);
+    if(x<=0.0f || y!=0.0f)return 28;
 
 #if defined(_WIN32)
     _putenv_s("SM64DS_PC_AUTOMATION_ONLY", "1");
@@ -174,6 +180,13 @@ int main() {
     if(ntr_input_run_buttons(0,1)!=0x800 || ntr_input_run_buttons(0x402,1)!=0xc02)return 84;
     settings.always_run=true;ntr::video_set_settings(settings);
     if(ntr_input_run_buttons(0x10,0)!=0x810 || ntr_input_run_buttons(0x402,0)!=0xc02)return 85;
+    settings.left_stick_deadzone=42;settings.right_stick_deadzone=18;ntr::video_set_settings(settings);
+    if(!ntr::video_save_settings("smoke_deadzone_settings.ini"))return 29;
+    ntr::video_set_settings(ntr::VideoSettings{});
+    if(!ntr::video_load_settings("smoke_deadzone_settings.ini"))return 30;
+    settings=ntr::video_get_settings();
+    std::remove("smoke_deadzone_settings.ini");
+    if(settings.left_stick_deadzone!=42 || settings.right_stick_deadzone!=18)return 31;
     std::puts("input smoke: analog travel, isolated input, run policy and timed stick replay pass");
     return 0;
 }

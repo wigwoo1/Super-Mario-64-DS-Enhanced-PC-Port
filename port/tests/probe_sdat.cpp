@@ -1,6 +1,7 @@
 // Local-asset acceptance tool. Outputs stay private; no ROM data is compiled in.
 #include "ntr/sdat.h"
 #include "ntr/pause_music.h"
+#include "ntr/music_tracks.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -21,6 +22,38 @@ int main(int argc,char **argv){
     std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)),{});
     ntr::SdatEngine engine;if(!engine.load(bytes.data(),bytes.size())){std::fprintf(stderr,"load failed: %s\n",engine.error().c_str());return 1;}
     std::vector<int16_t> buffer(2048);
+    if(!std::strcmp(argv[2],"--requested-music")) {
+        uint64_t total_nonzero=0;
+        for(const auto &track:ntr::requested_music_tracks) {
+            const auto id=static_cast<unsigned>(track.id);
+            if(!engine.has_sequence(id)) {
+                std::fprintf(stderr,"missing requested soundtrack entry: %s (sequence %u)\n",track.name,id);
+                return 1;
+            }
+            engine.stop_all();
+            const auto voice=engine.play_sequence(id,1000+id);
+            if(!voice) {
+                std::fprintf(stderr,"could not start requested soundtrack entry: %s (sequence %u): %s\n",track.name,id,engine.error().c_str());
+                return 1;
+            }
+            uint64_t nonzero=0;
+            for(unsigned block=0;block<96;++block) {
+                engine.render(buffer.data(),1024);
+                for(auto sample:buffer)nonzero+=sample!=0;
+            }
+            if(!nonzero || engine.errors()) {
+                std::fprintf(stderr,"requested soundtrack entry failed to render: %s (sequence %u), samples=%llu errors=%llu: %s\n",
+                    track.name,id,static_cast<unsigned long long>(nonzero),static_cast<unsigned long long>(engine.errors()),engine.error().c_str());
+                return 1;
+            }
+            total_nonzero+=nonzero;
+            std::printf("PASS %-16s sequence=%u nonzero_samples=%llu\n",track.name,id,static_cast<unsigned long long>(nonzero));
+        }
+        std::printf("PASS all %zu requested tracks rendered (%llu nonzero samples), errors=%llu\n",
+            sizeof(ntr::requested_music_tracks)/sizeof(ntr::requested_music_tracks[0]),
+            static_cast<unsigned long long>(total_nonzero),static_cast<unsigned long long>(engine.errors()));
+        return 0;
+    }
     if(!std::strcmp(argv[2],"--pause-music")) {
         auto check=[](bool ok,const char *message){if(!ok)throw std::runtime_error(message);};
         try {

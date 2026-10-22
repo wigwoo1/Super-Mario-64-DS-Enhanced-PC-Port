@@ -23,6 +23,7 @@ namespace {
 InputState g_state;
 uint16_t g_keyinput = 0x0FFF;
 uint16_t g_menu_keys = 0;
+std::array<bool,256> g_raw_keys{};
 bool g_touch = false;
 uint16_t g_touch_x = 0, g_touch_y = 0;
 unsigned long long g_input_poll_count = 0;
@@ -120,20 +121,7 @@ void input_poll() {
     // continuous direction and speed. Keyboard and physical D-pad remain
     // digital controls.
     uint16_t pressed = 0;
-    const uint16_t buttons = g_state.buttons;
-    if (key_down(VK_SPACE)) pressed |= 1u << 0;
-    if (key_down(VK_LSHIFT)) pressed |= 1u << 1;
-    if ((buttons & XINPUT_GAMEPAD_BACK) || key_down(VK_BACK)) pressed |= 1u << 2;
-    if ((buttons & XINPUT_GAMEPAD_START) || key_down(VK_RETURN)) pressed |= 1u << 3;
-    if ((buttons & XINPUT_GAMEPAD_DPAD_RIGHT) || key_down('D')) pressed |= 1u << 4;
-    if ((buttons & XINPUT_GAMEPAD_DPAD_LEFT) || key_down('A')) pressed |= 1u << 5;
-    if ((buttons & XINPUT_GAMEPAD_DPAD_UP) || key_down('W')) pressed |= 1u << 6;
-    if ((buttons & XINPUT_GAMEPAD_DPAD_DOWN) || key_down('S')) pressed |= 1u << 7;
-    if ((buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) || key_down('E')) pressed |= 1u << 8;
-    if ((buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) || key_down('Q')) pressed |= 1u << 9;
-    if (key_down('X')) pressed |= 1u << 10;
-    if (key_down('C')) pressed |= 1u << 11;
-
+    for(unsigned key=0;key<256;++key)g_raw_keys[key]=key_down(key);
     // Optional host-side automation for unattended startup/gameplay tracing.
     // These variables are unset during normal play and do not alter the UI.
     const char *automation_only = std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -141,22 +129,13 @@ void input_poll() {
         // Desktop typing, a connected pad, and mouse clicks must not change
         // the route taken by a scripted replay. Synthetic inputs below remain.
         g_state = {};
+        g_raw_keys.fill(false);
         pressed = 0;
         g_touch = false;
         g_touch_x = g_touch_y = 0;
         write_touch_latch(false, 0, 0);
         g_state.buttons=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_PAD_BUTTONS"),0xffff);
-        // The regular hardware path maps these XInput-compatible directional
-        // bits before this automation block. Reapply them after replacing the
-        // pad state so replayed controller D-pad input follows the same path.
-        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_RIGHT) pressed |= 1u << 4;
-        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_LEFT) pressed |= 1u << 5;
-        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_UP) pressed |= 1u << 6;
-        if (g_state.buttons & XINPUT_GAMEPAD_DPAD_DOWN) pressed |= 1u << 7;
-        if (g_state.buttons & XINPUT_GAMEPAD_START) pressed |= 1u << 3;
-        if (g_state.buttons & XINPUT_GAMEPAD_BACK) pressed |= 1u << 2;
-        if (g_state.buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) pressed |= 1u << 9;
-        if (g_state.buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) pressed |= 1u << 8;
+
     }
     // Replay taps use the same hardware latch as mouse input. Restrict this
     // test interface to isolated automation; each valid tap lasts five polls.
@@ -276,9 +255,15 @@ void input_poll() {
         (star_controls && std::strcmp(star_controls,"1")==0))) {
         pressed |= g_test_buttons;g_state.left_x=g_test_x;g_state.left_y=g_test_y;
     }
+    if(automation_only && automation_only[0]=='1') {
+        const unsigned key=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_HOST_KEYS"),255);
+        if(key)g_raw_keys[key]=true;
+    }
+    const auto &bindings=video_get_settings().bindings;
+    const uint32_t raw_pad=g_state.buttons | (g_state.left_trigger>128?0x10000u:0) | (g_state.right_trigger>128?0x20000u:0);
     static bool previous_zoom=false,previous_camera_mode=false;
-    bool zoom_down=(g_state.buttons & XINPUT_GAMEPAD_RIGHT_THUMB)!=0;
-    bool mode_down=(g_state.buttons & XINPUT_GAMEPAD_LEFT_THUMB)!=0;
+    bool zoom_down=(raw_pad & bindings.pad[12]) || g_raw_keys[bindings.keys[12]];
+    bool mode_down=(raw_pad & bindings.pad[13]) || g_raw_keys[bindings.keys[13]];
     if(automation_only && automation_only[0]=='1')
         zoom_down=zoom_down || scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_CAMERA_ZOOM"))!=0;
     if(automation_only && automation_only[0]=='1')
@@ -295,8 +280,8 @@ void input_poll() {
     // Menus may ask for input on the first tick of a gameplay/menu change,
     // before the graphics callback updates g_menu_navigation. Keep their
     // A-confirm/B-back view independent of the gameplay jump/attack swap.
-    g_menu_keys=static_cast<uint16_t>(pressed | controller_face_buttons(g_state.buttons,true));
-    pressed |= controller_face_buttons(g_state.buttons,g_menu_navigation);
+    g_menu_keys=static_cast<uint16_t>(pressed | mapped_buttons(ui_bindings(),g_raw_keys,raw_pad));
+    pressed |= mapped_buttons(g_menu_navigation?ui_bindings():bindings,g_raw_keys,raw_pad);
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);
 
     g_state.touch = g_touch;
@@ -333,6 +318,20 @@ void input_test_controls(bool enabled,uint16_t buttons,int16_t x,int16_t y) {
     g_test_buttons=buttons&0xfff;g_test_x=x;g_test_y=y;
 }
 InputState input_state() { return g_state; }
+uint32_t input_binding_candidate(bool pad) {
+    if(pad) {
+        const uint32_t value=g_state.buttons | (g_state.left_trigger>128?0x10000u:0) | (g_state.right_trigger>128?0x20000u:0);
+        return value && (value&(value-1))?0xffffffffu:value;
+    }
+    unsigned result=0;
+    for(unsigned key=8;key<255;++key)if(valid_key_binding(key) && g_raw_keys[key]) {
+        if(result)return 0xffffffffu;
+        result=key;
+    }
+    return result;
+}
+bool input_binding_cancel() {return g_raw_keys[27] || (g_state.buttons&0x20)!=0;}
+
 bool input_take_camera_zoom() {
     const bool pending=g_camera_zoom_pending;
     g_camera_zoom_pending=false;
@@ -359,7 +358,11 @@ void input_set_touch(bool pressed, uint16_t x, uint16_t y) {
 uint16_t input_keyinput() { return g_keyinput; }
 
 void normalize_stick(int16_t raw_x, int16_t raw_y, float *x, float *y) {
-    constexpr float deadzone = 7849.0f / 32767.0f;
+    normalize_stick(raw_x, raw_y, 24.0f, x, y);
+}
+
+void normalize_stick(int16_t raw_x, int16_t raw_y, float deadzone_percent, float *x, float *y) {
+    const float deadzone = std::clamp(deadzone_percent, 0.0f, 50.0f) / 100.0f;
     float sx = static_cast<float>(raw_x) / 32767.0f;
     float sy = static_cast<float>(raw_y) / 32767.0f;
     const float radius = std::sqrt(sx * sx + sy * sy);
@@ -377,7 +380,8 @@ void normalize_stick(int16_t raw_x, int16_t raw_y, float *x, float *y) {
 }
 
 void input_left_stick(float *x, float *y) {
-    normalize_stick(g_state.left_x, g_state.left_y, x, y);
+    normalize_stick(g_state.left_x, g_state.left_y,
+        static_cast<float>(video_get_settings().left_stick_deadzone), x, y);
 }
 
 }  // namespace ntr

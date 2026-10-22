@@ -4,10 +4,15 @@
 #include <cstddef>
 
 namespace pc_pause {
-enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens, Gameplay, Camera };
+enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens, Gameplay, Camera, Controls, Keyboard, Gamepad };
 enum class Action { None, Changed, GameOptions, BackPause, SaveProgress };
 // Shared pixel geometry for drawing and both stage/minigame touch handling.
 constexpr unsigned row_top = 24, row_height = 24;
+inline bool controller_modes_hit(unsigned state,unsigned x,unsigned y) {
+    if(state!=1 && state!=3 && state!=13)return false;
+    const unsigned top=(state==1?72:state==3?64:80);
+    return x>=8 && x<248 && y>=top && y<top+32;
+}
 inline int hit_row(unsigned y, unsigned count) {
     return y >= row_top && y < row_top + count * row_height && (y-row_top)%row_height<16
         ? static_cast<int>((y-row_top)/row_height) : -1;
@@ -27,6 +32,10 @@ struct Menu {
     unsigned row = 0;
     uint16_t previous = 0, repeat = 0;
     unsigned ticks = 0;
+    unsigned binding_bank=0, capture=0, capture_ticks=0;
+    bool reset_confirm=false;
+    bool binding_page() const {return page==Page::Keyboard || page==Page::Gamepad;}
+    Action binding_sample(uint32_t value,bool cancel,ntr::VideoSettings &settings);
     int save_status = 0; // 0 idle, 1 saved, -1 failed; never persisted as settings.
     void reset(uint16_t held);
     unsigned rows() const;

@@ -2038,3 +2038,44 @@ earned-reload-no-duplicate-r1-20261021/acceptance.json`; do not repeat it.
 Next gameplay check: create a route that actually contacts a known coin, then
 confirm the live HUD count increments and correlate its sound start/completion
 to that contact. Keep all tests muted and save files isolated.
+
+## 2026-10-22: Minimap counter icon clarification
+
+The requested minimap HUD should show four separate values: Stars, coins,
+health, and lives. Use each counter's existing in-game icon/sprite, not the
+placeholder shapes currently drawn by `ntr/minimap_hud.cpp`. The current overlay
+does not yet include the health value. The earlier coin pickup/HUD correlation
+is documented in `native-coin-hud-audio-verified-2026-10-22.txt`; this clarification
+does not require repeating that test. Icon extraction/reuse and health wiring
+remain implementation work. Runtime screenshot verification is still required
+after that code changes; keep tests muted.
+
+## 2026-10-22: Actual coin pickup HUD/audio correlation
+
+A 3,700-frame muted, isolated castle replay collected two yellow coins at runtime frame 3253 through normal movement. Coin UIDs 88 and 89 entered collected state; the HUD advanced from 0 to 2 by frame 3260. Trace-only audio instrumentation tied two archive 3/effect 17 starts to frame 3253; both completed naturally 31 audio ticks later. Mixer errors were zero and the output device received zero nonzero samples. This verifies the in-game trigger, finite cue completion and HUD update, but not audible timbre or subjective sound quality. Replay exited 0 and isolated slot/backup hashes remained unchanged. Screenshots, CSV, PCM and logs remain local under work/native-coin-audio-hud-rtframe-20261022. See 
+native-coin-hud-audio-verified-2026-10-22.txt. The port remains experimental; player acceptance and other unresolved gameplay/audio issues remain open.
+
+## 2026-10-22: Complete actor and level-object coverage requested
+
+Added `native-actor-coverage-plan-2026-10-22.txt` to the full-port roadmap. The player reports missing bridges, metal gates, buttons and other objects in some levels. Inventory all courses, areas, missions and minigames against original conditional spawns; trace missing native implementations/resources and distinguish spawn failures from invisible or missing scenery. Prioritize progression objects, then verify appearance, collision, linked behavior and lifecycle with muted isolated-save gameplay and screenshots. This is planned work, not a claim that the reported failures are fixed. Sol High is selected for the upcoming controller/keyboard rebinding implementation.
+
+
+## 2026-10-22: Keyboard/controller rebinding and stick deadzones
+
+Pause > Controller Modes now opens native Controls via pad confirmation or pointer/touch, with separate left/right deadzones and paged keyboard/controller bindings for twelve game buttons plus camera zoom/free camera. Release-before-capture, cancel/timeout, conflict swapping, confirmed defaults and persistent settings are implemented. Gameplay binds are editable; UI navigation stays fixed. Nine focused CTests pass. Three isolated muted castle/Battlefield/restart replays passed on implementation build 1D4E2B48; final button-boundary build BCCAB12C additionally passes full-width edge clicks, retained settings and X/J jumps in a 3200-tick Battlefield replay. All four exit 0 with unchanged QA saves, mixer errors 0 and muted device output. Final separate F: rebinding checkpoint is prepared for latest-test installation. See native-rebinding-verified-2026-10-22.txt for exact hashes, paths and limits. Physical Switch Pro input and the distorted letter on the original Controller Modes button remain open. Next bounded follow-up: refresh/reconstruct the ROM-free build kit with the new bindings header and verify the source export; Luna Medium is suitable for that established workflow. The full actor-coverage plan and port goal remain unfinished.
+
+Installation verified: F: latest-test launcher now opens native-checkpoint-2026-10-22-rebinding-final, SHA256 BCCAB12C1C62F5CF1B510D5AB70C96E29AA3C7D472E6A7E1A133728E30329E25. Previous checkpoint, original ROM and copied save/settings hashes are preserved; local evidence is work/playtest-rebinding-final-20261022/F-install-verification.json. Model handoff: Luna Medium for the established ROM-free kit refresh/reconstruction workflow; pause requested at this recommended model switch. The full port is not complete.
+
+## 2026-10-22: Original minimap counter icon source trace
+
+The original HUD uses `OAM::POWER_STAR`, `OAM::COIN`, and character-specific
+`OAM::LIFE_ICONS[]` templates. `dMeter_c::RenderHealthMeter` draws health from
+the original meter sprite/palette tables. `dMeter_c::InitResources` loads the
+language-specific OBJ graphics/palettes (default HUD graphics include file
+`0x269`); `dMap_c` loads minimap resource `0x229`. The native minimap overlay
+does not initialize or render the meter resource path, so changing only its
+placeholder icon shapes would still not reuse the game art. The next code step
+must make those existing templates available without clobbering the scene's
+live OBJ memory, add the active player's health value, and verify four counters
+in a muted runtime screenshot. No build or runtime claim is made for this audit.
+

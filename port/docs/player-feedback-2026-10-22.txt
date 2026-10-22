@@ -11,18 +11,22 @@ The player reported these issues in the Star Gate development preview:
 - Chain Chomp voice and bounce sounds are missing.
 - The secret portal triggered by standing in the level 1 flowers does not work.
 
-Requested minimap HUD addition: keep the Star, coin and life counters visible at
-all times beside the minimap. Place the counters on its side, and scale their
-icons with the minimap size setting.
+Requested minimap HUD addition: keep Star, coin, health, and life counters
+visible beside the minimap. Use the game's existing icons for all four; health
+and lives are separate counters. Place them on one side and scale their icons
+with the minimap size setting. The current overlay has only Star, coin, and life
+values and draws placeholder icons, so the art and health requirements remain
+open.
 
 These are user-reported failures, not claims from a muted automated test. The
 camera lens and pause confirmation now pass selected software replays with
 muted tests; physical Nintendo Switch Pro acceptance remains open. The flower
 portal implementation passes the Battlefield destination/re-entry replay and
 has an installed checkpoint, though other course warps are not covered.
-Minimap-adjacent counters are implemented and visible in a muted gameplay
-screenshot. A real coin pickup has not yet been correlated with a nonzero HUD
-counter, so that data update still needs an in-game check.
+Minimap-adjacent Star, coin, and life counters are implemented and visible in a
+muted gameplay screenshot. A real coin pickup has been correlated with the HUD
+counter updating. The existing-game icon art and separate health counter remain
+unimplemented.
 
 Automated checks do not establish sound quality. Title/save/Chomp event
 plumbing produces non-silent PCM in selected runs, while Lakitu cloud timbre,

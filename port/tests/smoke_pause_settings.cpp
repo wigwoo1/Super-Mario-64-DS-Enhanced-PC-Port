@@ -210,6 +210,16 @@ int main() {
     if(press(0x20)!=Action::Changed || settings.camera_acceleration!=2)return 91;
     menu.line(3,settings,free_label,sizeof(free_label));
     if(std::strcmp(free_label,"ACCELERATION SMOOTH"))return 92;
+    menu.page=Page::Controls;menu.row=0;
+    if(menu.page!=Page::Controls || menu.rows()!=5)return 100;
+    if(press(1)!=Action::Changed || settings.left_stick_deadzone!=26)return 101;
+    press(0x80);if(press(1)!=Action::Changed || settings.right_stick_deadzone!=22)return 102;
+    menu.line(0,settings,free_label,sizeof(free_label));
+    if(std::strcmp(free_label,"LEFT DEADZONE 26%"))return 103;
+    menu.line(1,settings,free_label,sizeof(free_label));
+    if(std::strcmp(free_label,"RIGHT DEADZONE 22%"))return 104;
+    if(press(2)!=Action::BackPause)return 105;
+    menu.page=Page::Camera;menu.row=3;
     press(0x200);
     if(menu.page!=Page::Screens)return 41;
     const ntr::MinigameLayout layouts[]={ntr::MinigameLayout::LeftRight,ntr::MinigameLayout::RightLeft,ntr::MinigameLayout::TopBottom};
@@ -270,7 +280,7 @@ int main() {
     }
     if(cache_button_panel(original_map.data(),1,panel.data()) ||
        cache_button_panel(original_map.data(),928,panel.data()))return 90;
-    for (int page=0;page<=8;++page) {
+    for (int page=0;page<=10;++page) {
         menu.page=static_cast<Page>(page); menu.row=0;
         draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
         for (auto entry:text) if (entry<0x200 || entry>0x2ff) return 31;
@@ -303,7 +313,7 @@ int main() {
     menu.page=Page::Display;
     draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
     const auto proportional_chars=chars;const auto proportional_text=text;
-    for(int page=0;page<=8;++page) {
+    for(int page=0;page<=10;++page) {
         menu.page=static_cast<Page>(page);menu.row=0;
         draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
         for(unsigned row=0;row<menu.rows();++row) {

@@ -13,10 +13,14 @@ window must not silently change the chosen internal resolution. Add a named
 "Native DS (256 x 192)" resolution option:256x192 per original DS screen (both
 screens keep that source resolution in dual-screen layouts), scaled into the
 user's chosen window. "Native DS" does not mean desktop/monitor resolution.
-Acceptance: drag-resize the window, cycle Native DS/720p/1080p/4K, and verify
+Include 480p (854x480) and 360p (640x360) for lower-power rendering.
+Acceptance: drag-resize the window, cycle Native DS/360p/480p/720p/1080p/4K, and verify
 unchanged window bounds with actual internal targets256x192 through3840x2160;
 verify window resize, pause/settings, both minigame screens and persistence.
-Planned; not implemented or runtime-accepted yet.
+Native DS, window independence, 720p,1080p,1440p and4K have selected muted
+runtime acceptance in `native-internal-resolution-2026-10-21.txt`. The newly
+added 360p/480p presets pass build and exact-cycle smoke checks; visual runtime
+acceptance and complete window/layout/persistence coverage remain open.
 
 Bob-omb/coin follow-up (2026-10-20, Sol Medium): native Release and56CTest
 pass. Distant regular Bob-omb body/ground shadow and red-coin body have matched
@@ -238,7 +242,8 @@ and verified with automated input, except for the stated physical-input limits.
    follow the recovered original menu rather than inventing a separate UI.
 
 3. Connect each option to the existing native settings state.
-   - Resolution presets through 3840x2160, including supported aspect ratios.
+   - Resolution presets through 3840x2160, including Native DS (256x192),
+     480p (854x480), and 360p (640x360), plus supported aspect ratios.
    - 60 / 120 / 240 FPS selection.
    - 4K replacement texture toggle and 2D/HUD scaling.
    - Minimap on/off, Upright / Rotate with player, opacity, size and position.
@@ -515,3 +520,5 @@ setting exists; the replacement text mod and custom-settings restyle are queued.
 2026-10-21 Options typography update: scripted English castle/Battlefield/Wanted PC settings now use a safe copy of original title glyphs/advance widths, compact centered labels and gold selection styling. Wanted bevels/arrow are code drawn; stage retains original artwork. See native-options-settings-style-2026-10-21.txt. Other-language coverage and full settings roadmap remain incomplete.
 
 2026-10-21 update: internal resolution/window independence and named Native DS are now runtime verified for castle/Wanted D3D11. Separate window client-size/maximized preferences persist. See native-internal-resolution-2026-10-21.txt. Text editing deferred by user; stop asking for replacement boxes for now. True high-refresh rendering, further native gameplay/audio and full roadmap remain open.
+
+2026-10-22: Native Controls rebinding and left/right deadzones are implemented with selected muted runtime verification; see native-rebinding-verified-2026-10-22.txt. Physical Switch Pro acceptance and the original button's distorted letter remain open. The broader settings roadmap remains incomplete.

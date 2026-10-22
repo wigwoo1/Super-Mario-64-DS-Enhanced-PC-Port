@@ -213,13 +213,17 @@ int main() {
 #endif
 
     const double expected[] = {16.0 / 9.0, 16.0 / 10.0, 21.0 / 9.0};
-    for (int i = 0; i < 13; ++i) {
+    const unsigned expected_resolutions[][2] = {
+        {1280,720}, {1920,1080}, {2560,1440}, {3840,2160},
+        {1280,800}, {1920,1200}, {2560,1600}, {3456,2160},
+        {1280,549}, {2560,1097}, {3440,1474}, {3840,1646},
+        {854,480}, {640,360}, {256,192}
+    };
+    for (int i = 0; i < 15; ++i) {
         if (settings.width > 3840 || settings.height > 2160 ||
             settings.width < 256 || settings.height < 192) return 1;
-        const double ratio = static_cast<double>(settings.width) / settings.height;
-        const int group = i / 4;
-        if (i<12 && std::abs(ratio - expected[group]) > 0.035) return 2;
-        if(i==12 && (settings.width!=256 || settings.height!=192))return 28;
+        if(settings.width!=expected_resolutions[i][0] ||
+           settings.height!=expected_resolutions[i][1])return 2;
         ntr::video_cycle_resolution(settings);
     }
     if (settings.width != 1280 || settings.height != 720) return 3;
