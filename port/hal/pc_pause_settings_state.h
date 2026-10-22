@@ -27,6 +27,9 @@ uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &t
 bool cache_options_font(const unsigned char *font, unsigned base_tile, const unsigned char *widths);
 void clear_options_font();
 bool options_font_ready();
+// Relabel one retail pause row without changing other live text or font tiles.
+bool draw_controls_label(unsigned char *chars,uint16_t *text_map,
+                         const unsigned char *font,unsigned row);
 struct Menu {
     Page page = Page::Options;
     unsigned row = 0;

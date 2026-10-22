@@ -88,8 +88,9 @@ def main():
         'lens/menu-input fixes and original-menu audio/stage-bank routing have selected '
         'muted checks; physical Nintendo Switch Pro and listening fidelity are unverified. '
         'Some mixed audio still clips. Lakitu cloud timbre, mountain/all-course warp coverage, minimap '
-        'original-icon/health integration and broader gameplay remain open. Star/coin/life digits with '
-        'placeholder icons are present beside the minimap. Native audio remains opt-in/diagnostic. '
+        'broader gameplay remain open. Star/coin/health/life counters now use original art and scale with '
+        'the minimap; selected English/Yoshi coin/damage/scaling/map-off checks pass. Other character/language '
+        'coverage remains incomplete. Native audio remains opt-in/diagnostic. '
         'High-refresh presentation repeats original-rate game frames; interpolation, '
         'HD texture packs, online/browser VS and other roadmap features remain unfinished.')
     validate_manifest(metadata)

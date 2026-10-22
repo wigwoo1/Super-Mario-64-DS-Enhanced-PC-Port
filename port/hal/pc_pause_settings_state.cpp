@@ -254,6 +254,55 @@ static unsigned glyph(char c) {
     if (c>='a' && c<='z') return c-'a'+0x2d;
     return c=='.' ? 0x50 : c=='%' ? 0x4f : c=='-' ? 0x47 : c==':' ? 0x4a : c=='/' ? 0x4e : 0x4d;
 }
+bool draw_controls_label(unsigned char *chars,uint16_t *text,const unsigned char *font,unsigned row) {
+    if(!chars || !text || !font || !have_options_font || row>=31)return false;
+    bool used[256]{};
+    for(unsigned i=0;i<1024;++i)if(i/32!=row && i/32!=row+1) {
+        const unsigned t=text[i]&0x3ff;
+        if(t>=0x200 && t<0x300)used[t-0x200]=true;
+    }
+    // The last tile is Message's transparent tile. Only borrow pairs which
+    // no other visible label references; custom settings own this same pool.
+    unsigned slots[127],count=0;
+    for(unsigned i=0;i<254;i+=2)if(!used[i]&&!used[i+1])slots[count++]=0x200+i;
+    unsigned char raster[16][128]{};
+    constexpr char label[]="CONTROLS";
+    unsigned width=0;
+    for(char c:label)if(c)width+=options_widths[glyph(c)];
+    unsigned cursor=(256-width)/2;
+    unsigned char ink=1;
+    for(unsigned i=0;i<64;++i)if(font[i]){ink=font[i]&15?font[i]&15:font[i]>>4;break;}
+    for(char c:label)if(c) {
+        const unsigned g=glyph(c);
+        for(unsigned y=0;y<16;++y)for(unsigned x=0;x<8;++x)
+            if((options_glyphs[g*64+y*4+x/2]>>((x&1)*4))&15) {
+                const unsigned dx=cursor+x;
+                if(dx<256)raster[y][dx/2]|=ink<<((dx&1)*4);
+            }
+        cursor+=options_widths[g];
+    }
+    unsigned required=0;
+    for(unsigned x=0;x<32;++x) {
+        bool visible=false;
+        for(unsigned y=0;y<16;++y)for(unsigned b=0;b<4;++b)visible|=raster[y][x*4+b]!=0;
+        required+=visible;
+    }
+    if(required>count)return false; // failure must leave the retail label intact
+    std::fill(text+row*32,text+(row+2)*32,0x2ff);
+    unsigned next=0;
+    for(unsigned x=0;x<32;++x) {
+        unsigned char cell[64];bool visible=false;
+        for(unsigned y=0;y<16;++y)for(unsigned b=0;b<4;++b) {
+            cell[y*4+b]=raster[y][x*4+b];visible|=cell[y*4+b]!=0;
+        }
+        if(!visible)continue;
+        const unsigned tile=slots[next++];
+        std::memcpy(chars+tile*32,cell,64);
+        text[row*32+x]=static_cast<uint16_t>(tile);
+        text[(row+1)*32+x]=static_cast<uint16_t>(tile+1);
+    }
+    return true;
+}
 void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
           uint16_t *text, uint16_t *panels, const unsigned char *font,
           const uint16_t *panel, uint16_t blank_panel, bool touch_navigation) {

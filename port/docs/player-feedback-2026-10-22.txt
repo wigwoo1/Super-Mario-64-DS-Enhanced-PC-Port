@@ -14,8 +14,8 @@ The player reported these issues in the Star Gate development preview:
 Requested minimap HUD addition: keep Star, coin, health, and life counters
 visible beside the minimap. Use the game's existing icons for all four; health
 and lives are separate counters. Place them on one side and scale their icons
-with the minimap size setting. The current overlay has only Star, coin, and life
-values and draws placeholder icons, so the art and health requirements remain
+with the minimap size setting. The overlay now has all four counters with original game artwork, verified
+in selected English/Yoshi paths; broader character/language acceptance remains
 open.
 
 These are user-reported failures, not claims from a muted automated test. The
@@ -25,8 +25,8 @@ portal implementation passes the Battlefield destination/re-entry replay and
 has an installed checkpoint, though other course warps are not covered.
 Minimap-adjacent Star, coin, and life counters are implemented and visible in a
 muted gameplay screenshot. A real coin pickup has been correlated with the HUD
-counter updating. The existing-game icon art and separate health counter remain
-unimplemented.
+counter updating. Original icon art and the separate health counter are now implemented;
+see native-minimap-original-art-2026-10-22.txt for verified scope.
 
 Automated checks do not establish sound quality. Title/save/Chomp event
 plumbing produces non-silent PCM in selected runs, while Lakitu cloud timbre,

@@ -1319,7 +1319,7 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     hal/pc_session.cpp hal/pc_pause_settings.cpp hal/pc_pause_settings_state.cpp hal/touch_menu_navigation.cpp hal/course_clear_input.cpp hal/stage_options_input.cpp
     hal/dialogue_overrides.cpp hal/dialogue_runtime.cpp
     hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp hal/distant_actor_shadows.cpp
-    hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
+    hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/minimap_hud_art.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
     "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV001_IMAGE_CPP}"
     "${LEVEL_OVERLAY_TABLE_CPP}" "${OV002_DATA_CPP}" "${TITLE_OVERLAY_DATA_CPP}"
     "${LEVEL_OVERLAY_DATA_CPP}" "${OV009_IMAGE_CPP}")

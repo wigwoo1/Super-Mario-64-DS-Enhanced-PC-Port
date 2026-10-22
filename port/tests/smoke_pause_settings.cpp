@@ -310,6 +310,23 @@ int main() {
     const auto original_font=font;
     if(cache_options_font(nullptr,0,widths.data()) || cache_options_font(font.data(),0x101,widths.data()))return 91;
     if(!cache_options_font(font.data(),0,widths.data()) || !options_font_ready())return 92;
+    // Relabeling must preserve every other live glyph and fail atomically
+    // when the shared Message scratch pool has no unreferenced tile pairs.
+    chars.fill(0xa5);text.fill(0x2ff);
+    for(unsigned i=0;i<256;++i)text[i]=static_cast<uint16_t>(0x200+i);
+    const auto busy_chars=chars;const auto busy_text=text;
+    if(draw_controls_label(chars.data(),text.data(),font.data(),12) ||
+       chars!=busy_chars || text!=busy_text)return 97;
+    text.fill(0x2ff);text[0]=0x200;
+    const auto before_label=chars;
+    if(!draw_controls_label(chars.data(),text.data(),font.data(),9))return 98;
+    bool label_visible=false;
+    for(unsigned i=0;i<1024;++i) {
+        if(i/32==9 || i/32==10)label_visible|=text[i]!=0x2ff;
+        else if(text[i]!=(i==0?0x200:0x2ff))return 99;
+    }
+    if(!label_visible || std::memcmp(chars.data()+0x4000,before_label.data()+0x4000,64) ||
+       std::memcmp(chars.data()+0x2ff*32,before_label.data()+0x2ff*32,32))return 100;
     menu.page=Page::Display;
     draw(menu,settings,chars.data(),text.data(),panels.data(),font.data(),panel.data(),0x3ff);
     const auto proportional_chars=chars;const auto proportional_text=text;

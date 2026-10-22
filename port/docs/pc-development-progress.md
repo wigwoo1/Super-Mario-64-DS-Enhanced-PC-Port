@@ -2079,3 +2079,10 @@ must make those existing templates available without clobbering the scene's
 live OBJ memory, add the active player's health value, and verify four counters
 in a muted runtime screenshot. No build or runtime claim is made for this audit.
 
+
+## 2026-10-22: Controls label repaired in normal game entry
+Pause now labels the native rebinding entry CONTROLS using the cached original Options font. Selected normal title/save/castle and Battlefield replays show clean text, open Controls and return to play. Build and three focused checks pass; both muted runs exit0 with QA saves unchanged, zero mixer errors and zero nonzero device output. English title-driven paths are verified; direct QA entry without title font initialization retains the legacy label, and physical hardware remains unverified. A separate F: controls-label checkpoint is installed and linked from the latest-test launcher. See native-controls-label-2026-10-22.txt. Original HUD icon/health integration and the full port remain unfinished.
+
+
+## 2026-10-22: Original-art minimap HUD and separate health counter
+Replaced placeholder icons with original Star/coin/character-life OBJ artwork and the original health meter. All four rows scale with the minimap. Private resource decoding preserves live sprite banks/palettes/OAM, verified by checksums. Native build and four focused checks pass. Final E5C2E670 build passes muted castle coin0->2, Battlefield Goomba damage8->3, large-map and map-off replays, including actual llvmpipe rendering. Isolated saves unchanged, mixer errors0/device output0. English/Yoshi selected paths accepted; broader character/language/game coverage remains open. Separate F: original-hud checkpoint installed, latest-test launcher updated, previous preview/ROM/saves/settings preserved. See native-minimap-original-art-2026-10-22.txt. Full port remains incomplete.

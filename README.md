@@ -76,10 +76,10 @@ game assets, personal saves, or proprietary compiler is included here.
   The October22 checkpoint adds25..300% free-camera sensitivity, independent X/Y
   inversion and Off/Gentle/Smooth acceleration. Selected menu/gameplay checks
   pass; physical Nintendo Switch Pro acceptance remains pending.
-  Broader all-course acceptance remains incomplete. Star, coin and life counters
-  are displayed beside the minimap with placeholder icons. Reusing original
-  game sprites, adding a health counter, and linking icon size to minimap size
-  remain roadmap work. HD texture packs, online VS and browser Download Play
+  Broader all-course acceptance remains incomplete. Star, coin, health and life counters
+  use original game artwork beside the minimap, scaling with its size. Selected
+  English/Yoshi coin collection, contact damage, large-map and map-off checks
+  pass with muted output; other character/language coverage remains incomplete. HD texture packs, online VS and browser Download Play
   remain planned; requested AI texture generation and replacement also remain
   future work.
 

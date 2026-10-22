@@ -10,9 +10,7 @@ namespace {
 constexpr uint32_t kPanel = 0xd9201408u;
 constexpr uint32_t kPanelEdge = 0xff5d3b18u;
 constexpr uint32_t kText = 0xfffff2beu;
-constexpr uint32_t kStar = 0xffffd32au;
-constexpr uint32_t kCoin = 0xffffb51cu;
-constexpr uint32_t kLife = 0xff50c82fu;
+MinimapHudArt art;
 
 void pixel(uint32_t *pixels,unsigned width,unsigned height,int x,int y,uint32_t color) {
     if(x>=0 && y>=0 && unsigned(x)<width && unsigned(y)<height)
@@ -46,69 +44,73 @@ void number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,unsigned
     }
 }
 
-void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,int size,unsigned type) {
-    if(type==0) {
-        // Five-point gold star with a dark pixel outline.
-        static constexpr unsigned char star[7][7]={
-            {0,0,0,1,0,0,0},{0,0,1,1,1,0,0},{1,1,1,1,1,1,1},
-            {0,1,1,1,1,1,0},{0,1,1,0,1,1,0},{1,1,0,0,0,1,1},{1,0,0,0,0,0,1}};
-        for(int py=0;py<size;++py)for(int px=0;px<size;++px) {
-            const int sx=px*7/size,sy=py*7/size;
-            if(star[sy][sx])pixel(pixels,width,height,x+px,y+py,kStar);
-        }
-        for(int py=0;py<size;++py)for(int px=0;px<size;++px)if(star[py*7/size][px*7/size]) {
-            bool edge=false;
-            for(int oy=-1;oy<=1&&!edge;++oy)for(int ox=-1;ox<=1;++ox) {
-                const int nx=px+ox,ny=py+oy;
-                if(nx<0||ny<0||nx>=size||ny>=size||!star[ny*7/size][nx*7/size]){edge=true;break;}
-            }
-            if(edge)pixel(pixels,width,height,x+px,y+py,kPanelEdge);
-        }
-    } else if(type==1) {
-        const int center=(size-1)/2,rx=std::max(1,size/3),ry=std::max(1,size/2);
-        for(int py=0;py<size;++py)for(int px=0;px<size;++px) {
-            const int dx=px-center,dy=py-center;
-            const int metric=dx*dx*ry*ry+dy*dy*rx*rx;
-            if(metric<=rx*rx*ry*ry) {
-                bool edge=false;
-                for(int delta=-1;delta<=1;delta+=2) {
-                    const int xx=dx+delta,yy=dy+delta;
-                    if((xx*xx*ry*ry+dy*dy*rx*rx)>rx*rx*ry*ry ||
-                       (dx*dx*ry*ry+yy*yy*rx*rx)>rx*rx*ry*ry)edge=true;
-                }
-                pixel(pixels,width,height,x+px,y+py,edge?kPanelEdge:((px==size/3)?0xffffe979u:kCoin));
-            }
-        }
-    } else {
-        // Green Yoshi life marker, scaled from a small readable pixel silhouette.
-        static constexpr unsigned char yoshi[7][7]={
-            {0,1,1,1,0,0,0},{1,1,1,1,1,0,0},{1,1,1,1,1,1,0},
-            {1,0,1,1,1,1,1},{1,1,1,1,1,1,0},{0,1,1,1,1,0,0},{0,0,1,0,1,0,0}};
-        for(int py=0;py<size;++py)for(int px=0;px<size;++px)if(yoshi[py*7/size][px*7/size])
-            pixel(pixels,width,height,x+px,y+py,kLife);
-        const int eye=std::max(1,size/7);
-        rect(pixels,width,height,x+size*2/7,y+size/7,eye,eye,0xff182318u);
-        rect(pixels,width,height,x+size*4/7,y+size/7,eye,eye,0xff182318u);
+void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,int size,const HudSprite &sprite) {
+    if(!sprite.width || !sprite.height || sprite.pixels.size()!=size_t(sprite.width)*sprite.height)return;
+    const double factor=double(size)/std::max(sprite.width,sprite.height);
+    const int w=std::max(1,int(std::lround(sprite.width*factor))),h=std::max(1,int(std::lround(sprite.height*factor)));
+    for(int py=0;py<h;++py)for(int px=0;px<w;++px) {
+        const uint32_t color=sprite.pixels[size_t(py*sprite.height/h)*sprite.width+px*sprite.width/w];
+        if(color>>24)pixel(pixels,width,height,x+(size-w)/2+px,y+(size-h)/2+py,color);
     }
 }
 }
 
+void minimap_hud_set_art(MinimapHudArt value) {art=std::move(value);}
+
+bool minimap_hud_decode(HudSprite &out,const uint8_t *attributes,size_t bytes,
+                       const uint8_t *tiles,size_t tile_bytes,const uint8_t *palette,size_t palette_bytes) {
+    if(!attributes||!tiles||!palette||bytes<8)return false;
+    struct Part {int x,y;unsigned w,h,tile,pal;bool flip_x,flip_y;};
+    std::vector<Part> parts;int left=512,top=256,right=-512,bottom=-256;
+    const unsigned dimensions[3][4][2]={{{8,8},{16,16},{32,32},{64,64}},{{16,8},{32,8},{32,16},{64,32}},{{8,16},{8,32},{16,32},{32,64}}};
+    auto word=[](const uint8_t *p){return unsigned(p[0])|(unsigned(p[1])<<8);};
+    bool terminated=false;
+    for(size_t offset=0;offset+8<=bytes && parts.size()<128;offset+=8) {
+        const auto *p=attributes+offset;
+        const unsigned a=word(p),b=word(p+2),c=word(p+4),shape=a>>14,size=b>>14;
+        if(shape==3 || (a&0x2300))return false; // these templates are regular 4bpp sprites
+        int x=b&511,y=a&255;if(x>=256)x-=512;if(y>=128)y-=256;
+        const unsigned w=dimensions[shape][size][0],h=dimensions[shape][size][1];
+        parts.push_back({x,y,w,h,c&1023,c>>12,bool(b&0x1000),bool(b&0x2000)});
+        left=std::min(left,x);top=std::min(top,y);right=std::max(right,x+int(w));bottom=std::max(bottom,y+int(h));
+        if(word(p+6)==0xffff){terminated=true;break;}
+    }
+    if(!terminated||right<=left||bottom<=top||right-left>128||bottom-top>128)return false;
+    HudSprite result;result.width=right-left;result.height=bottom-top;
+    result.pixels.resize(size_t(result.width)*result.height);
+    for(const auto &part:parts)for(unsigned y=0;y<part.h;++y)for(unsigned x=0;x<part.w;++x) {
+        const unsigned sx=part.flip_x?part.w-1-x:x,sy=part.flip_y?part.h-1-y:y;
+        const size_t address=(part.tile+(sy/8)*32+sx/8)*32+(sy%8)*4+(sx%8)/2;
+        if(address>=tile_bytes)return false;
+        const unsigned index=(tiles[address]>>((sx&1)*4))&15;
+        if(!index)continue;
+        const size_t pal=(part.pal*16+index)*2;
+        if(pal+1>=palette_bytes)return false;
+        const unsigned color=word(palette+pal);
+        auto expand=[](unsigned c){return (c<<3)|(c>>2);};
+        auto &dst=result.pixels[size_t(part.y-top+y)*result.width+part.x-left+x];
+        // The first OAM entry has priority over later entries.
+        if(!dst)dst=0xff000000u|(expand(color&31)<<16)|(expand((color>>5)&31)<<8)|expand((color>>10)&31);
+    }
+    out=std::move(result);return true;
+}
+
 void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
                        const VideoSettings &settings,bool visible,
-                       unsigned stars,unsigned coins,unsigned lives) {
+                       unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character) {
     if(!pixels||!width||!height)return;
     std::fill(pixels,pixels+size_t(width)*height,0u);
     if(!visible)return;
 
     const double scale=std::max(0.01,settings.minimap_scale/260.0);
-    const int icon_size=std::max(1,int(std::lround(5.0*scale)));
+    const int icon_size=std::max(1,int(std::lround(12.0*scale)));
     const int digit_scale=std::max(1,int(std::lround(scale)));
     const int pad=std::max(1,int(std::lround(scale)));
     const int glyph_height=5*digit_scale,glyph_width=11*digit_scale;
     const int row_height=std::max(icon_size,glyph_height)+2*pad;
     const int digits_width=std::max(4*digit_scale,glyph_width);
     const int panel_width=2*pad+icon_size+pad+digits_width;
-    const int panel_height=3*row_height+2*pad;
+    const int panel_height=4*row_height+2*pad;
     const double map_left=double(width)*settings.minimap_x/1000.0;
     const double map_top=double(height)*settings.minimap_y/1000.0;
     const double map_w=double(width)*settings.minimap_scale/1000.0;
@@ -124,13 +126,14 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     int panel_y=int(std::lround(map_top+(map_h-panel_height)/2.0));
     panel_y=std::clamp(panel_y,0,std::max(0,int(height)-panel_height));
 
-    const unsigned counts[3]={stars,coins,lives};
-    for(unsigned row=0;row<3;++row) {
+    const unsigned counts[4]={stars,coins,std::min(health,8u),lives};
+    const HudSprite *icons[4]={&art.star,&art.coin,&art.health[std::min(health,8u)],&art.lives[character<4?character:3]};
+    for(unsigned row=0;row<4;++row) {
         const int y=panel_y+pad+int(row)*row_height;
         rect(pixels,width,height,panel_x+1,y-1,panel_width-2,row_height,kPanel);
         outline_rect(pixels,width,height,panel_x,y-1,panel_width,row_height,kPanelEdge);
         const int ix=panel_x+pad,iy=y+(row_height-icon_size)/2;
-        icon(pixels,width,height,ix,iy,icon_size,row);
+        icon(pixels,width,height,ix,iy,icon_size,*icons[row]);
         number(pixels,width,height,ix+icon_size+pad,
                y+(row_height-glyph_height)/2,counts[row],digit_scale);
     }

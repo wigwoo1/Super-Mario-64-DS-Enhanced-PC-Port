@@ -50,7 +50,7 @@ bool g_editor_suppress_pointer=false;
 uint64_t g_editor_cache_tick=~uint64_t(0);
 MinimapDrag g_editor_drag;
 bool g_minimap_gameplay = false;
-struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0;};
+struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0,health=8,character=3;};
 MinimapCounters g_minimap_counters;
 bool g_cutscene_letter = false;
 bool g_pause_screen = false;
@@ -574,8 +574,17 @@ void video_set_minimap_gameplay(bool active) {
     }
     g_minimap_gameplay = active;
 }
-void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives) {
-    g_minimap_counters={active,stars,coins,lives};
+void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character) {
+    g_minimap_counters={active,stars,coins,lives,health,character};
+    if(const char *path=std::getenv("SM64DS_PC_HUD_CAPTURE")) {
+        static FILE *file=nullptr;static MinimapCounters previous;static uint64_t tick=~uint64_t(0);
+        if(!file && *path){file=std::fopen(path,"w");if(file)std::fputs("tick,active,stars,coins,lives,health,character,scale,map\n",file);}
+        const auto now=rt_frame();
+        if(file && (now>=tick+60 || tick==~uint64_t(0) || previous.active!=active || previous.stars!=stars || previous.coins!=coins || previous.lives!=lives || previous.health!=health || previous.character!=character)) {
+            std::fprintf(file,"%llu,%u,%u,%u,%u,%u,%u,%u,%u\n",static_cast<unsigned long long>(now),unsigned(active),stars,coins,lives,health,character,g_settings.minimap_scale,unsigned(g_settings.minimap));std::fflush(file);
+            previous=g_minimap_counters;tick=now;
+        }
+    }
 }
 void video_set_menu_focus(int left,int top,int right,int bottom) {
     g_focus_left=left;g_focus_top=top;g_focus_right=right;g_focus_bottom=bottom;
@@ -955,7 +964,7 @@ bool video_present_frame() {
     const bool hud_visible=g_minimap_counters.active && !g_pause_screen && !dual &&
         !g_minigame_active && !g_cutscene_letter;
     minimap_hud_build(gpu_hud_pixels.data(),SCREEN_W,SCREEN_H,g_settings,hud_visible,
-                      g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives);
+                      g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character);
     if(!g_gpu&&hud_visible)
         minimap_hud_blend(g_output.data(),gpu_hud_pixels.data(),SCREEN_W,SCREEN_H);
     if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_COUNTERS_TRACE")) {

@@ -121,7 +121,19 @@ extern "C" int pc_stage_options_take_action() {
 extern "C" int pc_stage_pause_take_action() {
     const int action=stage_pause_action;stage_pause_action=-1;return action;
 }
-extern "C" int pc_pause_settings_render() { if (!active) return 0; draw(); return 1; }
+extern "C" int pc_pause_settings_render() {
+    if (!active) {
+        if(data_0209f2c4==1 && !data_0209f300 &&
+           (data_0209f1ec==1 || data_0209f1ec==3 || data_0209f1ec==13)) {
+            const auto *font=static_cast<const unsigned char *>(data_0209d698==2?data_0209d6f8:
+                reinterpret_cast<void *>(data_0209d698==1?G2S::GetBG1CharPtr():func_02054d88()));
+            pc_pause::draw_controls_label(reinterpret_cast<unsigned char *>(G2S::GetBG0CharPtr()),
+                reinterpret_cast<uint16_t *>(G2S::GetBG0ScrPtr()),font,data_0209f360[1]/32+1);
+        }
+        return 0;
+    }
+    draw();return 1;
+}
 
 extern "C" void pc_pause_settings_open_controller_bindings() {
     active=true;legacy=false;

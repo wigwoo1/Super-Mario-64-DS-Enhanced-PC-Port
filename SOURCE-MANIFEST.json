@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "5e17449eb9a5cfa64714f3170b01a68a9354cbc9e202caf605dbaba010eb6296",
-      "bytes": 81332
+      "sha256": "4990631964b5265e3648a479f78da7d8f10b0ed8ff36887ec39c2c63a5dacf83",
+      "bytes": 81356
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6584,6 +6584,11 @@
       "bytes": 3575
     },
     {
+      "path": "port/docs/native-controls-label-2026-10-22.txt",
+      "sha256": "4aab5f7217fb2b6015488bd1086ff64ff798d1c93856f2cc219fb502258c1afe",
+      "bytes": 2266
+    },
+    {
       "path": "port/docs/native-course-clear-controller-2026-10-20.txt",
       "sha256": "f85a0a32d596bee3441ff6b58e75facdb7f95d9009e3f8df277bbe5071149415",
       "bytes": 4285
@@ -6682,6 +6687,11 @@
       "path": "port/docs/native-menu-text-alignment-2026-10-21.txt",
       "sha256": "1ace32d61302d26480c6f7645b393520c2843115174679f98f2a49ea45441fcb",
       "bytes": 3780
+    },
+    {
+      "path": "port/docs/native-minimap-original-art-2026-10-22.txt",
+      "sha256": "b2cef8d5f288b2623abd9691ce800af2d6abd225f413ed244756c1fdce794d9e",
+      "bytes": 4028
     },
     {
       "path": "port/docs/native-minimap-placement-2026-10-20.txt",
@@ -6860,13 +6870,13 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "c0181dacf52e44ed46b051eee0bf136db81b7bf5afe5aeebee1ad12fec2c260a",
-      "bytes": 268270
+      "sha256": "e386aba26c738266d272246362ba66ba8d058ee3471e89ef423c1ee350ada823",
+      "bytes": 269890
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
-      "sha256": "7ced531d883ba59fbad23f50e0cc96d0f958b837d7747784a1e4ed80c49cd763",
-      "bytes": 2125
+      "sha256": "2fbeb7559c853ae4dbccbafea4f78d622493a8e5da3e7812b2117f3eaca03c5d",
+      "bytes": 2092
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -6885,8 +6895,8 @@
     },
     {
       "path": "port/docs/player-feedback-2026-10-22.txt",
-      "sha256": "0179bc0c0d3374e4992ced4318d3b29b1981c724993c2e002751573cd1bdc8d4",
-      "bytes": 2753
+      "sha256": "336229d78a515c28dba972058e2343ccc3fc46d537ca56ceab8751f52dba8b86",
+      "bytes": 2840
     },
     {
       "path": "port/docs/power-star-eyes-checkpoint-2026-10-17.txt",
@@ -6900,8 +6910,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "334109147f15af9eab8ff634d9420527db4e9258d19f2f784e0439721ff35c7c",
-      "bytes": 9152
+      "sha256": "50c4565483f1e3bae5f5d4431e43c3d6b93b959c0c31812b2a2995b0dee34368",
+      "bytes": 9220
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7239,6 +7249,11 @@
       "bytes": 1949
     },
     {
+      "path": "port/hal/minimap_hud_art.cpp",
+      "sha256": "7e9d627668b9b15e8d8bbc5a838432c35f990f7cd741cc1aaa8e580c5b7c9413",
+      "bytes": 5786
+    },
+    {
       "path": "port/hal/model_host.cpp",
       "sha256": "b7f68caeb643ff0726e9f227e9518340b2986bd1ba89322d9570327a006911c0",
       "bytes": 9639
@@ -7295,18 +7310,18 @@
     },
     {
       "path": "port/hal/pc_pause_settings.cpp",
-      "sha256": "c9d08cf58b79a783b8fc5cb2e22e5476b00fd2247b7237675511decb06780e30",
-      "bytes": 10462
+      "sha256": "a4c6c56539d983d364d155f2f433e4361d9095ecb6974dcf62d0a5f7761f68cc",
+      "bytes": 11006
     },
     {
       "path": "port/hal/pc_pause_settings_state.cpp",
-      "sha256": "f24333cfc99a56953cf676592c3e3cdc582fe351d015f510e281b3c8e2c0a91b",
-      "bytes": 20000
+      "sha256": "cc186d67dabfedbf81ff945c517f0514b1c23ad97908c754a3db0469d0222c8b",
+      "bytes": 22116
     },
     {
       "path": "port/hal/pc_pause_settings_state.h",
-      "sha256": "a9bc281c8980dbd406978a47a464db1799b7becd8b42e6e85ad31085a841c65a",
-      "bytes": 2389
+      "sha256": "d27a5d341b17fd5e3deffac81d3b330ccc682de650817f3c6f3f35236f1c6a21",
+      "bytes": 2601
     },
     {
       "path": "port/hal/pc_session.cpp",
@@ -7370,8 +7385,8 @@
     },
     {
       "path": "port/hal/stage_graph_state.cpp",
-      "sha256": "0196592eecdef1d9f48d3551bf3184a95819ce3a131f2e8df9e467f0b3b88a05",
-      "bytes": 7993
+      "sha256": "b1eb8b57cd40cc30e52bbf841fe23240b4289bc936d6a3aa96e36fc35a9f6de6",
+      "bytes": 8355
     },
     {
       "path": "port/hal/stage_graph_state.h",
@@ -7570,8 +7585,8 @@
     },
     {
       "path": "port/ntr/include/ntr/minimap_hud.h",
-      "sha256": "3c7aba5a7eb80363a072e8e7fe6beaa548a8d304126b1ba908b1ccee87352ed8",
-      "bytes": 622
+      "sha256": "bba6900b17c0218b3ff5ff3772040bc8038ccd609554008dcde4a6ff6b9e6012",
+      "bytes": 1168
     },
     {
       "path": "port/ntr/include/ntr/mmio.h",
@@ -7625,8 +7640,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "97ea9823ef4efff2a06747d127edf0c204e8c45935f44a661422e29f1f7ca10a",
-      "bytes": 4754
+      "sha256": "8882c86b84dcd69779f4cec1a3e721007d645e6700313cf528fecff0bd37c92c",
+      "bytes": 4793
     },
     {
       "path": "port/ntr/input.cpp",
@@ -7645,8 +7660,8 @@
     },
     {
       "path": "port/ntr/minimap_hud.cpp",
-      "sha256": "07984eb9836650210d94c4aafda8564f43dfe1bb7561464b0eaf13db3b1fb737",
-      "bytes": 7178
+      "sha256": "22eca7bb17008ce5ba1b9b2fe6d89b596dde5b88a526d230e3e664af1da93e9d",
+      "bytes": 8069
     },
     {
       "path": "port/ntr/ppu.cpp",
@@ -7710,8 +7725,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "fd4ce132f80743ab932003e7e1036da960abaa4ab5c8e3acde15a5747a4d3583",
-      "bytes": 54720
+      "sha256": "50ea72428e24d900e7968669047e70a024651f8c1db4caeb1c74e3a2bbc006fd",
+      "bytes": 55702
     },
     {
       "path": "port/README.md",
@@ -7935,8 +7950,8 @@
     },
     {
       "path": "port/tests/smoke_minimap_hud.cpp",
-      "sha256": "97cbee89236d9da82b0d79a96c7f0827a77d0f191d50e3842dec44e74c0838fa",
-      "bytes": 1551
+      "sha256": "5afde61b66f06c242da649c6d5bd9a5d1380364f3f2705d69edf809ae11f4dcb",
+      "bytes": 3368
     },
     {
       "path": "port/tests/smoke_model.cpp",
@@ -7980,8 +7995,8 @@
     },
     {
       "path": "port/tests/smoke_pause_settings.cpp",
-      "sha256": "47b4354c4caace64e199f098448162e49c119cad0f73b3e1905c17bf90420ad1",
-      "bytes": 18770
+      "sha256": "43005aa7b3e53549310b72b035dcbbfa6cec45677ea542a8efb846c806b02fdc",
+      "bytes": 19731
     },
     {
       "path": "port/tests/smoke_pc_session.cpp",
@@ -8710,8 +8725,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "6193252bc6c5da980272c9e3016021de3f9cda031c18876ef3c24c2bfd6d868f",
-      "bytes": 6765
+      "sha256": "7e93f4986b1d2390f7add020487d5628c2035acd4be3b6972a8ea22af4a0f979",
+      "bytes": 6860
     },
     {
       "path": "port/tools/native_kit_data.py",
