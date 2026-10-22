@@ -6829,6 +6829,11 @@
       "bytes": 261372
     },
     {
+      "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
+      "sha256": "5bf9a7bdcdf170704ac7ffba79dcb826e4246af66f2dd4ecd6b567f510e9b467",
+      "bytes": 1120
+    },
+    {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
       "sha256": "2547435fa254f8eb33c99ba3582352e2641d9845716e9be17526c4251fb49274",
       "bytes": 36346
@@ -6845,8 +6850,8 @@
     },
     {
       "path": "port/docs/player-feedback-2026-10-22.txt",
-      "sha256": "041589b7bda2ba596b8ba693917260d72ed6f74c3486f3e1c541f99cf340bd0e",
-      "bytes": 804
+      "sha256": "daa6389757d9a6fecbb450cfaa5e2dda1c29a4925d7ace7827f61c26d627f814",
+      "bytes": 1222
     },
     {
       "path": "port/docs/power-star-eyes-checkpoint-2026-10-17.txt",
@@ -6860,8 +6865,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "9982b3f10c38cbd4b11be64f0ff4eda15e1ac8631736e8b537c3d83a4d8cc600",
-      "bytes": 6713
+      "sha256": "86de7b62abd6dce3d47c7785c57ee91987eb1758d4a5cfde6d373ae9663e973a",
+      "bytes": 7044
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -8605,8 +8610,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "fb208b8dd006fb45e9fd1dc62daf04723dd9a9140e47279c5ebdc29995b8303e",
-      "bytes": 7304
+      "sha256": "c174ea9e13c165bb9f9bad86762bdd48060b2875ddc4893d2aa7b436494b345a",
+      "bytes": 7503
     },
     {
       "path": "port/tools/native_save_hooks.py",

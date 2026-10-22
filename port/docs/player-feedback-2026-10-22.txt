@@ -8,9 +8,16 @@ The player reported these issues in the Star Gate development preview:
 - The title screen start sound and option-selection sound effects are missing.
 - The voice clip when selecting a save is missing.
 - Lakitu's cloud plays the wrong sound.
+- Chain Chomp voice and bounce sounds are missing.
+- The secret portal triggered by standing in the level 1 flowers does not work.
+
+Requested minimap HUD addition: keep the Star, coin and life counters visible at
+all times beside the minimap. Place the counters on its side, and scale their
+icons with the minimap size setting.
 
 These are user-reported failures, not claims from a muted automated test. The
 ROM-free kit refresh records the current code and does not resolve these issues.
 Keep them open for gameplay/audio work; do not advertise camera, pause
 confirmation or these sound cues as accepted. Automated runtime checks remain
-muted and therefore cannot establish listening accuracy.
+muted and therefore cannot establish listening accuracy. The flower portal
+interaction and minimap-adjacent counters remain open gameplay/UI work.

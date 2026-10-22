@@ -51,11 +51,16 @@ game assets, personal saves, or proprietary compiler is included here.
   all-course gameplay acceptance.
 - Native Chain Chomp, its stump/fence release and Star reward, plus castle and
   Battlefield tree visibility/reload, have selected isolated runtime checks.
+  Recent feedback reports that Chain Chomp voice and bounce cues are missing;
+  these sounds are not accepted. The level 1 flower secret portal interaction
+  is reported not to work and remains open.
   Player feedback reports that the camera still zooms in when Yoshi stops and
   that free-camera controls do not work; these features are not accepted.
-  Broader all-course acceptance remains incomplete. HD texture packs, online VS and
-  browser Download Play remain planned; requested AI texture generation and
-  replacement also remain future work.
+  Broader all-course acceptance remains incomplete. Star, coin and life counters
+  positioned beside the minimap, with icon size linked to minimap size, are
+  requested roadmap work. HD texture packs, online VS and browser Download Play
+  remain planned; requested AI texture generation and replacement also remain
+  future work.
 
 ## Downloading a development build
 
