@@ -12,8 +12,8 @@
 
 int main() {
     char directory[MAX_PATH],path[MAX_PATH],title[128];
-    GetTempPathA(MAX_PATH,directory);
-    std::snprintf(path,sizeof(path),"%ssm64ds-window-%lu.ini",directory,GetCurrentProcessId());
+    if(!GetCurrentDirectoryA(MAX_PATH,directory))return 1;
+    std::snprintf(path,sizeof(path),"%s\\sm64ds-window-%lu.ini",directory,GetCurrentProcessId());
     std::snprintf(title,sizeof(title),"SM64DS resolution-window smoke %lu",GetCurrentProcessId());
     if(GetFileAttributesA(path)!=INVALID_FILE_ATTRIBUTES)return 1;
     FILE *file=std::fopen(path,"wb");if(!file)return 2;

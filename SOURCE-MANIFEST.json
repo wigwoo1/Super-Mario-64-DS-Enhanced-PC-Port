@@ -7985,8 +7985,8 @@
     },
     {
       "path": "port/tests/smoke_video_window.cpp",
-      "sha256": "bb64a90239b092c1e8318a55c2dec3aaf9b085cc97175f9f609d6ef638a3c643",
-      "bytes": 3600
+      "sha256": "01410609db7cee0fca168629701cf60fe18127e857a7125dc4903b36017e820e",
+      "bytes": 3623
     },
     {
       "path": "port/tests/smoke_wanted_settings_surface.cpp",
