@@ -984,6 +984,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/bird_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/star_gate_host.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/lakitu_host.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/level_overlay_tables.py"
@@ -1027,6 +1028,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/bird_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/star_gate_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lakitu_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -1069,6 +1071,11 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
     endif()
 endif()
 include("${BOOT_CLOSURE_CMAKE}")
+add_executable(smoke_distance tests/smoke_distance.cpp
+    "${CMAKE_BINARY_DIR}/pc-boot-src/src/unnamed/arm9/0205/func_02053274.cpp")
+target_link_libraries(smoke_distance PRIVATE ntr)
+target_include_directories(smoke_distance PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
+add_test(NAME smoke_distance COMMAND smoke_distance)
 list(FILTER BOOT_CLOSURE_SOURCES EXCLUDE REGEX "/src/main\\.c$")
 list(FILTER BOOT_CLOSURE_SOURCES EXCLUDE REGEX "/src/_ZN5dBgChD2Ev\\.cpp$")
 list(FILTER BOOT_CLOSURE_SOURCES EXCLUDE REGEX "/src/_ZN15dExtFrameCtrl_cC2Ev\\.cpp$")

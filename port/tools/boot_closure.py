@@ -21,7 +21,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
-                 "daChScene_c_classInit", "daDoor_c_classInit", "dMap_c_classInit",
+                 "daChScene_c_classInit", "daDoor_c_classInit", "daStarGate_c_classInit", "dMap_c_classInit",
                  "daPicGate_c_classInit", "_ZN11daPicGate_cD1Ev", "_ZN11daPicGate_c19func_ov080_021261f4Ev",
                  "daDemo_c_classInit", "daC_Jugem_c_classInit", "__sinit_02073e6c",
                  "func_ov002_020e1e70", "func_ov002_020e200c",
@@ -390,6 +390,10 @@ def main() -> int:
                 sys.path.insert(0, str(root / "port/tools"))
                 import hostgen  # pylint: disable=import-outside-toplevel
                 transformed, rewrites = hostgen.transform(markerless)
+                if path.name=='d_a_star_gate.cpp':
+                    import star_gate_host
+                    transformed=star_gate_host.transform(transformed)
+                    rewrites+=1
                 if path.name=='d_a_kinopio.cpp':
                     import toad_host
                     transformed=toad_host.transform(root,transformed)

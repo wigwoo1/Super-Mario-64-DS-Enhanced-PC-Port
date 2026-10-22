@@ -70,6 +70,7 @@ def main():
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
+            ('g_profile_STAR_GATE', 'daStarGate_c_classInit', 100, 0x021483a8),
             ('pc_door_profile', 'daDoor_c_classInit', 100, 0x02148164)):
         base, rom = overlay(module)
         native = pe_bytes(args.exe, named(name), 28)
@@ -77,6 +78,10 @@ def main():
             raise ValueError(f'{name}: factory does not point at the native constructor')
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
+
+    base100,rom100=overlay(100)
+    if pe_bytes(args.exe,named('data_ov100_02148390'),24)!=rom100[0x02148390-base100:0x02148390-base100+24]:
+        raise ValueError('Star Gate thresholds/save flags/message table differs from original')
 
     # Native Toad's member-function pointers are four bytes on MSVC x86;
     # its two rows are12bytes each, not the original ARM20byte layout.

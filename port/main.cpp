@@ -17,6 +17,7 @@
 #include "daObjMarioCap_c.h"
 #include "daC_Jugem_c.h"
 #include "daDoor_c.h"
+#include "daStarGate_c.h"
 #include "daMip_c.h"
 #include "daObj_Mip_Key_c.h"
 #include "daRedBombhei_c.h"
@@ -234,15 +235,28 @@ static bool replay_course_route() {
         const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
     }
     if(!segment){replay_course_route_complete=true;return false;}
-    int level=0,x=0,z=0,radius=0,consumed=0,jump=0,jump_consumed=0;
-    if(std::sscanf(segment,"%d:%d:%d:%d%n",&level,&x,&z,&radius,&consumed)!=4 ||
-       consumed<=0 || (segment[consumed] && segment[consumed]!=',' && segment[consumed]!=':') ||
-       level<0 || level>=52 || radius<1 || radius>1000 ||
-       x< -32768 || x>32767 || z< -32768 || z>32767)return false;
-    if(segment[consumed]==':') {
-        if(std::sscanf(segment+consumed,":%d%n",&jump,&jump_consumed)!=1 ||
-           (jump!=1 && jump!=2) || (segment[consumed+jump_consumed] && segment[consumed+jump_consumed]!=','))return false;
+    int level=0,x=0,y=0,z=0,radius=0,consumed=0,jump=0,jump_consumed=0;
+    bool has_y=false;
+    // Height-aware route points are level:x:y:z:radius:jump. Keep the old
+    // level:x:z:radius[:jump] form for every existing route. Checking the
+    // six-field form first avoids treating its coordinates as an old route.
+    if(std::sscanf(segment,"%d:%d:%d:%d:%d:%d%n",
+                   &level,&x,&y,&z,&radius,&jump,&consumed)==6) {
+        has_y=true;
+        if(consumed<=0 || (segment[consumed] && segment[consumed]!=',') ||
+           (jump!=1 && jump!=2))return false;
+    } else {
+        consumed=0;jump=0;
+        if(std::sscanf(segment,"%d:%d:%d:%d%n",&level,&x,&z,&radius,&consumed)!=4 ||
+           consumed<=0 || (segment[consumed] && segment[consumed]!=',' && segment[consumed]!=':'))return false;
+        if(segment[consumed]==':') {
+            if(std::sscanf(segment+consumed,":%d%n",&jump,&jump_consumed)!=1 ||
+               (jump!=1 && jump!=2) || (segment[consumed+jump_consumed] && segment[consumed+jump_consumed]!=','))return false;
+        }
     }
+    if(level<0 || level>=52 || radius<1 || radius>1000 ||
+       x< -32768 || x>32767 || z< -32768 || z>32767 ||
+       (has_y && (y< -32768 || y>32767)))return false;
     auto *player=static_cast<Player *>(data_0209f394[0]);
     if(!player || player->aliveState!=1)return false;
     if(data_0209f2f8!=level) {
@@ -276,12 +290,15 @@ static bool replay_course_route() {
         if(ntr::rt_frame()%45<3)buttons=1;
     } else if(!player->mIsNoControl && !player->mIsControlDisabled) {
         const double dx=x*4096.0-player->mPosX,dz=z*4096.0-player->mPosZ;
+        const double dy=has_y ? y*4096.0-player->mPosY : 0.0;
+        const double horizontal=std::hypot(dx,dz);
+        const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
         // Route mode 2 takes off with a neutral stick. Retail Wait prioritizes
         // entering Walk over the jump edge when both arrive together. Keep
         // the input neutral through takeoff; never alter the player state.
-        if(jump==2 && std::hypot(dx,dz)<320*4096.0) {
+        if(jump==2 && horizontal<320*4096.0) {
             if(tick<jump_until) {
                 ntr::input_test_controls(true,2,0,0);return true;
             }
@@ -327,19 +344,34 @@ static bool replay_course_route() {
             if(close) {jump_until=tick+12;next_jump=tick+60;}
         }
         const double jump_range=tree_test && !std::strcmp(tree_test,"1") ? 120.0:320.0;
-        if(jump==1 && std::hypot(dx,dz)<jump_range*4096.0 && tick>=next_jump &&
+        if(jump==1 && horizontal<jump_range*4096.0 && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
             jump_until=tick+12;next_jump=tick+75;
         }
         if(tick<jump_until)buttons|=2;
-        if(std::hypot(dx,dz)<=radius*4096.0) {
-            std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d tick=%llu\n",
-                waypoint,level,x,z,static_cast<unsigned long long>(ntr::rt_frame()));
+        const bool horizontal_reached=horizontal<=radius*4096.0;
+        // Height-aware route points represent walkable floor positions, not
+        // transient jump arcs. Only advance after the player has landed at
+        // the requested height; otherwise an overhead stair edge can make
+        // the route skip forward while the player falls back to the lower floor.
+        const bool height_reached=!has_y ||
+            (!player->mIsAirborne && std::abs(dy)<=vertical_tolerance);
+        if(horizontal_reached && height_reached) {
+            if(has_y)
+                std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d,%d tick=%llu\n",
+                    waypoint,level,x,y,z,static_cast<unsigned long long>(ntr::rt_frame()));
+            else
+                std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d tick=%llu\n",
+                    waypoint,level,x,z,static_cast<unsigned long long>(ntr::rt_frame()));
             ++waypoint;
             if(precise)settle_until=tick+20;
+        } else if(horizontal_reached) {
+            // Stay under the height target while the normal jump input retries.
+            // Horizontal-only routes and their original controls are unchanged.
+            sx=0;sy=0;
         } else {
             const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-            double magnitude=precise?std::hypot(dx,dz)/(180*4096.0)*22000:22000.0;
+            double magnitude=precise?horizontal/(180*4096.0)*22000:22000.0;
             // Keep low-speed travel above the controller's radial deadzone.
             if(magnitude<12000)magnitude=12000;
             if(magnitude>22000)magnitude=22000;
@@ -1510,6 +1542,23 @@ static bool trace_script_progress(uint64_t frame)
                     observed_story_course()>=0 && observed_story_course()<30 ? data_0209caa0[0x14+observed_story_course()] : 0u);
 
                 std::fflush(state_file);
+                if(auto *gate_player=static_cast<Player *>(player); gate_player && std::getenv("SM64DS_PC_STAR_GATE_TRACE") &&
+                   data_0209f2f8==5 && ntr::rt_frame()%120==0) {
+                    std::fprintf(stderr,"[native Star Gate player] tick=%llu area=%d prevarea=%u state=%s step=%u kind=%u arg=%d flags=%u target=%d,%d,%d anchor=%d,%d,%d heading=%d moveheading=%d wall=%d,%d,%d pos=%d,%d,%d\n",
+                        static_cast<unsigned long long>(ntr::rt_frame()),gate_player->mAreaId,gate_player->mPrevAreaId,
+                        pc_player_state_name(gate_player),gate_player->mStateStep,gate_player->mNoCtrlKind,int(gate_player->mStateArg),
+                        gate_player->mIsOpeningBigDoor,gate_player->unk_744,gate_player->unk_748,gate_player->unk_74c,
+                        gate_player->unk_750,gate_player->unk_754,gate_player->unk_758,gate_player->mAngleY,gate_player->mPrevAngleY,
+                        gate_player->mWallNormalX,gate_player->mWallNormalY,gate_player->mWallNormalZ,
+                        gate_player->mPosX,gate_player->mPosY,gate_player->mPosZ);
+                    for(auto *a=dActor_c::FindWithActorID(354,nullptr);a;a=dActor_c::FindWithActorID(354,a)) {
+                        auto *g=static_cast<daStarGate_c *>(a);
+                        if(g->param1!=2)continue;
+                        std::fprintf(stderr,"[native Star Gate geometry] tick=%llu state=%d areas=%d,%d speed=%d target=%d offset=%d,%d,%d timer=%u\n",
+                            static_cast<unsigned long long>(ntr::rt_frame()),g->mState==&daStarGate_c::ST_WAIT?0:g->mState==&daStarGate_c::ST_OPEN_CLOSE?3:9,
+                            g->mAngleX,g->mAngleZ,g->mHorzSpeed,g->mTerminalVelocity,g->unk_0a4,g->mVertSpeed,g->unk_0ac,g->mCloseDoorTimer);
+                    }
+                }
             }
         }
     }

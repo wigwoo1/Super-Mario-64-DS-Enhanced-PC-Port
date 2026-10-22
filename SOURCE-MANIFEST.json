@@ -5150,8 +5150,8 @@
     },
     {
       "path": "include/daStarGate_c.h",
-      "sha256": "e3ba5b665d34a8e9d26a4a6050b2396418aa90fa18cf32037cddda06df99ece8",
-      "bytes": 3519
+      "sha256": "5178539c88ec65e96c2d944ea6dd03a6cd591522c5d3718bc472d04b9212b34d",
+      "bytes": 3693
     },
     {
       "path": "include/daTBasket_c.h",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "af936517d9ca88611dd8452e5754ce0a5dfb0191e1f45e363062cf615d324944",
-      "bytes": 79864
+      "sha256": "fc9b524345cee7f43043c122ace1ef6b06a6b4775cc0c02f107c148b4ea4c86e",
+      "bytes": 80350
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6744,6 +6744,11 @@
       "bytes": 2550
     },
     {
+      "path": "port/docs/native-star-gate-verified-2026-10-22.txt",
+      "sha256": "f85a0bea463280e0cc8ac8b2c7448d0e0033a65b26288db4753f2f8fd1388c5a",
+      "bytes": 1914
+    },
+    {
       "path": "port/docs/native-switch-camera-2026-10-20.txt",
       "sha256": "d9dba0f878db8a42babf5177831b783e79288d3fcd12beb09f1764b835a8f3e8",
       "bytes": 6174
@@ -6780,8 +6785,8 @@
     },
     {
       "path": "port/docs/native-toad-integration-plan-2026-10-21.txt",
-      "sha256": "03919f1d773192872400364e7ed3959142cc97b36bc6f56fb7168e5d4e765c06",
-      "bytes": 11426
+      "sha256": "a5fa56cc36c046a4bde418414c2412835b561eada26cc4120723755540569617",
+      "bytes": 13253
     },
     {
       "path": "port/docs/native-touch-menu-controller-2026-10-20.txt",
@@ -6839,6 +6844,11 @@
       "bytes": 3887
     },
     {
+      "path": "port/docs/player-feedback-2026-10-22.txt",
+      "sha256": "041589b7bda2ba596b8ba693917260d72ed6f74c3486f3e1c541f99cf340bd0e",
+      "bytes": 804
+    },
+    {
       "path": "port/docs/power-star-eyes-checkpoint-2026-10-17.txt",
       "sha256": "f1590435b335945300514efe6ef400d99aacb1f34d6b7d4f001d9ad61e9b3e7c",
       "bytes": 5749
@@ -6850,8 +6860,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "97585a299509a0a76f11223542327592f781f4bf6512a007aecf7e5847fa803c",
-      "bytes": 5902
+      "sha256": "9982b3f10c38cbd4b11be64f0ff4eda15e1ac8631736e8b537c3d83a4d8cc600",
+      "bytes": 6713
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -7000,8 +7010,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "54f20e091b9f1376c88fbe5fddb4522c0f975c7f0e06f4cdd0de80f0c5a87aef",
-      "bytes": 35410
+      "sha256": "12fce1f00676d3d86498ba17baadb9da67cc5dc82d848ec852a67b76579e20f8",
+      "bytes": 35512
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7385,8 +7395,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "b41011f94b35af0f913a4f6c7aae35dd44e691fcfed5ebbd8a1ba034b830fab9",
-      "bytes": 113380
+      "sha256": "349add026830806e59bdff41c4f310a34cbff64e8ceb891769ab6e17303db4fa",
+      "bytes": 117012
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7724,6 +7734,11 @@
       "bytes": 3107
     },
     {
+      "path": "port/tests/smoke_distance.cpp",
+      "sha256": "b530b10996d4acc93ed867a889b0674691da12412c4d1c391bf3efe7f80273cf",
+      "bytes": 1231
+    },
+    {
       "path": "port/tests/smoke_dma.cpp",
       "sha256": "f3f648d8df9e42d448bce41c0c6f8716de752fc02976ed2b417148311f1c65f7",
       "bytes": 2077
@@ -8049,6 +8064,11 @@
       "bytes": 2997
     },
     {
+      "path": "port/tests/test_hostgen_distance.py",
+      "sha256": "96f6eb9f8bf996490f577f6c09cedca34f626f6e6695f465dba98ea98b3069a7",
+      "bytes": 766
+    },
+    {
       "path": "port/tests/test_hostgen_inline.py",
       "sha256": "e2e5593caba9ae7687527e9a9d11f5f9da84284a7d87137ee7bb05fb03886765",
       "bytes": 1307
@@ -8092,6 +8112,11 @@
       "path": "port/tests/test_sound_host.py",
       "sha256": "df5093050e6c0aa94d4a4466458d7422634bb8116d84aae0fd7fd9a3360d9988",
       "bytes": 1191
+    },
+    {
+      "path": "port/tests/test_star_gate_host.py",
+      "sha256": "495be37a85b5515e72dc217bfa1c5bc8e137c537b25254e19b6476c13b0bda2a",
+      "bytes": 1683
     },
     {
       "path": "port/tests/test_star_select_transform.py",
@@ -8230,8 +8255,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "d24c8d2c15f19a24caeddee72ce5398de26c54e2a5105e0cd13527b549e272fe",
-      "bytes": 39027
+      "sha256": "a7febd3d800fc46a720df5320632097da4b423af3a417da1b0718762ac91fb1b",
+      "bytes": 39248
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8370,8 +8395,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "c6bc4fdcc3d12fa666c2f5653ddb666a2b8cd4374e95b67b740d1ae6bde4236e",
-      "bytes": 22621
+      "sha256": "20d29624739b96476f20ad4330c8967acfd9c91e46938d1e7e0c149535bef891",
+      "bytes": 22939
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8520,8 +8545,8 @@
     },
     {
       "path": "port/tools/hostgen.py",
-      "sha256": "a3edc273ede7672e043cbcd05e9aabbd6e66e30ea9fc5dd72e5e95e707b29844",
-      "bytes": 28382
+      "sha256": "383a45a59ee840c6d6c41257e2cbae98a5991547ef165bed284d3dd24f6e4a30",
+      "bytes": 28980
     },
     {
       "path": "port/tools/intro_host.py",
@@ -8580,8 +8605,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "e3b26c066a57e30c216d115c23e916235d26792e0db7edea043e0ff42e332f4b",
-      "bytes": 6965
+      "sha256": "fb208b8dd006fb45e9fd1dc62daf04723dd9a9140e47279c5ebdc29995b8303e",
+      "bytes": 7304
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -8662,6 +8687,11 @@
       "path": "port/tools/sound_host.py",
       "sha256": "fa9e9d5b68357eb1e2cf372bea9a59624a709cd41f8e95e39080d88f00ce14fc",
       "bytes": 1084
+    },
+    {
+      "path": "port/tools/star_gate_host.py",
+      "sha256": "407ca6a7fc2697ceaf815242ccb2b4ab7d45fb8701d1a378822263feb8fcc4f2",
+      "bytes": 2678
     },
     {
       "path": "port/tools/star_select_host.py",

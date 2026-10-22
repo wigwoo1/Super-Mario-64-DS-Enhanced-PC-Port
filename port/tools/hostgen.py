@@ -302,6 +302,15 @@ def transform(text):
                           'void *func_ov007_020c2b9c(int count, int* src)')
         text=text.replace(tail,tail+'\n  return r;')
         n24=2
+    n25 = 0
+    if re.search(r'^int func_02053274\(int \*a, int \*b\)\s*\{',text,re.MULTILINE):
+        anchor='    param[0] = (unsigned int)sq;\n    param[1] = (unsigned int)(sq >> 32);'
+        if text.count(anchor)!=1:
+            raise ValueError('3D distance square-root operand writes changed')
+        # Pointer-bound register writes otherwise only change the mapped latch.
+        # Submit the full operand through the hardware hook to run the unit.
+        text=text.replace(anchor,'    NTR_MMIO(unsigned long long, 0x040002b8) = static_cast<unsigned long long>(sq);')
+        n25=1
     n22 = 0
     n23 = 0
     if 'void func_ov007_020c4684(' in text and '*new_var = x1' in text:
@@ -446,7 +455,7 @@ def transform(text):
         text = "typedef struct { void* sfp; void* bmd; } FileEntry;\n" + text
     if moved_types:
         text = "\n".join(moved_types) + "\n" + text
-    return text, n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7 + n8 + n9 + n10 + n11 + n12 + n13 + n14 + n15 + n16 + n17 + n18 + n19 + n20 + n21 + n22 + n23 + n24 + minigame_hooks
+    return text, n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7 + n8 + n9 + n10 + n11 + n12 + n13 + n14 + n15 + n16 + n17 + n18 + n19 + n20 + n21 + n22 + n23 + n24 + n25 + minigame_hooks
 
 
 # ~110 files in the decomp are ARM assembly blocks -- CP15 cache ops, the CRT0,

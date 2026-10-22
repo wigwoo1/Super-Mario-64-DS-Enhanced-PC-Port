@@ -15,7 +15,8 @@ game assets, personal saves, or proprietary compiler is included here.
   rewards, course-clear behavior, Wanted, and portions of the Rec Room work.
 - Controller navigation is verified for several original title, file, pause,
   Game Options, course-clear and minigame menus. Physical Xbox hardware and all
-  menu/game combinations have not been accepted.
+  menu/game combinations have not been accepted. Recent player feedback reports
+  that A does not confirm selections in the in-game pause menu.
 - The Windows renderer offers resolutions up to 3840x2160, a repositionable
   minimap, and other PC settings. Render-distance presets have a verified native
   4K distant-Goomba body/shadow case and a 720p Bob-omb body/shadow and red-coin
@@ -31,19 +32,28 @@ game assets, personal saves, or proprietary compiler is included here.
   `SM64DS_PC_AUDIO_MUTED=1` silences device output while keeping the engine
   running for tests. Castle footsteps/birds, coin sound completion, and two
   Battlefield cannon positions have bounded checks; this does not establish
-  listening accuracy or complete sound compatibility.
+  listening accuracy or complete sound compatibility. Recent player feedback
+  reports missing title/start/selection and save-selection sounds, an incorrect
+  Lakitu cloud cue, and running/cannon/coin sound problems.
 - Original title/course entry, selected cannon and water-bomb encounters,
   repeat Star credit, pause/re-entry and selected audio flows have isolated
   runtime checks. See the dated `port/docs/` checkpoints for exact coverage and
   limitations; no single checkpoint establishes a complete port.
-- The original 20-Star basement Toad reward has a verified native dialogue,
-  Star pickup, save/reload, and repeat interaction without duplicate credit.
-  The original 40- and 60-Star placements and the companion reward branch still
-  need runtime checks.
+- The original 20-, 40- and 60-Star Toad placements have selected isolated
+  runtime checks. The 20-Star reward was collected, saved, reloaded and repeated
+  without duplicate credit. The 60-Star reward was also collected, saved,
+  reloaded and repeated without duplicate credit using a synthetic 60-Star
+  prerequisite save. The companion/variant branch still needs separate checks.
+- The original upstairs Star Gate now renders and follows its 50-Star/Mario
+  rule. Yoshi's denial, Mario's eligible entry, return of normal player control,
+  and the original 60-Star Toad Star's collection/save/reload/repeat path have
+  muted isolated checks. This is selected coverage, not a complete castle or
+  all-course gameplay acceptance.
 - Native Chain Chomp, its stump/fence release and Star reward, plus castle and
   Battlefield tree visibility/reload, have selected isolated runtime checks.
-  The stay-after-Star option and free camera also have bounded tests, but broader
-  all-course acceptance remains incomplete. HD texture packs, online VS and
+  Player feedback reports that the camera still zooms in when Yoshi stops and
+  that free-camera controls do not work; these features are not accepted.
+  Broader all-course acceptance remains incomplete. HD texture packs, online VS and
   browser Download Play remain planned; requested AI texture generation and
   replacement also remain future work.
 

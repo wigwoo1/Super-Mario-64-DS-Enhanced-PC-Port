@@ -1,0 +1,16 @@
+# Latest preview playtest feedback — 2026-10-22
+
+The player reported these issues in the Star Gate development preview:
+
+- The camera still zooms in when Yoshi stops moving.
+- Free camera does not work.
+- A does not select/confirm entries in the in-game pause menu.
+- The title screen start sound and option-selection sound effects are missing.
+- The voice clip when selecting a save is missing.
+- Lakitu's cloud plays the wrong sound.
+
+These are user-reported failures, not claims from a muted automated test. The
+ROM-free kit refresh records the current code and does not resolve these issues.
+Keep them open for gameplay/audio work; do not advertise camera, pause
+confirmation or these sound cues as accepted. Automated runtime checks remain
+muted and therefore cannot establish listening accuracy.

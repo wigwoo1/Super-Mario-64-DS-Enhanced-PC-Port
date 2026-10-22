@@ -247,6 +247,7 @@ struct PcActorProfile {
 #if defined(SM64DS_GAME_TARGET)
 extern "C" void *daChScene_c_classInit(void);
 extern "C" void *daDoor_c_classInit(void);
+extern "C" unsigned char g_profile_STAR_GATE[];
 extern "C" void *dMap_c_classInit(void);
 extern "C" void *daDemo_c_classInit(void);
 extern "C" void *daC_Jugem_c_classInit(void);
@@ -471,6 +472,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[335] = &pc_map_profile;
     data_020a4bb8_storage[352] = &pc_demo_profile;
     data_020a4bb8_storage[353] = &pc_door_profile;
+    data_020a4bb8_storage[354] = g_profile_STAR_GATE;
     data_020a4bb8_storage[307] = &pc_picture_gate_profile;
     pc_sound_obj_init_callbacks();
     data_020a4bb8_storage[359] = &pc_sound_obj_profile;

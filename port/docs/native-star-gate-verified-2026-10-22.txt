@@ -1,0 +1,31 @@
+# Upstairs Star Gate and original 60-Star Toad verification — 2026-10-22
+
+The native PC actor registry now includes the original upstairs STAR_GATE
+(actor 354, variant 2) used to reach the castle's 60-Star Toad. The recovered
+rule is preserved: the gate requires Mario and 50 Stars. Yoshi receives the
+original denial behavior. Eligible Mario entry loads the original room and
+returns normal control after the gate transition.
+
+The first eligible transition exposed a stale hardware square-root result in
+the production 3D distance helper. Its operand now passes through the PC
+hardware hook, which evaluates the full 64-bit square-root input. A focused
+smoke test calls the production helper with deliberately stale result state,
+including the distance used by the gate transition. No game movement or gate
+collision workaround was added.
+
+Muted isolated runtime checks used synthetic prerequisite saves, not a
+personal save. They verified the Yoshi denial path, eligible Mario gate entry,
+original Toad reward and Star flight, natural collection, save commit, and a
+fresh-process reload followed by a repeated conversation. The collected save
+contained 61 Stars with the original castle/course Star bit set. On reload the
+count and bit remained unchanged and no second copy of the reward Star spawned.
+The runtime checks exited successfully with zero mixer errors and device output
+muted. Screenshots and save/log/audio captures remain local and are not part of
+the public source or build kit.
+
+Focused verification: 16 host-generator Python checks, 2 Star Gate adapter
+checks, the input and production-distance CTest smoke tests, and the native
+actor/profile data audit passed. The 60-Star runtime case uses synthetic
+prerequisite progress; it does not claim a full natural 60-Star playthrough.
+Companion/variant Toad behavior and broader course coverage remain open. The
+port is experimental and incomplete.

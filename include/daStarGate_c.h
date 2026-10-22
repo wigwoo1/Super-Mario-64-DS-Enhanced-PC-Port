@@ -3,6 +3,9 @@
 
 #include "dExtCommonModel_c.h"
 #include "dActor_c.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "pcMemberCallback.h"
+#endif
 
 struct Player;
 
@@ -31,7 +34,11 @@ struct daStarGate_c : dActor_c {
     /* The exact nested type spelling is lineage-supported rather than ROM
        text. Its layout is ROM-proven: two 8-byte CodeWarrior PTMFs. */
     struct State {
+#if defined(SM64DS_PLATFORM_PC)
+        typedef PcMemberCallback<bool, Player *> StateFunc;
+#else
         typedef bool (daStarGate_c::*StateFunc)(Player *player);
+#endif
 
         StateFunc init;
         StateFunc main;

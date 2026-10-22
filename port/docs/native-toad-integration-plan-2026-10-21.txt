@@ -1,6 +1,13 @@
 Next native gameplay milestone: Toad / daKinopio_c
 Status: PARTIALLY VERIFIED overall; lobby interactions and original20-Star
-Toad reward collection/save/reload/no-duplicate are VERIFIED.
+Toad reward collection/save/reload/no-duplicate are VERIFIED. The original
+40-Star placement now has verified original dialogue, reward flight, natural
+collection, save commit, fresh-process reload and no-duplicate behavior
+(40 to 41 Stars, castle mask 8). Original Toad interaction on the earned save
+completes with no second Power Star and the disk total remains 41.
+Its input-only QA route follows the middle of the spiral stairs and goes around
+the stair enclosure on the upper floor. Original Player, collision, camera and
+reward code were unchanged during that investigation.
 
 Latest acceptance (supersedes historical pickup blockers below): read-only
 runtime trace proves simultaneous movement+jump enters original Walk before
@@ -164,3 +171,22 @@ resource lifetime, collider/shadow ABI and conditional rewards cross several
 original subsystems. Luna Medium can handle bounded repeat/reload checks after
 the implementation is accepted. This recommendation is based on the specific
 missing native connections, not code size or measured model cost/intelligence.
+
+2026-10-22 upstairs gate investigation:
+The route to the original 60-Star Toad crosses STAR_GATE actor 354.
+Preserve its original 50-Star/Mario restriction.
+Native gate registration, original requirement metadata, rendering and Yoshi's
+denial dialogue passed isolated muted runtime checks. Mario unlocks and crosses
+the gate, but the initial runtime stalled before returning control. The trace
+found a stale hardware square-root result in the production 3D-distance helper.
+Its operand writes now use the native hardware hook. The production-worker
+distance regression and eligible gate entry/control return passed.
+Original 60-Star Toad conversation, reward flight, natural jump/contact,
+collection and save commit passed in isolated muted QA with synthetic initial
+prerequisites. The resulting save contains 61 Stars and the correct castle bit.
+Fresh-process reload and repeat original conversation passed: the total remained
+61, the saved castle bit was unchanged, no duplicate reward actor spawned,
+and player control returned. All runtime checks were muted with zero mixer
+errors. Original 20/40/60-Star Toad reward coverage is now locally verified
+in the selected isolated paths; companion/variant branches remain separate.
+These diagnostic changes are not a stable installation or public build kit.
