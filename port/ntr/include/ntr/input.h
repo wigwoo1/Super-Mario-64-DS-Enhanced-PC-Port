@@ -57,6 +57,9 @@ extern "C" unsigned short ntr_input_run_buttons(unsigned short held, int analog)
 // Title navigation converts stick directions into menu keys. Gameplay keeps
 // those keys digital and consumes stick magnitude through the virtual stick.
 extern "C" void ntr_input_get_menu_keys(unsigned short *keys);
+// Explicit UI view: labeled A confirms even before the scene context changes.
+// The original input reader above retains gameplay jump/attack bindings.
+extern "C" void ntr_input_get_ui_keys(unsigned short *keys);
 extern "C" void ntr_input_set_menu_navigation(int enabled);
 // Original six-byte sample layout: x, y, pressed. Used by the host copy of
 // the game's four-player touch-history update for the local player only.

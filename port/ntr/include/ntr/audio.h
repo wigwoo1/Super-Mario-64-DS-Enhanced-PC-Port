@@ -14,6 +14,7 @@ bool audio_active(uint32_t key);
 void audio_stop(uint32_t key,int fade_frames=0);
 void audio_volume(uint32_t key,int volume,int fade_frames=0);
 void audio_pause_music(bool pause);
+void audio_set_pause_menu(bool paused,bool rec_room_music);
 void audio_pause_player(unsigned player,bool pause);
 void audio_stop_player(unsigned player,int fade_frames=0);
 void audio_stop_all();

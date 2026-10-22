@@ -21,3 +21,16 @@ Keep them open for gameplay/audio work; do not advertise camera, pause
 confirmation or these sound cues as accepted. Automated runtime checks remain
 muted and therefore cannot establish listening accuracy. The flower portal
 interaction and minimap-adjacent counters remain open gameplay/UI work.
+
+Camera/pause follow-up: native-camera-pause-followup-2026-10-22.txt records a
+normal-gameplay lens repair and separate menu-input handling. Selected castle
+and Battlefield replays pass with muted tests; physical Nintendo Switch Pro
+acceptance remains pending. Keep the hardware complaint open until tested.
+
+Sound follow-up: native-menu-stage-audio-followup-2026-10-22.txt records original
+menu SDK event/handle integration and the shared 52-stage sound-table repair.
+Title Start/menu/save voice and Chomp bark/bounce now produce native events and
+non-silent PCM in selected checks. All tests were muted; listening accuracy is
+not accepted. Some combined scenes still clip. Lakitu cloud timbre remains open.
+The Nintendo controller remains the reported device and needs physical testing.
+Separate local menu-audio checkpoint includes the prior camera/pause fixes.

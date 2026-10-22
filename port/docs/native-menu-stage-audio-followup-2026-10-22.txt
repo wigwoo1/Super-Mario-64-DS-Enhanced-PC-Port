@@ -1,0 +1,69 @@
+Original menu and stage sound follow-up, 2026-10-22
+
+Status: PARTIALLY VERIFIED. Missing native event plumbing and stage-bank layout
+are repaired with selected muted runtime checks. Listening accuracy, physical
+Nintendo Switch Pro input and broad audio acceptance remain open.
+
+Native EXE SHA256:
+2AD8ECEE04A127C5211A25F2BBEAAA6376B53680FEBE13AB9D2EE465C95833B3
+
+The original title/save/options frontend is DSMT/ov007. It starts effects using
+SDK func_02051f1c rather than the higher-level Sound wrapper. sound_host.py now
+connects the SDK start/bank/volume/handle-lifetime calls to the native player.
+audio_effect now honors its explicit voice key. The native key is the original
+handle's address, not a fabricated DS-driver object pointer. Six original menu
+liveness queries ask the native engine, preserving retail fallback. C-shard
+includes use C++ linkage within the generator's outer C wrapper. Matched src/
+sources are untouched; adaptations stay under port/.
+
+The original stage group/bank/music arrays are actually three interior labels
+of one 52x3-byte allocation. Independent native buffers had separated them by
+four bytes instead of one. sound_host.write_sources regenerates the shared
+allocation from the user's own ROM, with labels at +0/+1/+2. link_data excludes
+duplicate generic allocations. Native PE audit verifies all 156 bytes and lane
+offsets, and rejects the previous executable's separated allocation. No original
+table bytes are hardcoded into distributable source.
+
+Concrete evidence: Battlefield previously chose castle bank32. Original Chomp
+archive3/bark58 is silent with bank32 (0 nonzero PCM samples), but produces50765
+nonzero samples with Battlefield bank33 and completes at0.555s. Bounce57/bank33
+produces32644 nonzero samples and completes at0.384s. Both have0 engine errors
+in isolated offline renders. Actual gameplay now requests bark/bounce with33.
+This verifies routing and non-silent output, not listening/timbre accuracy.
+
+Rebuilt native executable, 10 focused CTests, 4 sound-host Python tests, 2 kit
+data-guard tests and full native actor-data audit pass. A new synthetic table
+fixture checks every byte lane and rejects truncated input/moved symbols.
+Selected runtime cases on the exact final EXE, all muted and exit0:
+- Original title/File A/castle,2400ticks: Start event2:105, selected-file voice
+  2:35, original music55/56 and native handle keys verified;0 clipped samples.
+- Original Options controller route,3400ticks: >10 authored menu sound events;
+  0 clipped samples. No physical Nintendo controller acceptance is claimed.
+- Chomp sound-event diagnostic,10000ticks: bark58/bounce57 usebank33. Input-only
+  route stalls at a bridge wall; no completed natural approach/release accepted.
+  10 clipped samples in the mixed capture; sounds are not isolated in this run.
+- Wanted,6500ticks: pause/settings/resume, retry and return to Rec Room/back to
+  title; original state/menu/music transitions and captures checked.56 clipped
+  samples in the mixed capture. Mixing fidelity remains unfinished.
+All audio shutdowns report0 engine errors and muted device nonzero output0.
+Captured private PCM was checked against shutdown statistics. Earlier SDK-only
+Options run had1 clipped sample; final run had0. Do not claim clipping is fixed.
+
+The preceding camera/pause fix is included. Physical Nintendo Switch Pro needs
+manual A-confirm/L3-free/R3-distance acceptance. This sound work does not establish
+that the user's controller issue is resolved. Lakitu cloud timbre, the flower
+warp and requested minimap-side counters remain separate open work.
+
+Installation is a separate local F: checkpoint, never a stable-install promotion.
+The root Play Latest Test With Sound.cmd points to the new checkpoint. Existing
+checkpoints and original saves remain untouched; progress/settings are copied
+with equal before/after hashes. Normal launcher uses F: ROM and local C: asset
+cache. Automated installation verification uses isolated C: saves/settings.
+
+Publication gate: the new generated sound table must never be uploaded as an
+object or full executable. Native kit packaging now rejects unreviewed generated
+pc-boot-src assembly/data objects BEFORE creating an output folder. Actual current
+build negative test passes. Update and review local reconstruction recipes for
+sound, camera and minigame data, then audit older kits, before another kit release.
+No new kit or public release was made for this milestone. Private test folders,
+PCM, screenshots, ROM data, saves and executable remain local.

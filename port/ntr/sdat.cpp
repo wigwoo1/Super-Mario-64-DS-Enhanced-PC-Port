@@ -31,6 +31,7 @@ struct Voice {
     AudioVolumeRamp volume;
     bool stopping=false;
     bool paused=false;
+    bool suspended=false;
     unsigned player_id=0;
     unsigned priority=0;
     std::shared_ptr<SSEQ> sequence;
@@ -141,7 +142,7 @@ struct SdatEngine::Impl {
             }
         }
     }
-    uint32_t play(int group,unsigned id,int bank_override,uint32_t slot,int volume) {
+    uint32_t play(int group,unsigned id,int bank_override,uint32_t slot,int volume,bool isolated=false) {
         try {
             Entry e;unsigned offset=0;
             if(group<0) {
@@ -152,6 +153,7 @@ struct SdatEngine::Impl {
                 e=effects[group].entries[id];offset=effects[group].offsets[id];
             }
             if(bank_override>=0)e.bank=unsigned(bank_override);
+            if(isolated)e.player=255;
             if(e.bank>=banks.size() || !banks[e.bank])throw std::runtime_error("SDAT sequence requires a valid runtime instrument bank");
             const auto key=std::make_tuple(group,id,e.bank);
             auto found=cache.find(key);
@@ -208,6 +210,7 @@ bool SdatEngine::load(const uint8_t *bytes,size_t size) {
     catch(const std::exception &e) {impl_=std::make_unique<Impl>(impl_->rate);impl_->last_error=e.what();++impl_->error_count;return false;}
 }
 uint32_t SdatEngine::play_sequence(unsigned id,uint32_t slot,int volume){return impl_->play(-1,id,-1,slot,volume);}
+uint32_t SdatEngine::play_sequence_isolated(unsigned id,uint32_t slot){return impl_->play(-1,id,-1,slot,127,true);}
 uint32_t SdatEngine::play_effect(unsigned archive,unsigned id,int bank,uint32_t slot,int volume){return impl_->play(int(archive),id,bank,slot,volume);}
 void SdatEngine::stop(uint32_t slot,int frames){
     auto &voices=impl_->voices;
@@ -216,6 +219,7 @@ void SdatEngine::stop(uint32_t slot,int frames){
 }
 void SdatEngine::stop_all(){impl_->voices.clear();}
 void SdatEngine::pause(uint32_t slot,bool paused){for(auto &v:impl_->voices)if(v.slot==slot)v.paused=paused;}
+void SdatEngine::suspend(uint32_t slot,bool suspended){for(auto &v:impl_->voices)if(v.slot==slot)v.suspended=suspended;}
 void SdatEngine::pause_player(unsigned player,bool paused){for(auto &v:impl_->voices)if(v.player_id==player)v.paused=paused;}
 void SdatEngine::stop_player(unsigned player,int frames){
     std::vector<uint32_t> slots;
@@ -235,7 +239,7 @@ void SdatEngine::render(int16_t *stereo,size_t frames) {
     auto &m=*impl_;m.mix.assign(frames*2,0);m.scratch.resize(frames*4);
     for(auto it=m.voices.begin();it!=m.voices.end();) {
         bool remove=false;
-        if(!it->paused) {
+        if(!it->paused && !it->suspended) {
             try {
                 it->player->GenerateSamples(m.scratch,0,unsigned(frames));
                 for(size_t i=0;i<frames*2;++i) {

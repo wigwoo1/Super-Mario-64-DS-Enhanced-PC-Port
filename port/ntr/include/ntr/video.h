@@ -28,9 +28,13 @@ struct VideoSettings {
     TextureQuality texture_quality = TextureQuality::Original;
     uint8_t camera_zoom = 0; // Original, 0.75x, 0.5x, 0.25x; inverse distance
     uint8_t camera_mode = 0; // 0=retail camera, 1=free orbit with right stick
+    uint16_t camera_sensitivity = 100; // free-camera speed, 25..300 percent
+    bool camera_invert_x = false, camera_invert_y = false;
+    uint8_t camera_acceleration = 1; // 0=off, 1=gentle, 2=smooth
     bool always_run = false; // digital movement; analog speed follows stick travel
     bool stay_in_stage_after_star = false; // retain original castle exit by default
     bool brain_rot_text = false; // opt-in dialogue replacement mode; missing entries fall back to original
+    bool pause_music_rec_room = false; // optional pause-menu theme; retain original by default
     RenderDistance render_distance = RenderDistance::Minimum;
 };
 

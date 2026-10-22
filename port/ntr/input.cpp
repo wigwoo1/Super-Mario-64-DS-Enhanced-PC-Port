@@ -22,6 +22,7 @@ namespace {
 
 InputState g_state;
 uint16_t g_keyinput = 0x0FFF;
+uint16_t g_menu_keys = 0;
 bool g_touch = false;
 uint16_t g_touch_x = 0, g_touch_y = 0;
 unsigned long long g_input_poll_count = 0;
@@ -118,7 +119,7 @@ void input_poll() {
     // mapping it to D-pad bits as well would mix digital movement with the
     // continuous direction and speed. Keyboard and physical D-pad remain
     // digital controls.
-    uint16_t pressed = controller_face_buttons(g_state.buttons,g_menu_navigation);
+    uint16_t pressed = 0;
     const uint16_t buttons = g_state.buttons;
     if (key_down(VK_SPACE)) pressed |= 1u << 0;
     if (key_down(VK_LSHIFT)) pressed |= 1u << 1;
@@ -145,7 +146,6 @@ void input_poll() {
         g_touch_x = g_touch_y = 0;
         write_touch_latch(false, 0, 0);
         g_state.buttons=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_PAD_BUTTONS"),0xffff);
-        pressed |= controller_face_buttons(g_state.buttons,g_menu_navigation);
         // The regular hardware path maps these XInput-compatible directional
         // bits before this automation block. Reapply them after replacing the
         // pad state so replayed controller D-pad input follows the same path.
@@ -292,11 +292,33 @@ void input_poll() {
     }
     previous_zoom=zoom_down;
     previous_camera_mode=mode_down;
+    // Menus may ask for input on the first tick of a gameplay/menu change,
+    // before the graphics callback updates g_menu_navigation. Keep their
+    // A-confirm/B-back view independent of the gameplay jump/attack swap.
+    g_menu_keys=static_cast<uint16_t>(pressed | controller_face_buttons(g_state.buttons,true));
+    pressed |= controller_face_buttons(g_state.buttons,g_menu_navigation);
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);
 
     g_state.touch = g_touch;
     g_state.touch_x = g_touch_x;
     g_state.touch_y = g_touch_y;
+    if(const char *path=std::getenv("SM64DS_PC_INPUT_TRACE")) {
+        static FILE *trace=nullptr;
+        static InputState previous{};
+        static bool previous_menu=false;
+        if(!trace && *path){trace=std::fopen(path,"w");if(trace)std::fputs("poll,menu,pad,game_keys,ui_keys,left_x,left_y,right_x,right_y,zoom_edge,mode_edge,touch\n",trace);}
+        if(trace && (g_state.buttons!=previous.buttons || g_state.left_x!=previous.left_x ||
+            g_state.left_y!=previous.left_y || g_state.right_x!=previous.right_x ||
+            g_state.right_y!=previous.right_y || g_menu_navigation!=previous_menu ||
+            g_input_poll_count%60==0)) {
+            std::fprintf(trace,"%llu,%u,%u,%u,%u,%d,%d,%d,%d,%u,%u,%u\n",g_input_poll_count,
+                unsigned(g_menu_navigation),unsigned(g_state.buttons),unsigned(pressed),unsigned(g_menu_keys),
+                int(g_state.left_x),int(g_state.left_y),int(g_state.right_x),int(g_state.right_y),
+                unsigned(g_state.camera_zoom_pressed),unsigned(g_state.camera_mode_pressed),unsigned(g_touch));
+            std::fflush(trace);
+        }
+        previous=g_state;previous_menu=g_menu_navigation;
+    }
 #endif
 }
 
@@ -401,6 +423,17 @@ extern "C" void ntr_input_get_menu_keys(unsigned short *keys) {
     if (x <= -0.45f) *keys |= 1u << 5;
     if (y >= 0.45f) *keys |= 1u << 6;
     if (y <= -0.45f) *keys |= 1u << 7;
+}
+
+extern "C" void ntr_input_get_ui_keys(unsigned short *keys) {
+    if(!keys)return;
+    *keys=ntr::g_menu_keys;
+    float x=0.0f,y=0.0f;
+    ntr::input_left_stick(&x,&y);
+    if(x>=0.45f)*keys|=1u<<4;
+    if(x<=-0.45f)*keys|=1u<<5;
+    if(y>=0.45f)*keys|=1u<<6;
+    if(y<=-0.45f)*keys|=1u<<7;
 }
 
 extern "C" void ntr_input_set_menu_navigation(int enabled) {

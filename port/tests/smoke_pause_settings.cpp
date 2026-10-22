@@ -165,7 +165,7 @@ int main() {
     if(menu.update(1,settings)!=Action::None)return 39; // Held A must not write repeatedly.
     press(0x80);if(press(1)!=Action::None || menu.page!=Page::Options)return 40;
     press(1);press(0x200);
-    if(menu.page!=Page::Gameplay || menu.rows()!=4)return 67;
+    if(menu.page!=Page::Gameplay || menu.rows()!=5)return 67;
     char gameplay_label[64];menu.line(0,settings,gameplay_label,sizeof(gameplay_label));
     if(std::strcmp(gameplay_label,"STAY AFTER STAR OFF"))return 68;
     if(press(1)!=Action::Changed || !settings.stay_in_stage_after_star)return 69;
@@ -182,6 +182,11 @@ int main() {
     if(free_action!=Action::Changed)return 80;
     char camera_mode_label[64]; menu.line(3,settings,camera_mode_label,sizeof(camera_mode_label));
     if(settings.camera_mode!=1 || std::strcmp(camera_mode_label,"CAMERA FREE"))return 81;
+    press(0x80);
+    if(menu.row!=4 || press(1)!=Action::Changed || !settings.pause_music_rec_room)return 94;
+    menu.line(4,settings,camera_mode_label,sizeof(camera_mode_label));
+    if(std::strcmp(camera_mode_label,"PAUSE MUSIC REC ROOM"))return 95;
+    if(press(0x20)!=Action::Changed || settings.pause_music_rec_room)return 96;
     while(menu.row>2)press(0x40);
     while(menu.row<2)press(0x80);
     auto run_action=press(1);
@@ -190,10 +195,28 @@ int main() {
     if(std::strcmp(gameplay_label,"ALWAYS RUN ON"))return 77;
     if(press(0x20)!=Action::Changed || settings.always_run)return 78;
     press(0x200);
+    if(menu.page!=Page::Camera || menu.rows()!=4)return 82;
+    char free_label[64];menu.line(0,settings,free_label,sizeof(free_label));
+    if(std::strcmp(free_label,"SENSITIVITY 100%"))return 83;
+    if(press(1)!=Action::Changed || settings.camera_sensitivity!=125)return 84;
+    for(unsigned i=0;i<12;++i)press(0x10);
+    if(settings.camera_sensitivity!=300)return 85;
+    for(unsigned i=0;i<15;++i)press(0x20);
+    if(settings.camera_sensitivity!=25)return 86;
+    press(0x80);if(press(1)!=Action::Changed || !settings.camera_invert_x)return 87;
+    press(0x80);if(press(1)!=Action::Changed || !settings.camera_invert_y)return 88;
+    press(0x80);if(press(1)!=Action::Changed || settings.camera_acceleration!=2)return 89;
+    if(press(1)!=Action::Changed || settings.camera_acceleration!=0)return 90;
+    if(press(0x20)!=Action::Changed || settings.camera_acceleration!=2)return 91;
+    menu.line(3,settings,free_label,sizeof(free_label));
+    if(std::strcmp(free_label,"ACCELERATION SMOOTH"))return 92;
+    press(0x200);
     if(menu.page!=Page::Screens)return 41;
     const ntr::MinigameLayout layouts[]={ntr::MinigameLayout::LeftRight,ntr::MinigameLayout::RightLeft,ntr::MinigameLayout::TopBottom};
     for(auto layout:layouts) {if(press(1)!=Action::Changed || settings.minigame_layout!=layout)return 49;}
     if(press(0x20)!=Action::Changed || settings.minigame_layout!=ntr::MinigameLayout::RightLeft)return 50;
+    press(0x100);
+    if(menu.page!=Page::Camera)return 93;
     press(0x100);
     if(menu.page!=Page::Gameplay)return 72;
     press(0x100);

@@ -37,6 +37,9 @@ def main():
     import ndspy.rom
     import ndspy.codeCompression
     metadata = json.loads((ROOT / '.native-kit/manifest.json').read_text())
+    sys.path.insert(0,str(ROOT/'port/tools'))
+    from native_kit_data import validate_manifest
+    validate_manifest(metadata)
     for item in metadata['prebuilt']:
         if sha(ROOT / item['path']) != item['sha256']:
             sys.exit('Build kit integrity check failed: ' + item['path'])

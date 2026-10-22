@@ -113,7 +113,7 @@ int pc_dsmt_input_update() {
         const auto input=ntr::input_state();
         unsigned short keys=0;
         ntr_input_set_menu_navigation(1);
-        ntr_input_get_menu_keys(&keys);
+        ntr_input_get_ui_keys(&keys);
         unsigned short x=input.touch_x,y=input.touch_y;bool touch=input.touch;
         controller_menu_touch(keys,x,y,touch);
         return func_ov007_020b7090(x,y,touch?1:0,0,keys);

@@ -247,6 +247,8 @@ int main() {
     settings.minimap_rotate_with_player = true;
     settings.minimap_hide_touch_target = false;
     settings.stay_in_stage_after_star = true; settings.brain_rot_text=true; settings.camera_zoom=3; settings.camera_mode=1; settings.always_run=true;
+    settings.camera_sensitivity=175;settings.camera_invert_x=true;settings.camera_invert_y=true;settings.camera_acceleration=2;
+    settings.pause_music_rec_room=true;
     settings.render_distance=ntr::RenderDistance::EntireMap;
     ntr::video_set_settings(settings);
     if (!ntr::video_save_settings(settings_path)) return 16;
@@ -257,10 +259,14 @@ int main() {
     settings.minimap_rotate_with_player = false;
     settings.minimap_hide_touch_target = true;
     settings.stay_in_stage_after_star = false; settings.brain_rot_text=false; settings.camera_zoom=0; settings.always_run=false;
+    settings.camera_sensitivity=100;settings.camera_invert_x=false;settings.camera_invert_y=false;settings.camera_acceleration=1;
+    settings.pause_music_rec_room=false;
     settings.render_distance=ntr::RenderDistance::Minimum;
     ntr::video_set_settings(settings);
     if (!ntr::video_load_settings(settings_path)) return 17;
     const ntr::VideoSettings loaded = ntr::video_get_settings();
+    if(loaded.camera_sensitivity!=175 || !loaded.camera_invert_x || !loaded.camera_invert_y || loaded.camera_acceleration!=2)return 34;
+    if(!loaded.pause_music_rec_room)return 35;
     if (loaded.width != 3840 || loaded.height != 2160 || loaded.target_fps != 240 ||
         ntr::rt_target_fps() != 240 || loaded.anisotropic_filtering!=16 ||
         loaded.renderer!=ntr::VideoRenderer::OpenGLSoftware || loaded.minimap || loaded.minimap_opacity != 137 ||

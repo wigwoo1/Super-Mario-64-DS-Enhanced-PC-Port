@@ -24,7 +24,7 @@ void close() {
 extern "C" int pc_wanted_settings_open(void *raw) {
     auto *scene=static_cast<dScMgBase_c *>(raw);
     if(scene->actorID!=366 || !data_0209d6f8) return 0;
-    uint16_t keys=0;ntr_input_get_menu_keys(&keys);
+    uint16_t keys=0;ntr_input_get_ui_keys(&keys);
     menu.reset(keys);
     touch_down=ntr::input_state().touch;
     saved_layers=data_0209d454;
@@ -39,7 +39,7 @@ extern "C" int pc_wanted_settings_update(void *raw) {
     auto *scene=static_cast<dScMgBase_c *>(raw);
     if(!scene->mMenuOpen) {close();return 0;}
     ntr_input_set_menu_navigation(1);
-    uint16_t keys=0;ntr_input_get_menu_keys(&keys);
+    uint16_t keys=0;ntr_input_get_ui_keys(&keys);
     const auto input=ntr::input_state();
     const bool tapped=input.touch && !touch_down;
     touch_down=input.touch;

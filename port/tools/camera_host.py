@@ -107,18 +107,39 @@ def transform(text):
         raise ValueError('Camera render coordinate conversion changed')
     text = text.replace(anchor, '    pc_camera_zoom(this, sp);\n\n' + anchor)
     text = text.replace('// @symbol _ZN9dCamera_c6RenderEv',
+                        'static bool pc_camera_gameplay(const dCamera_c *);\n'
                         'static void pc_camera_zoom(dCamera_c *, s32 *);\n\n// @symbol _ZN9dCamera_c6RenderEv')
-    text = ('#include "ntr/video.h"\n#include "ntr/input.h"\n#include "ntr/rt.h"\n'
+    # The original lens eases from its authored angle to a narrower idle lens.
+    # Keeping the eye distance steady alone cannot remove that visible zoom.
+    # Use the authored lens while the player controls the ordinary camera;
+    # scripted and inspection cameras keep the original blend.
+    lens = 's32 t = *(s32 *)((char *)self + 0x168);'
+    if text.count(lens) != 1:
+        raise ValueError('Camera movement lens blend changed')
+    text = text.replace(lens,
+        's32 t = pc_camera_gameplay(self) ? 0x1000 : *(s32 *)((char *)self + 0x168);')
+    text = ('#include "ntr/video.h"\n#include "ntr/input.h"\n#include "ntr/rt.h"\n#include "ntr/camera_controls.h"\n'
             '#include <algorithm>\n#include <cmath>\n#include <climits>\n' + text)
     text += r'''
 extern "C" int pc_chomp_release_target(int *);
 extern "C" void pc_camera_set_movement_yaw_offset(short, int);
+
+static bool pc_camera_gameplay(const dCamera_c *camera)
+{
+    const auto *player=reinterpret_cast<const unsigned char *>(camera->mTargetPlayer);
+    return player && *reinterpret_cast<const u16 *>(player+0xc)==0xbf &&
+        !player[0x6f6] && !player[0x709] &&
+        !data_0209fc48 && !data_0209f294 && !data_0209f20c && !data_0209f2c4 &&
+        camera->mState!=reinterpret_cast<const dCamera_c::State *>(&data_0209b098);
+}
 
 // Native distance zoom, using the camera's own background collision filter.
 static void pc_camera_zoom(dCamera_c *camera, s32 *view)
 {
     static double orbit_yaw = 0.0, orbit_pitch = 0.0;
     static bool orbit_active = false, orbit_initialized = false;
+    static ntr::FreeCameraResponse response;
+    static unsigned long long control_tick=~0ull;
     // Player.h pins actorID at 0xc and control-disabled/no-control bytes at
     // 0x6f6/0x709. Avoid importing its collision classes into this C shard.
     auto *player = reinterpret_cast<unsigned char *>(camera->mTargetPlayer);
@@ -189,6 +210,13 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
             camera->mState_13c-reinterpret_cast<int>(&data_02086fcc),camera->mFlags,int(allowed),
             *reinterpret_cast<const int *>(bytes+0x104),*reinterpret_cast<const int *>(bytes+0x108),
             view[0],view[1],view[2],view[3],view[4],view[5]);
+        const auto controls=ntr::input_state();
+        std::fprintf(stderr,"[camera controls] tick=%llu actor=%u disabled=%u no_control=%u locks=%d,%u,%u,%u fov=%d blend=%d mode=%u pad=%u right=%d,%d\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),player?unsigned(*reinterpret_cast<const u16 *>(player+0xc)):0,
+            is_player?unsigned(player[0x6f6]):0,is_player?unsigned(player[0x709]):0,
+            data_0209fc48,unsigned(data_0209f294),unsigned(data_0209f20c),unsigned(data_0209f2c4),
+            int(*reinterpret_cast<const short *>(bytes+0x17a)),*reinterpret_cast<const int *>(bytes+0x168),
+            unsigned(settings.camera_mode),unsigned(controls.buttons),int(controls.right_x),int(controls.right_y));
     }
     static unsigned long long handled = ~0ull;
     if (ntr::input_take_camera_zoom() && handled != ntr::rt_frame()) {
@@ -228,9 +256,9 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
                 mode_handled,settings.camera_mode?"free":"preset",int(saved));
         }
     }
-    if (!allowed) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; return; }
+    if (!allowed) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; response.reset(); control_tick=~0ull; return; }
     const auto input = ntr::input_state();
-    if(settings.camera_mode!=1) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; }
+    if(settings.camera_mode!=1) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; response.reset(); control_tick=~0ull; }
     // Free camera uses the camera object's stable tracked pose as its anchor.
     // Never derive distance from the previous render-only view: that view was
     // already orbited/zoomed and would compound every render pass.
@@ -254,14 +282,19 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
         orbit_pitch=std::asin(std::clamp(native_dy/std::max(1.0,native_distance),-1.0,1.0));
         orbit_initialized=true;
     }
-    if(settings.camera_mode==1 && (std::abs(input.right_x)>6500 || std::abs(input.right_y)>6500)) {
-        orbit_active=true;
-        // A full deflection should turn at a comfortable desktop-camera pace;
-        // the host polls several times during some DS presentation frames.
-        orbit_yaw += double(input.right_x)/32767.0*0.052;
-        orbit_pitch += double(input.right_y)/32767.0*0.035;
+    if(settings.camera_mode==1) {
+        const auto tick=ntr::rt_frame();
+        const double elapsed=control_tick==~0ull || tick<control_tick?1.0/30.0:double(tick-control_tick)/60.0;
+        control_tick=tick;
+        const auto turn=response.update(input.right_x,input.right_y,settings,elapsed);
+        orbit_yaw += turn.yaw;
+        orbit_pitch += turn.pitch;
         orbit_pitch=std::clamp(orbit_pitch,-1.15,1.15);
-        orbit_active=true;
+        orbit_active=turn.yaw!=0 || turn.pitch!=0;
+        if(std::getenv("SM64DS_PC_CAMERA_ORBIT_TRACE") && tick%30==0)
+            std::fprintf(stderr,"[camera response] tick=%llu elapsed=%.6f turn=%.8f,%.8f sensitivity=%u invert=%u,%u acceleration=%u\n",
+                static_cast<unsigned long long>(tick),elapsed,turn.yaw,turn.pitch,unsigned(settings.camera_sensitivity),
+                unsigned(settings.camera_invert_x),unsigned(settings.camera_invert_y),unsigned(settings.camera_acceleration));
     }
     if(settings.camera_mode==1) {
         // Match the game's own horizontal-angle convention (atan2(x,z)),

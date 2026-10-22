@@ -5,7 +5,8 @@
 
 namespace pc_pause {
 static constexpr Page pages[]={Page::Display,Page::Graphics,Page::Map,
-    Page::Position,Page::Save,Page::Screens,Page::Gameplay};
+    Page::Position,Page::Save,Page::Screens,Page::Camera,Page::Gameplay};
+static constexpr unsigned page_count=sizeof(pages)/sizeof(pages[0]);
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks) {
     uint16_t pressed = keys & ~previous;
     previous = keys;
@@ -25,7 +26,8 @@ unsigned Menu::rows() const {
     if(page==Page::Position || page==Page::Save) return 2;
     if(page==Page::Graphics) return 3;
     if(page==Page::Screens) return 1;
-    return page==Page::Gameplay ? 4 : 3;
+    if(page==Page::Gameplay)return 5;
+    return page==Page::Camera ? 4 : 3;
 }
 
 Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
@@ -44,8 +46,8 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
     }
     if (edge & 0x300) {
         unsigned current=0;
-        while(current<7 && pages[current]!=page) ++current;
-        page=pages[(current+(edge & 0x100 ? 1 : 6))%7];
+        while(current<page_count && pages[current]!=page) ++current;
+        page=pages[(current+(edge & 0x100 ? 1 : page_count-1))%page_count];
         row = 0; return Action::None;
     }
     if(page==Page::Save) {
@@ -101,7 +103,14 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         if(row==0) s.stay_in_stage_after_star = !s.stay_in_stage_after_star;
         else if(row==1) s.camera_zoom=static_cast<uint8_t>((s.camera_zoom+(direction>0?1:3))%4);
         else if(row==2) s.always_run=!s.always_run;
-        else s.camera_mode^=1;
+        else if(row==3)s.camera_mode^=1;
+        else s.pause_music_rec_room=!s.pause_music_rec_room;
+        break;
+    case Page::Camera:
+        if(row==0)s.camera_sensitivity=static_cast<uint16_t>(step(s.camera_sensitivity,25,25,300));
+        else if(row==1)s.camera_invert_x=!s.camera_invert_x;
+        else if(row==2)s.camera_invert_y=!s.camera_invert_y;
+        else s.camera_acceleration=static_cast<uint8_t>((s.camera_acceleration+(direction>0?1:2))%3);
         break;
     case Page::Position:
         if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000-s.minimap_scale));
@@ -159,7 +168,14 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         if(i==0) std::snprintf(out,size,"STAY AFTER STAR %s",s.stay_in_stage_after_star?on:off);
         else if(i==1) std::snprintf(out,size,"CAMERA ZOOM %s",s.camera_zoom==1?"0.75X":s.camera_zoom==2?"0.5X":s.camera_zoom==3?"0.25X":"ORIGINAL");
         else if(i==2) std::snprintf(out,size,"ALWAYS RUN %s",s.always_run?on:off);
-        else std::snprintf(out,size,"CAMERA %s",s.camera_mode?"FREE":"PRESET");break;
+        else if(i==3)std::snprintf(out,size,"CAMERA %s",s.camera_mode?"FREE":"PRESET");
+        else std::snprintf(out,size,"PAUSE MUSIC %s",s.pause_music_rec_room?"REC ROOM":"ORIGINAL");break;
+    case Page::Camera:
+        if(i==0)std::snprintf(out,size,"SENSITIVITY %u%%",unsigned(s.camera_sensitivity));
+        else if(i==1)std::snprintf(out,size,"INVERT X %s",s.camera_invert_x?on:off);
+        else if(i==2)std::snprintf(out,size,"INVERT Y %s",s.camera_invert_y?on:off);
+        else std::snprintf(out,size,"ACCELERATION %s",s.camera_acceleration==0?"OFF":s.camera_acceleration==2?"SMOOTH":"GENTLE");
+        break;
     }
 }
 
@@ -268,12 +284,12 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     char label[64];
     if (m.page==Page::Options) line("OPTIONS",0);
     else {
-        unsigned index=0;while(index<7 && pages[index]!=m.page)++index;
-        const char *names[]={"DISPLAY","GRAPHICS","MINIMAP","MAP POSITION","SAVE","SCREENS","GAMEPLAY"};
-        std::snprintf(label,sizeof(label),"%s %u/7",index<7?names[index]:"VISUAL",index+1);
+        unsigned index=0;while(index<page_count && pages[index]!=m.page)++index;
+        const char *names[]={"DISPLAY","GRAPHICS","MINIMAP","MAP POSITION","SAVE","SCREENS","FREE CAMERA","GAMEPLAY"};
+        std::snprintf(label,sizeof(label),"%s %u/%u",index<page_count?names[index]:"VISUAL",index+1,page_count);
         line(label,0);
     }
-    if(m.page==Page::Gameplay) line("R3 CYCLES CAMERA ZOOM",15);
+    if(m.page==Page::Camera) line("L3 FREE / R3 ZOOM",15);
     if(m.page==Page::Screens) line("TOP 75%  BOTTOM 25%",15);
     if(m.page==Page::Graphics && ntr::video_renderer_notice()[0])line(ntr::video_renderer_notice(),15);
     // The caller caches a complete four-row button from its native position.

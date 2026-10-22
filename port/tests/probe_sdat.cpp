@@ -1,5 +1,6 @@
 // Local-asset acceptance tool. Outputs stay private; no ROM data is compiled in.
 #include "ntr/sdat.h"
+#include "ntr/pause_music.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -20,6 +21,56 @@ int main(int argc,char **argv){
     std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)),{});
     ntr::SdatEngine engine;if(!engine.load(bytes.data(),bytes.size())){std::fprintf(stderr,"load failed: %s\n",engine.error().c_str());return 1;}
     std::vector<int16_t> buffer(2048);
+    if(!std::strcmp(argv[2],"--pause-music")) {
+        auto check=[](bool ok,const char *message){if(!ok)throw std::runtime_error(message);};
+        try {
+            check(engine.play_sequence(5,100) && engine.play_sequence(5,200),"same-player reference starts");
+            check(!engine.active(100),"same-player replacement fixture is not discriminating");
+            engine.stop_all();
+            ntr::SdatEngine reference;
+            check(reference.load(bytes.data(),bytes.size()),"reference archive load");
+            constexpr uint32_t original=12345;
+            check(engine.play_sequence(13,original) && reference.play_sequence(13,original),"original music start");
+            std::vector<int16_t> expected(2048);
+            bool audible=false;
+            for(unsigned i=0;i<32;++i) {
+                engine.render(buffer.data(),1024);reference.render(expected.data(),1024);
+                check(buffer==expected,"initial reference PCM differs");
+                audible|=std::any_of(buffer.begin(),buffer.end(),[](int16_t x){return x!=0;});
+            }
+            check(audible,"original fixture stayed silent");
+            ntr::PauseMusic pause(engine);pause.update(true,{original});
+            check(pause.active() && pause.retained()==1 && engine.active(original),"theme replaced original song");
+            engine.pause_player(255,true);
+            const auto effect=engine.play_effect(2,100,-1,900);
+            check(effect!=0,"menu effect start");
+            audible=false;
+            for(unsigned i=0;i<16;++i) {
+                engine.render(buffer.data(),1024);
+                audible|=std::any_of(buffer.begin(),buffer.end(),[](int16_t x){return x!=0;});
+            }
+            check(audible,"menu effects were suspended with music");
+            engine.stop(effect);engine.pause_player(255,false);
+            audible=false;
+            for(unsigned i=0;i<6000;++i) { // More than two minutes of pause-theme playback.
+                pause.update(true,{original}); // Repeated presentation cannot restart theme.
+                engine.render(buffer.data(),1024);
+                audible|=std::any_of(buffer.begin(),buffer.end(),[](int16_t x){return x!=0;});
+            }
+            check(audible && pause.active() && engine.active(original),"pause theme did not remain audible/isolated");
+            engine.pause(original,true); // Preserve the original driver's own pause state.
+            pause.update(false,{});engine.render(buffer.data(),1024);
+            check(std::all_of(buffer.begin(),buffer.end(),[](int16_t x){return x==0;}),"retail pause state was lost");
+            engine.pause(original,false);
+            for(unsigned i=0;i<32;++i) {
+                engine.render(buffer.data(),1024);reference.render(expected.data(),1024);
+                check(buffer==expected,"original song did not resume at identical sample position");
+            }
+            check(!pause.active() && pause.retained()==0 && !engine.errors(),"pause overlay did not clean up");
+            std::puts("PASS Rec Room theme isolated from original player; menu effects continue; original pause flag retained; resumed music13 PCM matches uninterrupted reference exactly for32768frames; errors=0");
+            return 0;
+        } catch(const std::exception &e) {std::fprintf(stderr,"pause-music check failed: %s\n",e.what());return 1;}
+    }
     if(!std::strcmp(argv[2],"--players")){
         auto check=[](bool ok,const char *message){if(!ok)throw std::runtime_error(message);};
         try {
@@ -48,7 +99,7 @@ int main(int argc,char **argv){
         const unsigned id=unsigned(std::strtoul(argv[4],nullptr,0));
         const unsigned seconds=unsigned(std::strtoul(argv[5],nullptr,0));
         if(!seconds || seconds>30 || !engine.has_effect(group,id))return 2;
-        const int bank=group==3?32:-1;
+        const int bank=argc>7?int(std::strtol(argv[7],nullptr,0)):(group==3?32:-1);
         const auto voice=engine.play_effect(group,id,bank);
         if(!voice){std::fprintf(stderr,"effect %u:%u failed: %s\n",group,id,engine.error().c_str());return 1;}
         const unsigned frames=48000*seconds;

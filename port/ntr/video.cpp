@@ -342,6 +342,8 @@ void clamp_settings(VideoSettings &s) {
     if(static_cast<unsigned>(s.renderer)>1)s.renderer=VideoRenderer::D3D11;
     if(static_cast<unsigned>(s.minigame_layout)>2) s.minigame_layout=MinigameLayout::TopBottom;
     if(s.camera_zoom>3) s.camera_zoom=0;
+    s.camera_sensitivity=std::clamp<uint16_t>(s.camera_sensitivity,25,300);
+    if(s.camera_acceleration>2)s.camera_acceleration=1;
     if(static_cast<unsigned>(s.render_distance)>3) s.render_distance=RenderDistance::Minimum;
     if(static_cast<unsigned>(s.texture_quality)>5) s.texture_quality=TextureQuality::Original;
     if(s.anisotropic_filtering!=2 && s.anisotropic_filtering!=4 &&
@@ -424,10 +426,15 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line, "target_fps") == 0) loaded.target_fps = static_cast<uint32_t>(value);
         else if (std::strcmp(line, "camera_zoom") == 0) loaded.camera_zoom = value<=3 ? static_cast<uint8_t>(value) : 0;
         else if (std::strcmp(line, "camera_mode") == 0) loaded.camera_mode = value<=1 ? static_cast<uint8_t>(value) : 0;
+        else if (std::strcmp(line,"camera_sensitivity")==0) loaded.camera_sensitivity=static_cast<uint16_t>(std::clamp(value,25ul,300ul));
+        else if (std::strcmp(line,"camera_invert_x")==0) loaded.camera_invert_x=value==1;
+        else if (std::strcmp(line,"camera_invert_y")==0) loaded.camera_invert_y=value==1;
+        else if (std::strcmp(line,"camera_acceleration")==0) loaded.camera_acceleration=value<=2?static_cast<uint8_t>(value):1;
         else if (std::strcmp(line, "always_run") == 0) loaded.always_run = value == 1;
         else if (std::strcmp(line, "render_distance") == 0) loaded.render_distance = value<=3 ? static_cast<RenderDistance>(value) : RenderDistance::Minimum;
         else if (std::strcmp(line, "stay_in_stage_after_star") == 0) loaded.stay_in_stage_after_star = value == 1;
         else if (std::strcmp(line, "brain_rot_text") == 0) loaded.brain_rot_text = value == 1;
+        else if (std::strcmp(line,"pause_music_rec_room")==0) loaded.pause_music_rec_room=value==1;
         else if (std::strcmp(line, "anisotropic_filtering") == 0) loaded.anisotropic_filtering=static_cast<uint8_t>(std::min(value,255ul));
         else if (std::strcmp(line, "renderer") == 0) loaded.renderer=value==1?VideoRenderer::OpenGLSoftware:VideoRenderer::D3D11;
         else if (std::strcmp(line, "minigame_layout") == 0) loaded.minigame_layout=value<=2?static_cast<MinigameLayout>(value):MinigameLayout::TopBottom;
@@ -474,7 +481,8 @@ bool video_save_settings(const char *path) {
     const bool write_ok = std::fprintf(file,
         "window_width=%u\nwindow_height=%u\nwindow_maximized=%u\nwidth=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
-        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\nbrain_rot_text=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n",
+        "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\nbrain_rot_text=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n"
+        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\npause_music_rec_room=%u\n",
         g_window_preferences.width,g_window_preferences.height,g_window_preferences.maximized?1u:0u,
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
@@ -485,7 +493,8 @@ bool video_save_settings(const char *path) {
         g_settings.minimap_hide_touch_target ? 1u : 0u,
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
-        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,g_settings.brain_rot_text ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance)) >= 0;
+        static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,g_settings.brain_rot_text ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance),
+        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.pause_music_rec_room)) >= 0;
     const bool close_ok = std::fclose(file) == 0;
     if (!write_ok || !close_ok) { std::remove(temporary); return false; }
 #if defined(_WIN32)

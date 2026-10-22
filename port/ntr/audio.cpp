@@ -6,6 +6,8 @@
 #include "ntr/audio_output.h"
 #include "ntr/fs.h"
 #include "ntr/sdat.h"
+#include "ntr/pause_music.h"
+#include "ntr/rt.h"
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -22,6 +24,7 @@ constexpr unsigned hz=48000,frames=512,blocks=4;
 struct State {
     struct EffectInfo { unsigned archive,id; uint64_t stop_tick; };
     SdatEngine engine;
+    PauseMusic pause_music{engine};
     std::mutex mutex;
     std::atomic<bool> running{false},ready{false};
     std::thread worker;
@@ -132,19 +135,22 @@ bool audio_ready(){return state && state->ready;}
 uint32_t audio_sequence(uint32_t key,unsigned id){
     if(!audio_ready())return 0;std::lock_guard<std::mutex> lock(state->mutex);
     const auto voice=state->engine.play_sequence(id,key);
-    if(voice){state->music[voice]=true;++state->starts;}
+    if(voice){state->music[voice]=true;state->pause_music.music_started(voice);++state->starts;}
     if(state->starts<3000)std::fprintf(stderr,"[native audio] sequence id=%u key=%u result=%u error=%s tick=%llu\n",id,key,voice,voice?"":state->engine.error().c_str(),state->game_ticks);
     return voice;
 }
-uint32_t audio_effect(unsigned group,unsigned id,int bank,uint32_t key){
-    return audio_effect_timed(group,id,bank,0);
-}
-uint32_t audio_effect_timed(unsigned group,unsigned id,int bank,unsigned max_game_ticks){
+static uint32_t start_effect(unsigned group,unsigned id,int bank,unsigned max_game_ticks,uint32_t key){
     if(!audio_ready())return 0;std::lock_guard<std::mutex> lock(state->mutex);
-    const auto voice=state->engine.play_effect(group,id,bank,0);
+    const auto voice=state->engine.play_effect(group,id,bank,key);
     if(voice){state->music[voice]=false;state->effects[voice]={group,id,max_game_ticks?state->game_ticks+max_game_ticks:0};++state->starts;}
     if(state->starts<3000)std::fprintf(stderr,"[native audio] effect archive=%u id=%u bank=%d result=%u error=%s tick=%llu\n",group,id,bank,voice,voice?"":state->engine.error().c_str(),state->game_ticks);
     return voice;
+}
+uint32_t audio_effect(unsigned group,unsigned id,int bank,uint32_t key){
+    return start_effect(group,id,bank,0,key);
+}
+uint32_t audio_effect_timed(unsigned group,unsigned id,int bank,unsigned max_game_ticks){
+    return start_effect(group,id,bank,max_game_ticks,0);
 }
 void audio_stop_effect(unsigned group,unsigned id,int fade_game_ticks){
     if(!audio_ready())return;std::lock_guard<std::mutex> lock(state->mutex);
@@ -182,7 +188,20 @@ void audio_tick(){
 void audio_stop(uint32_t key,int frames){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);state->engine.stop(key,frames);if(frames<=0)state->music.erase(key);if(frames>0)std::fprintf(stderr,"[native audio] stop-fade key=%u frames=%d tick=%llu\n",key,frames,state->game_ticks);else if(std::getenv("SM64DS_PC_AUDIO_TRACE"))std::fprintf(stderr,"[native audio] stop key=%u tick=%llu\n",key,state->game_ticks);}}
 void audio_volume(uint32_t key,int volume,int frames){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);state->engine.volume(key,volume,frames);}}
 void audio_pause_music(bool pause){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);for(auto pair:state->music)if(pair.second)state->engine.pause(pair.first,pause);}}
+void audio_set_pause_menu(bool paused,bool rec_room_music){
+    if(!audio_ready())return;
+    std::lock_guard<std::mutex> lock(state->mutex);
+    const bool requested=paused && rec_room_music;
+    if(requested==state->pause_music.requested())return;
+    std::vector<uint32_t> music;
+    for(auto pair:state->music)if(pair.second)music.push_back(pair.first);
+    const auto retained=state->pause_music.retained();
+    state->pause_music.update(requested,music);
+    std::fprintf(stderr,"[pause music] tick=%llu requested=%u active=%u theme=5 retained=%u restored=%u\n",
+        static_cast<unsigned long long>(rt_frame()),unsigned(requested),unsigned(state->pause_music.active()),
+        unsigned(state->pause_music.retained()),requested?0u:unsigned(retained));
+}
 void audio_pause_player(unsigned player,bool pause){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);state->engine.pause_player(player,pause);std::fprintf(stderr,"[native audio] player-pause player=%u paused=%u tick=%llu\n",player,unsigned(pause),state->game_ticks);}}
 void audio_stop_player(unsigned player,int frames){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);state->engine.stop_player(player,frames);if(frames>0)std::fprintf(stderr,"[native audio] player-stop-fade player=%u frames=%d tick=%llu\n",player,frames,state->game_ticks);}}
-void audio_stop_all(){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);state->engine.stop_all();state->music.clear();state->effects.clear();state->long_refs.clear();if(std::getenv("SM64DS_PC_AUDIO_TRACE"))std::fprintf(stderr,"[native audio] stop-all tick=%llu\n",state->game_ticks);}}
+void audio_stop_all(){if(audio_ready()){std::lock_guard<std::mutex> lock(state->mutex);state->pause_music.reset();state->engine.stop_all();state->music.clear();state->effects.clear();state->long_refs.clear();if(std::getenv("SM64DS_PC_AUDIO_TRACE"))std::fprintf(stderr,"[native audio] stop-all tick=%llu\n",state->game_ticks);}}
 }

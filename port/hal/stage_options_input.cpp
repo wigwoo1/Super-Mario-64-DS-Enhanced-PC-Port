@@ -9,15 +9,29 @@ extern "C" {
 extern unsigned char data_0209f1ec;
 extern unsigned short data_020a0e5a[];
 int pc_stage_options_take_action();
+int pc_stage_pause_take_action();
 extern unsigned char data_0209f2ec;
 int GetSoundMode();
 }
 namespace pc_stage_options {
 Frame::Frame() {
-    if(data_0209f1ec!=10 || gActivePlayerSlot>=4)return;
+    const unsigned state=data_0209f1ec;
+    const bool pause_buttons=state==1 || state==3 || state==13;
+    if((state!=10 && !pause_buttons) || gActivePlayerSlot>=4)return;
     slot=unsigned(gActivePlayerSlot)*4;
     keys=data_020a0e5a[slot/2];
     data_020a0e5a[slot/2]&=static_cast<unsigned short>(~0xffu);
+    if(pause_buttons) {
+        const int row=pc_stage_pause_take_action();
+        if(gTouchHeld[slot] || row<0 || row>=4)return;
+        saved[0]=gTouchHeld[slot];saved[1]=gTouchEdge[slot];
+        saved[2]=gTouchX[slot];saved[3]=gTouchY[slot];
+        gTouchHeld[slot]=gTouchEdge[slot]=1;
+        gTouchX[slot]=128;
+        gTouchY[slot]=static_cast<unsigned char>((state==1?48:state==3?40:56)+row*40);
+        injected=true;
+        return;
+    }
     if(ntr::input_state().touch)return; // Preserve stylus; don't leak a pad confirm.
     const int action=pc_stage_options_take_action();
     if(action==0)return;

@@ -175,6 +175,9 @@ add_executable(smoke_pause_settings tests/smoke_pause_settings.cpp hal/pc_pause_
 target_include_directories(smoke_pause_settings PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(smoke_pause_settings PRIVATE ntr)
 add_test(NAME smoke_pause_settings COMMAND smoke_pause_settings)
+add_executable(smoke_camera_controls tests/smoke_camera_controls.cpp)
+target_include_directories(smoke_camera_controls PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
+add_test(NAME smoke_camera_controls COMMAND smoke_camera_controls)
 add_executable(smoke_render_distance tests/smoke_render_distance.cpp)
 target_include_directories(smoke_render_distance PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
@@ -1118,6 +1121,7 @@ add_custom_command(OUTPUT "${BOOT_LINK_DATA_CPP}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/minigame_host.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/minigame_data.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/dsmt_host.py"
+              "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py"
             "${PORT_REPO_ROOT_ABS}/config/arm9/symbols.txt"
             "${PORT_REPO_ROOT_ABS}/extracted/arm9_dec.bin"
             "${BOOT_LINK_LOG}"

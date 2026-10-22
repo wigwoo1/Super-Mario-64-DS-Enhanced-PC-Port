@@ -40,6 +40,7 @@ unsigned nav_ticks;
 unsigned stage_options_focus;
 int stage_options_action;
 int stage_options_last_action;
+int stage_pause_action=-1;
 
 static void trace_stage_options(uint16_t keys,int edge,const ntr::InputState &input) {
     const char *path=std::getenv("SM64DS_PC_STAGE_OPTIONS_TRACE");
@@ -109,6 +110,7 @@ extern "C" void pc_pause_settings_reset() {
     restore_panels();
     active = legacy = touch_was_down = false;
     nav_previous = nav_repeat = 0; nav_ticks = 0;
+    stage_pause_action=-1;
 }
 extern "C" int pc_pause_settings_page() { return active ? static_cast<int>(menu.page)+1 : pc_wanted_settings_page(); }
 extern "C" int pc_pause_settings_row() { return active ? static_cast<int>(menu.row) : pc_wanted_settings_row(); }
@@ -116,11 +118,15 @@ extern "C" int pc_pause_save_status() { return menu.save_status; }
 extern "C" int pc_stage_options_take_action() {
     const int action=stage_options_action; stage_options_action=0; return action;
 }
+extern "C" int pc_stage_pause_take_action() {
+    const int action=stage_pause_action;stage_pause_action=-1;return action;
+}
 extern "C" int pc_pause_settings_render() { if (!active) return 0; draw(); return 1; }
 
 extern "C" int pc_pause_settings_update() {
+    stage_pause_action=-1;
     uint16_t keys = 0;
-    ntr_input_get_menu_keys(&keys);
+    ntr_input_get_ui_keys(&keys);
     const auto edge = pc_pause::events(keys,nav_previous,nav_repeat,nav_ticks);
     const auto input = ntr::input_state();
     if(const char *path=std::getenv("SM64DS_PC_SETTINGS_NAV_TRACE")) {
@@ -144,6 +150,13 @@ extern "C" int pc_pause_settings_update() {
         if (edge & 0x40) data_0209f2e0 = static_cast<unsigned char>((data_0209f2e0+count-1)%count);
         if (edge & 0x80) data_0209f2e0 = static_cast<unsigned char>((data_0209f2e0+1)%count);
         if (edge & 0xc0) dScStage_c::UpdateMenuButtons(false);
+        if (!input.touch && !data_0209f22c && (edge & (1|8))) {
+            // Scope confirmation as a native touch on the focused button.
+            // Retail hit tests also examine released stylus coordinates;
+            // leaving those stale can activate a different row on pad A.
+            if(edge & 8)data_0209f2e0=0;
+            stage_pause_action=data_0209f2e0;
+        }
         if (edge & 2) {
             data_0209f2e0 = 0;
             data_0209f22c = static_cast<unsigned char>(data_0208ee44<<3);

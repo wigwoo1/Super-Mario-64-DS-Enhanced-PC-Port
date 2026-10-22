@@ -15,10 +15,13 @@ public:
     SdatEngine &operator=(const SdatEngine &)=delete;
     bool load(const uint8_t *bytes,size_t size);
     uint32_t play_sequence(unsigned id,uint32_t slot=0,int volume=127);
+    // Host menu music has an independent player group; retail music is retained.
+    uint32_t play_sequence_isolated(unsigned id,uint32_t slot);
     uint32_t play_effect(unsigned archive,unsigned id,int bank_override=-1,uint32_t slot=0,int volume=127);
     void stop(uint32_t slot,int fade_frames=0);
     void stop_all();
     void pause(uint32_t slot,bool paused);
+    void suspend(uint32_t slot,bool suspended); // independent of the retail pause flag
     void pause_player(unsigned player,bool paused);
     void stop_player(unsigned player,int fade_frames=0);
     void volume(uint32_t slot,int value,int fade_frames=0);

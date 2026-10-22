@@ -47,7 +47,7 @@ void reset() {navigation=State{};live=false;menu_context=false;last_tick=~uint64
 void Frame::apply(const void *owner,int context,const ntr::MenuTarget *items,int count,int back,int page) {
     menu_context=context!=0;last_tick=ntr::rt_frame();live=false;
     if(menu_context)ntr_input_set_menu_navigation(1);
-    uint16_t keys=0;ntr_input_get_menu_keys(&keys);
+    uint16_t keys=0;ntr_input_get_ui_keys(&keys);
     // Mapping can swap A/B on a menu/gameplay transition. A held opening
     // button must not become a fresh confirm/back in the destination scene.
     if((navigation.owner!=owner || navigation.context!=context) && (keys&3))release.activate();

@@ -1,0 +1,44 @@
+Free Camera controls checkpoint, 2026-10-22
+
+Native EXE SHA256:
+D31F81837CBA39D900002785CF0BAEDFD7B9A92828E77CDCE7AF0CBB0A0324E9
+
+Added the FREE CAMERA page7/8 to shared castle/Battlefield/Wanted PC Settings:
+sensitivity25..300% in25% steps(default100), independent Invert X and Invert Y
+(defaultoff), and Acceleration Off/Gentle/Smooth(defaultGentle). Original native
+font, centered labels, game button panels, gold focus and arrow are retained.
+Gameplay remains the last page; from Display, L twice reaches Free Camera.
+All four controls persist in the normal settings file; old files use defaults.
+
+FreeCameraResponse applies per-axis deadzones, a small cubic stick-response
+curve and an analytically integrated acceleration ramp. Full stick maintains
+configured maximum speed; release stops immediately without coasting. Reversing
+the stick resets the old-direction ramp. Simulation tick deltas drive rotation;
+display refresh does not scale speed. Scripted/blocked/preset cameras reset the
+response, preserving original gameplay/cutscene state handling and movement yaw.
+
+Verified: native build,7 focused CTests (camera response, settings navigation,
+settings reload, Wanted surface, input, SDL gamepad, camera matrix),39 host Python
+tests and native actor-data audit. Response tests compare exact turn integrals
+at30/60/240 updates per second, both inversion axes, sensitivity, center deadzone,
+immediate stop and gentle/smooth ramps. These are not measured hardware displayFPS.
+
+Muted, isolated replays on exact final EXE all exit0/errors0/device nonzero0:
+- Castle7700ticks/60FPS setting: menu page/rows,125%/both inversions/Smooth saved;
+  inverted rendered yaw observed and holds after stick release. Response debug
+  samples use exact multiplesof30 while castle renders on odd ticks, so no
+  per-step response samples exist there. Do not claim those absent samples.
+- Battlefield4600ticks/240FPS setting: same menu changes persisted; live yaw and
+  pitch steps invert and accelerate, then remain zero after stick release.
+- Default Battlefield regression4300ticks/240setting: A-confirm/B-back, L3 mode,
+  right stick32.02degree turn, R3 zoom pass. Authored lens scales10512/4448 remain
+  fixed across raw blend751..4081; sampled idle distance831.72..831.72.
+- Actual installed F EXE/F ROM2400ticks: original title/FileA/castle route exit0,
+  isolated C saves/settings; nonzero private PCM but device muted/nonzero0/errors0.
+
+Separate F native-checkpoints/native-checkpoint-2026-10-22-free-camera-settings
+installed; root Play Latest Test With Sound.cmd updated after verifying it still
+matched the prior owned launcher. Prior launcher copied locally as a backup.
+Menu-audio checkpoint saves/settings copied with equal before/after hashes;
+original files and earlier checkpoints unchanged. Physical Nintendo Switch Pro
+is still pending manual acceptance. Full port and listening fidelity unfinished.

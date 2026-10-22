@@ -117,6 +117,17 @@ int main() {
     ntr_input_set_menu_navigation(1);ntr::input_poll();
     if(!ntr::input_state().camera_mode_pressed || ntr::input_take_camera_mode())return 91;
     ntr_input_set_menu_navigation(0);
+    // A menu can open before scanout marks its context active. Physical A
+    // still confirms there, while the same sample remains Jump for gameplay.
+    _putenv_s("SM64DS_PC_TEST_PAD_BUTTONS", "53:1000");
+    ntr::input_poll();
+    unsigned short transition_menu_keys=0;
+    ntr_input_get_ui_keys(&transition_menu_keys);
+    if(ntr::input_keyinput()!=0xffd || transition_menu_keys!=1)return 92;
+    unsigned short transition_game_keys=0;
+    ntr_input_get_menu_keys(&transition_game_keys);
+    if(transition_game_keys!=2)return 93;
+    _putenv_s("SM64DS_PC_TEST_PAD_BUTTONS", "");
     // Adaptive gameplay replays must be impossible during ordinary play.
     _putenv_s("SM64DS_PC_TEST_COURSE_ROUTE", "");
     _putenv_s("SM64DS_PC_TEST_BOSS_BOT", "0");

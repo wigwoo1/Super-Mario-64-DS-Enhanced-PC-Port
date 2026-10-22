@@ -402,7 +402,10 @@ def main() -> int:
                     import bird_host
                     transformed=bird_host.transform(root,transformed,path.name)
                     rewrites+=1
-                if path.name=='Sound.cpp':
+                if path.name in ('Sound.cpp','SoundEngine.cpp','func_ov007_020bd9e4.c',
+                                 'func_ov007_020bdbcc.c','func_ov007_020bde2c.c',
+                                 'func_ov007_020bde70.c','func_ov007_020bdebc.c','func_ov007_020bdf60.c',
+                                 'func_ov007_020be098.c'):
                     import sound_host
                     transformed=sound_host.transform(transformed,path.name)
                     rewrites+=1
@@ -660,6 +663,8 @@ def main() -> int:
 
     if args.generated_dir is not None:
         source_files.extend(camera_host.write_sources(root, args.generated_dir / 'camera'))
+        import sound_host
+        source_files.extend(sound_host.write_sources(root, args.generated_dir / 'sound'))
         import minigame_host
         source_files.extend(minigame_host.write_sources(root, args.generated_dir / 'minigame'))
         source_files.extend(minigame_data.write_sources(root, args.generated_dir / 'minigame'))

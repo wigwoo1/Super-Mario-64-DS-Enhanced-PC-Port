@@ -4,6 +4,7 @@
 #include "ntr/input.h"
 #include "ntr/gpu.h"
 #include "ntr/rt.h"
+#include "ntr/audio.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -67,6 +68,14 @@ void pc_stage_graph_prepare()
     wanted_settings=pc_wanted_settings_page()!=0;
 #endif
     ntr::video_set_pause_screen(paused || wanted_settings,custom_settings);
+    bool music_paused=paused || wanted_settings;
+#if defined(SM64DS_GAME_TARGET)
+    if(data_0209d4a8==&data_ov004_020beb74) {
+        const auto *scene=data_ov004_020beb74.mScene;
+        music_paused=scene && scene->mMenuOpen;
+    }
+#endif
+    ntr::audio_set_pause_menu(music_paused,ntr::video_get_settings().pause_music_rec_room);
 #if defined(SM64DS_GAME_TARGET)
     ntr::video_set_minimap_editor(paused && pc_pause_settings_page()==6,pc_pause_settings_row());
 #endif

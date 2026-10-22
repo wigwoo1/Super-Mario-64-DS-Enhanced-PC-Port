@@ -17,7 +17,7 @@ Frame::Frame() {
     if(slot>=16)return;
     phase_before=data_0209f2d4;selection_before=data_0209f2e0;delay_before=data_0209f22c;
     ready=data_0209f20c && phase_before==3 && !delay_before;
-    ntr_input_get_menu_keys(&keys);
+    ntr_input_get_ui_keys(&keys);
     real_touch=gTouchHeld[slot]!=0;
     const auto result=navigation.poll(ready,keys,selection_before,real_touch);
     // Consume only this scoped menu's pad bits, avoiding the retail rejection

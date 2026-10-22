@@ -16,7 +16,9 @@ game assets, personal saves, or proprietary compiler is included here.
 - Controller navigation is verified for several original title, file, pause,
   Game Options, course-clear and minigame menus. Physical Xbox hardware and all
   menu/game combinations have not been accepted. Recent player feedback reports
-  that A does not confirm selections in the in-game pause menu.
+  that A does not confirm selections in the in-game pause menu. The October22
+  checkpoint includes separate menu-input handling and a camera lens repair;
+  physical Nintendo Switch Pro acceptance remains pending.
 - The Windows renderer offers resolutions up to 3840x2160, a repositionable
   minimap, and other PC settings. Render-distance presets have a verified native
   4K distant-Goomba body/shadow case and a 720p Bob-omb body/shadow and red-coin
@@ -33,8 +35,14 @@ game assets, personal saves, or proprietary compiler is included here.
   running for tests. Castle footsteps/birds, coin sound completion, and two
   Battlefield cannon positions have bounded checks; this does not establish
   listening accuracy or complete sound compatibility. Recent player feedback
-  reports missing title/start/selection and save-selection sounds, an incorrect
-  Lakitu cloud cue, and running/cannon/coin sound problems.
+  reported missing title/start/selection and save-selection sounds. The October22
+  checkpoint connects the original menu's SDK events and handle lifetimes;
+  selected muted title/save/options checks now produce non-silent PCM. The stage
+  sound-bank table also retains its correct shared layout. Lakitu cloud timbre,
+  some mixed-scene clipping and broader audio fidelity remain open.
+  An optional Gameplay setting plays Rec Room music while paused, retaining the
+  current song's sample position for resume; selected castle/Battlefield/Wanted
+  flows and an exact resumed-PCM comparison have muted/offline checks.
 - Original title/course entry, selected cannon and water-bomb encounters,
   repeat Star credit, pause/re-entry and selected audio flows have isolated
   runtime checks. See the dated `port/docs/` checkpoints for exact coverage and
@@ -51,11 +59,17 @@ game assets, personal saves, or proprietary compiler is included here.
   all-course gameplay acceptance.
 - Native Chain Chomp, its stump/fence release and Star reward, plus castle and
   Battlefield tree visibility/reload, have selected isolated runtime checks.
-  Recent feedback reports that Chain Chomp voice and bounce cues are missing;
-  these sounds are not accepted. The level 1 flower secret portal interaction
+  The October22 audio checkpoint restores Battlefield's bank33 for Chain Chomp
+  bark/bounce; isolated cue renders are non-silent and gameplay events reach the
+  correct bank. Listening accuracy is unverified. A diagnostic approach replay
+  stalls at a bridge wall and does not establish full encounter acceptance.
+  The level 1 flower secret portal interaction
   is reported not to work and remains open.
   Player feedback reports that the camera still zooms in when Yoshi stops and
   that free-camera controls do not work; these features are not accepted.
+  The October22 checkpoint adds25..300% free-camera sensitivity, independent X/Y
+  inversion and Off/Gentle/Smooth acceleration. Selected menu/gameplay checks
+  pass; physical Nintendo Switch Pro acceptance remains pending.
   Broader all-course acceptance remains incomplete. Star, coin and life counters
   positioned beside the minimap, with icon size linked to minimap size, are
   requested roadmap work. HD texture packs, online VS and browser Download Play
@@ -68,6 +82,13 @@ Use the repository's **Releases** page. Build kits contain precompiled native
 code, with ROM-derived data objects omitted. They are developer previews, not
 ready-to-run game executables. A local assembly step recreates those objects
 from your own ROM and links the native game on your computer.
+
+**Packaging correction, October22:** use only a corrected format-2 kit. An audit
+found ROM-derived camera configuration data in older precompiled kit objects;
+those downloads did not meet the intended ROM-free rule. Format2 omits all15
+reviewed generated data objects, including camera, minigame and stage-sound
+tables. They are regenerated locally from your cartridge. A source checkout or
+an older kit with only10 omitted objects is not equivalent to a corrected kit.
 
 Requirements: Windows, Python 3, `ndspy==4.2.0`, and Visual Studio Build Tools
 with **Desktop development with C++** (x86 tools and Windows SDK). The release

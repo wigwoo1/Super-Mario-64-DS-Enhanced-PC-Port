@@ -4,7 +4,7 @@
 #include <cstddef>
 
 namespace pc_pause {
-enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens, Gameplay };
+enum class Page { Options, Display, Visual, Graphics, Map, Position, Save, Screens, Gameplay, Camera };
 enum class Action { None, Changed, GameOptions, BackPause, SaveProgress };
 // Shared pixel geometry for drawing and both stage/minigame touch handling.
 constexpr unsigned row_top = 24, row_height = 24;

@@ -35,6 +35,15 @@ def main():
         base = int(re.search(r'\.text\s+start:0x([\da-f]+)', text)[1], 16)
         return base, (ROOT / f'extracted/overlays/overlay_{number:04d}.bin').read_bytes()
 
+    from sound_host import STAGE_SOUND_START,STAGE_SOUND_END,STAGE_SOUND_LABELS
+    sound_base=named(STAGE_SOUND_LABELS[0])
+    for i,name in enumerate(STAGE_SOUND_LABELS):
+        if named(name)!=sound_base+i:raise ValueError('Stage group/bank/music labels do not share their original byte lanes')
+    arm=(ROOT/'extracted/arm9_dec.bin').read_bytes()
+    if pe_bytes(args.exe,sound_base,STAGE_SOUND_END-STAGE_SOUND_START)!=arm[STAGE_SOUND_START-0x02004000:STAGE_SOUND_END-0x02004000]:
+        raise ValueError('Native level sound table differs from original 52 records')
+    print('PASS: all 52 original stage sound records and +1/+2 bank/music labels share their correct native allocation')
+
     # Dialogue cleanup must reach the original camera restore worker. A legacy
     # actor-smoke no-op previously hid its alternate C symbol in shipping builds.
     restore = named('func_0200d81c')

@@ -9,15 +9,9 @@ import json
 import pathlib
 import re
 import shutil
+from native_kit_data import DATA_SOURCES, HOST_DATA, local_source, validate_generated_inputs, validate_manifest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-DATA_SOURCES = {'minigame_menu_data.asm', 'dsmt_data.asm', 'pc_link_data.cpp',
-                'romdata.c', 'ov002_data.cpp', 'ov001_image.cpp',
-                'ov009_image.cpp', 'level_overlay_tables.cpp', 'title_overlay_data.cpp',
-                'level_overlay_data.cpp'}
-SOURCE_ADAPTERS = {'pc_boot_dsmt.cpp', 'pc_title_session.cpp', 'player_render.cpp'}
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('public_source', type=pathlib.Path)
@@ -26,24 +20,24 @@ def main():
     output = args.output.resolve()
     if output.exists():
         raise ValueError('Use a fresh build-kit output directory')
-    shutil.copytree(args.public_source, output, ignore=shutil.ignore_patterns('.git'))
-    kit = output / '.native-kit'
-    (kit / 'objects').mkdir(parents=True)
     ninja = (ROOT / 'build/port/build.ninja').read_text()
     line = next(x for x in ninja.splitlines() if x.startswith('build sm64ds_pc.exe:'))
     inputs = line.split(': ', 1)[1].split(' | ', 1)[0].split()[1:]
     assert all(x.endswith('.obj') for x in inputs)
+    validate_generated_inputs(inputs)
+    if {local_source(x) for x in inputs if local_source(x)} != DATA_SOURCES:
+        raise ValueError('Reviewed local-data object roster differs from this build')
+    shutil.copytree(args.public_source, output, ignore=shutil.ignore_patterns('.git'))
+    kit = output / '.native-kit'
+    (kit / 'objects').mkdir(parents=True)
     prebuilt, local = [], []
     for index, original in enumerate(inputs):
         original = original.replace('\\', '/')
-        source_name = pathlib.Path(original).name.removesuffix('.obj')
-        if '/host-src/' in original and source_name in DATA_SOURCES:
-            source = 'build/port/host-src/' + source_name
+        source = local_source(original)
+        if source:
             local.append({'source': source, 'object': f'local-{index:04d}.obj',
                           'source_sha256': hashlib.sha256((ROOT / source).read_bytes()).hexdigest()})
             continue
-        if '/host-src/' in original and source_name not in SOURCE_ADAPTERS and '/host-src/src/' not in original:
-            raise ValueError('Review new generated object before publishing: ' + original)
         data = (ROOT / 'build/port' / original).read_bytes()
         # Replace the compiled-in local checkout fallback with ".". The launcher
         # supplies SM64DS_ASSET_ROOT explicitly. Preserve COFF offsets and sizes.
@@ -51,13 +45,13 @@ def main():
             data = data.replace(prefix, b'.' + bytes(len(prefix) - 1))
         relative = f'.native-kit/objects/{index:04d}.obj'
         (output / relative).write_bytes(data)
-        prebuilt.append({'path': relative, 'sha256': hashlib.sha256(data).hexdigest()})
-    assert {pathlib.Path(x['source']).name for x in local} == DATA_SOURCES
+        prebuilt.append({'path': relative, 'sha256': hashlib.sha256(data).hexdigest(), 'origin_object': original})
+    assert {x['source'] for x in local} == DATA_SOURCES
     library = (ROOT / 'build/port/ntr.lib').read_bytes()
     for prefix in (str(ROOT).encode(), ROOT.as_posix().encode()):
         library = library.replace(prefix, b'.' + bytes(len(prefix) - 1))
     (kit / 'ntr.lib').write_bytes(library)
-    prebuilt.append({'path': '.native-kit/ntr.lib', 'sha256': hashlib.sha256(library).hexdigest()})
+    prebuilt.append({'path': '.native-kit/ntr.lib', 'sha256': hashlib.sha256(library).hexdigest(), 'origin_object': 'ntr.lib'})
     commands = (ROOT / 'build/native-kit-commands.txt').read_text(encoding='utf-8-sig').splitlines()
     generators = []
     for command in commands:
@@ -67,9 +61,10 @@ def main():
         if not match:
             continue
         argv = [match[1]] + match[2].split()
-        if any(pathlib.Path(a).name in DATA_SOURCES for a in argv):
+        if any(pathlib.Path(a).name in HOST_DATA for a in argv):
             generators.append([a.replace(ROOT.as_posix(), '{root}') for a in argv])
-    assert len(generators) == len(DATA_SOURCES), (len(generators), generators)
+    assert len(generators) == len(HOST_DATA), (len(generators), generators)
+    generators.append(['{root}/port/tools/native_kit_data.py', '{root}'])
     shutil.copyfile(ROOT / 'build/port/host-src/pc_link_data.json', kit / 'link-names.json')
     requests = []
     for line in (ROOT / 'build/pc-game-link-history.log').read_text(errors='replace').splitlines():
@@ -80,11 +75,23 @@ def main():
     libraries = re.search(r'  LINK_LIBRARIES = (.+)', link_block)[1].split()
     libraries = [x for x in libraries if x.lower() != 'ntr.lib']
     assert all(re.fullmatch(r'[A-Za-z0-9_]+\.lib', x) for x in libraries)
-    metadata = {'format': 1, 'source_commit': 'PENDING', 'status': 'Experimental incomplete native port. Original title/file/course entry, the original 20-, 40- and 60-Star Toad rewards, selected Star collection/save/reload/repeat cases without duplicate credit, course-clear behavior, controller menu paths, selected cannon/water-bomb encounters and selected native-audio scenes are verified in isolated local runs. The original 60-Star reward was tested with synthetic prerequisite progress; the original 50-Star Mario Star Gate rule and entry/control return are verified. Companion/variant Toad behavior remains separate. Recent player feedback reports that stopping can zoom the camera in, free-camera controls do not work, A does not confirm pause-menu selections, title/start/menu/save-selection sounds are missing, Lakitu cloud audio is incorrect, and Chain Chomp voice/bounce cues are missing. The level 1 flower secret-portal interaction is also reported not to work. Native audio is opt-in and diagnostic; listening fidelity, shared voice/channel behavior and broad scene coverage remain incomplete. A distant Battlefield Goomba body/shadow is verified in native 4K; Bob-omb body/shadow and red-coin body are verified at 720p. Native Chain Chomp, stump/fence release and Star reward, and castle/Battlefield trees have selected runtime checks; broader actor/shadow/course coverage remains incomplete. Star, coin and life HUD counters beside the minimap are requested roadmap work. HD texture replacement, online/download-play VS and other requested roadmap features remain incomplete.',
+    metadata = {'format': 2, 'source_commit': 'PENDING',
                 'runtime_dependencies': [{'id': 'sdl3', 'version': '3.2.28',
                     'sdk_sha256': 'dc8328a923643a19a53e54ca418e8e2ac49f3cf6c95e90bbebf758cd3a00c2fb'}],
                 'prebuilt': prebuilt, 'local_objects': local, 'generators': generators,
                 'system_libraries': libraries, 'root_fallback': 'Compiled local checkout paths replaced with dot; launcher sets SM64DS_ASSET_ROOT.'}
+    metadata['status']=(
+        'Experimental incomplete native port. Format2 omits all15 reviewed ROM-derived '
+        'data objects, including camera/minigame/stage-sound data, for local regeneration. '
+        'Selected title/file/course, Toad/Star Gate reward/save/reload/repeat, cannon, '
+        'Chain Chomp release and Wanted flows have isolated checks. October22 camera '
+        'lens/menu-input fixes and original-menu audio/stage-bank routing have selected '
+        'muted checks; physical Nintendo Switch Pro and listening fidelity are unverified. '
+        'Some mixed audio still clips. Lakitu cloud timbre, flower warp, minimap-side '
+        'counters and broader gameplay remain open. Native audio remains opt-in/diagnostic. '
+        'High-refresh presentation repeats original-rate game frames; interpolation, '
+        'HD texture packs, online/browser VS and other roadmap features remain unfinished.')
+    validate_manifest(metadata)
     (kit / 'manifest.json').write_text(json.dumps(metadata, indent=2) + '\n')
     (output / 'ASSEMBLE-PC.cmd').write_text('''@echo off
 setlocal

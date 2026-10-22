@@ -1,0 +1,45 @@
+Camera lens and native pause input follow-up, 2026-10-22
+
+Status: automated runtime checks pass; physical Nintendo Switch Pro acceptance
+is still pending. Missing/inaccurate sound cues, flower warp and minimap-side
+Star/coin/life counters remain unresolved.
+
+The previous render-eye distance hold did not hold the lens. Original camera
+Render blends its authored half-angle toward 0xAAA through field +0x168.
+The baseline trace shows projection scale changing despite a stationary
+player and held camera distance. camera_host.py now retains the authored lens
+under ordinary player control, with original scripted/inspection blending
+outside that context. Tracking, state workers and collision remain in place.
+
+Menus request an explicit UI button view, independent of whether scanout has
+marked the new context as a menu. The original input reader keeps gameplay
+A-jump/B-attack and analog-only movement. A regression check verifies the same
+physical-A sample supplies DS B to gameplay and A to the explicit UI reader
+before the scene context changes.
+
+Native pause buttons scope focused confirmation as a touch for the original
+PS_Update call, restoring touch lanes and pressed keys afterward. This avoids
+relying on a raw gameplay face map or released touch coordinates. Start selects
+Continue; B backs out. Baseline automated A already worked; these changes do
+not prove the user's physical Nintendo failure is resolved.
+
+Verified local EXE SHA256:
+70A47AAA8776D0F259748DAD357EBC0B871C5B91FA0A971DC22A10F79378415F
+- Native game build, 2 camera host tests, 8 focused input/menu/camera CTests
+  (including actual SDL virtual Nintendo device) and native data audit pass.
+- Original title/File A/castle: 7000 ticks, exit 0, isolated saves.
+- Battlefield at 240 FPS setting: 4300 ticks, exit 0, isolated saves.
+- Both enter Options/PC Settings with labeled-pad A, back out, resume, toggle
+  free/preset on L3, orbit 43.64 degrees with scripted right stick and persist
+  distance on R3. Normal projection stays 10512/4448 while raw speed blend
+  ranges 779..4081 / 751..4081. Idle orbit distance stays 829.41 / 826.72 world
+  units in the respective sampled spans. Final player is grounded Wait with
+  normal control. Analog does not leak digital directions.
+- Device audio muted, nonzero output samples 0, mixer errors 0.
+- These checks cover selected paths at chosen FPS settings; they do not
+  measure display FPS, establish listening fidelity or all-course acceptance.
+
+Private evidence: work/native-player-regressions-castle-accepted-20261022 and
+work/native-player-regressions-battlefield-240-accepted-20261022.
+New local F: preview: native-checkpoint-2026-10-22-camera-pause.
+Full executable, ROM-derived data, logs, audio and screenshots stay local.

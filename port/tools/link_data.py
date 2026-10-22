@@ -282,6 +282,8 @@ def main() -> int:
     camera_states, camera_modes = owned_names(root)
     HAL_OWNED_DATA.update(camera_states)
     HAL_OWNED_DATA.update(camera_modes)
+    from sound_host import STAGE_SOUND_LABELS
+    HAL_OWNED_DATA.update(STAGE_SOUND_LABELS)
     from minigame_host import owned_names as callback_names
     HAL_OWNED_DATA.update(callback_names(root))
     from minigame_data import owned_names as resource_names

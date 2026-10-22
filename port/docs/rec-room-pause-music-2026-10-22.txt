@@ -1,0 +1,44 @@
+Optional Rec Room pause music, 2026-10-22
+
+Native EXE SHA256:
+0F7BA06E1A79D7B2087846753C94142382CE158029E86945971CC758D8A25ED7
+
+PC Settings > Gameplay(page8/8), row5: PAUSE MUSIC ORIGINAL / REC ROOM.
+Original is the default for old settings files. The toggle persists normally
+and can change playback immediately while paused. Shared native font/panels,
+gold focus border/arrow and centered labels are retained. The old Gameplay
+R3 hint was removed to make room; Free Camera page7/8 has L3/R3 instructions.
+
+The native PauseMusic controller plays the original Rec Room sequence5 in an
+isolated host player255, retaining the original music keys. Background voices
+are suspended independently of the original game's own paused flags; their
+sequencer/sample state is not advanced or restarted. Normal menu effects keep
+playing. New background voices started while paused inherit suspension. Resume,
+setting Off, scene exit or stop-all removes the theme and releases suspension.
+Stage and minigame pause hooks share this controller. No second SDAT/archive
+instance or ROM bytes are compiled into this feature. Existing channel-fidelity
+limitations are separate and remain open.
+
+Verification:
+- Native build,7 focused settings/camera/video tests and10 focused sound/input
+  tests pass (overlapping tests,12 distinct CTests). Native-data audit passes.
+- Local-SDAT probe --pause-music: confirms ordinary same-player starts would
+  replace the original voice; isolated theme does not. Menu effects are audible
+  while music is held. After128seconds of theme playback, stopping it preserves
+  a separately applied retail pause flag. On resume,32768 PCM frames match the
+  uninterrupted reference exactly. Zero engine errors; no device output.
+- Exact final EXE, all muted and isolated, exit0/errors0/device nonzero0:
+  Castle7200ticks: setting On/Off/On in pause, resume, another pause/resume;
+  no active BGM exists in this fixture after title/file music stops, so retained
+  background count0 is expected. Do not claim a castle BGM resume sample there.
+  Battlefield4100ticks/240FPS setting: same transitions retain/restore one live
+  music key each time, all three sessions balance and end cleanly.
+  Wanted6500ticks: pause/settings/resume, retry and pause/return to Rec Room/back
+  to title; both theme sessions stop without leaving a second theme playing.
+  This is selected runtime coverage, not all minigames/courses or listening QA.
+
+Includes the previous free-camera sensitivity/inversion/acceleration checkpoint;
+its math/menu/reload checks were rebuilt and pass. Physical Nintendo Switch Pro
+and broad listening accuracy remain unverified. Mixed scenes can still clip.
+The full port, Lakitu cloud timbre, flower warp and minimap-side counters remain
+unfinished. Full native executable contains local ROM data and stays private.
