@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 // Native-resolution D3D11 rasterization of the recovered game's geometry.
 // DS command decode, lighting, clipping, UVs and original textures stay shared
 // with the software reference. Only rasterization/presentation run on the GPU.
@@ -30,7 +31,7 @@ using Microsoft::WRL::ComPtr;
 struct Vertex { float p[4],color[4],uv[2]; };
 struct Texture {
     ComPtr<ID3D11Texture2D> resource; ComPtr<ID3D11ShaderResourceView> view;
-    bool partial_alpha=false;uint64_t bytes=0,last_used=0;
+    bool partial_alpha=false;unsigned width=0,height=0;uint64_t bytes=0,last_used=0;
 };
 struct FrameMaterial {
     const uint32_t *pixels=nullptr;int width=0,height=0;
@@ -57,7 +58,8 @@ ComPtr<ID3D11DepthStencilState> depth_on,depth_off;
 ComPtr<ID3D11DepthStencilState> normal_depth[2][2],translucent_depth[2][2],shadow_mask[2],shadow_draw[2],shadow_exclude,shadow_clear;
 ComPtr<ID3D11BlendState> blend_on,blend_off,color_off;
 ComPtr<ID3D11RasterizerState> rasterizer,wireframe;
-Texture base_texture,map_texture,white_texture;
+Texture base_texture,map_texture,white_texture,hud_texture;
+uint64_t hud_texture_revision=~uint64_t(0);
 using CacheKey=std::tuple<bool,uint64_t,uint32_t>;
 std::map<CacheKey,Texture> texture_cache;
 std::set<uint64_t> unavailable_replacements;
@@ -86,8 +88,9 @@ bool texture(Texture &out, const uint32_t *pixels, unsigned width, unsigned heig
     desc.Format=DXGI_FORMAT_B8G8R8A8_UNORM; desc.SampleDesc.Count=1;
     desc.Usage=D3D11_USAGE_DEFAULT; desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
     D3D11_SUBRESOURCE_DATA data{pixels,width*4,0};
-    return hr_ok(device->CreateTexture2D(&desc,pixels?&data:nullptr,&out.resource),"texture") &&
-        hr_ok(device->CreateShaderResourceView(out.resource.Get(),nullptr,&out.view),"texture view");
+    if(!hr_ok(device->CreateTexture2D(&desc,pixels?&data:nullptr,&out.resource),"texture") ||
+        !hr_ok(device->CreateShaderResourceView(out.resource.Get(),nullptr,&out.view),"texture view"))return false;
+    out.width=width;out.height=height;return true;
 }
 bool resize_target(unsigned width,unsigned height) {
     if (target && width==target_width && height==target_height) return true;
@@ -568,7 +571,7 @@ void gpu_close() {
     glsw_close();using_gl_software=false;
     if(context) { context->ClearState();context->Flush(); }
     texture_cache.clear();cache_bytes=0;use_counter=0;cache_epoch=0;unavailable_replacements.clear();
-    base_texture={};map_texture={};white_texture={};
+    base_texture={};map_texture={};white_texture={};hud_texture={};hud_texture_revision=~uint64_t(0);
     gameplay_cache.Reset();target_sample.Reset();staging.Reset();target_view.Reset();target.Reset();depth_view.Reset();depth.Reset();
     retirement_query.Reset();window_view.Reset();swap.Reset();vertex_shader.Reset();pixel_shader.Reset();layout.Reset();vertex_buffer.Reset();draw_params.Reset();toon_params.Reset();
     for(auto &sampler:texture_samplers)sampler.Reset();
@@ -595,8 +598,10 @@ void gpu_set_anisotropic_filtering(uint8_t level) {
 }
 uint8_t gpu_anisotropic_filtering() {return using_gl_software?glsw_anisotropic_filtering():anisotropic_level;}
 bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,const uint32_t *foreground,
-                const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay,const uint32_t *hud) {
-    if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,engine_a_on_top,cache_gameplay,hud);
+                const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay,
+                const uint32_t *hud,unsigned hud_width,unsigned hud_height,uint64_t hud_revision) {
+    if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,
+        engine_a_on_top,cache_gameplay,hud,hud_width,hud_height,hud_revision);
     frame_stats={};
     struct Timer {
         std::chrono::steady_clock::time_point start=std::chrono::steady_clock::now();
@@ -604,6 +609,7 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
     } timer;
     if(!device || s.width<256 || s.width>3840 || s.height<192 || s.height>2160 ||
         !resize_target(s.width,s.height)) return false;
+    if(hud && (hud_width!=s.width || hud_height!=s.height))return false;
     if(!sync_replacements())return false;
     ID3D11ShaderResourceView *null_view=nullptr;context->PSSetShaderResources(0,1,&null_view);
     ID3D11RenderTargetView *rt=target_view.Get(); context->OMSetRenderTargets(1,&rt,depth_view.Get());
@@ -665,8 +671,15 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
     }
     if(!screens && hud) {
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
-        context->UpdateSubresource(map_texture.resource.Get(),0,nullptr,hud,SCREEN_W*4,0);
-        if(!quad(map_texture.view.Get(),nearest_clamp.Get(),-1,1,1,-1))return false;
+        if(!hud_texture.resource || hud_texture.width!=hud_width || hud_texture.height!=hud_height) {
+            if(!texture(hud_texture,nullptr,hud_width,hud_height))return false;
+            hud_texture_revision=~uint64_t(0);
+        }
+        if(hud_texture_revision!=hud_revision) {
+            context->UpdateSubresource(hud_texture.resource.Get(),0,nullptr,hud,hud_width*4,0);
+            hud_texture_revision=hud_revision;
+        }
+        if(!quad(hud_texture.view.Get(),nearest_clamp.Get(),-1,1,1,-1))return false;
     }
     context->PSSetShaderResources(0,1,&null_view);
     return true;
@@ -726,7 +739,8 @@ bool gpu_open(void *,bool,VideoRenderer) { return false; }
 void gpu_close() {}
 void gpu_set_anisotropic_filtering(uint8_t) {}
 uint8_t gpu_anisotropic_filtering() { return 0; }
-bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool,const uint32_t *) { return false; }
+bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,
+                const DualScreenLayout *,const Framebuffer *,bool,bool,const uint32_t *,unsigned,unsigned,uint64_t) { return false; }
 void gpu_set_menu_scene(bool) {}
 void gpu_set_letter_overlay(bool) {}
 bool gpu_present(unsigned,unsigned,bool) { return false; }

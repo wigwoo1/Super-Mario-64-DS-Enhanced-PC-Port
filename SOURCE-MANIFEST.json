@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 {
   "format": 1,
   "upstream": "https://github.com/tangosdev/sm64ds-decomp",
@@ -6690,8 +6691,8 @@
     },
     {
       "path": "port/docs/native-minimap-original-art-2026-10-22.txt",
-      "sha256": "b2cef8d5f288b2623abd9691ce800af2d6abd225f413ed244756c1fdce794d9e",
-      "bytes": 4028
+      "sha256": "c467013b4a96cbd133f4a272c9dab8f54c67958329c0feffc6c966dd95830d4b",
+      "bytes": 5164
     },
     {
       "path": "port/docs/native-minimap-placement-2026-10-20.txt",
@@ -6870,8 +6871,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "e386aba26c738266d272246362ba66ba8d058ee3471e89ef423c1ee350ada823",
-      "bytes": 269890
+      "sha256": "95599a6d5cdb9aa0d182e8180b4739e620c552d9bc360050932be18771af682e",
+      "bytes": 270694
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -6910,8 +6911,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "50c4565483f1e3bae5f5d4431e43c3d6b93b959c0c31812b2a2995b0dee34368",
-      "bytes": 9220
+      "sha256": "f88b3e26996b311f5411b7d628036954a0d507dfed808e9fea2c4bda8535edbe",
+      "bytes": 9378
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7485,13 +7486,13 @@
     },
     {
       "path": "port/ntr/gl_software.cpp",
-      "sha256": "cc572e6f8dcfc21b8b000af1782e0173880f484f655296f8cec5d7b2e082b016",
-      "bytes": 31643
+      "sha256": "ef3363472bc81cbac2002e797b03d9971280d7dc959fb0bdb50e8a46d874e65f",
+      "bytes": 32721
     },
     {
       "path": "port/ntr/gpu.cpp",
-      "sha256": "c97d95328fd2b68132a6a0a0df441d926bbd18040b6e1720998332202947fdc3",
-      "bytes": 44748
+      "sha256": "4c3c88f173798c5c9228dfe0205f822b2c8aa3df02c17905b45cf8f780b27dc2",
+      "bytes": 45529
     },
     {
       "path": "port/ntr/gx.cpp",
@@ -7535,13 +7536,13 @@
     },
     {
       "path": "port/ntr/include/ntr/gl_software.h",
-      "sha256": "0a0f5c1d1e09a429a30f9e27f25941fabebc1c5e18761c08e07516851c4258c7",
-      "bytes": 866
+      "sha256": "13233c7148aeb21e0a8134a5d970d15ee1d61fb48c6da9813f76282184b43f73",
+      "bytes": 911
     },
     {
       "path": "port/ntr/include/ntr/gpu.h",
-      "sha256": "36a9577f925b2732f8a36790daa78cf44f4b3651516afcdfa721911d542703a7",
-      "bytes": 1860
+      "sha256": "097acba3df3efd608c6d9c0020890ab36a3acb49df4b4282b2180c9d5ef97d4f",
+      "bytes": 1952
     },
     {
       "path": "port/ntr/include/ntr/gx.h",
@@ -7660,8 +7661,8 @@
     },
     {
       "path": "port/ntr/minimap_hud.cpp",
-      "sha256": "22eca7bb17008ce5ba1b9b2fe6d89b596dde5b88a526d230e3e664af1da93e9d",
-      "bytes": 8069
+      "sha256": "6028e5e19b9581f6dd5de67c4816898ec0c763728cc79a239f269f919fec1b9a",
+      "bytes": 10375
     },
     {
       "path": "port/ntr/ppu.cpp",
@@ -7670,8 +7671,8 @@
     },
     {
       "path": "port/ntr/README.md",
-      "sha256": "273661de038e8a7d483e93d889b1fe63f2fe2447ece93ab17b65b1bc1feadc68",
-      "bytes": 10623
+      "sha256": "9ad303fce19cd02cc26b6a546405bee0443203ef8b04e6553e9162e45b3467aa",
+      "bytes": 11170
     },
     {
       "path": "port/ntr/rt.cpp",
@@ -7725,8 +7726,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "50ea72428e24d900e7968669047e70a024651f8c1db4caeb1c74e3a2bbc006fd",
-      "bytes": 55702
+      "sha256": "9d0b211e3c19198ae29ee55bed8433a4e746e637eefd3e825d7393b7e872474a",
+      "bytes": 56594
     },
     {
       "path": "port/README.md",
@@ -7900,8 +7901,8 @@
     },
     {
       "path": "port/tests/smoke_gpu.cpp",
-      "sha256": "b8c0806ffcaae50dbe631a8a943bd4229e1dc5ae66342b950af91eadd9e94dff",
-      "bytes": 20685
+      "sha256": "2281b5c34c4ee9284490f37555d50701c1487f3e0c2f218dfadf32a1e99b60e0",
+      "bytes": 22007
     },
     {
       "path": "port/tests/smoke_gx.cpp",
@@ -7950,8 +7951,8 @@
     },
     {
       "path": "port/tests/smoke_minimap_hud.cpp",
-      "sha256": "5afde61b66f06c242da649c6d5bd9a5d1380364f3f2705d69edf809ae11f4dcb",
-      "bytes": 3368
+      "sha256": "b0a46f0b144366bdcb661ac1367d33c443fb7c5dd9e9c779730890eda561d462",
+      "bytes": 4469
     },
     {
       "path": "port/tests/smoke_model.cpp",

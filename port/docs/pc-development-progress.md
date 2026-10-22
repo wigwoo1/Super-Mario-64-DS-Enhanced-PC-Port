@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 ## Current native build installed and launched from F: (2026-10-16)
 
 - The current Release build was up to date; `cmake --build build/port --target sm64ds_pc --parallel 4` completed with no work required. CTest passed45/45 (25.01s).
@@ -2086,3 +2087,15 @@ Pause now labels the native rebinding entry CONTROLS using the cached original O
 
 ## 2026-10-22: Original-art minimap HUD and separate health counter
 Replaced placeholder icons with original Star/coin/character-life OBJ artwork and the original health meter. All four rows scale with the minimap. Private resource decoding preserves live sprite banks/palettes/OAM, verified by checksums. Native build and four focused checks pass. Final E5C2E670 build passes muted castle coin0->2, Battlefield Goomba damage8->3, large-map and map-off replays, including actual llvmpipe rendering. Isolated saves unchanged, mixer errors0/device output0. English/Yoshi selected paths accepted; broader character/language/game coverage remains open. Separate F: original-hud checkpoint installed, latest-test launcher updated, previous preview/ROM/saves/settings preserved. See native-minimap-original-art-2026-10-22.txt. Full port remains incomplete.
+
+## 2026-10-22: Output-resolution counter HUD
+Moved the gameplay Star/coin/health/life overlay to a transparent buffer matching
+the selected internal resolution. The 5x7 numbers no longer come from an enlarged
+DS-sized canvas; original DS icon sources are smoothly resampled but retain their
+source detail limits. The minimap and other original 2D graphics remain DS-sized.
+Build and four focused checks pass. Muted D3D11 gameplay captures at 1280x720 and
+3840x2160 show Yoshi and all four counters; audio device output is silent and
+mixer errors remain zero. The 4K run's internal render target is 3840x2160, while
+window sizing remains separately configured. Actual hardware/window dimensions,
+other renderers and broader menu/character combinations remain to be checked.
+Full port remains incomplete.

@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 #include "ntr/gpu.h"
 #include "ntr/gx.h"
 #include "ntr/mmio.h"
@@ -332,6 +333,28 @@ int main(int argc,char **argv) {
         const auto &other=main_top?screens.bottom:screens.top;
         CHECK(pixels[size_t(main.y+main.height/2)*width+main.x+main.width/2]==0xffffffff);
         CHECK(pixels[size_t(other.y+other.height/2)*width+other.x+other.width/2]==0xff506070);
+    }
+    // The minimap HUD is an independent full-internal-resolution layer. Its
+    // upload is cached by revision, so a reused revision cannot display stale
+    // CPU pixels; a changed revision updates both D3D11 and llvmpipe paths.
+    std::vector<uint32_t> hud;
+    for(const auto dimensions:{std::pair<unsigned,unsigned>{1280,720},{3840,2160}}) {
+        const unsigned hw=dimensions.first,hh=dimensions.second;
+        hud.assign(size_t(hw)*hh,0);
+        const unsigned hx=hw/2,hy=hh/2;const size_t hi=size_t(hy)*hw+hx;
+        hud[hi]=0xffd020e0;
+        s.width=hw;s.height=hh;setup();
+        CHECK(ntr::gpu_render(base,nullptr,s,false,nullptr,nullptr,nullptr,true,false,
+                              hud.data(),hw,hh,77));
+        CHECK(ntr::gpu_readback(pixels,width,height));
+        CHECK(width==hw&&height==hh&&pixels[hi]==0xffd020e0);
+        hud[hi]=0xff20d0e0;
+        CHECK(ntr::gpu_render(base,nullptr,s,false,nullptr,nullptr,nullptr,true,false,
+                              hud.data(),hw,hh,77));
+        CHECK(ntr::gpu_readback(pixels,width,height)&&pixels[hi]==0xffd020e0);
+        CHECK(ntr::gpu_render(base,nullptr,s,false,nullptr,nullptr,nullptr,true,false,
+                              hud.data(),hw,hh,78));
+        CHECK(ntr::gpu_readback(pixels,width,height)&&pixels[hi]==0xff20d0e0);
     }
     ntr::gpu_close();
     if(failures) return 1;

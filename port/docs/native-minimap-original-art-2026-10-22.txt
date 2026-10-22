@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 Original-art minimap HUD, 2026-10-22
 
 Implemented Star, coin, health and life rows beside the minimap. Each icon is decoded from original game OBJ resources and OAM templates, not substitute artwork. Life art follows Player::mCharacter; health uses the original nine health templates and palette thresholds, driven by the active player's original health value. Icon size follows minimap size; counters remain visible when the map is off. Existing position settings still place the HUD alongside the map.
@@ -17,3 +18,19 @@ All five exit0, isolated seed saves unchanged, mixer errors0/device nonzero samp
 Installed F: checkpoint: F:\AI Games\Mario 64 DS\native-checkpoints\native-checkpoint-2026-10-22-original-hud. Play Latest Test With Sound.cmd points there. Installer verified all staged files, original ROM and previous preview hashes, and copied preview saves/settings without changing originals. Includes the canonical Mesa runtime and its licenses. Local manifest: work/playtest-original-hud-20261022/F-install-verification.json.
 
 Final actual-F startup accepted:2400ticks exit0, original title/FileA/castle, frame2300 shows all four original-art counters. F EXE hash E5C2E670 matches canonical; F ROM used, isolated seed unchanged, sprite memory unchanged, mixererrors0/device nonzero0. Case native-options-style-castle-originalHUD-F-final-muted-20261021/acceptance.json. All runtime handles terminal. Rendering integration is complete for the stated selected scope. Luna Medium recommended for routine character/regression checks or ROM-free kit refresh; pause at the user-requested model-switch boundary. Full port remains incomplete.
+
+## 2026-10-22: Output-resolution HUD overlay
+The counter overlay now has a transparent buffer matching the selected internal
+render target rather than being enlarged from 256x192. Numeric glyphs use a
+5x7 bitmap and original counter icons use premultiplied-alpha smooth sampling;
+icon source detail remains DS-sized. The DS minimap and other game-authored 2D
+elements remain unchanged. D3D11 and llvmpipe paths accept full-target HUD layers
+with revision-cached uploads. `smoke_minimap_hud`, `smoke_gpu`, `smoke_video`,
+and `smoke_video_window` pass. Muted RTX 5070 gameplay replays render at
+1280x720 and 3840x2160, with route/counters (Star 1, coin 2, health 8, lives 4)
+present. The 4K target is captured at 3840x2160; settings preserve that internal
+resolution. Device audio output contains zero nonzero samples and mixer errors
+are zero. Screenshots/logs/audio and isolated saves remain local under
+work/native-muted-audio-walk-fullres-hud-{1280x720,3840x2160}-20261021. These
+tests do not verify a physical 4K monitor/window or all renderer/character/menu
+combinations. The feature is experimental; full port remains incomplete.

@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 #include "ntr/minimap_hud.h"
 
 #include <algorithm>
@@ -11,6 +12,12 @@ constexpr uint32_t kPanel = 0xd9201408u;
 constexpr uint32_t kPanelEdge = 0xff5d3b18u;
 constexpr uint32_t kText = 0xfffff2beu;
 MinimapHudArt art;
+constexpr std::array<std::array<unsigned char,7>,10> kDigits7{{
+    {{14,17,19,21,25,17,14}},{{4,12,4,4,4,4,14}},{{14,17,1,2,4,8,31}},
+    {{30,1,1,14,1,1,30}},{{2,6,10,18,31,2,2}},{{31,16,16,30,1,1,30}},
+    {{14,16,16,30,17,17,14}},{{31,1,2,4,8,8,8}},{{14,17,17,14,17,17,14}},
+    {{14,17,17,15,1,1,14}}
+}};
 
 void pixel(uint32_t *pixels,unsigned width,unsigned height,int x,int y,uint32_t color) {
     if(x>=0 && y>=0 && unsigned(x)<width && unsigned(y)<height)
@@ -26,31 +33,56 @@ void outline_rect(uint32_t *pixels,unsigned width,unsigned height,int x,int y,in
     rect(pixels,width,height,x,y,1,h,color);rect(pixels,width,height,x+w-1,y,1,h,color);
 }
 
-constexpr std::array<std::array<unsigned char,5>,10> kDigits{{
-    {{7,5,5,5,7}},{{2,6,2,2,7}},{{7,1,7,4,7}},{{7,1,7,1,7}},{{5,5,7,1,1}},
-    {{7,4,7,1,7}},{{7,4,7,5,7}},{{7,1,1,1,1}},{{7,5,7,5,7}},{{7,5,7,1,7}}
-}};
-
-void number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,unsigned value,int scale) {
+void number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,unsigned value,
+            int cell_width,int cell_height) {
     char text[12]{};std::snprintf(text,sizeof(text),"%u",std::min(value,999u));
     int cursor=x;
     for(const char *ch=text;*ch;++ch) {
         if(*ch>='0'&&*ch<='9') {
-            const auto &rows=kDigits[*ch-'0'];
-            for(int py=0;py<5;++py)for(int px=0;px<3;++px)if(rows[py]&(1u<<(2-px)))
-                rect(pixels,width,height,cursor+px*scale,y+py*scale,scale,scale,kText);
-            cursor+=4*scale;
+            const auto &rows=kDigits7[*ch-'0'];
+            for(int py=0;py<7;++py)for(int px=0;px<5;++px)if(rows[py]&(1u<<(4-px)))
+                rect(pixels,width,height,cursor+px*cell_width,y+py*cell_height,cell_width,cell_height,kText);
+            cursor+=6*cell_width;
         }
     }
 }
 
-void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,int size,const HudSprite &sprite) {
+void over_pixel(uint32_t *pixels,unsigned width,unsigned height,int x,int y,uint32_t color) {
+    if(x<0||y<0||unsigned(x)>=width||unsigned(y)>=height)return;
+    uint32_t &dst=pixels[size_t(y)*width+unsigned(x)];
+    const unsigned sa=color>>24,da=dst>>24,inv=255-sa;
+    const unsigned alpha=sa+(da*inv+127)/255;
+    if(!alpha){dst=0;return;}
+    auto channel=[&](unsigned shift){
+        const unsigned sc=(color>>shift)&255,dc=(dst>>shift)&255;
+        const unsigned premult=sc*sa+(dc*da*inv+127)/255;
+        return (premult+alpha/2)/alpha;
+    };
+    dst=(alpha<<24)|(channel(16)<<16)|(channel(8)<<8)|channel(0);
+}
+
+void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
+          int target_width,int target_height,const HudSprite &sprite,bool smooth) {
     if(!sprite.width || !sprite.height || sprite.pixels.size()!=size_t(sprite.width)*sprite.height)return;
-    const double factor=double(size)/std::max(sprite.width,sprite.height);
-    const int w=std::max(1,int(std::lround(sprite.width*factor))),h=std::max(1,int(std::lround(sprite.height*factor)));
+    const int w=std::max(1,std::min(target_width,int(width)-x));
+    const int h=std::max(1,std::min(target_height,int(height)-y));
     for(int py=0;py<h;++py)for(int px=0;px<w;++px) {
-        const uint32_t color=sprite.pixels[size_t(py*sprite.height/h)*sprite.width+px*sprite.width/w];
-        if(color>>24)pixel(pixels,width,height,x+(size-w)/2+px,y+(size-h)/2+py,color);
+        uint32_t color=0;
+        if(!smooth) {
+            color=sprite.pixels[size_t(py)*sprite.height/h*sprite.width+px*sprite.width/w];
+        } else {
+            const double fx=std::clamp((px+0.5)*sprite.width/w-0.5,0.0,double(sprite.width-1));
+            const double fy=std::clamp((py+0.5)*sprite.height/h-0.5,0.0,double(sprite.height-1));
+            const unsigned x0=unsigned(fx),y0=unsigned(fy),x1=std::min(x0+1,sprite.width-1),y1=std::min(y0+1,sprite.height-1);
+            const double tx=fx-x0,ty=fy-y0;
+            const uint32_t samples[4]={sprite.pixels[size_t(y0)*sprite.width+x0],sprite.pixels[size_t(y0)*sprite.width+x1],
+                                       sprite.pixels[size_t(y1)*sprite.width+x0],sprite.pixels[size_t(y1)*sprite.width+x1]};
+            const double weights[4]={(1-tx)*(1-ty),tx*(1-ty),(1-tx)*ty,tx*ty};
+            double a=0,r=0,g=0,b=0;
+            for(unsigned i=0;i<4;++i){const double alpha=samples[i]>>24;a+=weights[i]*alpha;r+=weights[i]*alpha*((samples[i]>>16)&255);g+=weights[i]*alpha*((samples[i]>>8)&255);b+=weights[i]*alpha*(samples[i]&255);}
+            if(a>0)color=(unsigned(std::lround(a))<<24)|(unsigned(std::lround(r/a))<<16)|(unsigned(std::lround(g/a))<<8)|unsigned(std::lround(b/a));
+        }
+        if(color>>24)over_pixel(pixels,width,height,x+px,y+py,color);
     }
 }
 }
@@ -103,19 +135,23 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     if(!visible)return;
 
     const double scale=std::max(0.01,settings.minimap_scale/260.0);
-    const int icon_size=std::max(1,int(std::lround(12.0*scale)));
-    const int digit_scale=std::max(1,int(std::lround(scale)));
-    const int pad=std::max(1,int(std::lround(scale)));
-    const int glyph_height=5*digit_scale,glyph_width=11*digit_scale;
-    const int row_height=std::max(icon_size,glyph_height)+2*pad;
-    const int digits_width=std::max(4*digit_scale,glyph_width);
-    const int panel_width=2*pad+icon_size+pad+digits_width;
-    const int panel_height=4*row_height+2*pad;
+    const double raster_x=double(width)/256.0,raster_y=double(height)/192.0;
+    const int icon_width=std::max(1,int(std::lround(12.0*scale*raster_x)));
+    const int icon_height=std::max(1,int(std::lround(12.0*scale*raster_y)));
+    const int digit_width=std::max(1,int(std::lround(scale*raster_x)));
+    const int digit_height=std::max(1,int(std::lround(scale*raster_y)));
+    const int pad_x=std::max(1,int(std::lround(scale*raster_x)));
+    const int pad_y=std::max(1,int(std::lround(scale*raster_y)));
+    const int glyph_height=7*digit_height,glyph_width=18*digit_width;
+    const int row_height=std::max(icon_height,glyph_height)+2*pad_y;
+    const int digits_width=std::max(6*digit_width,glyph_width);
+    const int panel_width=2*pad_x+icon_width+pad_x+digits_width;
+    const int panel_height=4*row_height+2*pad_y;
     const double map_left=double(width)*settings.minimap_x/1000.0;
     const double map_top=double(height)*settings.minimap_y/1000.0;
     const double map_w=double(width)*settings.minimap_scale/1000.0;
     const double map_h=double(height)*settings.minimap_scale/1000.0;
-    const int gap=std::max(2,int(std::lround(3.0*scale)));
+    const int gap=std::max(2,int(std::lround(3.0*scale*raster_x)));
     const int right=int(std::lround(map_left+map_w))+gap;
     const int left=int(std::floor(map_left))-gap-panel_width;
     int panel_x;
@@ -129,13 +165,13 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     const unsigned counts[4]={stars,coins,std::min(health,8u),lives};
     const HudSprite *icons[4]={&art.star,&art.coin,&art.health[std::min(health,8u)],&art.lives[character<4?character:3]};
     for(unsigned row=0;row<4;++row) {
-        const int y=panel_y+pad+int(row)*row_height;
+        const int y=panel_y+pad_y+int(row)*row_height;
         rect(pixels,width,height,panel_x+1,y-1,panel_width-2,row_height,kPanel);
         outline_rect(pixels,width,height,panel_x,y-1,panel_width,row_height,kPanelEdge);
-        const int ix=panel_x+pad,iy=y+(row_height-icon_size)/2;
-        icon(pixels,width,height,ix,iy,icon_size,*icons[row]);
-        number(pixels,width,height,ix+icon_size+pad,
-               y+(row_height-glyph_height)/2,counts[row],digit_scale);
+        const int ix=panel_x+pad_x,iy=y+(row_height-icon_height)/2;
+        icon(pixels,width,height,ix,iy,icon_width,icon_height,*icons[row],width>256||height>192);
+        number(pixels,width,height,ix+icon_width+pad_x,
+               y+(row_height-glyph_height)/2,counts[row],digit_width,digit_height);
     }
 }
 

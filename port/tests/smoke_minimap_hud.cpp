@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 #include "ntr/minimap_hud.h"
 #include <algorithm>
 #include <array>
@@ -46,5 +47,23 @@ int main() {
     minimap_hud_build(pixels.data(),w,h,s,true,150,999,99,0,1);if(count(pixels)<=normal)return 13;
     std::vector<uint32_t> dst(w*h,0xff000000u),overlay(w*h,0u);overlay[0]=0x80ff0000u;
     minimap_hud_blend(dst.data(),overlay.data(),w,h);if(dst[0]!=0xff800000u)return 14;
+    s.minimap_scale=260;s.minimap_x=710;s.minimap_y=35;
+    minimap_hud_build(pixels.data(),w,h,s,true,21,47,6,8,3);
+    auto bounds=[](const std::vector<uint32_t> &p,unsigned width,unsigned height){
+        unsigned left=width,top=height,right=0,bottom=0;
+        for(unsigned y=0;y<height;++y)for(unsigned x=0;x<width;++x)if(p[size_t(y)*width+x]>>24){
+            left=std::min(left,x);top=std::min(top,y);right=std::max(right,x+1);bottom=std::max(bottom,y+1);
+        }
+        return std::array<unsigned,4>{left,top,right,bottom};
+    };
+    const auto native=bounds(pixels,w,h);
+    constexpr unsigned rw=1280,rh=720;std::vector<uint32_t> high(size_t(rw)*rh);
+    minimap_hud_build(high.data(),rw,rh,s,true,21,47,6,8,3);
+    const auto scaled=bounds(high,rw,rh);
+    if(scaled[2]-scaled[0]<5*(native[2]-native[0])-4 ||
+       scaled[3]-scaled[1]<3*(native[3]-native[1]) ||
+       scaled[3]-scaled[1]>5*(native[3]-native[1]))return 15;
+    const auto antialiased=std::count_if(high.begin(),high.end(),[](uint32_t p){const unsigned a=p>>24;return a>0xd9&&a<255;});
+    if(antialiased<20)return 16;
     std::puts("PASS original OBJ decode bounds/stride/palette/flips/priority and four minimap counters with health/character selection");
 }

@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 # port/ntr -- the host DS platform layer
 
 Imported 2026-08-02 from the port research repo (MIT, project-internal;
@@ -44,8 +45,15 @@ with an 8 MiB stack created after the fixed DS regions have been reserved.
 The existing raster suite also runs as `smoke_gpu --opengl` /
 `smoke_opengl_cpu` when that runtime is present.
 The selected resolution controls the GPU render target independently of window
-size. Screenshots capture that actual target. 2D assets retain their original
-resolution, while 3D polygon edges rasterize at native target resolution.
+size. Screenshots capture that actual target. 3D polygon edges rasterize at
+native target resolution. Gameplay Star, coin, health and character-life
+counters use a separate transparent layer at the selected output resolution;
+their numbers are drawn with a 5x7 bitmap font and the game's original small
+DS icons are smoothly resampled. This removes the extra pixelation from scaling
+the whole HUD from 256x192, but the original icon art itself remains limited by
+its source detail. Minimap artwork and other DS 2D elements retain their original
+resolution. `smoke_gpu` checks native HUD texture uploads and caching at 720p and
+4K; `smoke_minimap_hud` checks proportional layout and icon resampling.
 `smoke_gpu` runs offscreen on WARP and verifies native subpixel coverage at 4K,
 software parity, perspective UV/depth/cutouts, clipping/culling, viewports,
 completed-frame selection, widescreen frustum expansion, pause/map and resize.

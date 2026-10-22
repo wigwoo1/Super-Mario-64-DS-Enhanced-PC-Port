@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 #ifndef NTR_GPU_H
 #define NTR_GPU_H
 #include "ntr/ppu.h"
@@ -13,7 +14,8 @@ bool gpu_render(const Framebuffer &base, const uint32_t *minimap,
                 const VideoSettings &settings, bool geometry, const uint32_t *foreground = nullptr,
                 const DualScreenLayout *screens = nullptr, const Framebuffer *sub = nullptr,
                 bool engine_a_on_top = true, bool cache_gameplay = false,
-                const uint32_t *minimap_hud = nullptr);
+                const uint32_t *minimap_hud = nullptr, unsigned hud_width = 0,
+                unsigned hud_height = 0, uint64_t hud_revision = 0);
 // Screen-authored menus use their original full-frame projection.
 void gpu_set_menu_scene(bool active);
 void gpu_set_letter_overlay(bool active);

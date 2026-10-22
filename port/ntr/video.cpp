@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 #include "ntr/video.h"
 
 #include "ntr/gx.h"
@@ -902,7 +903,7 @@ bool video_present_frame() {
         g_output_width=g_settings.width;g_output_height=g_settings.height;
     }
     std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_map_pixels{};
-    static std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_hud_pixels{};
+    static std::vector<uint32_t> gpu_hud_pixels;
 
     if (video_minimap_visible()) {
         const Framebuffer *map = &g_bottom;
@@ -963,8 +964,25 @@ bool video_present_frame() {
 
     const bool hud_visible=g_minimap_counters.active && !g_pause_screen && !dual &&
         !g_minigame_active && !g_cutscene_letter;
-    minimap_hud_build(gpu_hud_pixels.data(),SCREEN_W,SCREEN_H,g_settings,hud_visible,
-                      g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character);
+    const unsigned hud_width=g_gpu?g_settings.width:SCREEN_W;
+    const unsigned hud_height=g_gpu?g_settings.height:SCREEN_H;
+    static std::array<uint32_t,11> previous_hud_key{};
+    static bool have_hud_key=false;
+    static uint64_t hud_revision=0;
+    const std::array<uint32_t,11> hud_key{{
+        unsigned(hud_visible),hud_width,hud_height,g_settings.minimap_x,g_settings.minimap_y,
+        g_settings.minimap_scale,g_minimap_counters.stars,g_minimap_counters.coins,
+        g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character}};
+    if(!have_hud_key||hud_key!=previous_hud_key) {
+        previous_hud_key=hud_key;have_hud_key=true;
+        if(++hud_revision==0)++hud_revision;
+        if(hud_visible) {
+            gpu_hud_pixels.resize(size_t(hud_width)*hud_height);
+            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,g_settings,true,
+                g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,
+                g_minimap_counters.health,g_minimap_counters.character);
+        } else gpu_hud_pixels.clear();
+    }
     if(!g_gpu&&hud_visible)
         minimap_hud_blend(g_output.data(),gpu_hud_pixels.data(),SCREEN_W,SCREEN_H);
     if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_COUNTERS_TRACE")) {
@@ -982,7 +1000,8 @@ bool video_present_frame() {
         if (!gpu_render(main_view,video_minimap_visible()?gpu_map_pixels.data():nullptr,
                         g_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
                         dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay,
-                        hud_visible?gpu_hud_pixels.data():nullptr) || !gpu_present(width,height,dual)) {
+                        hud_visible?gpu_hud_pixels.data():nullptr,hud_width,hud_height,hud_revision) ||
+            !gpu_present(width,height,dual)) {
             std::fprintf(stderr,"[video] native GPU presentation failed; reverting to software on the next frame\n");
             gpu_close();g_gpu=false;
             texture_set_backend(TextureBackend::SoftwareReference);

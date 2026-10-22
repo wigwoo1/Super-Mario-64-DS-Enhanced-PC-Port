@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 # Super Mario 64 DS Enhanced PC Port
 
 An **unfinished, experimental native Windows PC port**, based on
@@ -77,7 +78,9 @@ game assets, personal saves, or proprietary compiler is included here.
   inversion and Off/Gentle/Smooth acceleration. Selected menu/gameplay checks
   pass; physical Nintendo Switch Pro acceptance remains pending.
   Broader all-course acceptance remains incomplete. Star, coin, health and life counters
-  use original game artwork beside the minimap, scaling with its size. Selected
+  use original game artwork beside the minimap, scaling with its size. The counter
+  layer now renders at the selected internal resolution, including 4K; original
+  DS icon detail and the minimap itself remain source-resolution. Selected
   English/Yoshi coin collection, contact damage, large-map and map-off checks
   pass with muted output; other character/language coverage remains incomplete. HD texture packs, online VS and browser Download Play
   remain planned; requested AI texture generation and replacement also remain

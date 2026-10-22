@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 // OpenGL rasterization through an explicitly loaded Mesa llvmpipe runtime.
 // Geometry decoding/clipping and texture identities stay shared with D3D11.
 #include "ntr/gl_software.h"
@@ -66,7 +67,8 @@ struct Api {
 HMODULE library=nullptr;
 HWND context_window=nullptr,game_window=nullptr;
 HDC context_dc=nullptr;HGLRC context=nullptr;
-GLuint framebuffer=0,color_target=0,depth_target=0,program=0,base_image=0,map_image=0,white_image=0;
+GLuint framebuffer=0,color_target=0,depth_target=0,program=0,base_image=0,map_image=0,white_image=0,hud_image=0;
+unsigned hud_image_width=0,hud_image_height=0;uint64_t hud_image_revision=~uint64_t(0);
 GLuint gameplay_image=0,gameplay_framebuffer=0;
 unsigned gameplay_width=0,gameplay_height=0;
 GLint u_polygon=-1,u_alpha=-1,u_pass=-1,u_mode=-1,u_toon=-1,u_highlight=-1;
@@ -363,6 +365,7 @@ void close_worker() {
         gl.MakeCurrent(context_dc,context);
         for(auto &t:cache)gl.DeleteTextures(1,&t.second.id);
         if(base_image)gl.DeleteTextures(1,&base_image);if(map_image)gl.DeleteTextures(1,&map_image);
+        if(hud_image)gl.DeleteTextures(1,&hud_image);
         if(white_image)gl.DeleteTextures(1,&white_image);if(color_target)gl.DeleteTextures(1,&color_target);
         if(framebuffer&&gl.DeleteFramebuffers)gl.DeleteFramebuffers(1,&framebuffer);
         if(gameplay_image)gl.DeleteTextures(1,&gameplay_image);
@@ -375,7 +378,8 @@ void close_worker() {
     if(context_dc&&context_window)ReleaseDC(context_window,context_dc);context_dc=nullptr;
     if(context_window)DestroyWindow(context_window);context_window=nullptr;
     if(library)FreeLibrary(library);library=nullptr;
-    gl={};game_window=nullptr;framebuffer=color_target=depth_target=program=base_image=map_image=white_image=0;
+    gl={};game_window=nullptr;framebuffer=color_target=depth_target=program=base_image=map_image=white_image=hud_image=0;
+    hud_image_width=hud_image_height=0;hud_image_revision=~uint64_t(0);
     gameplay_image=gameplay_framebuffer=0;gameplay_width=gameplay_height=0;
     target_width=target_height=triangle_count=0;adapter_name[0]=0;cache.clear();missing.clear();cache_bytes=use_counter=0;
     readback_pixels.clear();raw_pixels.clear();readback_ready=false;anisotropic=0;stats={};
@@ -385,9 +389,12 @@ void glsw_set_letter_overlay(bool active){letter_overlay=active;}
 void glsw_set_anisotropic_filtering(uint8_t value){anisotropic=value==2||value==4||value==8||value==16?uint8_t(std::min<float>(value,max_aniso)):0;}
 uint8_t glsw_anisotropic_filtering(){return anisotropic;}
 bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,
-                   const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay,const uint32_t *hud) {
+                   const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,
+                   bool engine_a_on_top,bool cache_gameplay,const uint32_t *hud,
+                   unsigned hud_width,unsigned hud_height,uint64_t hud_revision) {
     stats={};auto start=std::chrono::steady_clock::now();
     if(!context||s.width<256||s.height<192||s.width>3840||s.height>2160||!resize(s.width,s.height))return false;
+    if(hud && (hud_width!=s.width || hud_height!=s.height))return false;
     readback_ready=false;gl.UseProgram(program);gl.BindFramebuffer(FBO,framebuffer);
     if(epoch!=texture_replacement_epoch()){
         gl.Finish();
@@ -431,8 +438,19 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
         quad(map_image,false,x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2);
     }
     if(!screens&&hud){
-        gl.BindTexture(GL_TEXTURE_2D,map_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,hud);
-        overlay_state(true);quad(map_image,false,-1,1,1,-1);
+        if(hud_image_width!=hud_width||hud_image_height!=hud_height||!hud_image) {
+            if(hud_image)gl.DeleteTextures(1,&hud_image);
+            hud_image=image(nullptr,int(hud_width),int(hud_height));
+            if(!hud_image)return false;
+            hud_image_width=hud_width;hud_image_height=hud_height;hud_image_revision=~uint64_t(0);
+        }
+        if(hud_image_revision!=hud_revision) {
+            gl.BindTexture(GL_TEXTURE_2D,hud_image);
+            gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,hud_width,hud_height,BGRA,GL_UNSIGNED_BYTE,hud);
+            if(!ok("HUD upload"))return false;
+            hud_image_revision=hud_revision;
+        }
+        overlay_state(true);quad(hud_image,false,-1,1,1,-1);
     }
     stats.cache_bytes=cache_bytes;stats.cache_budget=cache_budget;
     stats.cpu_us=std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count();
@@ -499,8 +517,11 @@ void glsw_close() {
     worker.thread=worker.wake=worker.done=nullptr;worker.stop=false;worker.job={};
 }
 bool glsw_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool geometry,
-                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool top,bool cache_gameplay,const uint32_t *hud) {
-    bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,top,cache_gameplay,hud);})&&result;
+                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,
+                 bool top,bool cache_gameplay,const uint32_t *hud,unsigned hud_width,
+                 unsigned hud_height,uint64_t hud_revision) {
+    bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,
+        top,cache_gameplay,hud,hud_width,hud_height,hud_revision);})&&result;
 }
 bool glsw_present(unsigned width,unsigned height,bool aspect) {
     bool result=false;return submit([&]{result=present_worker(width,height,aspect);})&&result;
