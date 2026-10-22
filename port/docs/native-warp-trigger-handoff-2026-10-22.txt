@@ -1,0 +1,62 @@
+Battlefield flower warp - 2026-10-22
+Status: VERIFIED in the selected automated native gameplay paths.
+
+Final EXE SHA256 a5f27c7fc6e9880dc2000da9fa7f5dbea918fba6684256772ded0aa9bb739228
+Build/link, two adapter checks, five focused CTests and native data audit pass.
+The normal-input route reaches the original flowers; no player/actor placement,
+forced hit, teleport, camera, reward or save-state injection is used.
+Two actual teleport-state episodes select original destinations3 and4. Both
+fade opacity31->0->31, relocate to original local-ROM destination records,
+return control and set the original60tick cooldown. Holding on arrival causes
+no extra teleport. Leaving and re-entering the peer cylinder enables return.
+Original pause Exit Course returns to the castle; original painting/mission1
+selection re-enters Battlefield. All4 warp actors are removed then recreated.
+Final13000tick case exits0, muted native audio, mixer errors0, grounded Wait
+and normal control. A prior7000tick repeat-only case also passes. Screenshots
+reviewed locally. Mountain warps/all courses were not newly tested.
+
+Production ground/line queries agreed with static KCL. Early QA routes advanced
+an airborne waypoint then drifted off the narrow raised-field approach. Walking
+height-aware waypoints now use mode0 and their existing landing/height check.
+A wider measured route around the fence works. No game-floor defect was found
+and no collision workaround was added. The arrival-side request during an
+existing teleport is original busy-latch/input bookkeeping, not another state
+episode. No flag-table change was needed. warp_probe.h/warp_replay.h are opt-in
+QA observations/controls; ordinary play does not use the probes or routes.
+Physical controller/listening fidelity remain separate; mixed audio can clip.
+Full port remains experimental/incomplete. Full EXE and private data stay local.
+
+Historical investigation below (superseded by the verification above):
+
+The PC registry omitted WARPKUN (actor347). Added its recovered factory and
+destructor to the native source closure and connected its original profile
+with a native factory pointer. The complete profile metadata is checked against
+the user's original overlay by check_native_actor_data.py. Matched src/ and
+shared include/ files remain unchanged. warp_host.py adds only optional tracing
+and host layout assertions; original cylinder, CanWarp, latch, destination
+selection and player teleport state logic are retained.
+
+The build links successfully. Two adapter checks, five focused CTests and the
+native data/profile audit pass. A muted Battlefield run spawns all four original
+warp triggers and exits normally. This does NOT prove a working teleport.
+
+Input-only flower approaches have not reached a valid stationary trigger
+contact. One was blocked along a fence and ended in defeat. A second jumped
+to the lower side of the raised field. A static-KCL-derived walking route also
+fell to lower ground after an airborne waypoint/Goomba encounter and stayed in
+OnWall. Every replay exited0 with mixer errors0 and muted device output. No warp
+request or St_Teleport_Main was observed; reject these as teleport acceptance.
+
+Next: inspect the actual production ground queries and collision/route state
+near the bridge/raised-field approach, comparing against the private static
+KCL reconstruction. The static geometry probe may itself be incomplete; no
+native floor-collision defect is established. The route can advance in the air,
+and enemy avoidance changes its trajectory. Do not modify game collision or
+warp rules to make a replay pass. Then prove stationary flower contact,
+original fade/destination/control return, cooldown/repeat and course reload.
+No QA player travel or actor/state injection was used in these runs.
+
+Candidate stays local and is not installed over the accepted F checkpoint.
+Current F pause-music checkpoint and public source/build kit are unchanged.
+This actor integration has no new generated ROM-data object. Any future kit
+still requires the existing format2 guards and fresh reconstruction/runtime.

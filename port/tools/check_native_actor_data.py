@@ -63,6 +63,7 @@ def main():
             ('pc_exit_profile', 'daChScene_c_classInit', 2, 0x02108690),
             ('pc_picture_gate_profile', 'daPicGate_c_classInit', 80, 0x02128290),
             ('pc_player_profile', 'daPly_c_classInit', 2, 0x0210a704),
+            ('pc_warp_profile', 'daWarpkun_c_classInit', 2, 0x0210ac98),
             ('pc_demo_profile', 'daDemo_c_classInit', 2, 0x0210ba60),
             ('pc_lakitu_profile', 'daC_Jugem_c_classInit', 85, 0x02130320),
             ('pc_buddy_profile', 'daRedBombhei_c_classInit', 84, 0x02130a14),

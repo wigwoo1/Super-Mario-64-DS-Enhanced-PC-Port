@@ -17,6 +17,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daKinopio_c_classInit", "_ZN11daKinopio_cD1Ev",
                  "daSBird_c_classInit", "_ZN9daSBird_cD1Ev",
                  "daCnn_c_classInit", "daWbm_c_classInit", "daTree_c_classInit",
+                 "daWarpkun_c_classInit", "_ZN11daWarpkun_cD1Ev",
                  "daObjMc_Metalnet_c_classInit",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
@@ -390,6 +391,10 @@ def main() -> int:
                 sys.path.insert(0, str(root / "port/tools"))
                 import hostgen  # pylint: disable=import-outside-toplevel
                 transformed, rewrites = hostgen.transform(markerless)
+                if path.name=='d_a_warpkun.cpp':
+                    import warp_host
+                    transformed=warp_host.transform(transformed)
+                    rewrites+=1
                 if path.name=='d_a_star_gate.cpp':
                     import star_gate_host
                     transformed=star_gate_host.transform(transformed)

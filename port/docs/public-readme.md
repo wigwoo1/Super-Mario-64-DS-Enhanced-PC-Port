@@ -63,8 +63,10 @@ game assets, personal saves, or proprietary compiler is included here.
   bark/bounce; isolated cue renders are non-silent and gameplay events reach the
   correct bank. Listening accuracy is unverified. A diagnostic approach replay
   stalls at a bridge wall and does not establish full encounter acceptance.
-  The level 1 flower secret portal interaction
-  is reported not to work and remains open.
+  The Battlefield flower warp works in both directions, preserves its original
+  destination/fade/cooldown behavior, and survives course exit and re-entry in
+  a muted isolated replay. Other course and mountain warp points were not
+  tested.
   Player feedback reports that the camera still zooms in when Yoshi stops and
   that free-camera controls do not work; these features are not accepted.
   The October22 checkpoint adds25..300% free-camera sensitivity, independent X/Y

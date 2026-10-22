@@ -149,6 +149,8 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 // Input-only course-route QA: decimal level:x:z:radius waypoints in world
 // units, with optional :1 to jump near the waypoint. Never writes player
 // positions, save flags, actors or scene state.
+#include "hal/warp_probe.h"
+#include "hal/warp_replay.h"
 static bool replay_course_route_complete;
 // Observes original contact/state and supplies normal input only. Never
 // changes actor state, position, save flags or dialogue results.
@@ -244,7 +246,7 @@ static bool replay_course_route() {
                    &level,&x,&y,&z,&radius,&jump,&consumed)==6) {
         has_y=true;
         if(consumed<=0 || (segment[consumed] && segment[consumed]!=',') ||
-           (jump!=1 && jump!=2))return false;
+           (jump<0 || jump>2))return false;
     } else {
         consumed=0;jump=0;
         if(std::sscanf(segment,"%d:%d:%d:%d%n",&level,&x,&z,&radius,&consumed)!=4 ||
@@ -1310,10 +1312,12 @@ static bool trace_script_progress(uint64_t frame)
     // Presentations can repeat a simulation tick, even at a 60 Hz target.
     // Advance input-only replay state once per game tick, so a repeated
     // presentation cannot skip the neutral input at a waypoint boundary.
+    pc_trace_warp_player(static_cast<Player *>(data_0209f394[0]));
+    pc_trace_warp_ground(static_cast<Player *>(data_0209f394[0]));
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

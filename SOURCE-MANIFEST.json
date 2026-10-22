@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "8774177c5c5e30f25817f02863f4e83a37f239c025b9218c0e92beaeab10b41f",
-      "bytes": 80651
+      "sha256": "baeaffa443ca4e77e1ad9dc4f50647083b1c29ba01e45dc2d68a974f571a901c",
+      "bytes": 80797
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6814,6 +6814,11 @@
       "bytes": 3714
     },
     {
+      "path": "port/docs/native-warp-trigger-handoff-2026-10-22.txt",
+      "sha256": "f4acbb3430901498348acfd031ff36266525fbb35c00ba30acec363509b15b1f",
+      "bytes": 4084
+    },
+    {
       "path": "port/docs/native-waterbomb-combat-2026-10-19.txt",
       "sha256": "6715ca12e7a10db5a5f36a0b3bb8935681fd8b4f67d9106d7dd344fbf7a7d190",
       "bytes": 3870
@@ -6880,8 +6885,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "7f26df7d5e399e03e27414f6db181f938019c9ed286122e014389362a1a28080",
-      "bytes": 8572
+      "sha256": "2c0ae5b2394ce64627fe802f5adef8204aa24de18668c5f2452d9b4901c247e7",
+      "bytes": 8723
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7035,8 +7040,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "12fce1f00676d3d86498ba17baadb9da67cc5dc82d848ec852a67b76579e20f8",
-      "bytes": 35512
+      "sha256": "4f09c15a42a4eb28a39204af228bbe18431422126142941abcc24b9bbf577b47",
+      "bytes": 35797
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7414,14 +7419,24 @@
       "bytes": 607
     },
     {
+      "path": "port/hal/warp_probe.h",
+      "sha256": "81815642b6b43ec6cf91ad5d9b802003f71d47c8cc6a08b801b85ee719b05427",
+      "bytes": 4145
+    },
+    {
+      "path": "port/hal/warp_replay.h",
+      "sha256": "9c06098695c7f30051365cf636abb6a08154a5b352952ec7f6e203dc9b01449f",
+      "bytes": 8479
+    },
+    {
       "path": "port/host_abi.h",
       "sha256": "c7e1064cf114a27412d11ba2da2c3fad61449fb109c32c5a7f9b994a3405e2d8",
       "bytes": 1157
     },
     {
       "path": "port/main.cpp",
-      "sha256": "349add026830806e59bdff41c4f310a34cbff64e8ceb891769ab6e17303db4fa",
-      "bytes": 117012
+      "sha256": "76abdb26c553d2ea946fea201757f6400562dc3781bb8789a811428126b8566c",
+      "bytes": 117367
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8300,8 +8315,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "47df034b78400ea3524455d2b7d2428ffd5ec81a2d00ee832c3ab85d6071a084",
-      "bytes": 39656
+      "sha256": "224355e9fc2af133835dca083483793cf2f78131179baf7376d9e3037124bc75",
+      "bytes": 39905
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8440,8 +8455,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "5b274eac6456e0cbfcd415ec7faaf1ba0ab2c8c5da4aff3efb7607a57d638c32",
-      "bytes": 23633
+      "sha256": "3bc0c803aee14fd3cb893b6926ee81787478b3a03bae906d64cb23e78ca5d8a8",
+      "bytes": 23706
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8650,8 +8665,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "74cd2f0876da60a97928b5e85ab8d064eef38def864b812b9ffbd02a9ee41b05",
-      "bytes": 6636
+      "sha256": "4aaccf56e255f0aa9ac599040ca81be2cfd0c171244246556fd61034e8d71ea6",
+      "bytes": 6658
     },
     {
       "path": "port/tools/native_kit_data.py",
@@ -8774,6 +8789,11 @@
       "bytes": 1617
     },
     {
+      "path": "port/tools/test_warp_host.py",
+      "sha256": "14851fd9b061c5b93ef4425120f8c7907c18427290720e9043635311b2562c2f",
+      "bytes": 908
+    },
+    {
       "path": "port/tools/texture_consumer_hooks.py",
       "sha256": "b6e04c44c34fb2e0ce559a6115ae48cc198a1a7034c34028c7be943c62a26e5c",
       "bytes": 1065
@@ -8807,6 +8827,11 @@
       "path": "port/tools/tree_host.py",
       "sha256": "0fc77dca490d81116505f13894daaf219bc76b8debeccd5fb107de46b1e9d862",
       "bytes": 4825
+    },
+    {
+      "path": "port/tools/warp_host.py",
+      "sha256": "466dc7b77aa3f071c5d7e61025d8bf32bada00b4fd99cddb2eb23e26e62e7206",
+      "bytes": 1203
     },
     {
       "path": "port/unmatched/camera_jitter.cpp",

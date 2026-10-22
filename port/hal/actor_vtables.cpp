@@ -272,6 +272,7 @@ extern "C" void pc_chomp_init_resources(), pc_pile_init_resources(), pc_wanwan_f
 extern "C" unsigned char g_profile_WANWAN[], g_profile_PILE[], g_profile_WANWAN_SHUTTER[];
 extern "C" void *daRedBombhei_c_classInit();
 extern "C" void *daCnn_c_classInit(), *daWbm_c_classInit();
+extern "C" void *daWarpkun_c_classInit();
 extern "C" void *daObjMc_Metalnet_c_classInit();
 extern "C" void *daObjMcWater_c_classInit();
 extern "C" void pc_cannon_init_resources(), pc_waterbomb_init_resources();
@@ -296,6 +297,10 @@ struct PcNativeActorProfile {
     int clipOffsetY, clipRadius, clipDistance, farDistance;
 };
 static_assert(sizeof(PcNativeActorProfile) == 0x1c, "native actor descriptor");
+// WARPKUN, original ov002 descriptor at 0210ac98; invisible warp cylinder.
+static PcNativeActorProfile pc_warp_profile = {
+    (void *)&daWarpkun_c_classInit,347,347,3,0,0xa000,0x960000,0
+};
 static PcNativeActorProfile pc_buddy_profile = { (void *)&daRedBombhei_c_classInit,181,46,3,0x40000,0x80000,0x1000000,0x1000000 };
 // ov098 descriptors 0213c67c/0213c74c, with native constructor pointers.
 static PcNativeActorProfile pc_cannon_profile = { (void *)&daCnn_c_classInit,207,47,3,0xc8000,0xc8000,0x1000000,0 };
@@ -437,6 +442,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[339] = &pc_metalnet_profile;
     data_020a4bb8_storage[338] = &pc_castle_water_profile;
     data_020a4bb8_storage[286] = g_profile_TREE;
+    data_020a4bb8_storage[347] = &pc_warp_profile;
     data_020a4bb8_storage[343] = g_profile_SBIRD;
     pc_toad_init_resources();
     data_020a4bb8_storage[185] = g_profile_KINOPIO;
