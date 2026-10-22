@@ -26,6 +26,7 @@
 #include "daWanwan_c.h"
 #include "daObjPile_c.h"
 #include "daObjWanwanShutter_c.h"
+#include "daKinopio_c.h"
 #include "SaveData.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
@@ -148,6 +149,81 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 // units, with optional :1 to jump near the waypoint. Never writes player
 // positions, save flags, actors or scene state.
 static bool replay_course_route_complete;
+// Observes original contact/state and supplies normal input only. Never
+// changes actor state, position, save flags or dialogue results.
+extern "C" bool pc_toad_contact_recent(unsigned id,unsigned player);
+static bool replay_toad_controls() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_TOAD_TALK");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!mode || (std::strcmp(mode,"1") && std::strcmp(mode,"cycle")) || !automation || std::strcmp(automation,"1"))return false;
+    const bool cycle=!std::strcmp(mode,"cycle");
+    int wanted_level=2,wanted_star=-1;
+    if(const char *value=std::getenv("SM64DS_PC_TEST_TOAD_LEVEL")) {
+        char *end=nullptr;const long parsed=std::strtol(value,&end,10);
+        if(end==value || *end || (parsed!=2 && parsed!=4 && parsed!=5))return false;
+        wanted_level=static_cast<int>(parsed);
+    }
+    if(const char *value=std::getenv("SM64DS_PC_TEST_TOAD_STAR")) {
+        char *end=nullptr;const long parsed=std::strtol(value,&end,10);
+        if(end==value || *end || parsed<0 || parsed>7)return false;
+        wanted_star=static_cast<int>(parsed);
+    }
+    if(cycle && wanted_level!=2)return false;
+    static unsigned target=0;static bool talking=false,done=false,pressed=false;
+    static unsigned visit=1,completed=0;
+    static bool awaiting_return=false,retreat=false;
+    static uint64_t began=0;
+    if(done)return false;
+    if(data_0209f2f8!=wanted_level) {
+        if(cycle && visit==1 && completed==2 && data_0209f2f8==1) {
+            awaiting_return=true;target=0;talking=false;pressed=false;retreat=false;
+        }
+        return false;
+    }
+    if(cycle && visit==1 && completed==2) {
+        if(!awaiting_return)return false;
+        visit=2;completed=0;awaiting_return=false;
+    }
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p || p->aliveState!=1)return false;
+    daKinopio_c *toad=nullptr;double distance=1e100;
+    for(auto *a=dActor_c::FindWithActorID(185,nullptr);a;a=dActor_c::FindWithActorID(185,a)) {
+        if(a->aliveState!=1 || (target && a->uniqueID!=target))continue;
+        if(wanted_star>=0 && static_cast<daKinopio_c *>(a)->mStarID!=wanted_star)continue;
+        // The Hazy Maze room has overlapping walkways. A horizontal approach
+        // must not seize input while the player is still on the floor above.
+        if(std::abs(double(a->mPosY)-p->mPosY)>120*4096.0)continue;
+        const auto d=std::hypot(double(a->mPosX)-p->mPosX,double(a->mPosZ)-p->mPosZ);
+        if(d<distance){distance=d;toad=static_cast<daKinopio_c *>(a);}
+    }
+    if(!toad)return false;
+    if(retreat) {if(distance>400*4096.0)retreat=false;return false;}
+    if(!target && distance>120*4096.0)return false;
+    const auto tick=ntr::rt_frame();
+    auto event=[&](const char *name){std::fprintf(stderr,
+        "[native Toad replay] %s tick=%llu id=%u player=%u speed=%d state=%s contact=%u visit=%u interaction=%u\n",
+        name,static_cast<unsigned long long>(tick),toad->uniqueID,p->uniqueID,p->mHorzSpeed,
+        pc_player_state_name(p),unsigned(pc_toad_contact_recent(toad->uniqueID,p->uniqueID)),visit,completed+1);};
+    if(!target){target=toad->uniqueID;began=tick;event("approach");}
+    if(toad->mState==1 && !talking){talking=true;event("talking");}
+    const bool ready=!p->mIsNoControl && !p->mIsControlDisabled;
+    if(talking && toad->mState==0 && ready) {
+        event("complete");++completed;
+        if(!cycle || visit==2)done=true;
+        else {target=0;talking=false;pressed=false;retreat=completed<2;}
+        return false;
+    }
+    if(tick-began>1800){done=true;event("timeout");return false;}
+    uint16_t buttons=0;
+    if(talking) {if(data_0209d660 && tick%45<3)buttons=1;}
+    else if(ready && p->mHorzSpeed<0x8000 &&
+            (!std::strcmp(pc_player_state_name(p),"St_Wait_Main") || !std::strcmp(pc_player_state_name(p),"St_Walk_Main")) &&
+            pc_toad_contact_recent(target,p->uniqueID)) {
+        buttons=1;if(!pressed){pressed=true;event("press-A");}
+    }
+    if(tick%120==0)event("observe");
+    ntr::input_test_controls(true,buttons,0,0);return true;
+}
 static bool replay_course_route() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -165,7 +241,7 @@ static bool replay_course_route() {
        x< -32768 || x>32767 || z< -32768 || z>32767)return false;
     if(segment[consumed]==':') {
         if(std::sscanf(segment+consumed,":%d%n",&jump,&jump_consumed)!=1 ||
-           jump!=1 || (segment[consumed+jump_consumed] && segment[consumed+jump_consumed]!=','))return false;
+           (jump!=1 && jump!=2) || (segment[consumed+jump_consumed] && segment[consumed+jump_consumed]!=','))return false;
     }
     auto *player=static_cast<Player *>(data_0209f394[0]);
     if(!player || player->aliveState!=1)return false;
@@ -202,6 +278,22 @@ static bool replay_course_route() {
         const double dx=x*4096.0-player->mPosX,dz=z*4096.0-player->mPosZ;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        // Route mode 2 takes off with a neutral stick. Retail Wait prioritizes
+        // entering Walk over the jump edge when both arrive together. Keep
+        // the input neutral through takeoff; never alter the player state.
+        if(jump==2 && std::hypot(dx,dz)<320*4096.0) {
+            if(tick<jump_until) {
+                ntr::input_test_controls(true,2,0,0);return true;
+            }
+            if(!player->mIsAirborne && tick>=next_jump &&
+               (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+                if(!std::strcmp(state,"St_Wait_Main")) {
+                    jump_until=tick+12;next_jump=tick+75;
+                    ntr::input_test_controls(true,2,0,0);
+                } else ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+        }
         // Optional input-only tree acceptance: keep climbing after the route
         // reaches the trunk, rest at its top, then jump off. No actor/state
         // placement or save edits are involved.
@@ -235,7 +327,7 @@ static bool replay_course_route() {
             if(close) {jump_until=tick+12;next_jump=tick+60;}
         }
         const double jump_range=tree_test && !std::strcmp(tree_test,"1") ? 120.0:320.0;
-        if(jump && std::hypot(dx,dz)<jump_range*4096.0 && tick>=next_jump &&
+        if(jump==1 && std::hypot(dx,dz)<jump_range*4096.0 && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
             jump_until=tick+12;next_jump=tick+75;
         }
@@ -1189,7 +1281,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

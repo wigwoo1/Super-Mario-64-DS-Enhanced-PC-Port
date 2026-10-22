@@ -1,0 +1,166 @@
+Next native gameplay milestone: Toad / daKinopio_c
+Status: PARTIALLY VERIFIED overall; lobby interactions and original20-Star
+Toad reward collection/save/reload/no-duplicate are VERIFIED.
+
+Latest acceptance (supersedes historical pickup blockers below): read-only
+runtime trace proves simultaneous movement+jump enters original Walk before
+the jump gate; original ARM confirms this ordering. Input-only replay mode2
+uses neutral-stick takeoff. No original Player/input/collision/save logic changed.
+Natural original20-Star Toad dialogue, reward flight, jump/contact/collection,
+save commit and restored control pass. Fresh process loads actual earned save,
+returns through original doors and talks again: no new reward, total remains21,
+castle course29 mask4, valid diskCRC and unchanged Star credit. Tests use isolated
+synthetic prerequisites only; collected Star is earned in native gameplay.
+Build/62CTest/85Python/PE actor audit pass. Both acceptance runs clean/muted,
+actual captured PCM checked, mixer errors0/device nonzero samples0. Screenshots
+inspected locally. Original40/60 placements, companion branch and crowded
+dialogue framing remain open. No root F promotion or public release this task.
+Luna Medium recommended next for routine regression/ROM-free kit refresh.
+
+Repeat/reentry update: input-only cycle mode now completes two conversations
+with the same original lobby Toad, exits through the real castle door, returns
+through it and completes a third conversation with a fresh actor. All three
+have real contact, valid slow action input, original239pages, original talk
+state and restored camera/control. Four Toads cleanup/recreate with fresh IDs.
+Final grounded idle and all isolated save bytes/Star total unchanged; engine
+runs with silent device output and zero mixer errors. Native build, five
+focused CTests and PE profile/callback audit pass. This is scene reentry, not
+conditional-Star persistence acceptance. Dialogue framing still crowds the
+characters; visual comparison/acceptance, reward prerequisites and other Toads
+remain open. No root F promotion or public release at this checkpoint.
+
+Latest update: one original lobby Toad conversation now passes with native
+dialogue pages, camera-state restoration, normal movement/idle and unchanged
+isolated saves. Earlier absent/timed-button failures were invalid test input.
+An opt-in input-only controller now observes original collider contact before
+its fields are cleared, waits for an allowed slow/idle player state, then
+presses the normal action button. It advances original pages and resumes the
+route only after Toad and player return to idle. No original gameplay state,
+position, save flag or dialogue result is forced. StartTalk is called once by
+the original actor; optional logging records its result without changing it.
+Contact/press2984 -> original StartTalk success2985 -> Toad talk2986 -> normal
+control3632. Message239 is original text, no replacement pack. Build/61CTest/
+82Python/PE profile+callback audit pass. Run stays muted with real PCM and zero
+device sound/mixer errors. Dialogue camera crowds the characters in the captured
+view; DS comparison/visual framing acceptance, repeat talk, other placements
+and conditional Stars remain open. This supersedes the dialogue-pending notes
+below only for the one accepted original lobby interaction. No F root promotion.
+
+Implementation follow-up: native actor185 now registers the original profile,
+uses three PC-owned eight-byte resource handles and a native typed two-state
+table. Factory/destructor are boot roots; matched src/include remain unchanged.
+Host adapter validates original callbacks/profile/resource initialization before
+generating code. Build passes;61CTest and82Python tests pass. PE audit confirms
+original profile scalars and that both native state pairs target native methods.
+Original-menu lobby replay visibly renders Toad. Castle exit/reentry destroys
+four original Toad actors and recreates four fresh actors without resource or
+mixer errors. Isolated saves remain unchanged; audio runs with output muted.
+Initial render route stops at a wall. First dialogue route also hits geometry;
+collision-derived approach reaches its chosen stopping radius but does not
+trigger dialogue. No further route guessing: trace contact flags and verify an
+actual original St_Talk transition next. Dialogue, head-tracking measurements,
+conditional Stars and other placements remain unaccepted. No F root promotion.
+
+Reproducibility follow-up: shipped symbol metadata regenerates byte-identical
+private link data (4248regions/4404references/0unknown symbols). Fresh output
+compiles/relinks and passes native profile/callback audit; original-menu castle
+runtime smoke exits normally with Toad rendering and unchanged isolated saves.
+This is not a full fresh-kit reconstruction or dialogue acceptance.
+Source inspection also establishes Player::StartTalk(false) requires A/B while
+idle or slow. Earlier movement-only replay omitted the button. Its closest
+sample was72.2world units, not a proven failure to reach Toad. A fixed-tick A
+probe entered Yoshi's attack state before the slow-talk gate; it is rejected.
+Next test should observe contact, allowed player state and speed before pressing
+the normal action button, avoiding further fixed-timestamp guesses.
+
+Follow-up preparation verified: original ARM9 ACTOR_SPAWN_TABLE identifies
+KINOPIO as actor185. MSVC x86 compile-only probe passes actor size0x210 and
+collider/model/shadow/state/message offsets. Native StateFunc is4bytes and
+native State is12bytes, versus the original ARM20byte row. Original callback
+descriptors verify state0=Idle_Init/Idle_Main and state1=Talk_Init/Talk_Main,
+all this-adjustments0. Do not copy the ARM state-table byte layout to PC.
+Original level loader uses a u16 raw-ID mapping; local placement audit finds
+ten standard Toad placements, four in castle-lobby level2. One is area0 and
+can be approached by the existing original castle-entry replay. Its initial
+variant1/StarIDff branch needs companion-resource verification. Exact placement
+records remain in the private audit, not a distributed ROM-data table.
+
+Why this actor: recovered src/game/actors/d_a_kinopio.cpp contains Toad's
+dialogue, head tracking, fading and conditional Power Star reward. The current
+PC actor registry has no KINOPIO factory/profile registration, and boot_closure
+does not root that factory. Existing recovered source alone is not a playable
+native actor. Castle NPC coverage is therefore incomplete.
+
+Authoritative local evidence:
+- include/daKinopio_c.h: actor size0x210; collider0xd4, ModelAnim0x108,
+  shadow0x16c, state0x1fc, message0x208, variant0x20b, StarID0x20c.
+- ov085 profile g_profile_KINOPIO at0212fe6c; factory02129cd0.
+- Original pointer-to-member state table0212fe88. SetState/RunState dispatch
+  through init/main pointers; host ABI must not execute raw ARM addresses.
+- __sinit_ov085_0212f2a8 constructs body resource0x35c and idle/talk animations
+  0x35d/0x35e, then copies four callback descriptors into the two-state table.
+- Separate __sinit_ov085_0212f3a0 initializes Peach resources; do not run every
+  overlay constructor merely to initialize Toad.
+- Star conditions use mStarID, NumStars(), IsStarCollectedInCurLevel and
+  data_ov085_0212f27c. Preserve actual original code, including dialogue shift.
+- Variant1 may spawn companion269; validate that original variant separately.
+
+Milestone1: native lifetime and rendering
+Use verified actor185; retain automated checks against original registry and
+level data. Validate profile scalars and callback targets against local overlay85.
+Reuse existing host transforms, typed callback/resource initialization patterns
+and native model/shadow interfaces. Assert host size/offsets; keep matched src/
+and include/ unchanged. Add original factory/destructor to boot roots, register
+the native profile, and ensure every resource/global has one native owner.
+Build, source-hook tests, native PE profile/data audit and focused component
+tests must pass. Enter castle through original menus with isolated saves and
+capture original placed Toad visible, idle, head tracking, cleanup and reload.
+Do not substitute a spawned QA actor for original-placement acceptance.
+
+Milestone2: original dialogue and control return
+Approach/talk using ordinary movement/buttons; test repeated interaction and
+page progression, original text mode and no dialogue replacement pack. Audio
+engine enabled with output-only mute so sound waits advance. Verify player/
+camera control returns, no stuck sound, saved progression unchanged for normal
+conversation, exit/reentry recreates actor and resources. Show screenshots.
+Keep user-authored text editing deferred.
+
+Milestone3: conditional Power Star reward
+2026-10-21 original-placement runtime evidence: the 20-Star Toad is reached
+through original File A/castle doors using an explicitly synthetic prerequisite
+save and input-only movement. Real contact/slow A opens the original dialogue;
+the native reward Star launches, links its original marker, flies and settles,
+then camera/player control returns. Audio runs with device output muted and
+zero mixer errors. Save bytes remain unchanged in this spawn-only run. This
+accepts reward creation/flight, not collection, persistence or duplicate credit.
+The replay route was corrected for a cropped private navigation grid, original
+door hinge-to-center transform, raised step and railing. Original game collision
+and friction were not changed. Current game build/85Python/62CTest pass; these
+runtime route edits are private QA only. Dialogue framing remains crowded.
+
+2026-10-21 unit evidence: smoke_toad_reward compiles the verbatim original
+St_Talk_Main with explicit save/sound/dialogue/spawn test seams.118checks cover
+below/at/above20/40/60, normal dialogue/sound waits, Star dispatch parameters,
+position/area, repeat suppression and already-collected/recreated actor cases.
+Native PE audit verifies all3 threshold bytes against local original data.
+62CTest/84Python PASS. This does not prove actual map entry, Star creation,
+collection or disk persistence. Existing QA save has1Star;29 is castle course
+ID, not a Star count. Original reward placements are level4/area4 Star2 at20,
+level5/area1 Star3 at40 andlevel5/area4 Star4 at60, all course29.
+Use isolated, explicitly identified prerequisite saves; derive required Star
+counts/IDs from local original data. Check below-threshold, eligible and
+already-collected branches, actual Star spawn/collection, save/reload and no
+duplicate credit. Preserve the original story/mission gates. Test supported
+variant/companion interactions separately; do not claim broader coverage from
+a basic dialogue-only Toad.
+
+Public source must contain no extracted models/tables or private saves/screens/
+logs/ROM dialogue drafts. If closure grows, refresh reviewed symbol-only support
+and perform fresh-folder kit reconstruction before a new public kit. No root F
+promotion before corresponding gameplay acceptance. Full port remains open.
+
+Model recommendation: Sol High for actor integration because callbacks,
+resource lifetime, collider/shadow ABI and conditional rewards cross several
+original subsystems. Luna Medium can handle bounded repeat/reload checks after
+the implementation is accepted. This recommendation is based on the specific
+missing native connections, not code size or measured model cost/intelligence.

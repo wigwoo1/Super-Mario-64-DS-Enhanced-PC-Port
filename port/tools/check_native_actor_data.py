@@ -69,6 +69,7 @@ def main():
             ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
+            ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
             ('pc_door_profile', 'daDoor_c_classInit', 100, 0x02148164)):
         base, rom = overlay(module)
         native = pe_bytes(args.exe, named(name), 28)
@@ -76,6 +77,23 @@ def main():
             raise ValueError(f'{name}: factory does not point at the native constructor')
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
+
+    # Native Toad's member-function pointers are four bytes on MSVC x86;
+    # its two rows are12bytes each, not the original ARM20byte layout.
+    toad_states=[]
+    for state in ('Idle','Talk'):
+        for phase in ('Init','Main'):
+            prefix=f'?St_{state}_{phase}@daKinopio_c@@'
+            matches={address for name,address in symbols.items() if name.startswith(prefix)}
+            if len(matches)!=1:raise ValueError('Missing/divergent native Toad callback '+prefix)
+            toad_states.append(matches.pop())
+        toad_states.append(0)
+    if struct.unpack('<6I',pe_bytes(args.exe,named('data_ov085_0212fe88'),24))!=tuple(toad_states):
+        raise ValueError('Toad state table does not bind to native methods')
+    base85,rom85=overlay(85)
+    requirements=rom85[0x0212f27c-base85:0x0212f27c-base85+3]
+    if requirements!=bytes((20,40,60)) or pe_bytes(args.exe,named('data_ov085_0212f27c'),3)!=requirements:
+        raise ValueError('Native Toad Star requirements differ from original 20/40/60 thresholds')
 
     from chomp_host import CALLBACKS
     for descriptor,target in CALLBACKS:
@@ -306,7 +324,7 @@ def main():
     next_object = min(address for address in symbols.values() if address > scratch)
     if next_object - scratch < 48:
         raise ValueError('shared Matrix4x3 allocation overlaps the next native object')
-    print('PASS: 3 native message formatters verified; all 4 native held/pressed input pairs share original interior labels; '
+    print('PASS: original Toad 20/40/60 Star thresholds verified; 3 native message formatters verified; all 4 native held/pressed input pairs share original interior labels; '
           'all 4 processed-controller records share the original 24-byte layout and interior labels; '
           'all 4 touch records share their original held/edge/x/y byte lanes; '
           'paired OAM buffers retain +8/+32/+1024 reset labels; '

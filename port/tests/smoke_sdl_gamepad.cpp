@@ -14,13 +14,26 @@ int main(int argc,char **argv) {
         }
         return 0;
     }
+    // Test only the virtual device. Connected user controllers must not win
+    // first-device discovery or make the disconnect assertion nondeterministic.
+    // --watch above deliberately retains ordinary physical-device discovery.
+    const char *physical_backends[]={SDL_HINT_JOYSTICK_HIDAPI,SDL_HINT_JOYSTICK_RAWINPUT,
+        SDL_HINT_JOYSTICK_WGI,SDL_HINT_XINPUT_ENABLED,SDL_HINT_JOYSTICK_DIRECTINPUT,SDL_HINT_JOYSTICK_GAMEINPUT};
+    for(const char *hint:physical_backends) {
+        SDL_SetHintWithPriority(hint,"0",SDL_HINT_OVERRIDE);
+        CHECK(SDL_GetHint(hint) && !std::strcmp(SDL_GetHint(hint),"0"));
+    }
     CHECK(SDL_InitSubSystem(SDL_INIT_GAMEPAD));
+    int isolated_count=0;auto *isolated_ids=SDL_GetGamepads(&isolated_count);
+    CHECK(isolated_count==0);SDL_free(isolated_ids);
     SDL_VirtualJoystickDesc desc{};SDL_INIT_INTERFACE(&desc);
     desc.type=SDL_JOYSTICK_TYPE_GAMEPAD;desc.name="Nintendo Switch Pro Controller QA";
     desc.vendor_id=0x057e;desc.product_id=0x2009;
     desc.naxes=SDL_GAMEPAD_AXIS_COUNT;desc.nbuttons=SDL_GAMEPAD_BUTTON_COUNT;
     desc.button_mask=(1u<<SDL_GAMEPAD_BUTTON_COUNT)-1;desc.axis_mask=(1u<<SDL_GAMEPAD_AXIS_COUNT)-1;
     const auto id=SDL_AttachVirtualJoystick(&desc);CHECK(id);
+    isolated_ids=SDL_GetGamepads(&isolated_count);
+    CHECK(isolated_count==1 && isolated_ids && isolated_ids[0]==id);SDL_free(isolated_ids);
     auto *joy=SDL_OpenJoystick(id);CHECK(joy);
     auto *pad=SDL_OpenGamepad(id);CHECK(pad);
     std::printf("virtual type=%d south label=%d east label=%d\n",SDL_GetGamepadType(pad),SDL_GetGamepadButtonLabel(pad,SDL_GAMEPAD_BUTTON_SOUTH),SDL_GetGamepadButtonLabel(pad,SDL_GAMEPAD_BUTTON_EAST));

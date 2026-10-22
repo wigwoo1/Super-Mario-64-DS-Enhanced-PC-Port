@@ -64,6 +64,24 @@ extern "C" const char *pc_player_state_name(const Player *player)
     return native_state_name(player?player->mState:nullptr);
 }
 
+extern "C" void pc_trace_jump_input(const void *object,const char *where)
+{
+    const char *range=std::getenv("SM64DS_PC_JUMP_INPUT_TRACE");
+    unsigned begin=0,end=0;
+    if(!range || std::sscanf(range,"%u:%u",&begin,&end)!=2)return;
+    const auto tick=ntr::rt_frame();if(tick<begin || tick>end)return;
+    extern unsigned char gActivePlayerSlot;
+    extern unsigned short data_0209f49c, data_0209f49e;
+    const auto *p=static_cast<const Player *>(object);
+    const auto *c=static_cast<const unsigned char *>(object);
+    const unsigned slot=gActivePlayerSlot;
+    const auto held=*reinterpret_cast<const unsigned short *>(reinterpret_cast<const char *>(&data_0209f49c)+slot*24);
+    const auto pressed=*reinterpret_cast<const unsigned short *>(reinterpret_cast<const char *>(&data_0209f49e)+slot*24);
+    std::fprintf(stderr,"[jump input] tick=%llu where=%s slot=%u held=%04x pressed=%04x state=%s flags=%04x crouch=%u phase=%u step=%u air=%u y=%d speed=%d\n",
+        tick,where,slot,held,pressed,pc_player_state_name(p),*reinterpret_cast<const unsigned short *>(c+0x6ce),
+        *reinterpret_cast<const unsigned short *>(c+0x6b0),unsigned(p->mStatePhase),unsigned(p->mStateStep),unsigned(p->mIsAirborne),p->mPosY,p->mHorzSpeed);
+}
+
 extern "C" void pc_trace_player_state_change(const Player *p,const Player::State *oldState,const Player::State *newState,const void *caller)
 {
     const char *range=std::getenv("SM64DS_PC_PLAYER_STATE_TRACE");

@@ -1,0 +1,17 @@
+Virtual controller QA isolation - 2026-10-21
+
+smoke_sdl_gamepad previously selected the first available controller. With an
+Xbox Series X Controller connected, the Nintendo virtual-device test read the
+Xbox instead and failed its exact button assertion. This was a test isolation
+failure; no production controller behavior was changed to make it pass.
+
+The noninteractive test disables physical HIDAPI, RawInput, WGI, XInput,
+DirectInput and GameInput backends using process-local SDL hint overrides,
+before SDL initialization. It asserts zero devices before attaching its
+virtual Nintendo controller and exactly that device afterward. Existing button,
+axis, trigger, label and disconnect assertions remain. --watch returns before
+isolation and continues to observe real controllers normally.
+
+The revised target compiles and passes10consecutive runs; the full62-test
+native suite passes afterward. This validates the virtual-device fixture and
+does not establish new physical Bluetooth/controller hardware acceptance.

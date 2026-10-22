@@ -36,6 +36,10 @@ game assets, personal saves, or proprietary compiler is included here.
   repeat Star credit, pause/re-entry and selected audio flows have isolated
   runtime checks. See the dated `port/docs/` checkpoints for exact coverage and
   limitations; no single checkpoint establishes a complete port.
+- The original 20-Star basement Toad reward has a verified native dialogue,
+  Star pickup, save/reload, and repeat interaction without duplicate credit.
+  The original 40- and 60-Star placements and the companion reward branch still
+  need runtime checks.
 - Native Chain Chomp, its stump/fence release and Star reward, plus castle and
   Battlefield tree visibility/reload, have selected isolated runtime checks.
   The stay-after-Star option and free camera also have bounded tests, but broader

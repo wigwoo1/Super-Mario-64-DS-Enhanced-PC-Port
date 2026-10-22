@@ -14,6 +14,7 @@ import sys
 
 
 DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
+                 "daKinopio_c_classInit", "_ZN11daKinopio_cD1Ev",
                  "daSBird_c_classInit", "_ZN9daSBird_cD1Ev",
                  "daCnn_c_classInit", "daWbm_c_classInit", "daTree_c_classInit",
                  "daObjMc_Metalnet_c_classInit",
@@ -389,6 +390,10 @@ def main() -> int:
                 sys.path.insert(0, str(root / "port/tools"))
                 import hostgen  # pylint: disable=import-outside-toplevel
                 transformed, rewrites = hostgen.transform(markerless)
+                if path.name=='d_a_kinopio.cpp':
+                    import toad_host
+                    transformed=toad_host.transform(root,transformed)
+                    rewrites+=1
                 if path.name in ('d_a_s_bird.cpp','d_a_s_bird_head.cpp'):
                     import bird_host
                     transformed=bird_host.transform(root,transformed,path.name)
@@ -489,6 +494,8 @@ def main() -> int:
                 if path.name == 'Player.cpp':
                     import tree_host
                     transformed = tree_host.transform_player(transformed)
+                    import jump_input_host
+                    transformed = jump_input_host.transform(transformed)
                     rewrites += 1
                 if path.name == 'd_a_tree.cpp':
                     import tree_host

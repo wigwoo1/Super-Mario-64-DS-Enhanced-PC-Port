@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.16)
 project(sm64ds-port C CXX ASM_MASM)
 include(CTest)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+set(TOAD_REWARD_ORIGINAL "${CMAKE_BINARY_DIR}/toad-reward-test/toad_reward_original.inc")
+add_custom_command(OUTPUT "${TOAD_REWARD_ORIGINAL}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_reward_test_source.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../src/game/actors/d_a_kinopio.cpp" "${TOAD_REWARD_ORIGINAL}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_reward_test_source.py"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../src/game/actors/d_a_kinopio.cpp"
+    VERBATIM)
+add_executable(smoke_toad_reward tests/smoke_toad_reward.cpp "${TOAD_REWARD_ORIGINAL}")
+target_include_directories(smoke_toad_reward PRIVATE "${CMAKE_BINARY_DIR}/toad-reward-test")
+add_test(NAME smoke_toad_reward COMMAND smoke_toad_reward)
 if(WIN32)
     execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/sdl3_dependency.py"
         "${CMAKE_BINARY_DIR}/controller-deps" RESULT_VARIABLE SDL3_RESULT OUTPUT_VARIABLE SDL3_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -973,6 +983,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/dialogue_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/bird_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_host.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/lakitu_host.py"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/level_overlay_tables.py"
@@ -1015,6 +1026,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/dialogue_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/bird_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lakitu_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
     OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/camera_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"

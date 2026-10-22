@@ -278,6 +278,8 @@ extern "C" unsigned char g_profile_CANNON_SHUTTER[];
 extern "C" unsigned char g_profile_BOMBKING[];
 extern "C" unsigned char g_profile_TREE[];
 extern "C" unsigned char g_profile_SBIRD[];
+extern "C" unsigned char g_profile_KINOPIO[];
+extern "C" void pc_toad_init_resources();
 extern "C" unsigned char g_profile_BOMBHEI[];
 extern "C++" { extern SharedFilePtr data_ov102_0214e9c0, data_ov102_0214e9c8; }
 extern "C" void *daYegg_c_classInit();
@@ -435,6 +437,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[338] = &pc_castle_water_profile;
     data_020a4bb8_storage[286] = g_profile_TREE;
     data_020a4bb8_storage[343] = g_profile_SBIRD;
+    pc_toad_init_resources();
+    data_020a4bb8_storage[185] = g_profile_KINOPIO;
     data_020a4bb8_storage[181] = &pc_buddy_profile;
     const char *qa_no_shutter=getenv("SM64DS_PC_TEST_NO_SHUTTER");
     const char *qa_only=getenv("SM64DS_PC_AUTOMATION_ONLY");

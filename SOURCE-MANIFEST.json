@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "5b21dde10dfc309ae133e7dd713933594c40051197de97ac85e04b991d2f3ee5",
-      "bytes": 78976
+      "sha256": "af936517d9ca88611dd8452e5754ce0a5dfb0191e1f45e363062cf615d324944",
+      "bytes": 79864
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6549,6 +6549,11 @@
       "bytes": 4675
     },
     {
+      "path": "port/docs/native-controller-qa-isolation-2026-10-21.txt",
+      "sha256": "f46c80f0644c9d82cb818d7954e6779b04f2abef1f29d0678b35f2901a053b37",
+      "bytes": 1019
+    },
+    {
       "path": "port/docs/native-controller-records-checkpoint-2026-10-15.txt",
       "sha256": "c7c96cc8471724201b9a8ca19705e79796df882fdfca34c04b03d5a38ac8a013",
       "bytes": 4645
@@ -6774,6 +6779,11 @@
       "bytes": 4129
     },
     {
+      "path": "port/docs/native-toad-integration-plan-2026-10-21.txt",
+      "sha256": "03919f1d773192872400364e7ed3959142cc97b36bc6f56fb7168e5d4e765c06",
+      "bytes": 11426
+    },
+    {
       "path": "port/docs/native-touch-menu-controller-2026-10-20.txt",
       "sha256": "bc99f6493fdc36e4246494c2d3f73fb312896aaa18aa9fd9eba47ae2c5e7230d",
       "bytes": 2863
@@ -6840,8 +6850,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "2e66213973cdaa7a6574e89c2a295cb95426ff3f461a6e0a80e6893a08281d06",
-      "bytes": 5646
+      "sha256": "97585a299509a0a76f11223542327592f781f4bf6512a007aecf7e5847fa803c",
+      "bytes": 5902
     },
     {
       "path": "port/docs/restored-build-checkpoint-2026-10-17.txt",
@@ -6990,8 +7000,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "509c97e5cf80bd22e5e1f25533e585e75bf924f16c3f51a63fddd4d0d6760850",
-      "bytes": 35240
+      "sha256": "54f20e091b9f1376c88fbe5fddb4522c0f975c7f0e06f4cdd0de80f0c5a87aef",
+      "bytes": 35410
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7280,8 +7290,8 @@
     },
     {
       "path": "port/hal/player_state_callbacks.cpp",
-      "sha256": "eb42b1c1aa2d5b72b51121def12b25387c19386f3fb2c15d497111d1b22b21b5",
-      "bytes": 4735
+      "sha256": "495e20e86f15905a491c9f04c46c0a953758e1f8c239e2780ad1432daf88279d",
+      "bytes": 5976
     },
     {
       "path": "port/hal/player_state_methods.inc",
@@ -7375,8 +7385,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "526be730a0a4296dda79e3eefc45408e4cc5b4b1b12bd56673d83e36223b1a9d",
-      "bytes": 108356
+      "sha256": "b41011f94b35af0f913a4f6c7aae35dd44e691fcfed5ebbd8a1ba034b830fab9",
+      "bytes": 113380
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7915,8 +7925,8 @@
     },
     {
       "path": "port/tests/smoke_sdl_gamepad.cpp",
-      "sha256": "55f8923a43737ba1f01bf24bcfae98e92ce06b9a4e21313a92c60299a0311455",
-      "bytes": 3567
+      "sha256": "f769236899aa8bdf52316576cb5936ce69388f236c31ad2da3827c3abfd21dec",
+      "bytes": 4467
     },
     {
       "path": "port/tests/smoke_soak.cpp",
@@ -7957,6 +7967,11 @@
       "path": "port/tests/smoke_texture_streaming.cpp",
       "sha256": "831885690a47de5466da0ce870e390c6f8e1d458cece6e65cd537852169d6e4a",
       "bytes": 8668
+    },
+    {
+      "path": "port/tests/smoke_toad_reward.cpp",
+      "sha256": "234b55a2fa98b2247a934b97b1a66e8adfc69e8851c16c5342186ca7d40c1a46",
+      "bytes": 5767
     },
     {
       "path": "port/tests/smoke_touch_state.cpp",
@@ -8084,6 +8099,16 @@
       "bytes": 1380
     },
     {
+      "path": "port/tests/test_toad_host.py",
+      "sha256": "c73467fbda5627e870d0623787da00c2452f4211aadae8e43dc9d7009655361d",
+      "bytes": 2821
+    },
+    {
+      "path": "port/tests/test_toad_reward_test_source.py",
+      "sha256": "92b19d9fe8148a944e8c669a6f13ee087d98086edd42601a3a2288fc36fe92ed",
+      "bytes": 1021
+    },
+    {
       "path": "port/third_party/sseqplayer/Channel.cpp",
       "sha256": "63eccb504bd6b6a96f0fd8ad401f0e2a701788c9a1b81ab61d5f6597ebafca43",
       "bytes": 26997
@@ -8205,8 +8230,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "c759b988e098308b4a99eb22224f12e2794d92966598a4607b22cd2c18cdef4e",
-      "bytes": 38657
+      "sha256": "d24c8d2c15f19a24caeddee72ce5398de26c54e2a5105e0cd13527b549e272fe",
+      "bytes": 39027
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8345,8 +8370,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "2e422ec59deeac901b9dfc1880a2c54c0cf7b9d859038a78d29f25754565aec2",
-      "bytes": 21463
+      "sha256": "c6bc4fdcc3d12fa666c2f5653ddb666a2b8cd4374e95b67b740d1ae6bde4236e",
+      "bytes": 22621
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8504,6 +8529,11 @@
       "bytes": 945
     },
     {
+      "path": "port/tools/jump_input_host.py",
+      "sha256": "df3dde1edc13ce095f1e7036433e8c89a40c9699a08ffe61a0c899664913c882",
+      "bytes": 676
+    },
+    {
       "path": "port/tools/lakitu_host.py",
       "sha256": "ea818214232d679a9572092c0cdcf7ae42b85b6ca4f8121b639d23eb231fa9e1",
       "bytes": 4109
@@ -8520,8 +8550,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "fed90d63b10cb1584af34390798bf41cd1a9ad63b7f52cbf61becff3f02c0b43",
-      "bytes": 26425
+      "sha256": "abaf5ee94b2d0eff1b802a1011fbbf0326e0ead2b3eed053901c6a275019a402",
+      "bytes": 26542
     },
     {
       "path": "port/tools/linkage.py",
@@ -8550,8 +8580,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "c37fb3f41bd9206df679abc11b03759485d05973b1278dfe7cda5bcf1b0bc32c",
-      "bytes": 6745
+      "sha256": "e3b26c066a57e30c216d115c23e916235d26792e0db7edea043e0ff42e332f4b",
+      "bytes": 6965
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -8682,6 +8712,16 @@
       "path": "port/tools/title_overlay_data.py",
       "sha256": "db31e2dc1570bd0ebf3c320592237a8d37878964e08403f7dcaf8135d9924e6c",
       "bytes": 3027
+    },
+    {
+      "path": "port/tools/toad_host.py",
+      "sha256": "a6e820811f2985b244c5f95f4e98551541b6818f80e6d409cc49c37854be0b86",
+      "bytes": 5390
+    },
+    {
+      "path": "port/tools/toad_reward_test_source.py",
+      "sha256": "3c750b879ca37327c9d0a1ecdfe8d5f8b5c21ac1612a62e2d9ac5ca13479df64",
+      "bytes": 1038
     },
     {
       "path": "port/tools/tree_host.py",
