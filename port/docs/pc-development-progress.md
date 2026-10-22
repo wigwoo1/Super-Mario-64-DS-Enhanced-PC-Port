@@ -2008,3 +2008,33 @@ falls below bridge. No shot launched in those checks. Stop route guesses and
 derive current collision/mission evidence. F65file separate diagnostic verified,
 mainrootB643 preserved. Shared16hardware channels/masks/heaps remain unfinished.
 See native-cannon-player-audio-2026-10-21.txt for exact scope.
+
+## 2026-10-22: Minimap counters and coin-audio replay follow-up
+
+The native HUD now shows star, coin and life counts beside the minimap. The
+rows remain visible with the map disabled; icon sizing follows minimap scale.
+The latest `sm64ds_pc.exe` (SHA256
+`2DC70880D8B3443D5F5A702548A8D0DB61676C53EE8BFCEFA4549282AD8822D7`) and
+`smoke_minimap_hud` build passed. Focused CTests `smoke_minimap_hud`,
+`smoke_gpu` and `smoke_video` passed. Two isolated-save runtime replays exited
+0 with audio muted and screenshots show the HUD with and without the map. The
+first replay showed 1 star, 0 coins and 4 lives. This did not demonstrate a
+nonzero coin value or a live coin-count change.
+
+A further 5,400-frame isolated Battlefield/Chomp route on that exact executable
+exited 0, had zero mixer errors, and submitted zero nonzero audio samples to the
+device (`SM64DS_PC_AUDIO_MUTED=1`). Screenshots `work/native-coin-audio-final-
+20261022/chomp-3320.bmp` and `chomp-5200.bmp` show the counters before and after
+course entry; the player did not collect a coin, so this run does not verify a
+coin sound or nonzero coin HUD count. An older private replay on a different
+executable logged archive 3 / effect 17 starting at audio tick 3324 and ending
+naturally at 3356, before its 60-tick safety stop, but captured yellow-coin
+counts remained 4 alive out of 4 around those ticks. That event cannot be
+claimed as a coin pickup. Do not change effect duration from this evidence.
+
+The active goal's upstairs 60-Star Toad reward/save/reload/no-duplicate-credit
+milestone is already covered by `work/native-muted-audio-walk-toad60-native-
+earned-reload-no-duplicate-r1-20261021/acceptance.json`; do not repeat it.
+Next gameplay check: create a route that actually contacts a known coin, then
+confirm the live HUD count increments and correlate its sound start/completion
+to that contact. Keep all tests muted and save files isolated.

@@ -385,7 +385,7 @@ void glsw_set_letter_overlay(bool active){letter_overlay=active;}
 void glsw_set_anisotropic_filtering(uint8_t value){anisotropic=value==2||value==4||value==8||value==16?uint8_t(std::min<float>(value,max_aniso)):0;}
 uint8_t glsw_anisotropic_filtering(){return anisotropic;}
 bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,
-                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay) {
+                   const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay,const uint32_t *hud) {
     stats={};auto start=std::chrono::steady_clock::now();
     if(!context||s.width<256||s.height<192||s.width>3840||s.height>2160||!resize(s.width,s.height))return false;
     readback_ready=false;gl.UseProgram(program);gl.BindFramebuffer(FBO,framebuffer);
@@ -429,6 +429,10 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
         overlay_state(true);
         const float x=s.minimap_x/1000.f,y=s.minimap_y/1000.f,size=s.minimap_scale/1000.f;
         quad(map_image,false,x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2);
+    }
+    if(!screens&&hud){
+        gl.BindTexture(GL_TEXTURE_2D,map_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,hud);
+        overlay_state(true);quad(map_image,false,-1,1,1,-1);
     }
     stats.cache_bytes=cache_bytes;stats.cache_budget=cache_budget;
     stats.cpu_us=std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count();
@@ -495,8 +499,8 @@ void glsw_close() {
     worker.thread=worker.wake=worker.done=nullptr;worker.stop=false;worker.job={};
 }
 bool glsw_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool geometry,
-                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool top,bool cache_gameplay) {
-    bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,top,cache_gameplay);})&&result;
+                 const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,bool top,bool cache_gameplay,const uint32_t *hud) {
+    bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,top,cache_gameplay,hud);})&&result;
 }
 bool glsw_present(unsigned width,unsigned height,bool aspect) {
     bool result=false;return submit([&]{result=present_worker(width,height,aspect);})&&result;

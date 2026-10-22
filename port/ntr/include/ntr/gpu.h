@@ -12,7 +12,8 @@ uint8_t gpu_anisotropic_filtering();
 bool gpu_render(const Framebuffer &base, const uint32_t *minimap,
                 const VideoSettings &settings, bool geometry, const uint32_t *foreground = nullptr,
                 const DualScreenLayout *screens = nullptr, const Framebuffer *sub = nullptr,
-                bool engine_a_on_top = true, bool cache_gameplay = false);
+                bool engine_a_on_top = true, bool cache_gameplay = false,
+                const uint32_t *minimap_hud = nullptr);
 // Screen-authored menus use their original full-frame projection.
 void gpu_set_menu_scene(bool active);
 void gpu_set_letter_overlay(bool active);

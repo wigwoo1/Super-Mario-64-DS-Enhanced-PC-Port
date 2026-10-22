@@ -8,7 +8,7 @@ void glsw_set_letter_overlay(bool active);
 void glsw_set_anisotropic_filtering(uint8_t level);
 uint8_t glsw_anisotropic_filtering();
 bool glsw_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,
-                 const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool);
+                 const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool,const uint32_t *);
 bool glsw_present(unsigned width,unsigned height,bool preserve_aspect);
 bool glsw_readback(std::vector<uint32_t> &,unsigned &,unsigned &);
 bool glsw_readback_gameplay(std::vector<uint32_t> &,unsigned &,unsigned &);

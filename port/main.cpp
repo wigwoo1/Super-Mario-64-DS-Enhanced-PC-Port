@@ -644,6 +644,40 @@ static void capture_waterbomb_state() {
     }
 }
 
+// Opt-in coin position telemetry for isolated gameplay-route validation.
+// This only reads live actor fields and writes when explicitly requested.
+static void capture_coin_actors() {
+    const char *path=std::getenv("SM64DS_PC_COIN_ACTOR_CAPTURE");
+    if(!path || !*path)return;
+    static FILE *file=nullptr;
+    static uint64_t previous=~uint64_t(0);
+    const auto tick=ntr::rt_frame();
+    if(tick==previous || tick%10!=0)return;
+    previous=tick;
+    if(!file) {
+        file=std::fopen(path,"w");
+        if(!file)return;
+        std::fputs("tick,level,player_x,player_y,player_z,coin_id,coin_uid,alive,flags,x,y,z,heading,clip_result,clip_distance\n",file);
+    }
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    unsigned live=0;
+    for(unsigned kind : {288u,289u,290u}) {
+        for(auto *coin=dActor_c::FindWithActorID(kind,nullptr);coin;coin=dActor_c::FindWithActorID(kind,coin)) {
+            if(coin->aliveState!=1)continue;
+            ++live;
+            std::fprintf(file,"%llu,%d,%d,%d,%d,%u,%u,%u,%08x,%d,%d,%d,%d,%u,%d\n",
+                static_cast<unsigned long long>(tick),int(data_0209f2f8),
+                player?player->mPosX:0,player?player->mPosY:0,player?player->mPosZ:0,
+                kind,coin->uniqueID,unsigned(coin->aliveState),unsigned(coin->mFlags),
+                coin->mPosX,coin->mPosY,coin->mPosZ,coin->mAngleY,unsigned(coin->mClipResult),coin->mClipDistance);
+        }
+    }
+    if(!live)std::fprintf(file,"%llu,%d,%d,%d,%d,0,0,0,0,0,0,0,0,0,0\n",
+        static_cast<unsigned long long>(tick),int(data_0209f2f8),
+        player?player->mPosX:0,player?player->mPosY:0,player?player->mPosZ:0);
+    std::fflush(file);
+}
+
 extern "C" int pc_native_collision_capture_enabled(void) {
     const char *path=std::getenv("SM64DS_PC_COLLISION_CAPTURE");
     return path && *path;
@@ -1589,6 +1623,7 @@ static bool trace_script_progress(uint64_t frame)
         }
     }
     capture_waterbomb_state();
+    capture_coin_actors();
     if (const char *path = std::getenv("SM64DS_PC_BUDDY_CAPTURE")) {
         static FILE *file=nullptr;
         static uint64_t previous=~uint64_t(0);

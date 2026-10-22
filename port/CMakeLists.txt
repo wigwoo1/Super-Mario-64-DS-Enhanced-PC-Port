@@ -135,7 +135,7 @@ add_library(ntr STATIC
     ntr/texture_assets.cpp
     hal/oam_buffers.asm
     hal/controller_state.asm
-    ntr/io.cpp ntr/gx.cpp ntr/gpu.cpp ntr/gl_software.cpp ntr/texture.cpp ntr/ppu.cpp ntr/video.cpp ntr/input.cpp ntr/sdl_gamepad.cpp ntr/lz77.cpp
+    ntr/io.cpp ntr/gx.cpp ntr/gpu.cpp ntr/gl_software.cpp ntr/minimap_hud.cpp ntr/texture.cpp ntr/ppu.cpp ntr/video.cpp ntr/input.cpp ntr/sdl_gamepad.cpp ntr/lz77.cpp
     ntr/rt.cpp ntr/runtime.cpp ntr/fs.cpp ntr/bmd.cpp ntr/screen_layout.cpp)
 target_include_directories(ntr PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 if(MSVC)
@@ -178,6 +178,9 @@ add_test(NAME smoke_pause_settings COMMAND smoke_pause_settings)
 add_executable(smoke_camera_controls tests/smoke_camera_controls.cpp)
 target_include_directories(smoke_camera_controls PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 add_test(NAME smoke_camera_controls COMMAND smoke_camera_controls)
+add_executable(smoke_minimap_hud tests/smoke_minimap_hud.cpp ntr/minimap_hud.cpp)
+target_include_directories(smoke_minimap_hud PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
+add_test(NAME smoke_minimap_hud COMMAND smoke_minimap_hud)
 add_executable(smoke_render_distance tests/smoke_render_distance.cpp)
 target_include_directories(smoke_render_distance PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")

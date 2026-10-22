@@ -16,11 +16,18 @@ all times beside the minimap. Place the counters on its side, and scale their
 icons with the minimap size setting.
 
 These are user-reported failures, not claims from a muted automated test. The
-ROM-free kit refresh records the current code and does not resolve these issues.
-Keep them open for gameplay/audio work; do not advertise camera, pause
-confirmation or these sound cues as accepted. Automated runtime checks remain
-muted and therefore cannot establish listening accuracy. The flower portal
-interaction and minimap-adjacent counters remain open gameplay/UI work.
+camera lens and pause confirmation now pass selected software replays with
+muted tests; physical Nintendo Switch Pro acceptance remains open. The flower
+portal implementation passes the Battlefield destination/re-entry replay and
+has an installed checkpoint, though other course warps are not covered.
+Minimap-adjacent counters are implemented and visible in a muted gameplay
+screenshot. A real coin pickup has not yet been correlated with a nonzero HUD
+counter, so that data update still needs an in-game check.
+
+Automated checks do not establish sound quality. Title/save/Chomp event
+plumbing produces non-silent PCM in selected runs, while Lakitu cloud timbre,
+sound fidelity and some mixed-scene clipping remain open. Keep hardware input
+and listening acceptance pending until manually checked.
 
 Camera/pause follow-up: native-camera-pause-followup-2026-10-22.txt records a
 normal-gameplay lens repair and separate menu-input handling. Selected castle

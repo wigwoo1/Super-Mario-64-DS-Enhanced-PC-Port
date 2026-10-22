@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "baeaffa443ca4e77e1ad9dc4f50647083b1c29ba01e45dc2d68a974f571a901c",
-      "bytes": 80797
+      "sha256": "2c69e396267e1012100961bf3a28b063d420eb2a755a66859964739e8e75be68",
+      "bytes": 81054
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6845,8 +6845,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "0bcd1ab0dcfafc915207d7b8449057907e61fb53edfa003080929e6f188358c2",
-      "bytes": 261372
+      "sha256": "c73fc27180212ae4220abcf94ea2f6a012511cdb39be6f8e8d6957e0f8f9f80d",
+      "bytes": 263285
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -6870,8 +6870,8 @@
     },
     {
       "path": "port/docs/player-feedback-2026-10-22.txt",
-      "sha256": "9013361ccaf3d9f50f23da100846d92853b7e1b47cd4d3891f61137f2dd164ff",
-      "bytes": 2087
+      "sha256": "d59f8149b2225c0dddcc6058498a4f5053a1329fbf53b0fd769d5f891f26fb42",
+      "bytes": 2509
     },
     {
       "path": "port/docs/power-star-eyes-checkpoint-2026-10-17.txt",
@@ -7355,8 +7355,8 @@
     },
     {
       "path": "port/hal/stage_graph_state.cpp",
-      "sha256": "8482b911036a7284e4d95baa50ad77173f09d1dcdc77ccc570e373066aa1916e",
-      "bytes": 7467
+      "sha256": "0196592eecdef1d9f48d3551bf3184a95819ce3a131f2e8df9e467f0b3b88a05",
+      "bytes": 7993
     },
     {
       "path": "port/hal/stage_graph_state.h",
@@ -7435,8 +7435,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "76abdb26c553d2ea946fea201757f6400562dc3781bb8789a811428126b8566c",
-      "bytes": 117367
+      "sha256": "7de490ecc6c938087033c3cdf01b447a16c08ff61cb53c9dcc636841c2294dad",
+      "bytes": 119077
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7455,13 +7455,13 @@
     },
     {
       "path": "port/ntr/gl_software.cpp",
-      "sha256": "2096d058aa676241b5e13386dd8ffc9b8d02c6c7717ea44b3dbbeb60d0969340",
-      "bytes": 31376
+      "sha256": "cc572e6f8dcfc21b8b000af1782e0173880f484f655296f8cec5d7b2e082b016",
+      "bytes": 31643
     },
     {
       "path": "port/ntr/gpu.cpp",
-      "sha256": "12677bedb0e3f9aec68bdaac07c328ada5547cac26997e9fc0b853b7e3d4a6d7",
-      "bytes": 44386
+      "sha256": "c97d95328fd2b68132a6a0a0df441d926bbd18040b6e1720998332202947fdc3",
+      "bytes": 44748
     },
     {
       "path": "port/ntr/gx.cpp",
@@ -7505,13 +7505,13 @@
     },
     {
       "path": "port/ntr/include/ntr/gl_software.h",
-      "sha256": "7879aa39c6c67c51b757d805d7cadd798f62029b5ae246909fdbbd88e9ab8f8e",
-      "bytes": 849
+      "sha256": "0a0f5c1d1e09a429a30f9e27f25941fabebc1c5e18761c08e07516851c4258c7",
+      "bytes": 866
     },
     {
       "path": "port/ntr/include/ntr/gpu.h",
-      "sha256": "25c99dab8e78f88ca5b089121ed9f9b88b0187476bfbadba2aa8f834098ee070",
-      "bytes": 1805
+      "sha256": "36a9577f925b2732f8a36790daa78cf44f4b3651516afcdfa721911d542703a7",
+      "bytes": 1860
     },
     {
       "path": "port/ntr/include/ntr/gx.h",
@@ -7547,6 +7547,11 @@
       "path": "port/ntr/include/ntr/minimap_drag.h",
       "sha256": "5902bdfa99c0c03f792f246c288090522a2ad0a7a112b551472f7ef720e29f71",
       "bytes": 901
+    },
+    {
+      "path": "port/ntr/include/ntr/minimap_hud.h",
+      "sha256": "3c7aba5a7eb80363a072e8e7fe6beaa548a8d304126b1ba908b1ccee87352ed8",
+      "bytes": 622
     },
     {
       "path": "port/ntr/include/ntr/mmio.h",
@@ -7595,8 +7600,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "a2234fe1775524bea5578c2b4f66447a702556a44bc9f326eac43565e3389a4a",
-      "bytes": 4356
+      "sha256": "cc07609082f99908313373a6ec2800739abfd5cba65fa1440077932e47c7ac3b",
+      "bytes": 4531
     },
     {
       "path": "port/ntr/input.cpp",
@@ -7612,6 +7617,11 @@
       "path": "port/ntr/lz77.cpp",
       "sha256": "7a97bf330635e8285b6c621fed353b6bac5679ef93bfbc96b3bd191f8b2776af",
       "bytes": 3101
+    },
+    {
+      "path": "port/ntr/minimap_hud.cpp",
+      "sha256": "07984eb9836650210d94c4aafda8564f43dfe1bb7561464b0eaf13db3b1fb737",
+      "bytes": 7178
     },
     {
       "path": "port/ntr/ppu.cpp",
@@ -7675,8 +7685,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "de14b394392668e867349246e2ce14a315f1d3812378135c60d7cb4eaa2ca018",
-      "bytes": 51643
+      "sha256": "22c054410a5008efa266e4a5658bbbc29d03252da013ae36c90774ad37737856",
+      "bytes": 53069
     },
     {
       "path": "port/README.md",
@@ -7897,6 +7907,11 @@
       "path": "port/tests/smoke_minigame_layout.cpp",
       "sha256": "0ecc4a65e1299cb790bd63bc186f90f7d73880cb881fe96c975c024a145f1237",
       "bytes": 2022
+    },
+    {
+      "path": "port/tests/smoke_minimap_hud.cpp",
+      "sha256": "97cbee89236d9da82b0d79a96c7f0827a77d0f191d50e3842dec44e74c0838fa",
+      "bytes": 1551
     },
     {
       "path": "port/tests/smoke_model.cpp",

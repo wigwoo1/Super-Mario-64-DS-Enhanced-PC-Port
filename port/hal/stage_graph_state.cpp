@@ -28,6 +28,10 @@ extern unsigned char data_0209f2c4;
 extern void *data_0209f394[];
 extern unsigned char data_0209f294,data_0209f20c;
 extern int data_0209fc48;
+extern unsigned char data_0209f250;
+extern signed char data_0209f2f4;
+extern short data_0209f358[];
+extern unsigned char NumStars(void);
 // The C IRQ/OAM shards use cdecl tables. The minigame registry is a real
 // native C++ object, whose virtual methods require the MSVC thiscall ABI.
 extern signed char data_0208e42c;
@@ -58,6 +62,15 @@ void pc_stage_graph_prepare()
     // Upload this active Stage callback's latest transform before scanout.
     const bool active = data_0209d4a8 == &data_0209f3c4;
     ntr::video_set_minimap_gameplay(active);
+#if defined(SM64DS_GAME_TARGET)
+    const unsigned player_slot=data_0209f250<4?data_0209f250:0;
+    const int coin_count=data_0209f358[player_slot];
+    const int life_count=data_0209f2f4;
+    ntr::video_set_minimap_counters(active,NumStars(),
+        unsigned(coin_count<0?0:coin_count),unsigned(life_count<0?0:life_count));
+#else
+    ntr::video_set_minimap_counters(false,0,0,0);
+#endif
     const bool paused = active && data_0209f2c4 != 0;
     bool custom_settings = false;
 #if defined(SM64DS_GAME_TARGET)

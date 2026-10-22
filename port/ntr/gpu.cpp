@@ -595,8 +595,8 @@ void gpu_set_anisotropic_filtering(uint8_t level) {
 }
 uint8_t gpu_anisotropic_filtering() {return using_gl_software?glsw_anisotropic_filtering():anisotropic_level;}
 bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,const uint32_t *foreground,
-                const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay) {
-    if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,engine_a_on_top,cache_gameplay);
+                const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay,const uint32_t *hud) {
+    if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,engine_a_on_top,cache_gameplay,hud);
     frame_stats={};
     struct Timer {
         std::chrono::steady_clock::time_point start=std::chrono::steady_clock::now();
@@ -663,6 +663,11 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
         // Preserve the old overlay's proportional layout in both dimensions.
         if(!quad(map_texture.view.Get(),nearest_clamp.Get(),x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2)) return false;
     }
+    if(!screens && hud) {
+        context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
+        context->UpdateSubresource(map_texture.resource.Get(),0,nullptr,hud,SCREEN_W*4,0);
+        if(!quad(map_texture.view.Get(),nearest_clamp.Get(),-1,1,1,-1))return false;
+    }
     context->PSSetShaderResources(0,1,&null_view);
     return true;
 }
@@ -721,7 +726,7 @@ bool gpu_open(void *,bool,VideoRenderer) { return false; }
 void gpu_close() {}
 void gpu_set_anisotropic_filtering(uint8_t) {}
 uint8_t gpu_anisotropic_filtering() { return 0; }
-bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool) { return false; }
+bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,const DualScreenLayout *,const Framebuffer *,bool,bool,const uint32_t *) { return false; }
 void gpu_set_menu_scene(bool) {}
 void gpu_set_letter_overlay(bool) {}
 bool gpu_present(unsigned,unsigned,bool) { return false; }

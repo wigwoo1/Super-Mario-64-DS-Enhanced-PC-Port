@@ -8,6 +8,7 @@
 #include "ntr/rt.h"
 #include "ntr/texture.h"
 #include "ntr/minimap_drag.h"
+#include "ntr/minimap_hud.h"
 #include "ntr/menu_focus.h"
 
 #include <algorithm>
@@ -49,6 +50,8 @@ bool g_editor_suppress_pointer=false;
 uint64_t g_editor_cache_tick=~uint64_t(0);
 MinimapDrag g_editor_drag;
 bool g_minimap_gameplay = false;
+struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0;};
+MinimapCounters g_minimap_counters;
 bool g_cutscene_letter = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
@@ -549,6 +552,9 @@ void video_set_minimap_gameplay(bool active) {
     }
     g_minimap_gameplay = active;
 }
+void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives) {
+    g_minimap_counters={active,stars,coins,lives};
+}
 void video_set_menu_focus(int left,int top,int right,int bottom) {
     g_focus_left=left;g_focus_top=top;g_focus_right=right;g_focus_bottom=bottom;
 }
@@ -865,6 +871,7 @@ bool video_present_frame() {
         g_output_width=g_settings.width;g_output_height=g_settings.height;
     }
     std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_map_pixels{};
+    static std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_hud_pixels{};
 
     if (video_minimap_visible()) {
         const Framebuffer *map = &g_bottom;
@@ -923,11 +930,28 @@ bool video_present_frame() {
         }
     }
 
+    const bool hud_visible=g_minimap_counters.active && !g_pause_screen && !dual &&
+        !g_minigame_active && !g_cutscene_letter;
+    minimap_hud_build(gpu_hud_pixels.data(),SCREEN_W,SCREEN_H,g_settings,hud_visible,
+                      g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives);
+    if(!g_gpu&&hud_visible)
+        minimap_hud_blend(g_output.data(),gpu_hud_pixels.data(),SCREEN_W,SCREEN_H);
+    if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_COUNTERS_TRACE")) {
+        static bool reported=false;
+        if(!reported&&trace[0]&&trace[0]!='0'&&rt_frame()>=1800&&hud_visible) {
+            std::fprintf(stderr,"[minimap counters] tick=%llu stars=%u coins=%u lives=%u scale=%u enabled=%d\n",
+                static_cast<unsigned long long>(rt_frame()),g_minimap_counters.stars,
+                g_minimap_counters.coins,g_minimap_counters.lives,g_settings.minimap_scale,int(g_settings.minimap));
+            std::fflush(stderr);reported=true;
+        }
+    }
+
     if (g_gpu) {
         const auto submit_start=std::chrono::steady_clock::now();
         if (!gpu_render(main_view,video_minimap_visible()?gpu_map_pixels.data():nullptr,
                         g_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
-                        dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay) || !gpu_present(width,height,dual)) {
+                        dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay,
+                        hud_visible?gpu_hud_pixels.data():nullptr) || !gpu_present(width,height,dual)) {
             std::fprintf(stderr,"[video] native GPU presentation failed; reverting to software on the next frame\n");
             gpu_close();g_gpu=false;
             texture_set_backend(TextureBackend::SoftwareReference);
