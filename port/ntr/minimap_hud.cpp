@@ -4,12 +4,12 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 
 namespace ntr {
 namespace {
-constexpr uint32_t kPanel = 0xd9201408u;
-constexpr uint32_t kPanelEdge = 0xff5d3b18u;
 constexpr uint32_t kText = 0xfffff2beu;
+constexpr uint32_t kTextOutline = 0xd0000000u;
 MinimapHudArt art;
 constexpr std::array<std::array<unsigned char,7>,10> kDigits7{{
     {{14,17,19,21,25,17,14}},{{4,12,4,4,4,4,14}},{{14,17,1,2,4,8,31}},
@@ -27,23 +27,46 @@ void rect(uint32_t *pixels,unsigned width,unsigned height,int x,int y,int w,int 
     for(int py=0;py<h;++py)for(int px=0;px<w;++px)pixel(pixels,width,height,x+px,y+py,color);
 }
 
-void outline_rect(uint32_t *pixels,unsigned width,unsigned height,int x,int y,int w,int h,uint32_t color) {
-    rect(pixels,width,height,x,y,w,1,color);rect(pixels,width,height,x,y+h-1,w,1,color);
-    rect(pixels,width,height,x,y,1,h,color);rect(pixels,width,height,x+w-1,y,1,h,color);
-}
-
 void number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,unsigned value,
             int cell_width,int cell_height) {
     char text[12]{};std::snprintf(text,sizeof(text),"%u",std::min(value,999u));
+    const int bold_x=std::max(1,cell_width/5);
+    // Keep a visible outer rim beyond the rightward bold pass. At 720p this
+    // is a few output pixels; it grows proportionally for 4K HUD rendering.
+    const int outline_x=bold_x+2,outline_y=std::max(2,cell_height/3);
     int cursor=x;
+    // Draw the thin outline for the complete number first so neighboring
+    // glyphs cannot paint over one another's edges.
     for(const char *ch=text;*ch;++ch) {
         if(*ch>='0'&&*ch<='9') {
             const auto &rows=kDigits7[*ch-'0'];
             for(int py=0;py<7;++py)for(int px=0;px<5;++px)if(rows[py]&(1u<<(4-px)))
-                rect(pixels,width,height,cursor+px*cell_width,y+py*cell_height,cell_width,cell_height,kText);
-            cursor+=6*cell_width;
+                rect(pixels,width,height,cursor+px*cell_width-outline_x,
+                     y+py*cell_height-outline_y,cell_width+2*outline_x,
+                     cell_height+2*outline_y,kTextOutline);
+            cursor+=6*cell_width+bold_x;
         }
     }
+    cursor=x;
+    for(const char *ch=text;*ch;++ch) {
+        if(*ch>='0'&&*ch<='9') {
+            const auto &rows=kDigits7[*ch-'0'];
+            for(int py=0;py<7;++py)for(int px=0;px<5;++px)if(rows[py]&(1u<<(4-px))) {
+                const int cell_x=cursor+px*cell_width;
+                const int cell_y=y+py*cell_height;
+                rect(pixels,width,height,cell_x,cell_y,cell_width,cell_height,kText);
+                rect(pixels,width,height,cell_x+bold_x,cell_y,cell_width,cell_height,kText);
+            }
+            cursor+=6*cell_width+bold_x;
+        }
+    }
+}
+
+int count_width(unsigned value,int cell_width) {
+    char text[12]{};std::snprintf(text,sizeof(text),"%u",std::min(value,999u));
+    const int digits=std::max(1,int(std::strlen(text)));
+    const int bold_x=std::max(1,cell_width/5);
+    return std::max(1,(digits*6-1)*cell_width+digits*bold_x);
 }
 
 void over_pixel(uint32_t *pixels,unsigned width,unsigned height,int x,int y,uint32_t color) {
@@ -128,7 +151,8 @@ bool minimap_hud_decode(HudSprite &out,const uint8_t *attributes,size_t bytes,
 
 void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
                        const VideoSettings &settings,bool visible,
-                       unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character) {
+                       unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character,
+                       MinimapHudBounds visible_bounds) {
     if(!pixels||!width||!height)return;
     std::fill(pixels,pixels+size_t(width)*height,0u);
     if(!visible)return;
@@ -141,37 +165,58 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     const int digit_height=std::max(1,int(std::lround(scale*raster_y)));
     const int pad_x=std::max(1,int(std::lround(scale*raster_x)));
     const int pad_y=std::max(1,int(std::lround(scale*raster_y)));
-    const int glyph_height=7*digit_height,glyph_width=18*digit_width;
+    const int glyph_height=7*digit_height;
     const int row_height=std::max(icon_height,glyph_height)+2*pad_y;
-    const int digits_width=std::max(6*digit_width,glyph_width);
-    const int panel_width=2*pad_x+icon_width+pad_x+digits_width;
-    const int panel_height=4*row_height+2*pad_y;
     const double map_left=double(width)*settings.minimap_x/1000.0;
     const double map_top=double(height)*settings.minimap_y/1000.0;
     const double map_w=double(width)*settings.minimap_scale/1000.0;
     const double map_h=double(height)*settings.minimap_scale/1000.0;
-    const int gap=std::max(2,int(std::lround(3.0*scale*raster_x)));
-    const int right=int(std::lround(map_left+map_w))+gap;
-    const int left=int(std::floor(map_left))-gap-panel_width;
-    int panel_x;
-    if(right+panel_width<=int(width))panel_x=right;
-    else if(left>=0)panel_x=left;
-    else panel_x=(width-(panel_width+map_w)>=map_left)?right:left;
-    panel_x=std::clamp(panel_x,0,std::max(0,int(width)-panel_width));
-    int panel_y=int(std::lround(map_top+(map_h-panel_height)/2.0));
-    panel_y=std::clamp(panel_y,0,std::max(0,int(height)-panel_height));
-
+    visible_bounds.left=std::min(visible_bounds.left,999u);
+    visible_bounds.top=std::min(visible_bounds.top,999u);
+    visible_bounds.right=std::clamp(visible_bounds.right,visible_bounds.left+1,1000u);
+    visible_bounds.bottom=std::clamp(visible_bounds.bottom,visible_bounds.top+1,1000u);
+    const double visible_left=map_left+map_w*visible_bounds.left/1000.0;
+    const double visible_top=map_top+map_h*visible_bounds.top/1000.0;
+    const double visible_right=map_left+map_w*visible_bounds.right/1000.0;
+    const double visible_bottom=map_top+map_h*visible_bounds.bottom/1000.0;
+    const int gap=std::max(1,int(std::lround(scale*raster_x)));
     const unsigned counts[4]={stars,coins,std::min(health,8u),lives};
     const HudSprite *icons[4]={&art.star,&art.coin,&art.health[std::min(health,8u)],&art.lives[character<4?character:3]};
-    for(unsigned row=0;row<4;++row) {
-        const int y=panel_y+pad_y+int(row)*row_height;
-        rect(pixels,width,height,panel_x+1,y-1,panel_width-2,row_height,kPanel);
-        outline_rect(pixels,width,height,panel_x,y-1,panel_width,row_height,kPanelEdge);
-        const int ix=panel_x+pad_x,iy=y+(row_height-icon_height)/2;
-        icon(pixels,width,height,ix,iy,icon_width,icon_height,*icons[row],width>256||height>192);
-        number(pixels,width,height,ix+icon_width+pad_x,
-               y+(row_height-glyph_height)/2,counts[row],digit_width,digit_height);
-    }
+    const auto card_width=[&](unsigned value) {
+        return 2*pad_x+icon_width+pad_x+count_width(value,digit_width);
+    };
+    const auto draw_card=[&](int x,int y,unsigned index) {
+        const int iy=y+(row_height-icon_height)/2;
+        icon(pixels,width,height,x+pad_x,iy,icon_width,icon_height,*icons[index],width>256||height>192);
+        number(pixels,width,height,x+2*pad_x+icon_width,
+               y+(row_height-glyph_height)/2,counts[index],digit_width,digit_height);
+    };
+
+    // Keep the requested Star/coin pair beside the map and the health/lives
+    // pair beneath it. This mirrors the mockup while keeping all four cards
+    // anchored to the user-positioned/resized minimap.
+    const int side_width=std::max(card_width(counts[0]),card_width(counts[1]));
+    const int map_x=int(std::lround(visible_left)),map_y=int(std::lround(visible_top));
+    const int map_right=int(std::lround(visible_right));
+    const int map_bottom=int(std::lround(visible_bottom));
+    const int side_left=map_x-gap-side_width;
+    const int side_right=map_right+gap;
+    int side_x=side_left>=0?side_left:
+        (side_right+side_width<=int(width)?side_right:std::clamp(side_left,0,std::max(0,int(width)-side_width)));
+    const int side_y=std::clamp(map_y,0,std::max(0,int(height)-2*(row_height+1)));
+    draw_card(side_x,side_y,0);
+    draw_card(side_x,side_y+row_height+1,1);
+
+    const int health_width=card_width(counts[2]),life_width=card_width(counts[3]);
+    const int bottom_width=health_width+gap+life_width;
+    int bottom_x=int(std::lround((visible_left+(visible_right-visible_left)/2.0)-bottom_width/2.0));
+    bottom_x=std::clamp(bottom_x,0,std::max(0,int(width)-bottom_width));
+    const int below_y=map_bottom+gap;
+    const int above_y=map_y-gap-row_height-1;
+    int bottom_y=below_y+row_height+1<=int(height)?below_y:
+        (above_y>=0?above_y:std::clamp(below_y,0,std::max(0,int(height)-row_height-1)));
+    draw_card(bottom_x,bottom_y,2);
+    draw_card(bottom_x+health_width+gap,bottom_y,3);
 }
 
 void minimap_hud_blend(uint32_t *destination,const uint32_t *overlay,

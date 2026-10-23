@@ -5,6 +5,7 @@
 #include "ntr/menu_focus.h"
 
 #include <cmath>
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -85,6 +86,23 @@ int main() {
         drag.reset();
         if(drag.update(true,599,599,500,x,y) || !drag.active)return 207;
         if(!drag.update(true,2000,-2000,500,x,y) || x!=500 || y!=0)return 208;
+        // An inset map can reach the screen edge while its transparent source
+        // margin is outside. Its visible pixels must remain entirely inside.
+        drag.reset();x=710;y=35;
+        const ntr::MinimapHudBounds inset{100,80,880,920};
+        drag.update(true,800,100,260,x,y,inset);
+        if(!drag.update(true,1400,1400,260,x,y,inset) || x!=771 || y!=760)return 210;
+        if(x+260*inset.right/1000>1000 || x<=740)return 211;
+        drag.update(false,0,0,260,x,y,inset);
+        drag.update(true,900,800,260,x,y,inset);
+        if(!drag.update(true,600,500,260,x,y,inset) || x!=471 || y!=460)return 212;
+        std::array<uint8_t,100> mask;mask.fill(1);
+        for(unsigned py=2;py<8;++py)for(unsigned px=1;px<9;++px)mask[py*10+px]=0;
+        const auto visible=ntr::minimap_visible_bounds(mask.data(),10,10);
+        if(visible.left!=100 || visible.top!=200 || visible.right!=900 || visible.bottom!=800)return 213;
+        ntr::VideoSettings overflow;overflow.minimap_x=overflow.minimap_y=1000;
+        const auto placed=ntr::minimap_visible_placement(overflow,visible);
+        if(placed.minimap_x!=766 || placed.minimap_y!=792 || overflow.minimap_x!=1000)return 214;
         for(unsigned scale=100;scale<=500;scale+=10)for(int delta: {-2000,0,150,2000}) {
             drag.reset();x=y=100;
             drag.update(true,100+scale/3,100+scale/2,uint16_t(scale),x,y);
@@ -145,7 +163,7 @@ int main() {
     settings.minimap_x = settings.minimap_y = 1000;
     ntr::video_set_settings(settings);
     const ntr::VideoSettings clamped = ntr::video_get_settings();
-    if (clamped.minimap_x != 500 || clamped.minimap_y != 500) return 14;
+    if (clamped.minimap_x != 1000 || clamped.minimap_y != 1000) return 14;
     settings = clamped;
     settings.minimap_x = 250;
     settings.minimap_y = 350;

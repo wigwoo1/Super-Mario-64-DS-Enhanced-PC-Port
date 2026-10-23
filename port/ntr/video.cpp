@@ -49,6 +49,7 @@ bool g_editor_save_failed=false;
 bool g_editor_suppress_pointer=false;
 uint64_t g_editor_cache_tick=~uint64_t(0);
 MinimapDrag g_editor_drag;
+MinimapHudBounds g_minimap_bounds;
 bool g_minimap_gameplay = false;
 struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0,health=8,character=3;};
 MinimapCounters g_minimap_counters;
@@ -313,7 +314,9 @@ void render_minimap_editor() {
     const auto &map=g_settings.minimap_hide_touch_target?g_editor_map:g_editor_map_full;
     std::array<uint8_t,SCREEN_W*SCREEN_H> transparent{};
     video_minimap_transparency_mask(&map.px[0][0],transparent.data(),SCREEN_W,SCREEN_H);
-    const int left=w*g_settings.minimap_x/1000,top=h*g_settings.minimap_y/1000;
+    const auto bounds=minimap_visible_bounds(transparent.data(),SCREEN_W,SCREEN_H);
+    const auto placement=minimap_visible_placement(g_settings,bounds);
+    const int left=w*placement.minimap_x/1000,top=h*placement.minimap_y/1000;
     const int mw=std::max(1,w*g_settings.minimap_scale/1000),mh=std::max(1,h*g_settings.minimap_scale/1000);
     for(int y=0;y<mh && top+y<h;++y)for(int x=0;x<mw && left+x<w;++x) {
         const int sy=y*SCREEN_H/mh,sx=x*SCREEN_W/mw;
@@ -321,15 +324,22 @@ void render_minimap_editor() {
             blend_minimap(&g_output[size_t(top+y)*w+left+x],map.px[sy][sx],g_settings.minimap_opacity);
     }
     const uint32_t border=g_editor_drag.active?0xff80ffff:0xffffdc40;
-    const int right=std::min(w-1,left+mw-1),bottom=std::min(h-1,top+mh-1);
-    for(int x=left;x<=right;++x) {g_output[size_t(top)*w+x]=border;g_output[size_t(bottom)*w+x]=border;}
-    for(int y=top;y<=bottom;++y) {g_output[size_t(y)*w+left]=border;g_output[size_t(y)*w+right]=border;}
+    const int edge_left=std::min(w-1,left+mw*int(bounds.left)/1000);
+    const int edge_top=std::min(h-1,top+mh*int(bounds.top)/1000);
+    const int right=std::min(w-1,left+(mw*int(bounds.right)+999)/1000-1);
+    const int bottom=std::min(h-1,top+(mh*int(bounds.bottom)+999)/1000-1);
+    for(int x=edge_left;x<=right;++x) {g_output[size_t(edge_top)*w+x]=border;g_output[size_t(bottom)*w+x]=border;}
+    for(int y=edge_top;y<=bottom;++y) {g_output[size_t(y)*w+edge_left]=border;g_output[size_t(y)*w+right]=border;}
     g_editor_redraw=false;
 }
 
 void update_minimap_drag(bool down,int x,int y) {
     const bool was_active=g_editor_drag.active;
-    if(g_editor_drag.update(down,x,y,g_settings.minimap_scale,g_settings.minimap_x,g_settings.minimap_y)) {
+    const auto &map=g_settings.minimap_hide_touch_target?g_editor_map:g_editor_map_full;
+    std::array<uint8_t,SCREEN_W*SCREEN_H> transparent{};
+    video_minimap_transparency_mask(&map.px[0][0],transparent.data(),SCREEN_W,SCREEN_H);
+    const auto bounds=minimap_visible_bounds(transparent.data(),SCREEN_W,SCREEN_H);
+    if(g_editor_drag.update(down,x,y,g_settings.minimap_scale,g_settings.minimap_x,g_settings.minimap_y,bounds)) {
         g_editor_dirty=true;g_editor_redraw=true;
     }
     if(was_active!=g_editor_drag.active)g_editor_redraw=true;
@@ -362,9 +372,10 @@ void clamp_settings(VideoSettings &s) {
     s.width = std::max(256u, std::min(s.width, 3840u));
     s.height = std::max(192u, std::min(s.height, 2160u));
     s.minimap_scale = std::max<uint16_t>(100, std::min<uint16_t>(s.minimap_scale, 500));
-    const uint16_t max_position = static_cast<uint16_t>(1000 - s.minimap_scale);
-    s.minimap_x = std::min<uint16_t>(s.minimap_x, max_position);
-    s.minimap_y = std::min<uint16_t>(s.minimap_y, max_position);
+    // Source-texture padding may be outside the screen. Placement is limited
+    // using the actual map pixels once a gameplay map is available.
+    s.minimap_x = std::min<uint16_t>(s.minimap_x, 1000);
+    s.minimap_y = std::min<uint16_t>(s.minimap_y, 1000);
 }
 
 }  // namespace
@@ -537,6 +548,7 @@ void video_set_settings(const VideoSettings &settings) {
     g_settings = settings;
     if(g_editor_active)g_editor_redraw=true;
     clamp_settings(g_settings);
+    if(g_editor_map_ready)g_settings=minimap_visible_placement(g_settings,g_minimap_bounds);
     if (g_settings.target_fps != 60 && g_settings.target_fps != 120 &&
         g_settings.target_fps != 240) g_settings.target_fps = 60;
     rt_set_target_fps(g_settings.target_fps);
@@ -771,13 +783,14 @@ bool video_present_frame() {
             s.minimap_scale = static_cast<uint16_t>(std::min(500, s.minimap_scale + 10));
             video_set_settings(s);
         }
-        const uint16_t max_position = static_cast<uint16_t>(1000 - s.minimap_scale);
+        const uint16_t max_x=minimap_position_limit(s.minimap_scale,g_minimap_bounds.right);
+        const uint16_t max_y=minimap_position_limit(s.minimap_scale,g_minimap_bounds.bottom);
         if (GetAsyncKeyState(VK_LEFT) & 1) {
             s.minimap_x = static_cast<uint16_t>(s.minimap_x > 10 ? s.minimap_x - 10 : 0);
             video_set_settings(s);
         }
         if (GetAsyncKeyState(VK_RIGHT) & 1) {
-            s.minimap_x = static_cast<uint16_t>(std::min<unsigned>(max_position, s.minimap_x + 10));
+            s.minimap_x = static_cast<uint16_t>(std::min<unsigned>(max_x, s.minimap_x + 10));
             video_set_settings(s);
         }
         if (GetAsyncKeyState(VK_UP) & 1) {
@@ -785,7 +798,7 @@ bool video_present_frame() {
             video_set_settings(s);
         }
         if (GetAsyncKeyState(VK_DOWN) & 1) {
-            s.minimap_y = static_cast<uint16_t>(std::min<unsigned>(max_position, s.minimap_y + 10));
+            s.minimap_y = static_cast<uint16_t>(std::min<unsigned>(max_y, s.minimap_y + 10));
             video_set_settings(s);
         }
     }
@@ -903,6 +916,8 @@ bool video_present_frame() {
     }
     std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_map_pixels{};
     static std::vector<uint32_t> gpu_hud_pixels;
+    MinimapHudBounds hud_map_bounds{};
+    VideoSettings map_settings=minimap_visible_placement(g_settings,g_minimap_bounds);
 
     if (video_minimap_visible()) {
         const Framebuffer *map = &g_bottom;
@@ -917,6 +932,9 @@ bool video_present_frame() {
         std::array<uint8_t, SCREEN_W * SCREEN_H> transparent{};
         video_minimap_transparency_mask(&map->px[0][0], transparent.data(),
                                        SCREEN_W, SCREEN_H);
+        hud_map_bounds=minimap_visible_bounds(transparent.data(),SCREEN_W,SCREEN_H);
+        g_minimap_bounds=hud_map_bounds;
+        map_settings=minimap_visible_placement(g_settings,hud_map_bounds);
         if (g_gpu) for (size_t i=0;i<gpu_map_pixels.size();++i) {
             const uint32_t pixel=(&map->px[0][0])[i];
             const uint32_t alpha=transparent[i]?0:((pixel>>24)*g_settings.minimap_opacity/255);
@@ -924,8 +942,8 @@ bool video_present_frame() {
         }
         const int map_w = std::max(1, SCREEN_W * g_settings.minimap_scale / 1000);
         const int map_h = std::max(1, map_w * SCREEN_H / SCREEN_W);
-        const int left = std::min(SCREEN_W - 1, SCREEN_W * g_settings.minimap_x / 1000);
-        const int top = std::min(SCREEN_H - 1, SCREEN_H * g_settings.minimap_y / 1000);
+        const int left = std::min(SCREEN_W - 1, SCREEN_W * map_settings.minimap_x / 1000);
+        const int top = std::min(SCREEN_H - 1, SCREEN_H * map_settings.minimap_y / 1000);
         const int draw_w = std::min(map_w, SCREEN_W - left);
         const int draw_h = std::min(map_h, SCREEN_H - top);
         for (int y = 0; y < draw_h; ++y) {
@@ -965,21 +983,22 @@ bool video_present_frame() {
         !g_minigame_active && !g_cutscene_letter;
     const unsigned hud_width=g_gpu?g_settings.width:SCREEN_W;
     const unsigned hud_height=g_gpu?g_settings.height:SCREEN_H;
-    static std::array<uint32_t,11> previous_hud_key{};
+    static std::array<uint32_t,15> previous_hud_key{};
     static bool have_hud_key=false;
     static uint64_t hud_revision=0;
-    const std::array<uint32_t,11> hud_key{{
-        unsigned(hud_visible),hud_width,hud_height,g_settings.minimap_x,g_settings.minimap_y,
+    const std::array<uint32_t,15> hud_key{{
+        unsigned(hud_visible),hud_width,hud_height,map_settings.minimap_x,map_settings.minimap_y,
         g_settings.minimap_scale,g_minimap_counters.stars,g_minimap_counters.coins,
-        g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character}};
+        g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character,
+        hud_map_bounds.left,hud_map_bounds.top,hud_map_bounds.right,hud_map_bounds.bottom}};
     if(!have_hud_key||hud_key!=previous_hud_key) {
         previous_hud_key=hud_key;have_hud_key=true;
         if(++hud_revision==0)++hud_revision;
         if(hud_visible) {
             gpu_hud_pixels.resize(size_t(hud_width)*hud_height);
-            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,g_settings,true,
+            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,map_settings,true,
                 g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,
-                g_minimap_counters.health,g_minimap_counters.character);
+                g_minimap_counters.health,g_minimap_counters.character,hud_map_bounds);
         } else gpu_hud_pixels.clear();
     }
     if(!g_gpu&&hud_visible)
@@ -997,7 +1016,7 @@ bool video_present_frame() {
     if (g_gpu) {
         const auto submit_start=std::chrono::steady_clock::now();
         if (!gpu_render(main_view,video_minimap_visible()?gpu_map_pixels.data():nullptr,
-                        g_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
+                        map_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
                         dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay,
                         hud_visible?gpu_hud_pixels.data():nullptr,hud_width,hud_height,hud_revision) ||
             !gpu_present(width,height,dual)) {

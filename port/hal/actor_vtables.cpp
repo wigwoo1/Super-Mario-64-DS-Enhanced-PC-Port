@@ -269,6 +269,8 @@ extern "C" void pc_goomba_init_resources();
 extern "C" void pc_bombking_init_resources();
 extern "C" void pc_buddy_init_resources(), pc_shutter_init_resources();
 extern "C" void pc_chomp_init_resources(), pc_pile_init_resources(), pc_wanwan_fence_init_resources();
+extern "C" void pc_lava_bridge_init_resources();
+extern "C" unsigned char g_profile_FL_LONDON[];
 extern "C" unsigned char g_profile_WANWAN[], g_profile_PILE[], g_profile_WANWAN_SHUTTER[];
 extern "C" void *daRedBombhei_c_classInit();
 extern "C" void *daCnn_c_classInit(), *daWbm_c_classInit();
@@ -433,6 +435,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_rabbit_init_resources();
     pc_buddy_init_resources();pc_shutter_init_resources();
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
+    pc_lava_bridge_init_resources();
+    data_020a4bb8_storage[73] = g_profile_FL_LONDON;
     data_020a4bb8_storage[219] = g_profile_WANWAN;
     data_020a4bb8_storage[27] = g_profile_PILE;
     data_020a4bb8_storage[41] = g_profile_WANWAN_SHUTTER;

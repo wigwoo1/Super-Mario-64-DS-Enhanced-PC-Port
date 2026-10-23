@@ -8,6 +8,7 @@
 #include "dFader_c.h"
 #include "dActor_c.h"
 #include "Player.h"
+#include "dBgPi.h"
 #include "daKrb_c.h"
 #include "daBombking_c.h"
 #include "daBmb_c.h"
@@ -152,6 +153,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/warp_probe.h"
 #include "hal/warp_replay.h"
 static bool replay_course_route_complete;
+static unsigned replay_course_route_waypoint=0;
 // Observes original contact/state and supplies normal input only. Never
 // changes actor state, position, save flags or dialogue results.
 extern "C" bool pc_toad_contact_recent(unsigned id,unsigned player);
@@ -227,11 +229,11 @@ static bool replay_toad_controls() {
     if(tick%120==0)event("observe");
     ntr::input_test_controls(true,buttons,0,0);return true;
 }
-static bool replay_course_route() {
+static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    const char *route=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+    const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
-    static unsigned waypoint=0;
+    auto &waypoint=replay_course_route_waypoint;
     const char *segment=route;
     for(unsigned i=0;i<waypoint && segment;++i) {
         const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
@@ -246,14 +248,14 @@ static bool replay_course_route() {
                    &level,&x,&y,&z,&radius,&jump,&consumed)==6) {
         has_y=true;
         if(consumed<=0 || (segment[consumed] && segment[consumed]!=',') ||
-           (jump<0 || jump>2))return false;
+           (jump<0 || jump>3))return false;
     } else {
         consumed=0;jump=0;
         if(std::sscanf(segment,"%d:%d:%d:%d%n",&level,&x,&z,&radius,&consumed)!=4 ||
            consumed<=0 || (segment[consumed] && segment[consumed]!=',' && segment[consumed]!=':'))return false;
         if(segment[consumed]==':') {
             if(std::sscanf(segment+consumed,":%d%n",&jump,&jump_consumed)!=1 ||
-               (jump!=1 && jump!=2) || (segment[consumed+jump_consumed] && segment[consumed+jump_consumed]!=','))return false;
+               (jump<1 || jump>3) || (segment[consumed+jump_consumed] && segment[consumed+jump_consumed]!=','))return false;
         }
     }
     if(level<0 || level>=52 || radius<1 || radius>1000 ||
@@ -283,7 +285,7 @@ static bool replay_course_route() {
     static uint64_t jump_until=0,next_jump=0;
     static uint64_t settle_until=0;
     const char *settle=std::getenv("SM64DS_PC_TEST_ROUTE_SETTLE");
-    const bool precise=settle && !std::strcmp(settle,"1");
+    const bool precise=route_override || (settle && !std::strcmp(settle,"1"));
     if(precise && ntr::rt_frame()<settle_until) {
         ntr::input_test_controls(true,0,0,0);return true;
     }
@@ -297,15 +299,33 @@ static bool replay_course_route() {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        const bool horizontal_reached=horizontal<=radius*4096.0;
+        const bool height_reached=!has_y ||
+            (!player->mIsAirborne && std::abs(dy)<=vertical_tolerance);
+        // Optional QA route mode 3: ordinary running crouch/jump inputs for
+        // a wide gap. Never change player position, velocity or actor state.
+        if(jump==3) {
+            static uint64_t launch=0;
+            if(horizontal<1750*4096.0 && !player->mIsAirborne &&
+               !std::strcmp(state,"St_Walk_Main") && tick>=next_jump) {
+                launch=tick;next_jump=tick+100;
+            }
+            if(launch && tick-launch<18)buttons|=(tick-launch<6 ? 0x100:0x102);
+        }
         // Route mode 2 takes off with a neutral stick. Retail Wait prioritizes
         // entering Walk over the jump edge when both arrive together. Keep
         // the input neutral through takeoff; never alter the player state.
-        if(jump==2 && horizontal<320*4096.0) {
+        // A height-aware mode2 point is a traversable step: stop retrying
+        // after landing at the point. Legacy collection points have no Y and
+        // retain their repeated neutral jumping until the collector finishes.
+        if(jump==2 && horizontal<320*4096.0 &&
+           !(has_y && horizontal_reached && height_reached)) {
             if(tick<jump_until) {
                 ntr::input_test_controls(true,2,0,0);return true;
             }
             if(!player->mIsAirborne && tick>=next_jump &&
-               (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+               (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") ||
+                !std::strcmp(state,"St_OnWall_Main"))) {
                 if(!std::strcmp(state,"St_Wait_Main")) {
                     jump_until=tick+12;next_jump=tick+75;
                     ntr::input_test_controls(true,2,0,0);
@@ -351,13 +371,10 @@ static bool replay_course_route() {
             jump_until=tick+12;next_jump=tick+75;
         }
         if(tick<jump_until)buttons|=2;
-        const bool horizontal_reached=horizontal<=radius*4096.0;
         // Height-aware route points represent walkable floor positions, not
         // transient jump arcs. Only advance after the player has landed at
         // the requested height; otherwise an overhead stair edge can make
         // the route skip forward while the player falls back to the lower floor.
-        const bool height_reached=!has_y ||
-            (!player->mIsAirborne && std::abs(dy)<=vertical_tolerance);
         if(horizontal_reached && height_reached) {
             if(has_y)
                 std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d,%d tick=%llu\n",
@@ -377,12 +394,89 @@ static bool replay_course_route() {
             // Keep low-speed travel above the controller's radial deadzone.
             if(magnitude<12000)magnitude=12000;
             if(magnitude>22000)magnitude=22000;
+            if(jump==3)magnitude=32767;
             sx=static_cast<int16_t>(std::sin(angle)*magnitude);
             sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
         }
     }
     ntr::input_test_controls(true,buttons,sx,sy);
     return true;
+}
+
+// Input-only lava-bridge lifecycle QA: use the original Exit Course menu,
+// basement painting and mission selector, then repeat the same walking route.
+static bool replay_lava_bridge_lifecycle() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!mode || std::strcmp(mode,"1") || !automation || std::strcmp(automation,"1"))return false;
+    static int phase=0;static uint64_t began=0,jumpUntil=0,nextJump=0;
+    const auto tick=ntr::rt_frame();
+    auto event=[&](const char *name){std::fprintf(stderr,"[native lava bridge lifecycle] %s tick=%llu level=%d phase=%d\n",name,static_cast<unsigned long long>(tick),int(data_0209f2f8),phase);};
+    if(phase>=4)return false;
+    if(!phase) {if(!replay_course_route_complete)return false;phase=1;began=tick;event("exit-request");}
+    if(tick-began>12000){phase=4;event("timeout");return false;}
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    const bool ready=p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto controls=[&](){ntr::input_test_controls(true,buttons,sx,sy);return true;};
+    if(phase==1) {
+        if((data_0209f2f8==2 || data_0209f2f8==4) && ready) {
+            phase=2;event("castle-return");
+            replay_course_route_waypoint=0;replay_course_route_complete=false;
+        }
+        else {
+            if(!data_0209f2c4){if(ready && tick%45<3)buttons=8;}
+            else if(data_0209f248==3 && tick%45<3)buttons=data_0209f2e0==3?1:0x80;
+            return controls();
+        }
+    }
+    if(phase==2) {
+        unsigned selected=0,selectionPhase=0,selectionMode=0,confirmed=0,selectionReady=0;
+        if(pc_star_select_status(&selected,&selectionPhase,&selectionMode,&confirmed,&selectionReady)) {
+            if(selectionReady && !confirmed && selectionMode==0 && tick%20<3)
+                buttons=selected==0 && selectionPhase==2?1:0x20;
+            return controls();
+        }
+        if(data_0209f2f8==14 && ready) {
+            phase=3;event("original-course-reentry");
+            replay_course_route_waypoint=0;replay_course_route_complete=false;
+            return false;
+        }
+        // An entry through the development picker returns to the lobby. Feed
+        // the existing route controller a private, geometry-reviewed castle
+        // path; it must reach the actual basement painting through real doors.
+        if(const char *castle_route=std::getenv("SM64DS_PC_TEST_LAVA_CASTLE_ROUTE")) {
+            if(!replay_course_route_complete) {
+                if(data_0209f2c4) {if(tick%45<3)buttons=8;return controls();}
+                if(replay_course_route(castle_route))return true;
+                if(!replay_course_route_complete)return controls();
+                event("painting-approach");
+            }
+        }
+        if(data_0209f2f8!=4 || !ready)return controls();
+        if(data_0209d660){if(tick%45<3)buttons=1;return controls();}
+        // Original level4 exit/painting at(-1350,-1100,-3850), facing south.
+        const double dx=-1350*4096.0-p->mPosX,dz=-4150*4096.0-p->mPosZ;
+        const char *state=pc_player_state_name(p);
+        // Measure takeoff from the painting plane, not the steering target
+        // behind it. An early jump lands at the wall before crossing the exit.
+        // Neutralize Walk/OnWall first so Wait cannot consume the jump edge.
+        const double paintingDistance=std::hypot(dx,-3850*4096.0-p->mPosZ);
+        if(tick<jumpUntil){buttons=2;return controls();}
+        if(paintingDistance<220*4096.0 && tick>=nextJump && !p->mIsAirborne &&
+           (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") ||
+            !std::strcmp(state,"St_OnWall_Main"))) {
+            if(!std::strcmp(state,"St_Wait_Main")) {
+                jumpUntil=tick+12;nextJump=tick+75;buttons=2;event("painting-neutral-takeoff");
+            }
+            return controls();
+        }
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(angle)*22000);sy=static_cast<int16_t>(-std::cos(angle)*22000);
+        return controls();
+    }
+    if(phase==3 && replay_course_route_complete){phase=4;event("done");}
+    return false;
 }
 
 // Input-only rabbit capture replay. The original route handles the opening
@@ -1348,10 +1442,28 @@ static bool trace_script_progress(uint64_t frame)
     // presentation cannot skip the neutral input at a waypoint boundary.
     pc_trace_warp_player(static_cast<Player *>(data_0209f394[0]));
     pc_trace_warp_ground(static_cast<Player *>(data_0209f394[0]));
+    if(const char *path=std::getenv("SM64DS_PC_MOVING_CONTACT_CAPTURE")) {
+        static FILE *file=nullptr;static uint64_t last=~uint64_t(0);
+        const auto tick=ntr::rt_frame();
+        auto *p=static_cast<Player *>(data_0209f394[0]);
+        static const unsigned interval=[](){const char *v=std::getenv("SM64DS_PC_MOVING_CONTACT_INTERVAL");return v?(std::max)(1u,unsigned(std::strtoul(v,nullptr,10))):5u;}();
+        if(!file) {file=std::fopen(path,"w");if(file)std::fputs("tick,level,grounded,airborne,owner_kind,owner_uid,x,y,z,ground_y,normal_x,normal_y,normal_z,clsn_flags,wall_x,wall_y,wall_z\n",file);}
+        if(file && p && p->aliveState==1 && tick%interval==0 && tick!=last) {
+            last=tick;
+            const bool grounded=p->mMeshClsn.IsOnGround()!=0;
+            const auto *hit=grounded?static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+            const auto *owner=hit && hit->colliderIdx<24 ? hit->owner:nullptr;
+            std::fprintf(file,"%llu,%d,%u,%u,%u,%u,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d\n",
+                static_cast<unsigned long long>(tick),int(data_0209f2f8),unsigned(grounded),unsigned(p->mIsAirborne),
+                owner?unsigned(owner->actorID):0,owner?unsigned(owner->uniqueID):0,
+                p->mPosX,p->mPosY,p->mPosZ,p->mGroundY,p->mFloorNormalX,p->mFloorNormalY,p->mFloorNormalZ,
+                unsigned(p->mClsnFlags),p->mWallNormalX,p->mWallNormalY,p->mWallNormalZ);std::fflush(file);
+        }
+    }
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

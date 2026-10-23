@@ -69,10 +69,14 @@ game assets, personal saves, or proprietary compiler is included here.
   stalls at a bridge wall and does not establish full encounter acceptance.
   The Battlefield flower warp works in both directions, preserves its original
   destination/fade/cooldown behavior, and survives course exit and re-entry in
-  a muted isolated replay. Other course and mountain warp points were not
-  tested.
-  Player feedback reports that the camera still zooms in when Yoshi stops and
-  that free-camera controls do not work; these features are not accepted.
+  a muted isolated replay. The original Lethal Lava Land painting can also be
+  entered again after course exit; both moving lava bridges unload and respawn
+  with working collision for repeat crossings. These results use isolated
+  test saves and selected courses; other course and mountain warp points were
+  not tested.
+  A selected open-ground camera test confirms that stopping Yoshi no longer
+  pulls the original camera closer. Free-camera movement has software replay
+  checks; physical Nintendo Switch Pro behavior remains unverified.
   The October22 checkpoint adds25..300% free-camera sensitivity, independent X/Y
   inversion and Off/Gentle/Smooth acceleration. Selected menu/gameplay checks
   pass; physical Nintendo Switch Pro acceptance remains pending.

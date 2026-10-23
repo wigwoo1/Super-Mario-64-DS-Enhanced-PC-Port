@@ -1,0 +1,75 @@
+Native actor registry audit, 2026-10-22
+
+LATEST LIFECYCLE ACCEPTANCE: original painting entry and bridge reload PASS.
+Current exe88ACEAAF2395B6B226386CB56F0D56CC345B558BB203DEE5058ADBE0A039C586.
+Input-only Exit Course, original lobby/basement doors and lava painting load
+mission1. New bridge instances226/227 replace initial9/10. Both render on
+screen and tilt through[-8192,0];226 grounded samples after entry follow
+owner sequence226,227,226,227. Original collision ground height matches feet.
+Exit0 at16000, restored normal control, audio output muted/errors0, isolated
+save unchanged. Initial bootstrap is the development picker with synthetic
+prerequisites; earned progression and a new F install are not claimed.
+Only QA route/jump controls changed: body clearance and neutral takeoff.
+Source actor collision/friction was retained. Acceptance/evidence in outer
+work/native-lava-bridge-painting-entry-r1-muted-20261022/acceptance.json.
+This supersedes the painting/reload limitations in the earlier notes below.
+
+EARLIER DIAGNOSTIC UPDATE: both bridges now pass three input-only crossings, with
+native floor-owner sequence9,10,9,10 and44 grounded samples. Current build
+also passes initial contact, original Exit Course and basement key entry.
+The painting approach remains unverified: two routes stop at a slippery
+ramp or raised corner before entering the course. Do not promote the bridge
+as fully accepted or publish a kit based on exit0 from these diagnostic runs.
+See outer work/lava-bridge-lifecycle-diagnostics-20261022.json and latest
+CURRENT-GAMEPLAY-HANDOFF.txt. No actor physics was altered for these tests.
+
+NEXT AUDITED OMISSION: daObjFl_Seesaw_c source/header and original profile
+g_profile_FL_SEESAW (ov02202114010) exist, but the native link map, boot roots
+and profile registration contain no corresponding actor. Not integrated yet.
+
+CONTACT UPDATE: original bridge uid9 now passes a muted, input-only approach
+and standing/carry check. The player's native floor result names actor73 in
+42 grounded samples;14 idle/no-input samples show357.58 vertical/119.11
+horizontal units of movement with native ground contact. Evidence in outer
+workspace work/native-lava-bridge-contact-r1-muted-20261022/acceptance.json.
+Current source actor behavior was retained. Other bridge contact, original
+castle entry and course unload/re-entry remain open; no stable-install
+promotion or public kit is justified yet. This supersedes only the contact
+limitation in the earlier update below.
+
+UPDATE: bridge integration is now PARTIALLY VERIFIED. The original omission
+described below was repaired by adding daObjFl_London_c_classInit to the boot
+closure, deferring its two resource handles through lava_bridge_host.py, and
+registering actor 73. The executable links and the native profile/collision
+property audit passes. Runtime diagnostic-r4 on level 14 spawned both original
+bridges and verified their full tilt range [-8192,0] plus rendered triangles.
+No player relocation or actor-placement changes were used. Walking collision
+and entry through the original castle course portal remain unverified. The
+colliders stayed disabled at the distant spawn position; this is not evidence
+that near-player activation works. Do not promote as fully accepted gameplay.
+See work/CURRENT-GAMEPLAY-HANDOFF.txt in the outer workspace for the evidence.
+
+The user's report that level objects such as bridges, gates, buttons and other
+objects fail to appear warrants checking both source linkage and the native
+actorID -> profile table. One concrete confirmed omission is Lethal Lava Land's
+swinging lava bridge, daObjFl_London_c (profile LAVA_BRIDGE, actor ID 73).
+Evidence:
+
+- include/daObjFl_London_c.h identifies the actor as LAVA_BRIDGE (73).
+- src/actors/daObjFl_London_c.cpp defines g_profile_FL_LONDON with profile ID
+  0x49 (73), model file 0x5fd and collision file 0x5fe.
+- port/hal/actor_vtables.cpp initializes profile-table entries for supported
+  actors, but does not assign data_020a4bb8_storage[73].
+- Current build/port/sm64ds_pc.map has no daObjFl_London_c or g_profile_FL_LONDON
+  symbols, so the actor TU is not linked into the native executable.
+
+Therefore this actor cannot spawn in the current native build even though its
+decompilation exists. A complete integration needs adding the TU to the native
+target, resolving its overlay-22 CLPS/model/collision dependencies, performing
+the resource-handle initialization after the filesystem handle registry is
+ready, and registering slot 73. Then run Lethal Lava Land from its original
+course entry and confirm the bridge's model, motion and collision in a muted
+runtime screenshot. Do not claim completion based only on registration or a
+successful link. No code was changed for this audit; the source build and
+runtime were not rerun. This is a first item in the broader all-actors audit,
+not proof that other missing objects are covered.

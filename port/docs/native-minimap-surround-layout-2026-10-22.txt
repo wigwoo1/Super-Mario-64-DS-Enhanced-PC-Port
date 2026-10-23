@@ -1,0 +1,21 @@
+Minimap-surround HUD layout, 2026-10-22
+
+Star and coin icons/counts sit beside the map; health and character-life
+icons/counts share a row below it. Near the lower screen edge, that second row
+moves above the map. The dark backing cards were removed and spacing was
+reduced to one scaled logical pixel. Elements remain anchored to the user's
+map position and size with screen-edge clamping. Existing decoded game icons
+and the output-resolution transparent HUD layer are retained.
+
+Verification: smoke_minimap_hud checks transparent space behind all four
+counter groups, their positions beside/below the default map, and behavior at
+top-left and lower-right large-map placements;
+smoke_minimap_hud, smoke_gpu, smoke_stage_graph, smoke_video, and
+smoke_video_window pass. Two 2600-frame muted native castle runs at 1280x720
+exited 0 using isolated saves: default map placement and map x=500,y=500,scale
+500. Screenshots are private at
+work/native-hud-around-map-transparent-default-muted-20261022/frame-2450.bmp
+and work/native-hud-around-map-transparent-bottomright-muted-20261022/frame-
+2450.bmp. Both runs: audio mixer errors=0, submitted nonzero output samples=0,
+seed save byte-identical. This verifies the Yoshi HUD path only. Other
+character art paths and renderer/gameplay combinations remain open.

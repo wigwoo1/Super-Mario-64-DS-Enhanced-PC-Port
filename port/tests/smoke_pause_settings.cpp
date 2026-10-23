@@ -134,7 +134,7 @@ int main() {
     char map_label[64];menu.line(0,settings,map_label,sizeof(map_label));
     if(std::strcmp(map_label,"OPACITY 0%"))return 51;
     press(0x80); settings.minimap_scale=495; settings.minimap_x=740; press(0x10);
-    if (settings.minimap_scale!=500 || settings.minimap_x!=500) return 14;
+    if (settings.minimap_scale!=500 || settings.minimap_x!=740) return 14;
     menu.line(1,settings,map_label,sizeof(map_label));
     if(std::strcmp(map_label,"MAP SIZE 50%"))return 52;
     settings.minimap_scale=100; press(0x20);
@@ -149,10 +149,10 @@ int main() {
     if(menu.page!=Page::Position)return 48;
     settings.minimap_x=0; press(0x20);
     if (settings.minimap_x!=0) return 17;
-    settings.minimap_x=900; press(0x10);
-    if (settings.minimap_x!=900) return 18;
+    settings.minimap_x=990; press(0x10);
+    if (settings.minimap_x!=1000) return 18;
     menu.line(0,settings,map_label,sizeof(map_label));
-    if(std::strcmp(map_label,"MAP X POSITION 90%"))return 54;
+    if(std::strcmp(map_label,"MAP X POSITION 100%"))return 54;
     press(0x80); settings.minimap_y=5; press(0x20);
     if (settings.minimap_y!=0) return 19;
     menu.line(1,settings,map_label,sizeof(map_label));

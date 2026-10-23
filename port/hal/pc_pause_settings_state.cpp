@@ -138,13 +138,13 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         else s.right_stick_deadzone=static_cast<uint8_t>(step(s.right_stick_deadzone,2,0,50));
         break;
     case Page::Position:
-        if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000-s.minimap_scale));
-        if (row == 1) s.minimap_y = static_cast<uint16_t>(step(s.minimap_y, 10, 0, 1000-s.minimap_scale));
+        if (row == 0) s.minimap_x = static_cast<uint16_t>(step(s.minimap_x, 10, 0, 1000));
+        if (row == 1) s.minimap_y = static_cast<uint16_t>(step(s.minimap_y, 10, 0, 1000));
         break;
     default: break;
     }
-    s.minimap_x = std::min<uint16_t>(s.minimap_x, 1000-s.minimap_scale);
-    s.minimap_y = std::min<uint16_t>(s.minimap_y, 1000-s.minimap_scale);
+    s.minimap_x = std::min<uint16_t>(s.minimap_x, 1000);
+    s.minimap_y = std::min<uint16_t>(s.minimap_y, 1000);
     return Action::Changed;
 }
 
