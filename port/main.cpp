@@ -299,6 +299,105 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        // Isolated block-contact replay: use ordinary jump plus midair R to
+        // test the block's ground-pound callback. This only injects input
+        // under automation; it never edits actor, player, collision or save
+        // state.
+        const char *block_replay=std::getenv("SM64DS_PC_TEST_BLOCK_INTERACTION");
+        if(block_replay && !std::strcmp(block_replay,"1") && level==6) {
+            dActor_c *block=nullptr;double block_distance=1e100;
+            for(auto *candidate=dActor_c::FindWithActorID(15,nullptr);candidate;
+                candidate=dActor_c::FindWithActorID(15,candidate)) {
+                const double bx=double(candidate->mPosX)-player->mPosX;
+                const double by=double(candidate->mPosY)-player->mPosY;
+                const double bz=double(candidate->mPosZ)-player->mPosZ;
+                if(candidate->aliveState!=1 || std::abs(by)>700*4096.0)continue;
+                const double distance=std::hypot(bx,bz);
+                if(distance<block_distance){block=candidate;block_distance=distance;}
+            }
+            static bool block_contact_seen=false;
+            if(block && block_distance<260*4096.0)block_contact_seen=true;
+            if(block_contact_seen && (!block || block_distance>=260*4096.0)) {
+                dActor_c *coin=nullptr;double nearest=500*4096.0;
+                for(auto *a=dActor_c::FindWithActorID(288,nullptr);a;
+                    a=dActor_c::FindWithActorID(288,a)) {
+                    if(a->aliveState!=1 || std::hypot(double(a->mPosX)+3660*4096.0,
+                       double(a->mPosZ)-6411*4096.0)>600*4096.0)continue;
+                    double d=std::hypot(double(a->mPosX)-player->mPosX,double(a->mPosZ)-player->mPosZ);
+                    if(d<nearest){nearest=d;coin=a;}
+                }
+                sx=sy=0;
+                if(coin) {
+                    double angle=std::atan2(double(coin->mPosX)-player->mPosX,
+                        double(coin->mPosZ)-player->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    sx=static_cast<int16_t>(std::sin(angle)*18000);
+                    sy=static_cast<int16_t>(-std::cos(angle)*18000);
+                }
+                ntr::input_test_controls(true,0,sx,sy);return true;
+            }
+            if(block && block_distance<260*4096.0 &&
+               (!std::strcmp(state,"St_LedgeHang_Main") ||
+                !std::strcmp(state,"St_Wait_Main") ||
+                !std::strcmp(state,"St_Walk_Main") ||
+                !std::strcmp(state,"St_OnWall_Main") ||
+                !std::strcmp(state,"St_Jump_Main") ||
+                !std::strcmp(state,"St_GroundPound_Main"))) {
+                const double bx=double(block->mPosX)-player->mPosX;
+                const double bz=double(block->mPosZ)-player->mPosZ;
+                const double angle=std::atan2(bx,bz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*22000);
+                sy=static_cast<int16_t>(-std::cos(angle)*22000);
+                static uint64_t r_until=0,climb_until=0,next_climb=0,next_pound=0;
+                static bool climb_jump_pending=false,pound_jump_pending=false;
+                static bool climbed_onto_block=false;
+                static uint64_t block_top_since=0;
+                const bool grounded_state=!std::strcmp(state,"St_Wait_Main") ||
+                    !std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_OnWall_Main");
+                const bool above_block=player->mPosY-block->mPosY>120*4096;
+                if(!player->mIsAirborne && grounded_state && above_block) {
+                    climbed_onto_block=true;
+                    if(!block_top_since)block_top_since=tick;
+                }
+                if(climbed_onto_block) { sx=0;sy=0; }
+                if(pound_jump_pending && !player->mIsAirborne && tick>=next_pound)
+                    pound_jump_pending=false;
+                if(!climbed_onto_block && !player->mIsAirborne && grounded_state &&
+                   block_distance<220*4096.0 && tick>=next_climb) {
+                    buttons=2; // DS B jump; the PC A binding maps here.
+                    climb_jump_pending=true;
+                    climb_until=tick+5;
+                    next_climb=tick+90;
+                } else if(!climbed_onto_block && !player->mIsAirborne &&
+                          climb_jump_pending && tick<climb_until) {
+                    buttons=2;
+                } else if(!climbed_onto_block && climb_jump_pending && tick>=climb_until) {
+                    climb_jump_pending=false;
+                } else if(climbed_onto_block && !player->mIsAirborne && grounded_state &&
+                          !pound_jump_pending && tick>=next_pound && tick>=block_top_since+100) {
+                    buttons=2; // Jump from the block before pressing R in midair.
+                    pound_jump_pending=true;
+                    climb_until=tick+8;
+                    next_pound=tick+180;
+                } else if(player->mIsAirborne && pound_jump_pending &&
+                          !std::strcmp(state,"St_Jump_Main")) {
+                    buttons=0x100; // DS R while airborne initiates a ground pound.
+                    r_until=tick+3;
+                    pound_jump_pending=false;
+                } else if(pound_jump_pending && !player->mIsAirborne && tick<climb_until) {
+                    buttons=2; // Hold through input polling, as during the ledge approach.
+                } else if(tick<r_until) {
+                    buttons=0x100;
+                }
+                static const char *last_state=nullptr;
+                if(!last_state || std::strcmp(last_state,state) || tick%120==0 || buttons) {
+                    std::fprintf(stderr,"[native block replay] tick=%llu id=%u distance=%.1f state=%s stick=%d,%d buttons=%x\n",
+                        static_cast<unsigned long long>(tick),block->uniqueID,block_distance/4096.0,
+                        state,int(sx),int(sy),unsigned(buttons));
+                    last_state=state;
+                }
+                ntr::input_test_controls(true,buttons,sx,sy);return true;
+            }
+        }
         const bool horizontal_reached=horizontal<=radius*4096.0;
         const bool height_reached=!has_y ||
             (!player->mIsAirborne && std::abs(dy)<=vertical_tolerance);

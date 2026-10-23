@@ -301,6 +301,33 @@ struct PcNativeActorProfile {
     int clipOffsetY, clipRadius, clipDistance, farDistance;
 };
 static_assert(sizeof(PcNativeActorProfile) == 0x1c, "native actor descriptor");
+// Original ov002 big-brick actor: five distinct profile IDs share one class.
+extern "C" void *daObjBlockL_c_classInit_BK_FUTA();
+extern "C" void *daObjBlockL_c_classInit_BLOCK_LL();
+extern "C" void *daObjBlockL_c_classInit_SW_BLOCK_L();
+extern "C" void *daObjBlockL_c_classInit_DP_BLOCK_L();
+extern "C" void *daObjBlockL_c_classInit_BLOCK_L();
+extern "C" void pc_block_init_resources(void);
+static PcNativeActorProfile pc_block_profile = {
+    (void *)&daObjBlockL_c_classInit_BLOCK_L,15,32,0x2u,
+    0x64000,0xc8000,0x1800000,0x1800000
+};
+static PcNativeActorProfile pc_big_block_profile = {
+    (void *)&daObjBlockL_c_classInit_BLOCK_LL,17,34,0x2u,
+    0x96000,0x12c000,0x1800000,0x1800000
+};
+static PcNativeActorProfile pc_switch_block_profile = {
+    (void *)&daObjBlockL_c_classInit_SW_BLOCK_L,19,36,0x2u,
+    0x64000,0xc8000,0x1800000,0x1800000
+};
+static PcNativeActorProfile pc_heavy_block_profile = {
+    (void *)&daObjBlockL_c_classInit_DP_BLOCK_L,16,33,0x2u,
+    0x96000,0x12c000,0x4000000,0x4000000
+};
+static PcNativeActorProfile pc_fortress_wall_profile = {
+    (void *)&daObjBlockL_c_classInit_BK_FUTA,46,199,0x2u,
+    0x64000,0xc8000,0x1800000,0x1800000
+};
 // WARPKUN, original ov002 descriptor at 0210ac98; invisible warp cylinder.
 static PcNativeActorProfile pc_warp_profile = {
     (void *)&daWarpkun_c_classInit,347,347,3,0,0xa000,0x960000,0
@@ -444,6 +471,11 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
     data_020a4bb8_storage[73] = g_profile_FL_LONDON;
+    data_020a4bb8_storage[15] = &pc_block_profile;
+    data_020a4bb8_storage[16] = &pc_heavy_block_profile;
+    data_020a4bb8_storage[17] = &pc_big_block_profile;
+    data_020a4bb8_storage[19] = &pc_switch_block_profile;
+    data_020a4bb8_storage[46] = &pc_fortress_wall_profile;
     pc_fl_seesaw_init_resources();
     data_020a4bb8_storage[77] = &pc_fl_seesaw_profile;
     data_020a4bb8_storage[219] = g_profile_WANWAN;

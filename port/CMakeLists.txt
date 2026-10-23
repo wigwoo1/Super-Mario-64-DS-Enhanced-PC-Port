@@ -468,6 +468,7 @@ set(OV002_DATA_SYMBOLS
     data_ov002_0211058c data_ov002_021106ac
     data_ov002_0210c080 data_ov002_0211110c
     data_ov002_0210d7f4
+    data_ov002_0210d794 data_ov002_0210d8f4
     data_ov002_02110064 data_ov002_020ff120 data_ov002_021101cc)
 set(OV002_DATA_CPP "${CMAKE_BINARY_DIR}/host-src/ov002_data.cpp")
 set(PC_GAME_LINK_HISTORY "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log")
@@ -488,6 +489,17 @@ add_custom_command(OUTPUT "${OV002_DATA_CPP}"
             "${PORT_REPO_ROOT_ABS}/extracted/overlays/overlay_0002.bin"
             "${PC_GAME_LINK_HISTORY}"
     COMMENT "ov002 data from the local ROM extraction")
+
+# Block collision material row three points into object overlay 15. Keep its
+# exact source bytes local and reconstruct them from the user's ROM as needed.
+set(OV015_DATA_CPP "${CMAKE_BINARY_DIR}/host-src/ov015_data.cpp")
+add_custom_command(OUTPUT "${OV015_DATA_CPP}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/overlay_data.py"
+            --out "${OV015_DATA_CPP}" --overlay 15 data_ov015_021135f4
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/overlay_data.py"
+            "${PORT_REPO_ROOT_ABS}/config/arm9/overlays/ov015/symbols.txt"
+            "${PORT_REPO_ROOT_ABS}/extracted/overlays/overlay_0015.bin"
+    COMMENT "ov015 block collision material from the local ROM extraction")
 
 # The retail title overlay stores course labels as ARM9 pointers. Rebuild that
 # table with native pointers into strings copied from the user's local ROM.
@@ -988,6 +1000,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/chomp_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py"
@@ -1035,6 +1048,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/chomp_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/texture_consumer_hooks.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -1324,7 +1338,7 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     hal/dialogue_overrides.cpp hal/dialogue_runtime.cpp
     hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp hal/distant_actor_shadows.cpp
     hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/minimap_hud_art.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
-    "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV001_IMAGE_CPP}"
+    "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV015_DATA_CPP}" "${OV001_IMAGE_CPP}"
     "${LEVEL_OVERLAY_TABLE_CPP}" "${OV002_DATA_CPP}" "${TITLE_OVERLAY_DATA_CPP}"
     "${LEVEL_OVERLAY_DATA_CPP}" "${OV009_IMAGE_CPP}")
 target_include_directories(sm64ds_pc BEFORE PRIVATE "${CMAKE_BINARY_DIR}/pc-host-include")

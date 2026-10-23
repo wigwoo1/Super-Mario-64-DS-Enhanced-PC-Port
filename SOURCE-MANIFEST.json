@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "1ed4b13acce9a3d2ccb3219c8b5c478d37f522c361207fc3e8f047665119d903",
-      "bytes": 81666
+      "sha256": "8cc875f46b46567abd6f2c875858b7c7b4d491447b74a52ec0df65aabcf8036b",
+      "bytes": 82593
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6905,8 +6905,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "52e9cff639d0f1b81b626edd45bfe6ba28ff4ff9fd6c69a9d7fd17762c9f9d8b",
-      "bytes": 37050
+      "sha256": "cf4aad165a6c2d0a1fe743a5552c2e12315dd9d047892ecfe237553396a6dde0",
+      "bytes": 37790
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -7090,8 +7090,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "f68526435794ea3a4a8597dd81ce9449a5f74fb8d1a71d124820a93a36db27d7",
-      "bytes": 36382
+      "sha256": "0304bcb9fb55754786a379e91a2f6f78aac8cd4401dbde1456abf89f756e1a1a",
+      "bytes": 37834
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7490,8 +7490,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "3dcd831e0959cbeaf1348bc1206de2dbdc007fa9d18aefa132b02c5136ea3c64",
-      "bytes": 125988
+      "sha256": "67b3915b5cfc6ec1555f8f8e2c01462a5fe3c0ea4e12a46129dde5af199b0286",
+      "bytes": 132159
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8399,14 +8399,19 @@
       "bytes": 3512
     },
     {
+      "path": "port/tools/block_host.py",
+      "sha256": "fe9506c5a789127b69679bbe228d4d8928a5043b2219e6bc689177005ec64a52",
+      "bytes": 4985
+    },
+    {
       "path": "port/tools/bombking_host.py",
       "sha256": "32b70192205be2f5214e1004c06cf6595a06befe5aaacd452c42f88f0bd95512",
       "bytes": 4130
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "e50ae35322a30c8b14ca58d351a1347cdb58a581e4a7bcd055d5d3b02836c295",
-      "bytes": 40405
+      "sha256": "d08acc4842346117f6073f5f0616c141ba78052a516d61b4110b88c9f9fd6b19",
+      "bytes": 40646
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8795,8 +8800,8 @@
     },
     {
       "path": "port/tools/overlay_data.py",
-      "sha256": "07ea2d93dd159a3ed9bd4297a0af978fd9a4f6eb1be34a723afdee29537cfce1",
-      "bytes": 6238
+      "sha256": "40d6ab1c13e1a2a8d6fc18821a808913164b11ddb2b47e73b6b6d29f36a3e618",
+      "bytes": 6258
     },
     {
       "path": "port/tools/pc_title_session.py",

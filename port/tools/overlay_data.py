@@ -15,13 +15,13 @@ from link_data import NATIVE_CPP_DATA
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-OV_BASE = {1: 0x020AA420, 2: 0x020AD660}
+OV_BASE = {1: 0x020AA420, 2: 0x020AD660, 15: 0x021111A0}
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", required=True, type=pathlib.Path)
-    ap.add_argument("--overlay", type=int, choices=(1, 2), default=2)
+    ap.add_argument("--overlay", type=int, choices=(1, 2, 15), default=2)
     ap.add_argument("--link-log", type=pathlib.Path,
                     help="include unresolved data symbols named by a prior link")
     ap.add_argument("symbols", nargs="+")

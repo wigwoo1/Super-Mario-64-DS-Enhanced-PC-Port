@@ -522,3 +522,14 @@ setting exists; the replacement text mod and custom-settings restyle are queued.
 2026-10-21 update: internal resolution/window independence and named Native DS are now runtime verified for castle/Wanted D3D11. Separate window client-size/maximized preferences persist. See native-internal-resolution-2026-10-21.txt. Text editing deferred by user; stop asking for replacement boxes for now. True high-refresh rendering, further native gameplay/audio and full roadmap remain open.
 
 2026-10-22: Native Controls rebinding and left/right deadzones are implemented with selected muted runtime verification; see native-rebinding-verified-2026-10-22.txt. Physical Switch Pro acceptance and the original button's distorted letter remain open. The broader settings roadmap remains incomplete.
+
+2026-10-23 request: trigger camera rotation (PLANNED, not implemented).
+Add Left Trigger = rotate camera left and Right Trigger = rotate camera right.
+Expose both actions in the keyboard/controller rebinding menu. Support the
+connected controller's trigger representation (including digital triggers),
+ignore trigger noise, and leave camera stationary when both are held equally.
+Respect the selected camera mode: original preset turns in original mode;
+smooth continuous rotation using camera sensitivity in free-camera mode.
+Keep right-stick camera control, stick-click mode/zoom actions, and menu
+navigation working. Verify press/hold/release and simultaneous triggers on
+Xbox and Switch Pro mappings, with muted tests and screenshots.

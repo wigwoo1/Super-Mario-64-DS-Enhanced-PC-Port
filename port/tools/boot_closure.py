@@ -23,6 +23,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daObjFl_London_c_classInit",
                  "daObjFl_Seesaw_c_classInit",
+                 "daObjBlockL_c_classInit_BLOCK_L",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
                  "daChScene_c_classInit", "daDoor_c_classInit", "daStarGate_c_classInit", "dMap_c_classInit",
                  "daPicGate_c_classInit", "_ZN11daPicGate_cD1Ev", "_ZN11daPicGate_c19func_ov080_021261f4Ev",
@@ -396,6 +397,10 @@ def main() -> int:
                 if path.name=='d_a_warpkun.cpp':
                     import warp_host
                     transformed=warp_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'daObjBlockL_c.cpp':
+                    import block_host
+                    transformed=block_host.transform(transformed)
                     rewrites+=1
                 if path.name=='d_a_star_gate.cpp':
                     import star_gate_host
