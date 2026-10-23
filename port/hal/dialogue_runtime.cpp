@@ -15,6 +15,9 @@ int GetOwnerLanguage();
 extern uint8_t data_0209d6bc,data_0209d6b4,data_0209d68c,data_0209d684,data_0209d694,data_0209d660;
 }
 extern "C" void pc_dialogue_observe(){
+    // Keep the platform renderer synchronized through its normal ntr API.
+    // This also lets renderer-only test targets link without game globals.
+    ntr::video_set_dialogue_card_active(data_0209d660!=0);
     const char *path=std::getenv("SM64DS_PC_DIALOGUE_CAPTURE");
     if(!path || !*path)return;
     static FILE *file=nullptr;static uint32_t previous[7]={};static bool observed=false;

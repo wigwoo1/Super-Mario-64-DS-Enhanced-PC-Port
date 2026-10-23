@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "70f06ee43dac936b4235161c8c9377d3f8b04af394d4fb7cd833f4270ade333d",
-      "bytes": 249647
+      "sha256": "e28f8203a2e8f2b9f9d4cac031784c33b724855e4b9328cd796c880a1ba3a765",
+      "bytes": 249696
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "a224b3ac9dc4ddabcb56620db3b5d77d51657adae47b6ee937f7ac906b6fabce",
-      "bytes": 81516
+      "sha256": "1ed4b13acce9a3d2ccb3219c8b5c478d37f522c361207fc3e8f047665119d903",
+      "bytes": 81666
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
-      "sha256": "2c44d5691f5f42271a49c2e472a81e50ef180215142c632efb4e31c3d197b220",
-      "bytes": 4904
+      "sha256": "ba594ce6ff8a0fcd7e18d2ea38aa305cc87aab136999d812404da0ffd8876f7d",
+      "bytes": 7859
     },
     {
       "path": "port/docs/native-analog-range-checkpoint-2026-10-16.txt",
@@ -6604,9 +6604,14 @@
       "bytes": 4773
     },
     {
+      "path": "port/docs/native-dialogue-card-link-fix-2026-10-23.txt",
+      "sha256": "96b6d73444d30e66e7e1fb7ab38145ac7455325c71430509c6a2036cb9f225fc",
+      "bytes": 1555
+    },
+    {
       "path": "port/docs/native-dialogue-overrides-2026-10-21.txt",
-      "sha256": "4bd0bb57d988f4aa794ae2964cecbc19bca942934088c932312535c03e01712a",
-      "bytes": 6682
+      "sha256": "61ebc93efb9f39bdc5d3e36e77a0f54aa15e660afaa719d911a534fb9c1efca1",
+      "bytes": 8712
     },
     {
       "path": "port/docs/native-distant-bomb-coin-checked-2026-10-20.txt",
@@ -6774,6 +6779,11 @@
       "bytes": 5142
     },
     {
+      "path": "port/docs/native-seesaw-verified-2026-10-23.txt",
+      "sha256": "35bfd210abc26c1ecdf666f79f8d7663edb80d849e300a72f4f2cf097013f691",
+      "bytes": 3528
+    },
+    {
       "path": "port/docs/native-shadow-masks-checkpoint-2026-10-15.txt",
       "sha256": "2017dbd983cde5bb737902355b524ae908788ac0ecffdd06500b613dd5342980",
       "bytes": 7294
@@ -6880,8 +6890,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "95599a6d5cdb9aa0d182e8180b4739e620c552d9bc360050932be18771af682e",
-      "bytes": 270694
+      "sha256": "761aadab84432887ddf8292c27101b997650550e33a6f8d5650bba0dc10877f0",
+      "bytes": 273074
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -7075,8 +7085,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "2bc4f0284fa735a4e69f00dd0659925a2e671389e5d0cea2c2254024b468c406",
-      "bytes": 35984
+      "sha256": "f68526435794ea3a4a8597dd81ce9449a5f74fb8d1a71d124820a93a36db27d7",
+      "bytes": 36382
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7155,8 +7165,8 @@
     },
     {
       "path": "port/hal/dialogue_runtime.cpp",
-      "sha256": "32d6c0e5c6c25c484e6b4ad538b21f0025813db6f97e9aff7fda6e370f5f32b4",
-      "bytes": 4338
+      "sha256": "718abd10e76cddd6dd76d611bf843a7b2c3c9b9bbc7123f7498a90acff61eff1",
+      "bytes": 4548
     },
     {
       "path": "port/hal/distant_actor_shadows.cpp",
@@ -7655,8 +7665,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "8882c86b84dcd69779f4cec1a3e721007d645e6700313cf528fecff0bd37c92c",
-      "bytes": 4793
+      "sha256": "9e6d0c49f28887b42b26fcf38f8eada1109e5a6f8e2a8c1e6407419dbb198be0",
+      "bytes": 4916
     },
     {
       "path": "port/ntr/input.cpp",
@@ -7740,8 +7750,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "bfa8b0372455c90f7012e0f4fc3c5d8963ddc3cbef6d682d86dbcf8026136243",
-      "bytes": 58013
+      "sha256": "5f9695550f4c806a834b6875a3ffbe39a6ca2ffd7125049edda3627d17cb4387",
+      "bytes": 61934
     },
     {
       "path": "port/README.md",
@@ -8390,8 +8400,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "e6b3f2e02e5beb832fadcda429fec7ba4240835adfc91c56c38202450071ffcb",
-      "bytes": 40160
+      "sha256": "e50ae35322a30c8b14ca58d351a1347cdb58a581e4a7bcd055d5d3b02836c295",
+      "bytes": 40405
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8530,8 +8540,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "f58cc8eb8de6d1120d6e3327dd4165c8a2e985009b9a3e6bca02a9a51e629c8f",
-      "bytes": 24003
+      "sha256": "250d01fb06d090296cec2fc2d280af646888b9abc81fb621ef63d292c0f39628",
+      "bytes": 24287
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8822,6 +8832,11 @@
       "path": "port/tools/sdl3_dependency.py",
       "sha256": "627c7d16ce980093211e93c997f7e6e4470eaeb3262bbc23179b4c42fa066db8",
       "bytes": 1450
+    },
+    {
+      "path": "port/tools/seesaw_host.py",
+      "sha256": "7a98340787f716673effb3d2b7319dfaf3c0940c54ed9e4e79c075232ee8f35a",
+      "bytes": 2529
     },
     {
       "path": "port/tools/setup_mesa_runtime.ps1",

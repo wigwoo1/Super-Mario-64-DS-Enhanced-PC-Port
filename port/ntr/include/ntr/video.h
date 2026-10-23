@@ -62,6 +62,8 @@ void video_set_minimap_gameplay(bool active);
 void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives,unsigned health=8,unsigned character=3);
 // Peach's 2D letter text follows the widened projection of its 3D panel.
 void video_set_cutscene_letter(bool active);
+// The native game bridge updates this when DS dialogue opens or closes.
+void video_set_dialogue_card_active(bool active);
 bool video_minimap_visible();
 // Present the original bottom-screen pause/options interface as the main view.
 void video_set_pause_screen(bool active, bool custom_settings = false);

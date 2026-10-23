@@ -78,6 +78,7 @@ def main():
             ('g_profile_WANWAN', 'daWanwan_c_classInit', 14, 0x02114750),
             ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
             ('g_profile_FL_LONDON', 'daObjFl_London_c_classInit', 22, 0x02113f4c),
+            ('pc_fl_seesaw_profile', 'daObjFl_Seesaw_c_classInit', 22, 0x02114010),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
@@ -93,6 +94,8 @@ def main():
     base64,rom64=overlay(64)
     if pe_bytes(args.exe,named('data_ov064_0211bb2c'),32)!=rom64[0x0211bb2c-base64:0x0211bb4c-base64]:
         raise ValueError('Lava bridge collision properties differ from original')
+    if pe_bytes(args.exe,named('data_ov064_0211bacc'),32)!=rom64[0x0211bacc-base64:0x0211bacc-base64+32]:
+        raise ValueError('Lethal Lava Land seesaw collision properties differ from original')
     base100,rom100=overlay(100)
     if pe_bytes(args.exe,named('data_ov100_02148390'),24)!=rom100[0x02148390-base100:0x02148390-base100+24]:
         raise ValueError('Star Gate thresholds/save flags/message table differs from original')

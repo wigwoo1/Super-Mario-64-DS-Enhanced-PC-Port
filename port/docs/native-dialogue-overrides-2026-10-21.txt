@@ -96,3 +96,32 @@ Sol Medium for investigating additional unsupported text paths.
 F deployment still needs a new frozen accepted snapshot; old title installer
 is stale and must never have its SHA check bypassed. Do not kill user game.
 Full goal remains active; do not pause solely for this completed test milestone.
+
+2026-10-23 dialogue-card coverage update: card activation now follows
+data_0209d660, the shared message-open flag, rather than adjacent
+data_0209d664, which left some dialogue types uncovered. Pause/minigame/
+Peach-letter/custom-menu/two-screen exclusions remain. The screenshot replay
+used build SHA256 2BD299E837F40A03401C6FF642AECE43653DD67736FAE2738BFE38553D9CFBB6;
+after a redundant declaration cleanup, the final clean rebuild is
+13481A4852C477885381AE4F21596FD3A67319FDD3D4B8A2FF02131DF69FC9D0.
+Muted D3D11 Toad 60-Star conversation replay showed its text on the gold-trimmed
+card at tick 14200 and no card after the message closed at tick 14800. Device
+audio gate logged output_muted=1. Python dialogue tests 3/3 and focused video/
+dialogue CTests 3/3 passed on the final rebuild. The long replay launcher did not return its exit
+code cleanly, so this is visual/runtime partial acceptance; Lakitu-specific
+runtime confirmation and broader speaker coverage remain pending. No F: install
+or public build was made.
+
+2026-10-23 dialogue-card layout update: the gold-trimmed translucent card now
+centers on the visible foreground text with a consistent minimum size, instead
+of assuming every speaker uses the same text anchor. This fixes Lakitu's
+left-anchored opening line while keeping the upstairs Toad card aligned. Native
+Release build EE5254B9D292EC659F663BAFFBE1A77C89A89B352E09A0FA4CEB7A5526B66DE3;
+smoke_video_window, smoke_dialogue_overrides and smoke_video pass. A 12000-frame
+muted intro/door route exits 0 and shows the card during Lakitu message 1; a
+15000-frame muted upstairs Toad route exits 0, shows message 272 on the card,
+then shows no card after dialogue closes. Screenshots remain private in
+work/native-dialogue-card-lakitu-dynamic-r1-muted-20261023 and
+work/native-muted-audio-walk-dialogue-card-toad-dynamic-r1-muted-20261023-20261021.
+This verifies GPU presentation for those two speakers; other dialogue families,
+software-renderer presentation and unusual multi-screen layouts still need checks.

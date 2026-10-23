@@ -2098,3 +2098,40 @@ mixer errors remain zero. The 4K run's internal render target is 3840x2160, whil
 window sizing remains separately configured. Actual hardware/window dimensions,
 other renderers and broader menu/character combinations remain to be checked.
 Full port remains incomplete.
+
+## 2026-10-23: Seesaw diagnosis corrected; original behavior restored
+
+LATEST ACCEPTANCE: contact, idle carry, unload and original painting re-entry
+now verified on unchanged A56B0B37 build. Running normal-jump replay lands on
+original UID11 with268 grounded samples; 16000-tick original Exit Course/castle/
+painting/mission1 replay creates UID229 and records575 post-reload grounded
+samples,572 no-input carry samples spanning58.04 vertical units. Both exit0,
+muted output0/errors0, QA save unchanged. Build/profile audit/3focused checks
+pass. Detailed scope and diagnostic sampling limit are recorded in
+native-seesaw-verified-2026-10-23.txt. This supersedes the unverified-contact
+history below. Luna Medium next for fresh ROM-free kit reconstruction; full
+port and new F installation remain incomplete.
+
+Retracted the prior collision-table-reset diagnosis and removed the forced
+Enable hooks. Original IsClsnInRange owns distance-based activation, which now
+passes the near-player activation trace. Correct resource resolution is through
+handles.tsv: handles0x610/0x611 map to fl_shiso BMD/KCL, not Snow Mountain FAT
+entries. Build A56B0B37E862486FCA3F3CC50B390D3224FC167EF9071BA2591FE02E881777E4
+and native actor/profile data audit pass; three collision/video CTests pass.
+Two muted isolated-save jump replays exit0 with no audio submitted/errors0.
+The seesaw is visibly present/tilting, but neither jump lands on it: long jump
+overshoots; neutral jump loses forward movement and falls short. Contact/carry
+and unload/re-entry remain unverified. Stop route guesses; next derive running
+normal-jump timing/braking from measured trajectories. See current detailed
+handoff in native-actor-registry-audit-2026-10-22.txt. No F: install or full-port
+completion claim.
+## 2026-10-23: Dialogue-card renderer link fixed
+
+The renderer's dialogue-card state now goes through the ntr video API, avoiding
+an unresolved game-only symbol in renderer smoke targets while retaining the
+shared DS message-open state. The native game and `smoke_input` build cleanly;
+nine focused CTests, three dialogue Python tests and the native actor/data audit
+pass. Two fresh muted dialogue replays did not reach an accepted speaker view,
+so this refactor has no new runtime screenshot acceptance. No F installation or
+build-kit release was made. Details: `native-dialogue-card-link-fix-2026-10-23.txt`.
+

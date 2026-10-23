@@ -271,6 +271,8 @@ extern "C" void pc_buddy_init_resources(), pc_shutter_init_resources();
 extern "C" void pc_chomp_init_resources(), pc_pile_init_resources(), pc_wanwan_fence_init_resources();
 extern "C" void pc_lava_bridge_init_resources();
 extern "C" unsigned char g_profile_FL_LONDON[];
+extern "C" void *daObjFl_Seesaw_c_classInit();
+extern "C" void pc_fl_seesaw_init_resources();
 extern "C" unsigned char g_profile_WANWAN[], g_profile_PILE[], g_profile_WANWAN_SHUTTER[];
 extern "C" void *daRedBombhei_c_classInit();
 extern "C" void *daCnn_c_classInit(), *daWbm_c_classInit();
@@ -318,6 +320,11 @@ static PcNativeActorProfile pc_metalnet_profile = {
 static PcNativeActorProfile pc_castle_water_profile = {
     (void *)&daObjMcWater_c_classInit,338,338,0,
     0,0x00320000,0x01f40000,0x00050000
+};
+// FL_SEESAW (77), exact ov022 descriptor metadata from 0x02114010.
+static PcNativeActorProfile pc_fl_seesaw_profile = {
+    (void *)&daObjFl_Seesaw_c_classInit,77,285,0x00000002u,
+    0,0x00650000,0x02000000,0
 };
 static void *pc_power_star_factory() { return new daStar_c(); }
 static void *pc_silver_star_factory() { return new daStar_c(); }
@@ -437,6 +444,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
     data_020a4bb8_storage[73] = g_profile_FL_LONDON;
+    pc_fl_seesaw_init_resources();
+    data_020a4bb8_storage[77] = &pc_fl_seesaw_profile;
     data_020a4bb8_storage[219] = g_profile_WANWAN;
     data_020a4bb8_storage[27] = g_profile_PILE;
     data_020a4bb8_storage[41] = g_profile_WANWAN_SHUTTER;

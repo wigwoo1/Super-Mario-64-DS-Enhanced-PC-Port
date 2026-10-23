@@ -1,0 +1,55 @@
+Native Lethal Lava Land seesaw - VERIFIED SELECTED GAMEPLAY - 2026-10-23
+
+Executable SHA256:
+A56B0B37E862486FCA3F3CC50B390D3224FC167EF9071BA2591FE02E881777E4
+
+Original FL_SEESAW actor77 now has verified visible rendering, full tilt range,
+near-player collision activation, landing, idle platform carry, course unload,
+and fresh creation/contact/carry after entry through the original painting.
+No player position/velocity changes, forced collider enabling, or modified
+matched source/physics were used. The successful replay replaces a neutral
+jump waypoint with a running normal-jump waypoint near the ledge: target
+14:-5150:3300:40:1, followed by 14:-5625:120:3300:100:0.
+
+Evidence in outer workspace work/:
+1. native-lava-bridge-seesaw-running-jump-high-r1-20261023-muted-20261022
+   4500 ticks, exit0. 268 grounded seesaw contact samples, 264 idle samples;
+   no-input vertical range57.82 units while remaining on UID11. Trace observes
+   full tilt[-1024,1024] and distant-disabled/near-enabled collision.
+   Screenshot frame-3500.png and acceptance.json.
+2. native-lava-bridge-seesaw-reentry-high-r1-20261023-muted-20261022
+   16000 ticks, exit0. Original Exit Course -> castle/lobby/basement doors ->
+   original painting -> mission1; reentry12214, route complete13144. Old UID11
+   replaced by UID229. Grounded samples50 before/575 after; 572 post-route
+   no-input samples on new actor, vertical carry58.04 units. Final level14 Wait,
+   control flags clear. New actor renders visible triangles. Screenshot
+   frame-15500.png and acceptance.json. Course return uses original triggers.
+
+Both runs: audio output muted, submitted nonzero samples0, mixer errors0;
+isolated slot1.sav bytes equal seed. Private check-seesaw-gameplay-20261023.py
+verifies floor ownership, feet/ground agreement, no-input carry, new UID,
+visible render submissions, mission1, restored control and save preservation.
+Visual screenshots inspected. Build target current; native actor/profile data
+audit and smoke_collision_veneer/smoke_video_window/smoke_video pass3/3.
+
+Trace limitation: Behavior runs every other presentation frame. Its legacy
+%10 sampler misses odd-phase instances after scene change. Consequently the
+reloaded instance's continuous contact/render data establishes carry/collision;
+no new full-angle trace claim is made for that instance. Initial standalone run
+observes the full range directly. This is a diagnostic sampling limitation,
+not evidence of absent actor behavior. Preserve this distinction in reporting.
+
+Scope: initial bootstrap uses development course picker and synthetic Mario
+prerequisite save. Earned whole-game progression, other characters, hardware
+controllers, other renderers and final F installation are not newly verified.
+Full port remains unfinished. The former forced-Enable and suspected resource
+mismatch diagnoses were retracted; original IsClsnInRange and overlay0 handle
+resolution are correct. No F root files, original ROM, or user saves changed.
+
+NEXT: Luna Medium is suitable for established ROM-free kit refresh, fresh-folder
+reconstruction and muted runtime verification. Include the expanded seesaw
+source closure/helper and reviewed symbol metadata, plus current dialogue-card
+changes; preserve publication allowlists. Do not publish full executables or
+private extracted/generated data. The old active-goal 60-Star Toad milestone
+already passed isolated original reward/save/reload/no-duplicate acceptance;
+do not repeat it. Resume the broader actor coverage roadmap after kit refresh.

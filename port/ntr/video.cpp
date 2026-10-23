@@ -54,6 +54,7 @@ bool g_minimap_gameplay = false;
 struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0,health=8,character=3;};
 MinimapCounters g_minimap_counters;
 bool g_cutscene_letter = false;
+bool g_dialogue_card_active = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
 bool g_minigame_active = false;
@@ -63,6 +64,69 @@ bool g_gpu = false;
 bool g_forced_software = false,g_renderer_failed = false;
 VideoRenderer g_active_renderer=VideoRenderer::D3D11;
 unsigned g_output_width=SCREEN_W,g_output_height=SCREEN_H;
+
+// The retail dialogue glyphs are a transparent PPU foreground layer. Add a
+// small parchment-colored panel only to transparent pixels in that layer, so
+// glyphs remain sharp and untouched in both the native GPU and software paths.
+uint32_t dialogue_card_color(uint32_t destination, uint32_t source) {
+    const unsigned alpha=source>>24;
+    const unsigned inverse=255-alpha;
+    const unsigned r=(((source>>16)&255)*alpha+((destination>>16)&255)*inverse+127)/255;
+    const unsigned g=(((source>>8)&255)*alpha+((destination>>8)&255)*inverse+127)/255;
+    const unsigned b=((source&255)*alpha+(destination&255)*inverse+127)/255;
+    return 0xff000000u|(r<<16)|(g<<8)|b;
+}
+
+struct DialogueCardBounds {int left=54,top=50,right=182,bottom=146;};
+
+DialogueCardBounds dialogue_card_bounds(const Framebuffer &foreground) {
+    // Dialogue glyphs are in the PPU foreground. Their anchor differs between
+    // cutscene/Lakitu messages and ordinary NPC boxes, so center the same-size
+    // card on the actual visible text rather than assuming one fixed anchor.
+    int min_x=SCREEN_W,min_y=SCREEN_H,max_x=-1,max_y=-1;
+    for(int y=40;y<168;++y) for(int x=20;x<196;++x) {
+        if(foreground.px[y][x]>>24) {
+            min_x=std::min(min_x,x); min_y=std::min(min_y,y);
+            max_x=std::max(max_x,x); max_y=std::max(max_y,y);
+        }
+    }
+    if(max_x<min_x || max_y<min_y) return {};
+    constexpr int min_width=128,min_height=96,padding_x=10,padding_y=10;
+    const int width=std::min(SCREEN_W-24,std::max(min_width,max_x-min_x+1+padding_x*2));
+    const int height=std::min(SCREEN_H-24,std::max(min_height,max_y-min_y+1+padding_y*2));
+    const int center_x=(min_x+max_x+1)/2,center_y=(min_y+max_y+1)/2;
+    const int left=std::clamp(center_x-width/2,12,SCREEN_W-12-width);
+    const int top=std::clamp(center_y-height/2,12,SCREEN_H-12-height);
+    return {left,top,left+width,top+height};
+}
+
+void dialogue_card_on_scene(Framebuffer &frame,const DialogueCardBounds &bounds) {
+    const int left=bounds.left,top=bounds.top,right=bounds.right,bottom=bounds.bottom;
+    for(int y=top;y<bottom;++y) for(int x=left;x<right;++x) {
+        const bool border=x==left || x==right-1 || y==top || y==bottom-1;
+        const bool inner_border=x==left+2 || x==right-3 || y==top+2 || y==bottom-3;
+        const bool corner=(x<left+4 || x>=right-4) && (y<top+4 || y>=bottom-4);
+        if(corner && !border && !inner_border) continue;
+        const uint32_t color=border?0xe8e8b850u:inner_border?0xffedcf86u:0xb8172033u;
+        auto &pixel=frame.px[y][x];
+        pixel=dialogue_card_color(pixel,color);
+    }
+}
+
+void dialogue_card_on_foreground(Framebuffer &frame,const DialogueCardBounds &bounds) {
+    const int left=bounds.left,top=bounds.top,right=bounds.right,bottom=bounds.bottom;
+    for(int y=top;y<bottom;++y) for(int x=left;x<right;++x) {
+        const bool border=x==left || x==right-1 || y==top || y==bottom-1;
+        const bool inner_border=x==left+2 || x==right-3 || y==top+2 || y==bottom-3;
+        const bool corner=(x<left+4 || x>=right-4) && (y<top+4 || y>=bottom-4);
+        if(corner && !border && !inner_border) continue;
+        auto &pixel=frame.px[y][x];
+        if(pixel>>24) continue; // retain every original text and UI pixel
+        if(border) pixel=0xe8e8b850u;
+        else if(inner_border) pixel=0xffedcf86u;
+        else pixel=0xb8172033u;
+    }
+}
 
 constexpr std::array<std::array<uint32_t, 2>, 15> kResolutionPresets{{
     {{1280, 720}}, {{1920, 1080}}, {{2560, 1440}}, {{3840, 2160}},
@@ -611,6 +675,9 @@ void video_set_cutscene_letter(bool active) {
     g_cutscene_letter = active;
     gpu_set_letter_overlay(active);
 }
+void video_set_dialogue_card_active(bool active) {
+    g_dialogue_card_active = active;
+}
 void video_set_pause_screen(bool active, bool custom_settings) {
     if(active && !g_pause_screen && g_minimap_gameplay && g_gpu) {
         if(!gpu_readback_gameplay(g_editor_background,g_editor_width,g_editor_height))
@@ -866,8 +933,13 @@ bool video_present_frame() {
     const bool geometry_visible=!g_pause_screen && ppu_geometry_active();
     uint8_t foreground_mask=ppu_backgrounds_above_3d();
     ppu_scanout(ENGINE_A,g_foreground,true,foreground_mask);
+    const bool dialogue_card=g_dialogue_card_active && !g_pause_screen && !g_minigame_active &&
+        !g_cutscene_letter && !g_menu_open && !dual;
+    const auto dialogue_bounds=dialogue_card?dialogue_card_bounds(g_foreground):DialogueCardBounds{};
+    if(dialogue_card && g_gpu) dialogue_card_on_foreground(g_foreground,dialogue_bounds);
     if (!g_gpu && geometry_visible) {
         gx_render(g_top);
+        if(dialogue_card) dialogue_card_on_scene(g_top,dialogue_bounds);
         for(int y=0;y<SCREEN_H;++y)for(int x=0;x<SCREEN_W;++x)
             if(g_foreground.px[y][x]>>24)g_top.px[y][x]=g_foreground.px[y][x];
     }

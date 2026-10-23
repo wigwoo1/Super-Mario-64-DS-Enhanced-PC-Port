@@ -1,5 +1,51 @@
 Native actor registry audit, 2026-10-22
 
+LATEST 2026-10-23: SEESAW CONTACT/CARRY AND ORIGINAL PAINTING RE-ENTRY VERIFIED.
+Supersedes the remaining contact limitations in the diagnostic history below.
+Exact A56B0B37 build: running-jump4500 and lifecycle16000 muted replays exit0.
+UID11 contact/carry passes; original painting/mission1 creates UID229, with575
+grounded contact samples after re-entry and572 no-input carry samples. Original
+collision/physics preserved. Save unchanged, mixer errors0/audio submitted0.
+Build/data audit/three focused CTests pass. See native-seesaw-verified-2026-10-23.txt
+and private acceptance records. Next model Luna Medium for ROM-free kit refresh.
+Whole actor inventory/full port and F installation remain incomplete.
+
+## 2026-10-23: Corrected seesaw diagnosis (PARTIALLY VERIFIED)
+
+The previous scene-reset diagnosis was unsupported and is retracted. The
+original dBgActor_c::IsClsnInRange explicitly disables distant colliders and
+enables them near the player. Removed both forced Enable injections from
+seesaw_host.py; trace now observes the completed original range check.
+Also retracted the suspected resource mismatch: 0x610/0x611 are overlay-0
+handles, not FAT IDs. handles.tsv resolves them correctly to FAT1121/1122,
+data/special_obj/fl_shiso/fl_shiso.bmd and fl_shiso.kcl.
+
+Current build A56B0B37E862486FCA3F3CC50B390D3224FC167EF9071BA2591FE02E881777E4
+compiles, passes the native actor/profile data audit, and passes the three
+collision/video CTests. Two muted isolated-save replays exit0 with mixer
+errors0 and submitted nonzero samples0. The original collider enables on
+approach and the seesaw visibly renders/tilts. Neither route establishes
+grounded owner UID11 contact, standing, or carry. These remain UNVERIFIED.
+
+Private geometry script work/inspect-seesaw-geometry-20261023.py reconstructs
+KCL triangle corners. Local bounds approximately x[-375.26,375], y[0,120],
+z[-1004.76,1000]; actor center(-5625,0,3000). Static ledge ends near x=-5000,
+leaving a lava gap before the seesaw. Normal walking across it is invalid.
+Long-jump replay crosses center x=-5625 while still high, then overshoots.
+Neutral-jump replay starts near x=-4998 but moves too little before descending
+into lava at x=-5109. Stop guessing routes after these two focused attempts.
+Next: derive a running normal-jump takeoff/braking schedule from these measured
+trajectories, preserving all original player/actor physics. Inspect yaw/actual
+transformed footprint if needed before testing contact, then unload/re-entry.
+
+Evidence: work/native-lava-bridge-seesaw-original-jump-r1-20261023-muted-20261022
+and work/native-lava-bridge-seesaw-original-neutraljump-r2-20261023-muted-20261022.
+The latter frame-3200.bmp clearly shows the seesaw and Mario on takeoff.
+No F: installation or full gameplay acceptance is justified yet.
+
+This supersedes the earlier statement below that the seesaw actor was not
+integrated; actor registration/rendering exist, but contact remains open.
+
 LATEST LIFECYCLE ACCEPTANCE: original painting entry and bridge reload PASS.
 Current exe88ACEAAF2395B6B226386CB56F0D56CC345B558BB203DEE5058ADBE0A039C586.
 Input-only Exit Course, original lobby/basement doors and lava painting load

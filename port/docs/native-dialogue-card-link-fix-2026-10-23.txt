@@ -1,0 +1,24 @@
+2026-10-23 dialogue-card renderer link fix
+
+The native video library referenced a dialogue-active function that was only
+defined in the full game target. Renderer-only targets such as smoke_input and
+smoke_video therefore failed to link. The renderer now owns a small active
+state behind ntr::video_set_dialogue_card_active(); the game dialogue observer
+updates it from the shared DS message-open flag. This preserves the card's
+speaker coverage and lets platform-only targets link without game globals.
+
+Verification on the resulting native Release executable:
+- sm64ds_pc and smoke_input compile/link successfully with Visual Studio 2026.
+- Nine focused CTests pass: input, video/window, pause settings, input state,
+  input history, dialogue overrides, stage graph, collision veneer and video.
+- Three dialogue override Python tests pass.
+- Native actor/profile/data audit passes, including the native seesaw profile.
+- Executable SHA256: C9B8BCDE7BE972791ACD236D2F767942773D1870A383806B0F8C22D6DA1FCBF4.
+
+Runtime acceptance is incomplete for this refactor. Two fresh muted automation
+launches failed to reach the intended Lakitu/Toad dialogue state; one landed in
+the development scene picker, and the other did not return a reliable exit
+code. Their screenshots are not accepted evidence. The earlier pre-refactor
+Lakitu and upstairs Toad screenshots remain evidence for the card layout only.
+No install or build-kit release was made. The next kit must be reconstructed in
+a fresh folder from the revised source and pass its own muted runtime check.

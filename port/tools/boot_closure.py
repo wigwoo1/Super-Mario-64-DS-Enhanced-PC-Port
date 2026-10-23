@@ -22,6 +22,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daObjFl_London_c_classInit",
+                 "daObjFl_Seesaw_c_classInit",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
                  "daChScene_c_classInit", "daDoor_c_classInit", "daStarGate_c_classInit", "dMap_c_classInit",
                  "daPicGate_c_classInit", "_ZN11daPicGate_cD1Ev", "_ZN11daPicGate_c19func_ov080_021261f4Ev",
@@ -503,6 +504,10 @@ def main() -> int:
                 if path.name == 'daObjFl_London_c.cpp':
                     import lava_bridge_host
                     transformed = lava_bridge_host.transform(transformed)
+                    rewrites += 1
+                if path.name == 'daObjFl_Seesaw_c.cpp':
+                    import seesaw_host
+                    transformed = seesaw_host.transform(transformed)
                     rewrites += 1
                 if path.name == '_ZN6Player16St_WallJump_MainEv.cpp':
                     import tree_host
