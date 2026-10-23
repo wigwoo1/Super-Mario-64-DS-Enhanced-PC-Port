@@ -1,3 +1,6 @@
+## 2026-10-23 — Native dialogue cards verified
+
+Current native Release build (`C9B8BCDE7BE972791ACD236D2F767942773D1870A383806B0F8C22D6DA1FCBF4`) was exercised through muted normal-game routes. Lakitu's opening `Yoshi...` dialogue and upstairs Toad's text both appear on the translucent card with gold border. Toad's dialogue closes and player control returns. Both runs exit 0; the Toad audio device receives zero samples, and its isolated save seed hashes are unchanged. Six focused CTests and three dialogue override Python tests pass. Local captures and full evidence are in `work/native-muted-audio-walk-dialogue-card-lakitu-correct-route-post-linkfix-20261023-20261021` and `work/native-muted-audio-walk-dialogue-card-correct-route-20261023-20261021`; screenshots and private data stay local. The Toad visual route uses a Mario prerequisite save. Other NPC message variants remain untested. See `native-dialogue-card-runtime-2026-10-23.txt`.
 ## Current native build installed and launched from F: (2026-10-16)
 
 - The current Release build was up to date; `cmake --build build/port --target sm64ds_pc --parallel 4` completed with no work required. CTest passed45/45 (25.01s).
@@ -2134,4 +2137,5 @@ nine focused CTests, three dialogue Python tests and the native actor/data audit
 pass. Two fresh muted dialogue replays did not reach an accepted speaker view,
 so this refactor has no new runtime screenshot acceptance. No F installation or
 build-kit release was made. Details: `native-dialogue-card-link-fix-2026-10-23.txt`.
+
 

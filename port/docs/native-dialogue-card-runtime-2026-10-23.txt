@@ -1,0 +1,30 @@
+Native dialogue-card runtime check — 2026-10-23
+
+Status: VERIFIED for Lakitu's opening dialogue and upstairs Toad's dialogue on
+the current native Release executable. The card follows the shared original
+dialogue-active flag, so the renderer link fix is exercised through the normal
+game dialogue path rather than a renderer-only fixture.
+
+Executable SHA256:
+C9B8BCDE7BE972791ACD236D2F767942773D1870A383806B0F8C22D6DA1FCBF4
+
+Muted runtime evidence:
+- Lakitu opening route: 12,000 frames, exit 0. Frame 7,260 shows the original
+  two-line "Yoshi..." prompt over Lakitu with the translucent panel and gold
+  frame. Later captures show the prompt closing and gameplay continuing.
+- Upstairs Toad route: 15,000 frames, exit 0. Frame 14,200 shows the original
+  Toad text on the card; frame 14,800 shows the card closed and normal play
+  resumed. The native Toad trace records talk start, active dialogue, and
+  completion at tick 14,734.
+- Both runs used output-muted mode; the Toad run records zero samples sent to
+  the audio device. They used isolated QA saves. Hashes for the copied Toad
+  seed files match their originals.
+- The screenshot seed for the upstairs Toad is a Mario prerequisite save, so
+  Mario is visible in that diagnostic image. It does not represent the normal
+  fresh-game Yoshi start.
+- Six relevant native CTests and all three dialogue override Python tests pass.
+
+Evidence is stored in private local QA folders and is not part of any public
+source or build-kit package. The build-kit refresh remains a separate pending
+publication milestone. Other NPC lines and physical controller behavior were
+not part of these two routes.

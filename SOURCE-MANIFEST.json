@@ -6609,6 +6609,11 @@
       "bytes": 1555
     },
     {
+      "path": "port/docs/native-dialogue-card-runtime-2026-10-23.txt",
+      "sha256": "fd7be7d99e1f71787e5f75022642a395fedaf42a2478045dff15ebc251788817",
+      "bytes": 1650
+    },
+    {
       "path": "port/docs/native-dialogue-overrides-2026-10-21.txt",
       "sha256": "61ebc93efb9f39bdc5d3e36e77a0f54aa15e660afaa719d911a534fb9c1efca1",
       "bytes": 8712
@@ -6890,8 +6895,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "761aadab84432887ddf8292c27101b997650550e33a6f8d5650bba0dc10877f0",
-      "bytes": 273074
+      "sha256": "a2ea7ddf950dbedbb813dd6045837516b85a2ba819719b6d2222174bad1c3ffe",
+      "bytes": 274025
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
