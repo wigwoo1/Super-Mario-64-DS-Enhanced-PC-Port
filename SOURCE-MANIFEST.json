@@ -8240,8 +8240,8 @@
     },
     {
       "path": "port/tests/test_native_kit_data_guard.py",
-      "sha256": "00ad15110b76eb9fa0cd3cb3973e43cb9556978b2fac569378341f30ca62840c",
-      "bytes": 2489
+      "sha256": "22483cf01589e588cb013c2b7f34f33931214679d0df8b58410720056b557948",
+      "bytes": 3155
     },
     {
       "path": "port/tests/test_picture_gate_transform.py",
@@ -8765,13 +8765,13 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "123342820e1b458a96ba45f20362b0258d36f03a85a27848a8c27f2db2190718",
+      "sha256": "028a35ab471c65cbb089b956b9aad1a3363caab8856c81654c0c3a93934edb56",
       "bytes": 6992
     },
     {
       "path": "port/tools/native_kit_data.py",
-      "sha256": "1923d08ae178dac2689575bfd484e727405e4563b37d49f58fc4166d28415d59",
-      "bytes": 3944
+      "sha256": "2a513f4e2f1b32fe63b8c740f2a1d7c99658da43c63b932afa57959e83a532ee",
+      "bytes": 3965
     },
     {
       "path": "port/tools/native_save_hooks.py",
