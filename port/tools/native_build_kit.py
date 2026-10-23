@@ -81,7 +81,7 @@ def main():
                 'prebuilt': prebuilt, 'local_objects': local, 'generators': generators,
                 'system_libraries': libraries, 'root_fallback': 'Compiled local checkout paths replaced with dot; launcher sets SM64DS_ASSET_ROOT.'}
     metadata['status']=(
-        'Experimental incomplete native port. Format2 omits all16 reviewed ROM-derived '
+        'Experimental incomplete native port. Format2 omits all17 reviewed ROM-derived '
         'data objects, including camera/minigame/stage-sound data, for local regeneration. '
         'Selected title/file/course, Toad/Star Gate reward/save/reload/repeat, cannon, '
         'Chain Chomp release, Battlefield flower-warp return/re-entry, Lethal Lava Land '

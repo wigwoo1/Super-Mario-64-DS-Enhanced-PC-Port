@@ -343,6 +343,14 @@ static PcNativeActorProfile pc_metalnet_profile = {
     (void *)&daObjMc_Metalnet_c_classInit,339,339,0x2u,
     0,0x500000,0x1000000,0
 };
+extern "C" void *daObjC0_Switch_c_classInit(), *daObjC0Water_c_classInit();
+// Original ov012 C0_SWITCH / C0_WATER descriptor metadata.
+static PcNativeActorProfile pc_basement_pillar_profile = {
+    (void *)&daObjC0_Switch_c_classInit,34,228,2,0x60000,0x250000,0x1000000,0
+};
+static PcNativeActorProfile pc_basement_water_profile = {
+    (void *)&daObjC0Water_c_classInit,35,229,0,0,0x1000000,0,0
+};
 // CASTLE_WATER (338), recovered from the mixed ov009 actor profile registry.
 static PcNativeActorProfile pc_castle_water_profile = {
     (void *)&daObjMcWater_c_classInit,338,338,0,
@@ -486,6 +494,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[208] = &pc_waterbomb_profile;
     data_020a4bb8_storage[339] = &pc_metalnet_profile;
     data_020a4bb8_storage[338] = &pc_castle_water_profile;
+    data_020a4bb8_storage[34] = &pc_basement_pillar_profile;
+    data_020a4bb8_storage[35] = &pc_basement_water_profile;
     data_020a4bb8_storage[286] = g_profile_TREE;
     data_020a4bb8_storage[347] = &pc_warp_profile;
     data_020a4bb8_storage[343] = g_profile_SBIRD;

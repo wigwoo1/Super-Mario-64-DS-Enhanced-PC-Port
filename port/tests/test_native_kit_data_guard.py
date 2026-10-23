@@ -11,16 +11,17 @@ class KitDataGuard(unittest.TestCase):
             path='CMakeFiles/sm64ds_pc.dir/pc-boot-src/'+name+'.obj'
             for spelling in (path,path.replace('/','\\')):
                 self.assertEqual(local_source(spelling),'build/port/pc-boot-src/'+name)
-        self.assertEqual(len(DATA_SOURCES),16)
+        self.assertEqual(len(DATA_SOURCES),17)
 
-    def test_block_overlay_must_be_regenerated_and_cannot_be_prebuilt(self):
-        origin='CMakeFiles/sm64ds_pc.dir/host-src/ov015_data.cpp.obj'
-        for spelling in (origin,origin.replace('/',chr(92))):
-            self.assertEqual(local_source(spelling),'build/port/host-src/ov015_data.cpp')
-        metadata={'format':2,'local_objects':[{'source':source,'object':f'local-{i:04d}.obj',
-            'source_sha256':'a'*64} for i,source in enumerate(sorted(DATA_SOURCES))],
-            'prebuilt':[{'path':'.native-kit/objects/0001.obj','origin_object':origin}]}
-        with self.assertRaisesRegex(ValueError,'cannot be prebuilt'):validate_manifest(metadata)
+    def test_object_overlays_must_be_regenerated_and_cannot_be_prebuilt(self):
+        for name in ('ov012_data.cpp','ov015_data.cpp'):
+            origin='CMakeFiles/sm64ds_pc.dir/host-src/'+name+'.obj'
+            for spelling in (origin,origin.replace('/',chr(92))):
+                self.assertEqual(local_source(spelling),'build/port/host-src/'+name)
+            metadata={'format':2,'local_objects':[{'source':source,'object':f'local-{i:04d}.obj',
+                'source_sha256':'a'*64} for i,source in enumerate(sorted(DATA_SOURCES))],
+                'prebuilt':[{'path':'.native-kit/objects/0001.obj','origin_object':origin}]}
+            with self.assertRaisesRegex(ValueError,'cannot be prebuilt'):validate_manifest(metadata)
 
     def test_unreviewed_generated_files_are_rejected(self):
         for name in ('new_data.asm','new_data.cpp','callbacks.cpp'):

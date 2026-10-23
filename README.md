@@ -98,8 +98,8 @@ from your own ROM and links the native game on your computer.
 
 **Packaging correction, October22:** use only a corrected format-2 kit. An audit
 found ROM-derived camera configuration data in older precompiled kit objects;
-those downloads did not meet the intended ROM-free rule. Format2 omits all15
-reviewed generated data objects, including camera, minigame and stage-sound
+those downloads did not meet the intended ROM-free rule. Format2 omits every reviewed
+generated data object, including camera, minigame and stage-sound
 tables. They are regenerated locally from your cartridge. A source checkout or
 an older kit with only10 omitted objects is not equivalent to a corrected kit.
 

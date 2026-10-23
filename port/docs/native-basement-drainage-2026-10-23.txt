@@ -1,0 +1,30 @@
+NATIVE BASEMENT PILLARS / WATER - DRAINAGE VERIFIED - 2026-10-23
+
+Original actors34/35 are connected to native factories with the original profile
+metadata. Their file handles initialize when resources are first requested.
+The embedded basement BTA has four header pointers plus one material-name pointer
+relocated into a local ROM-derived buffer; CLPS bytes also remain local. The kit
+guard now omits17 generated data objects. These bytes must never be published.
+
+Original title/FileA/castle/basement entry and ordinary walking/swimming/jump/
+ground-pound inputs reached the original pillars. Each pillar sank100 units;
+the second press set the original drainage flag0x80000. Water gradually lowered
+1200 units to its original target. Final18000-frame runtime exited0, muted device
+output had0 nonzero samples and mixer errors0. Models and water were inspected
+before/after. No original actor behavior or character rules were changed.
+
+Four basement adapter/data tests, five kit data guard checks, controller-state
+CTest and native actor/profile/data audit pass. Controller fixture now verifies
+points immediately inside/outside the actual24% default deadzone. This changes
+only the test, not controller behavior. Private acceptance JSON and screenshots
+remain under work; they are excluded from publication.
+
+This uses synthetic20-Star/key prerequisites with moat flag initially clear.
+The disk save did not acquire the flag because this replay did not invoke save.
+Manual native-menu save, fresh-process reload, lowered actor respawn and castle
+exterior consistency are pending. No F install or public build promotion yet.
+Any new kit requires fresh17-data reconstruction and its own muted runtime.
+
+FOLLOW-UP - SAVE / RELOAD / CASTLE EXTERIOR VERIFIED - 2026-10-23
+
+On the same current executable (SHA256 71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128), the original two basement pillars were pressed by normal jump/ground-pound input. The native Options save completed at tick13490 with flags2=0x000B0288, including the original moat-drain flag 0x00080000. A separate fresh process loaded File A from that save as primary. It followed the castle entrance back outside and reached the exterior moat/cannon basin. The original castle-water actor338 was alive at Y=-2,867,200 fixed-point (-700 world units), showing the saved lower level was reapplied after reload. Captures at ticks10000,12000,14000 show the exterior basin water below the surrounding ground; it remains visible at the lower height rather than disappearing. The saved File A SHA256 was unchanged by reload. Both runs exited0 with audio output muted (zero nonzero samples submitted, mixer errors0). No source fix was needed. Exact private evidence and screenshots: work/native-muted-audio-walk-moat-exterior-reload-v3-20261023/acceptance.json. This uses synthetic20-Star/key prerequisites and does not establish a natural campaign. No F install or public build promotion.

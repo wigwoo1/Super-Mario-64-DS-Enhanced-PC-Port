@@ -1,0 +1,39 @@
+NATIVE CASTLE BLACK BLOCK (ACTOR17) - SELECTED CHECKS VERIFIED - 2026-10-23
+
+The original castle-grounds black brick uses the native block family's second
+model/collision/material row. Original Wario-only attack eligibility is unchanged.
+
+An isolated synthetic Wario/60-Star/moat-drained prerequisite save reached the
+block through original title/FileA flow and ordinary walking/jump/climb input.
+Wario ground-pound is observed at2956; actor17/unique47 remains alive2980, is
+absent2990 while the scene is still castle1, and coins55/56/57 spawn2988. The
+opening then transfers the player to original secret course32 at3075. The
+3600-frame run exits0. This proves destruction, three-coin spawning and secret
+course entry; no coin pickup is proven (the course coin counter remains0 before
+the transition). Secret course completion is not covered.
+
+A separate Mario comparison run uses the same synthetic drained-moat prerequisites
+with character0. Repeated ground pounds occur, but actor47 is alive5500, no coin
+actors spawn, and the player remains in castle1. The5700-frame run exits0.
+Both audio engines report errors0/device nonzero samples0 with output muted;
+isolated seed bytes remain unchanged. No personal save, ROM or stable install
+was altered. Exact per-run executable hashes are in the private acceptance JSON.
+
+QA input changes in port/main.cpp only: optional strict block target level:actor,
+actual block origin for reward pursuit, grounded wall-state jump input, and
+centering within90 world units before treating height as block-top contact.
+Climb-jump input now uses the same260-unit approach radius as block selection,
+covering black-block corners. No player position, actor state, hit callback,
+collision rule, reward data or save state is forced. Final route radius20 avoids
+ending automation before centering90. Source compiles; native actor/profile/data
+audit passes. This milestone does not establish all block variants.
+
+Remaining normal-progression gap: basement pillars34 and basement water35 have
+recovered original source but no native profile registration. Implement their
+original two-pillar ground-pound sequence, water lowering, save flag persistence
+and castle-ground water update before claiming naturally earned moat drainage.
+Other block variants16/19/46 and black-block Star-bearing placements remain open.
+
+Private evidence: work/block17-wario-acceptance-20261023.json and
+work/check-block17-wario-20261023.py. Raw test assets, fixtures, saves, screenshots,
+logs and audio are local only and must never enter public source/build kits.

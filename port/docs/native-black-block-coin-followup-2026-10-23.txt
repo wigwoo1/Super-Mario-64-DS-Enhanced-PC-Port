@@ -1,0 +1,39 @@
+# Castle black-block coin pickup follow-up — 2026-10-23
+
+Current build `71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128`
+was replayed with isolated Wario/60-Star/drained-moat prerequisites. The
+original title/File A route reaches castle actor 17; Wario ground-pounds it
+using the native collision and actor path. The block spawns its three original
+coin actors (55, 56, 57) at tick 2988. The opening transfers Wario to secret
+course 32 at tick 3075 before any of those three coin actors is collected.
+CORRECTION: the earlier claim that these coins leak into the secret course was
+incorrect. Frame3070 still has level1 active. All three coins enter aliveState2
+(already dying, per fBase_c.h) at3070 and their last telemetry is3071, before
+level32 is first sampled at3075. Their absence after transfer is normal cleanup.
+Coin pickup remains unexercised by this route, rather than a proven gameplay bug.
+
+The 4300-frame muted run exits 0, with zero samples submitted and zero mixer
+errors. The copied QA save hash matches its seed. No personal save or ROM was
+modified. Screenshots: `work/native-muted-audio-walk-block17-wario-coins-current-71d-r2-20261021/frame-2980.bmp`,
+`frame-3020.bmp` and `frame-3070.bmp`. Frame 2980 shows Wario over the block;
+frame 3020 shows the opened hole and coins; frame 3070 shows the castle camera
+below the terrain BEFORE the transition. The shared runner initially used its unrelated default
+block target; that run was discarded. The accepted replay explicitly targeted
+castle actor `1:17`.
+
+Fresh3400-frame replay on the same build confirms cleanup: coins55/56/57 spawn
+at2983, are last recorded at3066 with dying state2, and level32 first appears
+at3070. Subsequent actor censuses3100/3300 contain none of these actors; the
+post-transition screenshot shows Wario inside the secret course with no stray
+coins. The native build check passes (Ninja: no work), runtime exits0 muted,
+mixer errors0, and all QA seed files remain unchanged. The verifier checks the
+actual per-run transition boundary, since menu/route tick timing varies slightly.
+
+Original daObjBlockL_c::Kill explicitly spawns three coins and destroys the
+block; it does not require their collection before allowing the secret-hole
+transition. No production change or forced coin award is justified by this run.
+No actor-lifetime repair or stronger model is required for the retracted leak.
+Fresh evidence: work/native-muted-audio-walk-block17-transition-cleanup-audit-20261023-20261021/acceptance.json.
+Verifier: work/check-block17-transition-cleanup-20261023.py.
+Coin collection via a separate escape/re-entry route and secret-course
+completion remain open. Do not count this as all-block support.

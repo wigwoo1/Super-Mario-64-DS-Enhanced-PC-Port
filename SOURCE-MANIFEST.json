@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "8cc875f46b46567abd6f2c875858b7c7b4d491447b74a52ec0df65aabcf8036b",
-      "bytes": 82593
+      "sha256": "701fad559ac5eba0f95921fe2f7b8e62da81c917b143995a1b8676de28ccaeae",
+      "bytes": 83239
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6497,6 +6497,21 @@
       "path": "port/docs/native-audio-wanted-verified-2026-10-20.txt",
       "sha256": "585d4b81f870e2ac3dcc2f4cf86f289c9e56fc7a42d762dcf8b9865687b0d879",
       "bytes": 3541
+    },
+    {
+      "path": "port/docs/native-basement-drainage-2026-10-23.txt",
+      "sha256": "79541ce875996ef49f37346bfef0b99f5dc28282faa3774b490a59f55f388067",
+      "bytes": 2960
+    },
+    {
+      "path": "port/docs/native-black-block-2026-10-23.txt",
+      "sha256": "14d3173846779bf5f902903456f8bc87bd08a052716e92c42595b23947c59c91",
+      "bytes": 2570
+    },
+    {
+      "path": "port/docs/native-black-block-coin-followup-2026-10-23.txt",
+      "sha256": "08183de331f16fd99cbff4cbfaeb0b4e1123e667e39f30b38f1b177f5e6cb905",
+      "bytes": 2714
     },
     {
       "path": "port/docs/native-buddy-cannon-verified-2026-10-18.txt",
@@ -6895,8 +6910,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "a2ea7ddf950dbedbb813dd6045837516b85a2ba819719b6d2222174bad1c3ffe",
-      "bytes": 274025
+      "sha256": "d8f4b61abcc9be6b461c02519f06f97247c49fee8cef7dbf12bf0aaebecd09a0",
+      "bytes": 277830
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -6935,8 +6950,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "57ed48cec7ca9814351f49622ea678bc91589c6c6c4ae9aa5a69762aa1899b6d",
-      "bytes": 9686
+      "sha256": "4d1ce2319f800c7697ebe8b02e8e98ee1894979d27ba6431b0c39d3eac3de4e9",
+      "bytes": 9685
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7090,8 +7105,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "0304bcb9fb55754786a379e91a2f6f78aac8cd4401dbde1456abf89f756e1a1a",
-      "bytes": 37834
+      "sha256": "f47d8af05c076853d228bdf337a8ffd1dcc497a2b5da9be98ed9f750d339935c",
+      "bytes": 38355
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7490,8 +7505,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "67b3915b5cfc6ec1555f8f8e2c01462a5fe3c0ea4e12a46129dde5af199b0286",
-      "bytes": 132159
+      "sha256": "35b30209fd9dafedb882afa872c03a5d6938f2ed8d9ef388c588cf6a92eb7696",
+      "bytes": 142792
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7860,8 +7875,8 @@
     },
     {
       "path": "port/tests/smoke_controller_state.cpp",
-      "sha256": "70aded34d56a22b52d7c8c6f9c92cfc810fda7898cfdb955e9eb9c60a74449bb",
-      "bytes": 7504
+      "sha256": "12a64312f513b9b288b9e6d9c8e91880dd9e86d24386d3985f47b4ed3e88f78f",
+      "bytes": 7865
     },
     {
       "path": "port/tests/smoke_dialogue_overrides.cpp",
@@ -8159,6 +8174,11 @@
       "bytes": 1030
     },
     {
+      "path": "port/tests/test_basement_host.py",
+      "sha256": "c7696acf11cac337529b3397c78e98a1e1b0fd5049d4d6b3ce24bf1420d8b595",
+      "bytes": 2482
+    },
+    {
       "path": "port/tests/test_bird_host.py",
       "sha256": "815e6e87a5adbbe033d8ac3f526b7e2bb08564b92ed858fb9987e3bf518a6611",
       "bytes": 1847
@@ -8240,8 +8260,8 @@
     },
     {
       "path": "port/tests/test_native_kit_data_guard.py",
-      "sha256": "22483cf01589e588cb013c2b7f34f33931214679d0df8b58410720056b557948",
-      "bytes": 3155
+      "sha256": "858ca9b17483d2bf9ba2300639e99b670a39250052b0ee0cdf9010c114360ccb",
+      "bytes": 3227
     },
     {
       "path": "port/tests/test_picture_gate_transform.py",
@@ -8394,6 +8414,16 @@
       "bytes": 1015
     },
     {
+      "path": "port/tools/basement_data.py",
+      "sha256": "57db8637663304c4160796b7bde3ee55c9469c48cd0b611796fa0a7aa15f3310",
+      "bytes": 2118
+    },
+    {
+      "path": "port/tools/basement_host.py",
+      "sha256": "95669eae5a2d33b3e88704891fc9e2cc0f23d3e16ce3f6b65e0ab5e9ccc7d43d",
+      "bytes": 1476
+    },
+    {
       "path": "port/tools/bird_host.py",
       "sha256": "d29b7cf117fe478b599e4757266271956031ad64f9beba354c3b6aa68a383e71",
       "bytes": 3512
@@ -8410,8 +8440,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "d08acc4842346117f6073f5f0616c141ba78052a516d61b4110b88c9f9fd6b19",
-      "bytes": 40646
+      "sha256": "cfeb45c5b94048e62d28f95bc05bbf78812c0217759eb89ad11e46d549d20251",
+      "bytes": 40979
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8765,13 +8795,13 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "028a35ab471c65cbb089b956b9aad1a3363caab8856c81654c0c3a93934edb56",
+      "sha256": "ab45bf42166e2450d0e06c44ea4f1d38e5e45d5173fc416924a6e6bc5f352b81",
       "bytes": 6992
     },
     {
       "path": "port/tools/native_kit_data.py",
-      "sha256": "2a513f4e2f1b32fe63b8c740f2a1d7c99658da43c63b932afa57959e83a532ee",
-      "bytes": 3965
+      "sha256": "5a8f165f357f32144ef577607a918cdf0b687e27a3dd042170185b42a0ff477b",
+      "bytes": 3983
     },
     {
       "path": "port/tools/native_save_hooks.py",

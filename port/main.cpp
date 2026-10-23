@@ -30,6 +30,8 @@
 #include "daObjWanwanShutter_c.h"
 #include "daKinopio_c.h"
 #include "SaveData.h"
+#include "daObjC0_Switch_c.h"
+#include "daObjC0Water_c.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
 
@@ -229,6 +231,110 @@ static bool replay_toad_controls() {
     if(tick%120==0)event("observe");
     ntr::input_test_controls(true,buttons,0,0);return true;
 }
+// Opt-in isolated save-flow replay for the natural basement drainage event.
+// This presses the same Start/D-pad/A/shoulder inputs a player uses; it never
+// calls SaveCurrentFile directly and never edits the save flags.
+static bool replay_drain_save_controls() {
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *enabled=std::getenv("SM64DS_PC_TEST_DRAIN_SAVE");
+    if(!automation || std::strcmp(automation,"1") || !enabled || std::strcmp(enabled,"1"))return false;
+    static unsigned phase=0;
+    static uint64_t pulse_until=0,next_action=0;
+    const auto tick=ntr::rt_frame();
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    uint16_t buttons=0;
+    auto event=[&](const char *name) {
+        std::fprintf(stderr,"[native drain save] %s tick=%llu phase=%u level=%d pause=%u state=%u selection=%u page=%d row=%d status=%d flags2=%08x\n",
+            name,static_cast<unsigned long long>(tick),phase,int(data_0209f2f8),unsigned(data_0209f2c4),
+            unsigned(data_0209f1ec),unsigned(data_0209f2e0),pc_pause_settings_page(),pc_pause_settings_row(),
+            pc_pause_save_status(),unsigned(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2));
+    };
+    if(phase==0) {
+        if(data_0209f2f8!=4 || !player || player->aliveState!=1 || player->mIsAirborne ||
+           std::strcmp(pc_player_state_name(player),"St_Wait_Main") ||
+           !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2&0x80000u))return false;
+        bool first=false,second=false;
+        for(auto *a=dActor_c::FindWithActorID(34,nullptr);a;a=dActor_c::FindWithActorID(34,a)) {
+            auto *pillar=static_cast<daObjC0_Switch_c *>(a);
+            if(a->aliveState!=1 || !pillar->mPressed)continue;
+            if(a->mPosZ < -500*4096)first=true;else second=true;
+        }
+        if(!first || !second)return false;
+        phase=1;pulse_until=tick+3;buttons=8;event("open-pause");
+        ntr::input_test_controls(true,buttons,0,0);return true;
+    }
+    if(phase==1) {
+        if(data_0209f2c4==1 && data_0209f1ec==1) {phase=2;next_action=tick+30;event("pause-ready");}
+    } else if(phase==2) {
+        if(data_0209f2c4==1 && data_0209f1ec==1 && data_0209f2e0>=2) {phase=4;next_action=tick+30;event("options-selected");}
+        else if(tick>=next_action) {phase=3;pulse_until=tick+3;buttons=0x80;event("select-options-down");}
+    } else if(phase==3) {
+        if(tick>=pulse_until) {phase=2;next_action=tick+30;}
+    } else if(phase==4) {
+        if(tick>=next_action) {phase=5;pulse_until=tick+3;buttons=1;event("open-pc-settings");}
+    } else if(phase==5) {
+        if(data_0209f1ec==10 && pc_pause_settings_page()==1) {phase=6;next_action=tick+30;event("settings-root-ready");}
+    } else if(phase==6) {
+        if(tick>=next_action) {phase=7;pulse_until=tick+3;buttons=1;event("enter-display-settings");}
+    } else if(phase==7) {
+        if(pc_pause_settings_page()==2) {phase=8;next_action=tick+30;event("display-page-ready");}
+    } else if(phase==8) {
+        if(pc_pause_settings_page()==7) {phase=10;next_action=tick+30;event("save-page-ready");}
+        else if(tick>=next_action) {phase=9;pulse_until=tick+3;buttons=0x100;event("cycle-settings-page");}
+    } else if(phase==9) {
+        if(tick>=pulse_until) {phase=8;next_action=tick+30;}
+    } else if(phase==10) {
+        if(tick>=next_action) {phase=11;pulse_until=tick+3;buttons=1;event("confirm-save-progress");}
+    } else if(phase==11) {
+        if(pc_pause_save_status()!=0) {phase=12;event(pc_pause_save_status()>0?"save-success":"save-failed");}
+    }
+    if(phase==1 && tick>=pulse_until) {phase=2;next_action=tick+30;}
+    if(phase==12 && tick%60==0)event("saved-waiting");
+    if(tick<pulse_until) {
+        if(phase==1)buttons=8;
+        else if(phase==3)buttons=0x80;
+        else if(phase==5 || phase==7 || phase==11)buttons=1;
+        else if(phase==9)buttons=0x100;
+    }
+    ntr::input_test_controls(true,buttons,0,0);return true;
+}
+static bool replay_pillar_controls() {
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!automation || std::strcmp(automation,"1") || data_0209d660)return false;
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    if(!player || player->aliveState!=1 || player->mIsNoControl || player->mIsControlDisabled)return false;
+    const int level=data_0209f2f8;const auto tick=ntr::rt_frame();
+    const char *state=pc_player_state_name(player);
+        const char *pillar_test=std::getenv("SM64DS_PC_TEST_DRAIN_PILLARS");
+        if(level==4 && pillar_test && !std::strcmp(pillar_test,"1")) {
+            static unsigned target=0;static uint64_t began=0,jump_until=0;
+            static bool jumped=false;daObjC0_Switch_c *pillar=nullptr;
+            for(auto *a=dActor_c::FindWithActorID(34,nullptr);a;a=dActor_c::FindWithActorID(34,a)) {
+                auto *candidate=static_cast<daObjC0_Switch_c *>(a);
+                if(a->aliveState!=1)continue;
+                if(target) {if(a->uniqueID==target)pillar=candidate;continue;}
+                if(candidate->mPressed || player->mIsAirborne ||
+                   (std::strcmp(state,"St_Wait_Main") && std::strcmp(state,"St_Walk_Main")))continue;
+                if(std::abs(double(a->mPosY)-player->mPosY)<80*4096.0 &&
+                   std::hypot(double(a->mPosX)-player->mPosX,double(a->mPosZ)-player->mPosZ)<60*4096.0)
+                    pillar=candidate;
+            }
+            if(pillar && pillar->mPressed) {
+                std::fprintf(stderr,"[native pillar replay] pressed tick=%llu id=%u\n",static_cast<unsigned long long>(tick),target);
+                target=0;pillar=nullptr;jumped=false;
+            }
+            if(pillar) {
+                if(!target){target=pillar->uniqueID;began=tick;jumped=false;std::fprintf(stderr,"[native pillar replay] settle tick=%llu id=%u\n",static_cast<unsigned long long>(tick),target);}
+                uint16_t keys=0;
+                if(!jumped && tick>=began+100 && !player->mIsAirborne) {keys=2;jumped=true;jump_until=tick+8;}
+                else if(jumped && player->mIsAirborne && !std::strcmp(state,"St_Jump_Main"))keys=0x100;
+                else if(jumped && !player->mIsAirborne && tick<jump_until)keys=2;
+                if(keys)std::fprintf(stderr,"[native pillar replay] tick=%llu id=%u state=%s buttons=%x\n",static_cast<unsigned long long>(tick),target,state,unsigned(keys));
+                ntr::input_test_controls(true,keys,0,0);return true;
+            }
+        }
+    return false;
+}
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -303,11 +409,43 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // test the block's ground-pound callback. This only injects input
         // under automation; it never edits actor, player, collision or save
         // state.
+        // Original swimming steers heading/pitch directly. Opt-in QA routes
+        // use ordinary D-pad/stroke buttons; never write pose or player state.
+        const char *swim_route=std::getenv("SM64DS_PC_TEST_SWIM_ROUTE");
+        if(has_y && swim_route && !std::strcmp(swim_route,"1") &&
+           !std::strcmp(state,"St_Swim_Main")) {
+            const short desired_yaw=static_cast<short>(std::atan2(dx,dz)*65536.0/6.283185307179586);
+            const short delta=static_cast<short>(desired_yaw-player->mAngleY);
+            const int steer=int(delta)-int(player->mAngleYSpeed)*6;
+            uint16_t swim_buttons=steer>768?0x20:steer< -768?0x10:0;
+            const double pitch=std::abs(dy)<40*4096.0?0.0:
+                std::atan2(-dy,(std::max)(horizontal,100*4096.0))*65536.0/6.283185307179586;
+            const double desired_pitch=pitch/(pitch<0?0.6:1.25);
+            const double pitch_error=desired_pitch-player->mPrevAngleX;
+            if(pitch_error>1536)swim_buttons|=0x40;
+            if(pitch_error< -1536)swim_buttons|=0x80;
+            if(std::abs(int(delta))<0x2000 && tick%24<12)swim_buttons|=2;
+            if(horizontal<=radius*4096.0 && std::abs(dy)<=120*4096.0) {
+                std::fprintf(stderr,"[native swim route] reached waypoint=%u tick=%llu\n",waypoint,static_cast<unsigned long long>(tick));
+                ++waypoint;
+            }
+            if(tick%120==0)std::fprintf(stderr,"[native swim route] tick=%llu target=%d,%d,%d yaw_delta=%d pitch=%d buttons=%x\n",
+                static_cast<unsigned long long>(tick),x,y,z,int(delta),int(player->mPrevAngleX),unsigned(swim_buttons));
+            ntr::input_test_controls(true,swim_buttons,0,0);return true;
+        }
         const char *block_replay=std::getenv("SM64DS_PC_TEST_BLOCK_INTERACTION");
-        if(block_replay && !std::strcmp(block_replay,"1") && level==6) {
+        int block_level=6,block_actor=15;
+        if(const char *target=std::getenv("SM64DS_PC_TEST_BLOCK_TARGET")) {
+            char extra=0;
+            if(std::sscanf(target,"%d:%d%c",&block_level,&block_actor,&extra)!=2 ||
+               block_level<0 || block_level>=52 ||
+               (block_actor!=15 && block_actor!=16 && block_actor!=17 && block_actor!=19 && block_actor!=46))
+                block_level=-1;
+        }
+        if(block_replay && !std::strcmp(block_replay,"1") && level==block_level) {
             dActor_c *block=nullptr;double block_distance=1e100;
-            for(auto *candidate=dActor_c::FindWithActorID(15,nullptr);candidate;
-                candidate=dActor_c::FindWithActorID(15,candidate)) {
+            for(auto *candidate=dActor_c::FindWithActorID(block_actor,nullptr);candidate;
+                candidate=dActor_c::FindWithActorID(block_actor,candidate)) {
                 const double bx=double(candidate->mPosX)-player->mPosX;
                 const double by=double(candidate->mPosY)-player->mPosY;
                 const double bz=double(candidate->mPosZ)-player->mPosZ;
@@ -316,13 +454,16 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 if(distance<block_distance){block=candidate;block_distance=distance;}
             }
             static bool block_contact_seen=false;
-            if(block && block_distance<260*4096.0)block_contact_seen=true;
+            static int reward_x=0,reward_z=0;
+            if(block && block_distance<260*4096.0) {
+                block_contact_seen=true;reward_x=block->mPosX;reward_z=block->mPosZ;
+            }
             if(block_contact_seen && (!block || block_distance>=260*4096.0)) {
                 dActor_c *coin=nullptr;double nearest=500*4096.0;
                 for(auto *a=dActor_c::FindWithActorID(288,nullptr);a;
                     a=dActor_c::FindWithActorID(288,a)) {
-                    if(a->aliveState!=1 || std::hypot(double(a->mPosX)+3660*4096.0,
-                       double(a->mPosZ)-6411*4096.0)>600*4096.0)continue;
+                    if(a->aliveState!=1 || std::hypot(double(a->mPosX)-reward_x,
+                       double(a->mPosZ)-reward_z)>600*4096.0)continue;
                     double d=std::hypot(double(a->mPosX)-player->mPosX,double(a->mPosZ)-player->mPosZ);
                     if(d<nearest){nearest=d;coin=a;}
                 }
@@ -354,7 +495,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 const bool grounded_state=!std::strcmp(state,"St_Wait_Main") ||
                     !std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_OnWall_Main");
                 const bool above_block=player->mPosY-block->mPosY>120*4096;
-                if(!player->mIsAirborne && grounded_state && above_block) {
+                if(!player->mIsAirborne && grounded_state && above_block && block_distance<90*4096.0) {
                     climbed_onto_block=true;
                     if(!block_top_since)block_top_since=tick;
                 }
@@ -362,7 +503,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 if(pound_jump_pending && !player->mIsAirborne && tick>=next_pound)
                     pound_jump_pending=false;
                 if(!climbed_onto_block && !player->mIsAirborne && grounded_state &&
-                   block_distance<220*4096.0 && tick>=next_climb) {
+                   block_distance<260*4096.0 && tick>=next_climb) {
                     buttons=2; // DS B jump; the PC A binding maps here.
                     climb_jump_pending=true;
                     climb_until=tick+5;
@@ -466,7 +607,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
         }
         const double jump_range=tree_test && !std::strcmp(tree_test,"1") ? 120.0:320.0;
         if(jump==1 && horizontal<jump_range*4096.0 && tick>=next_jump &&
-           (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+           (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") ||
+            (!player->mIsAirborne && !std::strcmp(state,"St_OnWall_Main")))) {
             jump_until=tick+12;next_jump=tick+75;
         }
         if(tick<jump_until)buttons|=2;
@@ -1423,6 +1565,29 @@ static bool replay_chomp_controls() {
 
 static bool trace_script_progress(uint64_t frame)
 {
+    if(const char *path=std::getenv("SM64DS_PC_DRAIN_CAPTURE")) {
+        static FILE *file=nullptr;static uint64_t previous=~uint64_t(0);
+        const auto tick=ntr::rt_frame();
+        if(tick!=previous && tick%10==0) {
+            previous=tick;
+            if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,level,flags2,water_height,kind,id,y,pressed,lowered_y,draining,collision_enabled\n",file);}
+            extern int data_0209f32c;
+            if(file) {
+                const auto flags=static_cast<unsigned>(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2);
+                std::fprintf(file,"%llu,%d,%u,%d,0,0,0,0,0,0,0\n",static_cast<unsigned long long>(tick),int(data_0209f2f8),flags,data_0209f32c);
+                for(unsigned kind:{34u,35u})for(auto *a=dActor_c::FindWithActorID(kind,nullptr);a;a=dActor_c::FindWithActorID(kind,a)) {
+                    if(a->aliveState!=1)continue;
+                    const auto *pillar=kind==34?static_cast<daObjC0_Switch_c *>(a):nullptr;
+                    const auto *water=kind==35?static_cast<daObjC0Water_c *>(a):nullptr;
+                    std::fprintf(file,"%llu,%d,%u,%d,%u,%u,%d,%u,%d,%u,%u\n",static_cast<unsigned long long>(tick),int(data_0209f2f8),flags,data_0209f32c,
+                        kind,a->uniqueID,int(a->mPosY),pillar?unsigned(pillar->mPressed):0,water?water->mLoweredY:0,water?unsigned(water->mWasJustDrained):0,
+                        unsigned(static_cast<dBgActor_c *>(a)->mMeshCollider.IsEnabled()));
+                }
+                std::fflush(file);
+            }
+        }
+    }
+
     // Opt-in, read-only observations of the original three-actor encounter.
     if(const char *path=std::getenv("SM64DS_PC_CHOMP_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -1562,7 +1727,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

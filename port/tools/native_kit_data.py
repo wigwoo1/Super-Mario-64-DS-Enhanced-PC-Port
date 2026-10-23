@@ -5,7 +5,7 @@ import re
 
 HOST_DATA = frozenset({
     'minigame_menu_data.asm', 'dsmt_data.asm', 'pc_link_data.cpp', 'romdata.c',
-    'ov002_data.cpp', 'ov015_data.cpp', 'ov001_image.cpp', 'ov009_image.cpp',
+    'ov002_data.cpp', 'ov012_data.cpp', 'ov015_data.cpp', 'ov001_image.cpp', 'ov009_image.cpp',
     'level_overlay_tables.cpp', 'title_overlay_data.cpp', 'level_overlay_data.cpp',
 })
 BOOT_DATA = frozenset({

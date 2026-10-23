@@ -73,12 +73,20 @@ int main() {
     dScStage_c::CheckInput();
     for(unsigned p=1;p<4;++p) CHECK(field(data_0209f49c,p)==(1u<<p) && field(data_0209f49e,p)==(1u<<p));
     CHECK(field(data_0209f49e)==0);
-    // Small deflections must clear the retail joystick's stationary range.
+    // Deflections just outside the configured24% radial deadzone must clear
+    // the retail joystick's stationary range.
     // Both Standard and Touch modes have different first nonzero speed steps.
+    for(const char *inside: {"0","5553"}) {
+        _putenv_s("SM64DS_PC_TEST_STICK_X",inside[0]=='0'?"7850":"5553");
+        _putenv_s("SM64DS_PC_TEST_STICK_Y",inside);
+        ntr::input_poll();dScStage_c::CheckInput();
+        CHECK(field(data_0209f4a0)==0);
+    }
+    _putenv_s("SM64DS_PC_TEST_STICK_Y","0");
     for(unsigned mode: {0u,2u}) {
         data_0209f4ae[0]=static_cast<unsigned char>(mode);
         int previous=0;
-        for(const char *sample: {"7850","9000","12000","20000","32767"}) {
+        for(const char *sample: {"8000","9000","12000","20000","32767"}) {
             _putenv_s("SM64DS_PC_TEST_STICK_X",sample);
             ntr::input_poll();dScStage_c::CheckInput();
             int mag=field(data_0209f4a0);
@@ -88,7 +96,7 @@ int main() {
         }
         // Tiny diagonals must also clear the first speed step after the
         // original radius-105 integer vector/square-root quantization.
-        for(const char *sample: {"5553","-5553"}) {
+        for(const char *sample: {"5657","-5657"}) {
             _putenv_s("SM64DS_PC_TEST_STICK_X",sample);
             _putenv_s("SM64DS_PC_TEST_STICK_Y","5553");
             ntr::input_poll();dScStage_c::CheckInput();

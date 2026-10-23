@@ -2139,3 +2139,46 @@ so this refactor has no new runtime screenshot acceptance. No F installation or
 build-kit release was made. Details: `native-dialogue-card-link-fix-2026-10-23.txt`.
 
 
+## 2026-10-23: Current-build upstairs gate and 60-Star Toad recheck
+
+On current build SHA256 `71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128`,
+repeated the original Mario/60-Star route through level transitions 1->2->5,
+then reached the original upstairs 60-Star Toad. With isolated synthetic
+prerequisites (60 Stars, required keys, Mario selected, Toad Star uncollected),
+normal dialogue/reward behavior naturally spawned, launched and collected the
+Star. The normal File A save committed with a valid CRC, 61 Stars, and course
+Star bit `0x10`. A fresh process loaded that exact save, returned through the
+same upstairs route, and completed a repeat Toad conversation. It remained at
+61 Stars; the original Toad reward actor did not respawn and the save bytes were
+unchanged. Both runs exited 0 with device output muted, zero submitted samples,
+and zero mixer errors. Screenshots are local in
+`work/native-muted-audio-walk-toad60-current-71d-door-collect-r1-20261021/` and
+`work/native-muted-audio-walk-toad60-current-71d-door-reload-r1-20261021/`.
+This rechecks the existing Star Gate/reward implementation on the current build;
+it does not establish a natural 60-Star campaign, physical controller behavior,
+or completion of the broader port.
+
+
+## 2026-10-23: Drained moat save/reload and exterior water verified
+
+Using current build SHA256 `71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128`, normal jumps/ground pounds pressed the two basement pillars; the original drain flag `0x00080000` was saved through the native pause Options screen (save success at tick 13490; flags2 `0x000B0288`). A fresh process loaded the same File A as primary and followed normal doors back outside to the moat/cannon basin. Castle Water actor338 was alive at Y `-2,867,200` fixed-point (`-700` world units), confirming the saved lowered position was restored. Exterior screenshots show water still visible below the surrounding ground at the lowered height. The save hash did not change during reload. Both runs exited0 with audio output muted and zero mixer errors. No code change was needed; the result does not imply that every drop of the moat water should disappear.
+
+Evidence: `work/native-muted-audio-walk-moat-exterior-reload-v3-20261023/acceptance.json`; screenshots `reload-frame-10000.bmp`, `reload-frame-12000.bmp`, `reload-frame-14000.bmp`. Test used the synthetic20-Star/basement-key QA prerequisites and did not alter the user save, install on F:, or publish a build. Full port remains unfinished.
+
+## 2026-10-23: Castle black-block transition cleanup verified; leak diagnosis retracted
+
+Current build `71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128`
+replayed the original castle Wario black-block route with isolated QA progress.
+Actor17 is broken by a real ground-pound and coins55/56/57 spawn at tick2988,
+but Wario enters secret course32 at tick3075 before collecting any of them.
+The earlier claim of a leak was incorrect: screenshot3070 is still in castle1,
+and coins55/56/57 are already dying and disappear before course32 loads.
+A fresh3400-frame replay confirms their destruction before the actual transition
+and absence in post-load censuses/screenshots. Native build passes (no work),
+runtime exits0 with muted output0/errors0, and QA seed files stay unchanged.
+The production behavior is retained. Coin pickup is unexercised, not a proven
+failure; no forced award or scene-cleanup change is justified. Details and
+fresh evidence: `native-black-block-coin-followup-2026-10-23.txt` and outer
+`work/native-muted-audio-walk-block17-transition-cleanup-audit-20261023-20261021/acceptance.json`.
+The previous model escalation for an actor leak is retracted. Luna Medium is
+suitable for the established fresh ROM-free kit reconstruction follow-up.
