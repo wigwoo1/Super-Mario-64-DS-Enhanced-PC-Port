@@ -156,6 +156,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/warp_replay.h"
 #include "hal/koopa_replay.h"
 static bool replay_course_route_complete;
+static bool replay_lava_bridge_reentered;
 static unsigned replay_course_route_waypoint=0;
 // Observes original contact/state and supplies normal input only. Never
 // changes actor state, position, save flags or dialogue results.
@@ -339,6 +340,9 @@ static bool replay_pillar_controls() {
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+    if(!route_override && replay_lava_bridge_reentered) {
+        if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
+    }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
     auto &waypoint=replay_course_route_waypoint;
     const char *segment=route;
@@ -651,6 +655,11 @@ static bool replay_lava_bridge_lifecycle() {
     const char *mode=std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     if(!mode || std::strcmp(mode,"1") || !automation || std::strcmp(automation,"1"))return false;
+    int course_level=14;
+    if(const char *configured=std::getenv("SM64DS_PC_TEST_LAVA_COURSE_LEVEL")) {
+        const int requested=std::atoi(configured);
+        if(requested>=0 && requested<52)course_level=requested;
+    }
     static int phase=0;static uint64_t began=0,jumpUntil=0,nextJump=0;
     const auto tick=ntr::rt_frame();
     auto event=[&](const char *name){std::fprintf(stderr,"[native lava bridge lifecycle] %s tick=%llu level=%d phase=%d\n",name,static_cast<unsigned long long>(tick),int(data_0209f2f8),phase);};
@@ -679,9 +688,26 @@ static bool replay_lava_bridge_lifecycle() {
                 buttons=selected==0 && selectionPhase==2?1:0x20;
             return controls();
         }
-        if(data_0209f2f8==14 && ready) {
+        if(data_0209f2f8==course_level && ready) {
             phase=3;event("original-course-reentry");
-            replay_course_route_waypoint=0;replay_course_route_complete=false;
+            replay_lava_bridge_reentered=true;
+            replay_course_route_waypoint=0;
+            const char *route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE");
+            if(!route || !*route)route=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+            if(route) {
+                // On re-entry, resume the ordinary course route at its first
+                // waypoint for this course instead of replaying the castle
+                // approach from the beginning.
+                unsigned index=0;const char *segment=route;
+                while(segment && *segment) {
+                    int route_level=-1;
+                    if(std::sscanf(segment,"%d:",&route_level)==1 && route_level==course_level) {
+                        replay_course_route_waypoint=index;break;
+                    }
+                    const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;++index;
+                }
+            }
+            replay_course_route_complete=false;
             return false;
         }
         // An entry through the development picker returns to the lobby. Feed
@@ -695,7 +721,7 @@ static bool replay_lava_bridge_lifecycle() {
                 event("painting-approach");
             }
         }
-        if(data_0209f2f8!=4 || !ready)return controls();
+        if(course_level!=14 || data_0209f2f8!=4 || !ready)return controls();
         if(data_0209d660){if(tick%45<3)buttons=1;return controls();}
         // Original level4 exit/painting at(-1350,-1100,-3850), facing south.
         const double dx=-1350*4096.0-p->mPosX,dz=-4150*4096.0-p->mPosZ;

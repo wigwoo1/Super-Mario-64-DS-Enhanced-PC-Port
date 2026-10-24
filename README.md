@@ -11,12 +11,22 @@ game assets, personal saves, or proprietary compiler is included here.
 
 ## Current state
 
+- The Secret Slide's opaque black background now replaces the incorrect green
+  palette backdrop in a selected muted native replay. Shared background-layer
+  priority, window and renderer checks pass. Its Star box, finish mechanism,
+  timer display and complete course/reward flow remain unfinished. This does
+  not establish complete rear-plane, fog or all-course rendering support.
 - The October24 checkpoint corrects the native OS clock units: the original
   stopwatch conversion now agrees with real elapsed time in a focused Windows
   test. Complete timer rendering, pause, high-score and timed-Star flows still
   need gameplay acceptance. Battlefield lifts, the tilting bridge and switch
   gates are partially integrated; full rides and gate-opening interactions
   remain unverified. Koopa's player-win and Star-reward lifecycle remains open.
+  A selected Mission2 Mario crossing of the tilting bridge now passes with
+  native contact, tilt, player carry and stable landing on the far bank.
+  Yoshi now also crosses in both directions with native grounded contact and
+  stable landings on both banks, including a selected original course re-entry.
+  Other characters and broader course-reload coverage remain unverified.
 - Native original title/file flow, selected courses and actors, Power Star
   rewards, course-clear behavior, Wanted, and portions of the Rec Room work.
 - Controller navigation is verified for several original title, file, pause,

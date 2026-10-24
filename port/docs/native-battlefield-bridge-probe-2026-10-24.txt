@@ -1,0 +1,46 @@
+Battlefield tilting-bridge proximity qualification - 2026-10-24
+Status: PARTIALLY VERIFIED. Contact and tilt accepted; crossing remains open.
+
+This follows the verified ROM-free clock-kit publication at source2e0be44.
+No change to the published kit, F installation or original matched src/include.
+The current diagnostic game SHA256 is
+11C8614703C8D8C906FBB42667F4C4D36EB69BD7A7201E9B494DC06FEBC6D395.
+
+Only opt-in QA controls changed: production ground queries can wait for the
+real player to approach an XZ point; mission-selection-only Koopa mode chooses
+the original Mission2 without starting the race after scenery navigation.
+No player placement, original actor/physics, collider, event or reward writes.
+The original seesaw disables collision offscreen and enables it when near.
+Therefore distant samples cannot establish the absence of moving collision.
+
+Two private muted original-title/FileA/castle/Mission2 observations:
+- Spawn-area probe:904/904 ground hits;75 disagree with candidate bridge floor
+  height. None identify bridge39.5100frames, exit0, errors0, submitted output0,
+  synthetic save bytes unchanged. This does NOT establish a missing bridge.
+- Ordinary Mario approach: safely crosses the first static bridge and reaches
+  the tilting bridge. At the proximity trigger,904/904 ground hits;51 identify
+  moving bridge39, and25 still disagree with the candidate floor geometry.
+  The bridge collider is enabled at this query. Native contact capture records
+  62grounded samples on bridge39/uid117, playerY exactly equal to groundY,
+  spanning ticks6070..6375 and heights143.965..748.276. Observed bridge pitch
+  ranges-2579..7847. The player is carried down as it tilts, then falls to the
+  lower floor and does not reach the far bank.9000frames, exit0, errors0,
+  submitted output0, unchanged isolated saves. Final Wait/alive/control.
+  Mission2 is confirmed; Koopa remains idle and no race or reward is forced.
+
+Release build and4focused clock/input/clsn/Stage graph CTests pass. A first
+compile used the reserved Windows macro spelling near as a local variable;
+renaming it proximity fixed compilation. No game behavior change was needed.
+Private acceptance: work/upper-field-bridge-investigation-20261024.json and
+work/check-upper-field-bridge-20261024.py. Screenshots inspected/shown.
+
+Next work must explain the remaining25 live/private-surface disagreements and
+use the actual tilting bridge footprint/transform and carry behavior to qualify
+a traversal. Do not repeat the same candidate or remove original tilt/collision.
+The candidate also contains one unverified jump connection; it is not walking
+acceptance. Gates/switch press, player Koopa win, Star/save/reload remain open.
+Sol High recommended for the original collision/geometry investigation before
+another route attempt. Full port goal incomplete. Runtime tests remain muted.
+
+Keep original geometry, query outputs, raw actor data, saves, full executables,
+logs, screenshots and audio private. Tested kit folders contain private data.

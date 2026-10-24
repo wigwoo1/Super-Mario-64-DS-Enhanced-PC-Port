@@ -1,5 +1,14 @@
 # Complete native actor and level-object coverage
 
+New user report2026-10-24: Princess's Secret Slide has a green background where
+the void should be black, plus missing Star box, finish line and counter/timer.
+The opaque black rear-plane now renders correctly in a muted native diagnostic
+replay, with five focused rendering tests passing. Missing Star box (actor21
+ITEM_BLOCK), finish mechanism and timer still need native gameplay investigation.
+Ordinary castle portrait entry, complete slide and Star rewards remain unverified.
+See native-secret-slide-background-2026-10-24.txt for current evidence and limits.
+See native-castle-secret-slide-report-2026-10-24.txt.
+
 Requested 2026-10-22. Status: PLANNED; missing-object reports are not yet
 reproduced or fixed. This milestone remains part of the full PC-port goal.
 
@@ -47,6 +56,18 @@ existing publication rules. Refresh ROM-free build support only through the
 reviewed reconstruction and publication workflow when source closure grows.
 
 ## Confirmed report: Koopa the Quick missing (2026-10-23)
+
+Update2026-10-24: decline/retry and original Yoshi refusal now pass muted native
+runtime checks with original dialogues/choice inputs/cooldown and unchanged
+saves. See native-koopa-interactions-2026-10-24.txt. Race result/reward lifecycle
+and later-course variant remain open.
+
+Update2026-10-24: actual original-menu Mission1/Mission2 comparison now verifies
+the authored conditional absence/presence of Koopa and his finish flag. Common
+Battlefield lifts, bridge and gates spawn in both missions and lifts move.
+See native-koopa-mission-filter-2026-10-24.txt. A zero-star replay that did not
+enter Battlefield cannot diagnose Koopa spawning. Full race/reward acceptance
+and complete lift ride/disembark remain open.
 
 Update2026-10-23: the original race actor188 and finish flag205 are now native.
 Mission2 spawn, original offer/accept/start and autonomous26-node summit finish

@@ -1,3 +1,9 @@
+2026-10-24 requested: optional Physics = ORIGINAL DS / CLASSIC N64, applying
+the N64 Mario movement reference to Mario and Yoshi. Also add DS title Mario
+face stretching with a separate Mario button for original drawing mode.
+Both are PLANNED, not implemented. Requirements, source references and staged
+acceptance: native-title-face-and-classic-physics-plan-2026-10-24.txt.
+
 2026-10-21 VERIFIED: settings alignment in castle/Battlefield/Wanted. Cache
 original button at native data_0209f360[0] (0x80 castle,0x60 Battlefield); retain
 compact16px bevels/24px row pitch. Center visible text ink in both directions,

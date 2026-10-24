@@ -6455,8 +6455,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "d85ad2752b230fb4a3cc59583249c348a0eb92798512179b79d0ce431d3fe184",
-      "bytes": 6306
+      "sha256": "d0b576e262c651eea6f4d8174f8cb7b002ed6c242fd334066826a06723fe254d",
+      "bytes": 7643
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6504,6 +6504,11 @@
       "bytes": 2960
     },
     {
+      "path": "port/docs/native-battlefield-bridge-probe-2026-10-24.txt",
+      "sha256": "ef6f190425809697050aca0a034e7ae009026ca2f3e92f3204fc0bd38588e114",
+      "bytes": 3024
+    },
+    {
       "path": "port/docs/native-battlefield-platforms-2026-10-23.txt",
       "sha256": "e4b8c423a64902dc4286113bab846f80ecf1dc07839e0334784457f7edff8d33",
       "bytes": 5578
@@ -6522,6 +6527,11 @@
       "path": "port/docs/native-block16-verified-2026-10-23.txt",
       "sha256": "014ca22e6aa5e76db34b3faf884127e598d13cbdaf16b0415933b8d9f0a13d9f",
       "bytes": 4260
+    },
+    {
+      "path": "port/docs/native-bridge-crossing-verified-2026-10-24.txt",
+      "sha256": "0571ffdd9d7b768fc6eb2215d3a6205bd2e68901679a30923aa650a91f456c49",
+      "bytes": 3447
     },
     {
       "path": "port/docs/native-buddy-cannon-verified-2026-10-18.txt",
@@ -6577,6 +6587,11 @@
       "path": "port/docs/native-castle-birds-2026-10-21.txt",
       "sha256": "7c989c2f971038c80571281ac48b8ae5c755095836d17ed45cbecc0f93cc4638",
       "bytes": 1996
+    },
+    {
+      "path": "port/docs/native-castle-secret-slide-report-2026-10-24.txt",
+      "sha256": "9c42042ad04280ebfef4ebd84dc804547f45453c9e87a765cdb1a97e90da2df1",
+      "bytes": 2630
     },
     {
       "path": "port/docs/native-chain-chomp-camera-star-2026-10-20.txt",
@@ -6702,6 +6717,16 @@
       "path": "port/docs/native-koopa-integration-2026-10-23.txt",
       "sha256": "31866b37d6d90280b2f87bb98439e0d1f3e9b38c554e5924a1a7dabaf1e6a478",
       "bytes": 5975
+    },
+    {
+      "path": "port/docs/native-koopa-interactions-2026-10-24.txt",
+      "sha256": "0826e1283552406c9b8fd7f217e5f2f809b636ea2ddee86dca7efb27fcdc8197",
+      "bytes": 2823
+    },
+    {
+      "path": "port/docs/native-koopa-mission-filter-2026-10-24.txt",
+      "sha256": "548be11bd8dfd1821b5acae6393f88447adcbf39d855a4506a069d58528a6047",
+      "bytes": 2930
     },
     {
       "path": "port/docs/native-koopa-surface-investigation-2026-10-24.txt",
@@ -6839,6 +6864,16 @@
       "bytes": 5142
     },
     {
+      "path": "port/docs/native-secret-slide-background-2026-10-24.txt",
+      "sha256": "2aaa3e2a1dbce8ad55e6857f237e18dcb5d8134f01131b830b14fcaf72c1ce0c",
+      "bytes": 3769
+    },
+    {
+      "path": "port/docs/native-secret-slide-item-block-handoff-2026-10-24.txt",
+      "sha256": "18c1080f5751eb1213ddf146193443df6ed655cce2752fe972a25dac5a855d4b",
+      "bytes": 5023
+    },
+    {
       "path": "port/docs/native-seesaw-verified-2026-10-23.txt",
       "sha256": "35bfd210abc26c1ecdf666f79f8d7663edb80d849e300a72f4f2cf097013f691",
       "bytes": 3528
@@ -6894,6 +6929,11 @@
       "bytes": 5983
     },
     {
+      "path": "port/docs/native-title-face-and-classic-physics-plan-2026-10-24.txt",
+      "sha256": "0d63b1c8be88fb12bd5f1278043a5c6fde415199a2ec1daed7e48c33b3d7a29f",
+      "bytes": 6760
+    },
+    {
       "path": "port/docs/native-title-options-controller-2026-10-20.txt",
       "sha256": "4dcb5317af64cbea1288f48f17c5f4a42f3eabad9183797d3b389c913405b39d",
       "bytes": 4102
@@ -6939,6 +6979,11 @@
       "bytes": 4364
     },
     {
+      "path": "port/docs/native-yoshi-bridge-roundtrip-2026-10-24.txt",
+      "sha256": "5fe41117c734656efb355f303346396169022f85675bdedbe1b9c94b86b9b4ef",
+      "bytes": 4587
+    },
+    {
       "path": "port/docs/native-yoshi-start-and-render-checkpoint-2026-10-15.txt",
       "sha256": "bf48857757be832d115a64e1b226693c75aaf9383fe1c60dd87d3853b739b5e1",
       "bytes": 6341
@@ -6960,8 +7005,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "cf4aad165a6c2d0a1fe743a5552c2e12315dd9d047892ecfe237553396a6dde0",
-      "bytes": 37790
+      "sha256": "8e5927e41fb58ba7628471b1696de19a34551d94eb91187fab0cfecd4d7a24a8",
+      "bytes": 38166
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -6990,8 +7035,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "252859443967692fee00e6d666d454570c26b59ef08228131e533ebfc794a8d9",
-      "bytes": 10150
+      "sha256": "39bfa85dbdbd1b55996dad6877b20bf8b3f5bdc915e27a76470158172d7e56d9",
+      "bytes": 10912
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7310,8 +7355,8 @@
     },
     {
       "path": "port/hal/koopa_replay.h",
-      "sha256": "bf63f700ff2afeac7dee0b8fc3ddd8cf775c11a144fbecb39e73655a26cb063c",
-      "bytes": 14501
+      "sha256": "3f9e60aa738f3520e8701daaf058e42f84f6b1fdf4c8d01f92c025c9e9a7cb5e",
+      "bytes": 19025
     },
     {
       "path": "port/hal/level_overlay.cpp",
@@ -7560,8 +7605,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "40f9a34e8718c4b709d85a515910d9aeeb972345f2d21892a0bb41d200d400c7",
-      "bytes": 144268
+      "sha256": "3b3500fd01451e2dd0769f79e1f1bd47683f5a5a852af965d97d6911d7d364b2",
+      "bytes": 145649
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7705,8 +7750,8 @@
     },
     {
       "path": "port/ntr/include/ntr/ppu.h",
-      "sha256": "a661d1c196278b3fbd88d41503de4559d325b5d3982f2fdec080499331b29e09",
-      "bytes": 1745
+      "sha256": "c1f1e7cf073ec1b54e9b61370d098d9e297a3637c4873386a375b8e3b1d64834",
+      "bytes": 1784
     },
     {
       "path": "port/ntr/include/ntr/rt.h",
@@ -7765,8 +7810,8 @@
     },
     {
       "path": "port/ntr/ppu.cpp",
-      "sha256": "3f8337c87a8c887f8be3010e2baf6acf7bb22b3a39cdd15d6fb4086c2a27c217",
-      "bytes": 30322
+      "sha256": "cd2cb85e7aa196cae01afb186dcc910b50d9392605eb48ef0332b191bdb1180e",
+      "bytes": 31324
     },
     {
       "path": "port/ntr/README.md",
@@ -7825,8 +7870,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "db1de711c644e55f0e9f0a8930442409090853f1f01e06afd714701a84627226",
-      "bytes": 63044
+      "sha256": "beba48e9ca9a65a451fcefdd09a8b3adcabcf0993c375205be43c0408378bb9f",
+      "bytes": 63839
     },
     {
       "path": "port/README.md",
@@ -8115,8 +8160,8 @@
     },
     {
       "path": "port/tests/smoke_ppu_affine.cpp",
-      "sha256": "61fdfc6fb7a54af923840e47dadc599da0a85e29ae7f866a6b18574e4666e684",
-      "bytes": 5545
+      "sha256": "41bedeebfb8d5e02355aed047c88459c5dd2dab1c13215c1aff36444e84a8b16",
+      "bytes": 8329
     },
     {
       "path": "port/tests/smoke_ppu_obj.cpp",

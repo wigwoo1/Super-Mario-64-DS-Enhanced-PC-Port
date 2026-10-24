@@ -90,6 +90,65 @@ int main() {
         ntr::ppu_scanout(static_cast<ntr::Engine>(engine),frame);
         if(frame.px[0][0]!=0xffff0000)return 18;
     }
+    // Secret Slide requests an opaque black 3D clear over a green palette
+    // backdrop. Apply it at BG0's priority, without changing tiled BG0,
+    // transparent clears, foreground-only captures, windows or the sub engine.
+    std::memset((void*)0x04000008,0,0x54);
+    word(0x05000000,31<<5);word(0x05000002,31);
+    word(0x04000008,2);word(0x0400000a,0x1f83);
+    NTR_MMIO(uint32_t,0x04000000)=0x10308;
+    NTR_MMIO(uint32_t,0x04000350)=0x3f1f0000;
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xff000000)return 22;
+    // A genuinely higher-priority BG1 still covers the rear-plane.
+    word(0x0400000a,0x1f81);
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xffff0000)return 23;
+    // Foreground-only capture must not paint black over rendered geometry.
+    word(0x0400000a,0x1f83);
+    ntr::ppu_scanout(ntr::ENGINE_A,frame,true,0x0e);
+    if(frame.px[0][0]!=0xffff0000)return 24;
+    NTR_MMIO(uint32_t,0x04000000)=0x10108;
+    ntr::ppu_scanout(ntr::ENGINE_A,frame,true,0x0e);
+    if(frame.px[0][0]!=0x0000ff00)return 25;
+    NTR_MMIO(uint32_t,0x04000350)=0x3f000000;
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xff00ff00)return 26;
+    // The clear color is a register, not a hard-coded black fallback.
+    NTR_MMIO(uint32_t,0x04000350)=0x3f1f7c00;
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xff0000ff)return 27;
+    ntr::ppu_scanout(ntr::ENGINE_B,frame);
+    if(frame.px[0][0]!=0xffff0000)return 31;
+    NTR_MMIO(uint32_t,0x04000000)=0x10008; // BG0 disabled
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xff00ff00)return 32;
+    NTR_MMIO(uint32_t,0x04000000)=0x10100; // tiled BG0
+    word(0x04000008,0x1f80);
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xffff0000)return 33;
+    NTR_MMIO(uint32_t,0x04000000)=0x10108;
+    word(0x04000008,2);
+    word(0x04000060,1u<<14); // a bitmap rear-plane is not this constant
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xff00ff00)return 34;
+    word(0x04000060,0);
+    word(0x04000010,256);
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xff00ff00)return 28;
+    word(0x04000010,0);
+    NTR_MMIO(uint32_t,0x04000000)=0x12108;
+    word(0x04000040,0x1020);word(0x04000044,0x1020);
+    word(0x04000048,1);word(0x0400004a,0);
+    ntr::ppu_begin_window_frame();
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[16][16]!=0xff0000ff || frame.px[0][0]!=0xff00ff00)return 29;
+    NTR_MMIO(uint32_t,0x04000000)=0x10188;
+    ntr::ppu_scanout(ntr::ENGINE_A,frame);
+    if(frame.px[0][0]!=0xffffffff)return 30;
+    NTR_MMIO(uint32_t,0x04000350)=0; // restore for subsequent 2D tests
+    std::memset((void*)0x04000040,0,0xc);
+    ntr::ppu_begin_window_frame();
     // Wanted uses BG2/BG3 with BG0 disabled. Diagnostics must never read a
     // zero-initialized disabled layer's screen/character addresses.
 #if defined(_WIN32)

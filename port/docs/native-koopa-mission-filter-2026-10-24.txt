@@ -1,0 +1,46 @@
+Koopa mission selection and Battlefield scenery spawn comparison - 2026-10-24
+Status: VERIFIED for original Mission1/Mission2 spawn behavior only.
+Full native PC port and Koopa race reward lifecycle remain incomplete.
+
+Build SHA256:
+3E273C2379F418F9CF13D1A0E0844328E3980171113CD62AFA0113A772D0177C
+
+The earlier Koopa native-registration gap was resolved by the original actor
+integration. The present verification confirms the original mission filter:
+Koopa and the race finish flag are absent in Battlefield Mission1 and present
+in Mission2. The common lifts, tilting bridge and both gates spawn in both.
+This expected mission-specific absence should not be reported as a new native
+actor-registration failure. The zero-star replay that stopped at the locked
+castle door did not load Battlefield and remains inconclusive for progression.
+
+Change: opt-in Koopa/scenery QA now uses the existing validated
+SM64DS_PC_TEST_MISSION choice when operating the actual star-selection scene.
+No value retains the previous Mission2 replay behavior. The private muted
+runner exposes MenuMission1..7 (default2), records the chosen value and leaves
+ExpectedMission as an independent runtime assertion. Original game menus,
+actor tables, player physics, authored spawn rules, resources and saves are
+unchanged. No forced level load, actor creation, state or reward writes.
+
+Release game build and seven focused CTests passed: game_clock, input,
+pc_session, input_state, input_history, stage_graph, clsn. Existing mission
+validation covers the QA opt-in and invalid mission values. Runtime comparison
+used the same isolated synthetic one-Star Mario seed and input-only route:
+original title -> FileA -> castle -> painting -> actual mission selector.
+Each run confirmed its requested mission and completed6000presentation ticks
+with exit0, final Wait/control, mixer errors0, submitted sound samples0 and
+both slot/minigame save hashes unchanged. Screens4300/5500 captured;5500
+Mission1 and Mission2 frames inspected/shown. At both censuses4500/5500:
+Mission1 Koopa/flag absent; Mission2 Koopa/flag alive. Common scenery alive in
+both missions; the two lift positions changed between the observations.
+
+Private evidence: outer work/koopa-mission-filter-acceptance-20261024.json;
+checker work/check-koopa-mission-filter-20261024.py; runtime folders
+native-muted-audio-walk-koopa-mission{1,2}-compare-20261024-r1-20261021.
+The private original scene-filter inspection agrees with runtime results.
+Keep scene inventories, extracted data, full executables, screenshots, logs
+and saves local. No F installation, source publication or new release here.
+
+Remaining: full race win/loss/result/reward/save/reload, decline/retry and
+Yoshi refusal, legitimate switch/gate opening, full lift ride/disembark and
+other level/shared-class variants. Bridge Yoshi roundtrip/re-entry already
+has independent accepted evidence; do not repeat it as a spawn diagnosis.

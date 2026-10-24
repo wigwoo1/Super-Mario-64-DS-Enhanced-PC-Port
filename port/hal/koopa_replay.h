@@ -2,6 +2,9 @@
 #include "daRNk_c.h"
 #include "daRFlag_c.h"
 #include "dBgCh_Gnd.h"
+#include "dBgActor_c.h"
+#include "pc_session.h"
+extern "C" { extern unsigned char data_0209d6bc,data_0209d68c; }
 
 // Read-only production collision queries for private route qualification.
 // Input rows are x,y,z world units; output remains local to the QA case.
@@ -13,7 +16,34 @@ static void pc_probe_koopa_ground(Player *player) {
     if(done || !input || !output || !automation || std::strcmp(automation,"1") ||
        data_0209f2f8!=6 || !player || player->aliveState!=1 ||
        !dActor_c::FindWithActorID(188,nullptr))return;
+    // Moving colliders can be intentionally disabled while the real player
+    // is distant. Qualify their surfaces only after an ordinary approach;
+    // never enable them or move the player to satisfy a probe.
+    if(const char *proximity=std::getenv("SM64DS_PC_KOOPA_GROUND_NEAR")) {
+        int x,z,radius;char extra;
+        if(std::sscanf(proximity,"%d:%d:%d%c",&x,&z,&radius,&extra)!=3 ||
+           x< -32000 || x>32000 || z< -32000 || z>32000 || radius<1 || radius>5000)return;
+        if(std::hypot(double(player->mPosX)/4096-x,double(player->mPosZ)/4096-z)>radius)return;
+    }
     done=true;
+    if(auto *actor=dActor_c::FindWithActorID(39,nullptr)) {
+        auto *bridge=static_cast<dBgActor_c *>(actor);
+        char path[4096];std::snprintf(path,sizeof(path),"%s.bridge.csv",output);
+        if(FILE *snapshot=std::fopen(path,"w")) {
+            auto matrix=[&](const char *name,const Matrix4x3 &m) {
+                std::fprintf(snapshot,"%s",name);
+                for(unsigned i=0;i<12;++i)std::fprintf(snapshot,",%d",reinterpret_cast<const int *>(&m)[i]);
+                std::fputc('\n',snapshot);
+            };
+            matrix("model",bridge->mModel.mat4x3);
+            matrix("collider",bridge->mMeshCollider.newScaledMat);
+            matrix("inverse",bridge->mMeshCollider.invScaledMat);
+            std::fprintf(snapshot,"state,%llu,%u,%u,%d,%d,%d\n",
+                static_cast<unsigned long long>(ntr::rt_frame()),unsigned(actor->uniqueID),
+                unsigned(bridge->mMeshCollider.IsEnabled()),int(actor->mAngleX),int(actor->mAngleY),int(actor->mAngleZ));
+            std::fclose(snapshot);
+        }
+    }
     FILE *samples=std::fopen(input,"r"),*capture=std::fopen(output,"w");
     if(!samples || !capture) {
         if(samples)std::fclose(samples);
@@ -68,24 +98,40 @@ static void pc_probe_koopa_ground(Player *player) {
 static bool pc_replay_koopa(Player *player,bool routeComplete) {
     const char *mode=std::getenv("SM64DS_PC_TEST_KOOPA");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    if(!mode || (std::strcmp(mode,"start") && std::strcmp(mode,"race")) || !automation || std::strcmp(automation,"1"))return false;
+    if(!mode || (std::strcmp(mode,"start") && std::strcmp(mode,"race") && std::strcmp(mode,"select") &&
+       std::strcmp(mode,"decline-retry") && std::strcmp(mode,"refusal")) || !automation || std::strcmp(automation,"1"))return false;
     const bool pilot=!std::strcmp(mode,"race");
+    const bool declineRetry=!std::strcmp(mode,"decline-retry");
+    const bool refusal=!std::strcmp(mode,"refusal");
     const auto tick=ntr::rt_frame();
     uint16_t buttons=0;int16_t sx=0,sy=0;
     auto controls=[&](){ntr::input_test_controls(true,buttons,sx,sy);return true;};
     unsigned selection=0,phase=0,selectionMode=0,confirm=0,ready=0;
     if(pc_star_select_status(&selection,&phase,&selectionMode,&confirm,&ready)) {
+        // Reuse the validated QA mission setting while retaining Mission 2
+        // for existing Koopa/scenery replays that do not specify a target.
+        const unsigned target=std::getenv("SM64DS_PC_TEST_MISSION")
+            ? static_cast<unsigned>(pc_test_mission()-1) : 1u;
         if(ready && !confirm && selectionMode==0 && tick%30<3) {
             if(phase==0)buttons=1;
-            else if(selection!=1)buttons=selection>1?0x20:0x10;
+            else if(selection!=target)buttons=selection>target?0x20:0x10;
             else buttons=1;
         }
         return controls();
     }
+    // Mission-selection-only QA leaves subsequent movement to the ordinary
+    // course route. It must not approach Koopa after a scenery check finishes.
+    if(!std::strcmp(mode,"select"))return false;
     if(data_0209f2f8!=6 || !routeComplete || !player || player->aliveState!=1)return false;
     auto *koopa=static_cast<daRNk_c *>(dActor_c::FindWithActorID(188,nullptr));
     if(!koopa || koopa->aliveState!=1)return false;
     static int previousState=-1;static bool pathLogged=false;
+    static unsigned offers=0;static bool interactionDone=false,retreated=false;
+    auto interaction=[&](const char *name) {
+        std::fprintf(stderr,"[native Koopa interaction] event=%s tick=%llu offers=%u state=%d step=%u cooldown=%u answer=%u character=%u racing=%u\n",
+            name,static_cast<unsigned long long>(tick),offers,koopa->mState,unsigned(koopa->mStep),
+            unsigned(koopa->mStateTimer),unsigned(data_0209d684),unsigned(player->param1),unsigned(koopa->mIsRacing));
+    };
     if(!pathLogged) {
         for(int i=0;i<koopa->mNumPathPts;++i) {
             Vector3 point;koopa->mPathPtr.GetNode(point,i);
@@ -94,9 +140,33 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
         pathLogged=true;
     }
     if(previousState!=koopa->mState) {
+        if(koopa->mState==1) {
+            ++offers;
+            if(declineRetry || refusal)interaction(offers==1?"first-offer":"retry-offer");
+        }
+        if(previousState==1 && koopa->mState==0 && (declineRetry || refusal)) {
+            interaction(refusal?"refused":"declined");
+            if(refusal)interactionDone=true;
+        }
+        if(declineRetry && offers>=2 && koopa->mState==2) {
+            interactionDone=true;interaction("accepted-retry");
+        }
         previousState=koopa->mState;
         std::fprintf(stderr,"[native Koopa replay] tick=%llu state=%d player_state=%s\n",
             static_cast<unsigned long long>(tick),koopa->mState,pc_player_state_name(player));
+    }
+    if(interactionDone) {
+        if(refusal) {
+            const double dx=double(player->mPosX)-koopa->mPosX,dz=double(player->mPosZ)-koopa->mPosZ;
+            if(std::hypot(dx,dz)<450*4096.0 && !player->mIsNoControl && !player->mIsControlDisabled) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*22000);
+                sy=static_cast<int16_t>(-std::cos(angle)*22000);
+            } else if(!retreated && !player->mIsNoControl && !player->mIsControlDisabled) {
+                retreated=true;interaction("retreated");
+            }
+        }
+        return controls();
     }
     if(koopa->mState==0 && !player->mIsNoControl && !player->mIsControlDisabled) {
         const double dx=double(koopa->mPosX)-player->mPosX,dz=double(koopa->mPosZ)-player->mPosZ;
@@ -105,7 +175,14 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
             sx=static_cast<int16_t>(std::sin(angle)*24000);
             sy=static_cast<int16_t>(-std::cos(angle)*24000);
         }
-    } else if(koopa->mState==1 && tick%45<3)buttons=1;
+    } else if(koopa->mState==1 && tick%45<3) {
+        // Operate the real choice menu; observe its selection rather than
+        // assigning the answer. Decline once, then accept the next offer.
+        const unsigned wanted=declineRetry && offers==1?1u:0u;
+        if((data_0209d6bc==4 || data_0209d6bc==5) && data_0209d68c!=wanted)
+            buttons=data_0209d6bc==4?(wanted?0x10:0x20):(wanted?0x80:0x40);
+        else buttons=1;
+    }
     else if(pilot && koopa->mState>=2) {
         static unsigned node=1,lastJumpNode=~0u;
         static Vector3 detour[2048];static unsigned detourCount=0,detourIndex=0;

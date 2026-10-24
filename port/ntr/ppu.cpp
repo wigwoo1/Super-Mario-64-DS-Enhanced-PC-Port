@@ -253,6 +253,17 @@ void ppu_scanout(Engine eng, Framebuffer &fb, bool transparent_backdrop,
         return;
     }
 
+    // The opaque 3D rear-plane belongs to BG0, ahead of lower-priority
+    // backgrounds and the palette backdrop. It is not palette entry zero.
+    // Keep transparent clears unchanged; translucent/bitmap rear-planes need
+    // their own 3D compositing support rather than an opaque replacement.
+    const uint32_t clear = eng == ENGINE_A ? rd32(0x04000350) : 0;
+    const bool opaque_rear_plane = eng == ENGINE_A && disp_mode == 1 &&
+        (dispcnt & 0x108u) == 0x108u && (background_mask & 1u) &&
+        !(rd16(0x04000060) & (1u << 14)) && ((clear >> 16) & 31u) == 31u;
+    const uint32_t rear_color = bgr555(static_cast<uint16_t>(clear));
+    const unsigned rear_priority = rd16(em.reg_base + 8) & 3u;
+    const unsigned rear_scroll = rd16(em.reg_base + 0x10) & 511u;
     BgConfig bgs[4];
     for (int i = 0; i < 4; ++i) {
         bgs[i] = read_bg(em, i, dispcnt);
@@ -371,6 +382,9 @@ void ppu_scanout(Engine eng, Framebuffer &fb, bool transparent_backdrop,
             // so walk priorities 3..0 and let later writes overwrite.
             for (int prio = 3; prio >= 0; --prio) {
                 for (int bg = 3; bg >= 0; --bg) {
+                    if (bg == 0 && opaque_rear_plane && (layers & 1u) &&
+                        rear_priority == static_cast<unsigned>(prio) &&
+                        ((x + rear_scroll) & 511u) < SCREEN_W) c = rear_color;
                     if (!(layers & (1u<<bg)) || !bgs[bg].enabled || bgs[bg].priority != prio) continue;
                     uint32_t s;
                     if (sample_bg(em, bgs[bg], x, y, s)) c = s;

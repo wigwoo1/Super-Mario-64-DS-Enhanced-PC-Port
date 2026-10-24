@@ -1,0 +1,105 @@
+DS title Mario face stretching and optional N64 Classic Physics
+Requested 2026-10-24. Status: PLANNED; neither feature is implemented.
+These extend the full native PC-port goal. Complete the current gameplay
+milestone before beginning either implementation; do not add inactive settings.
+
+1. Stretch the original DS title-screen Mario head
+
+Use the DS Mario head, its textures and the existing title scene. Tapping or
+clicking Mario's face enters a face-play mode and turns his head toward the
+camera. A separate Mario button enters the existing DS drawing/sketch mode.
+Preserve access to the original title choices, files and Options from either
+mode. Avoid making a face tap start the game or enter drawing unintentionally.
+
+Provide independently selectable deformation handles for hat/forehead, left
+and right ears, mouth, left and right moustache sides, nose and eyelids.
+Dragging pulls the nearby head surface smoothly, like the N64 title head;
+release lets it recover elastically. Support mouse and touchscreen pointer
+input, correct hit testing at all internal/window sizes, and the existing
+controller navigation/cursor conventions where practical. Provide reset/back
+actions, visible focus and clean recovery on focus loss or disconnect.
+
+Implementation milestones:
+- Identify the actual DS title head resources, animation and mesh submission
+  paths; show the undeformed, camera-facing DS head before adding deformation.
+- Inspect N64 Goddard skin/joint/particle/control behavior, then map its useful
+  mechanisms to the DS head's different topology and skeleton. Use stable
+  bind-pose vertices and weighted regions; never repeatedly deform the previous
+  frame or modify shared in-game character meshes/resources.
+  Inspect whether eyelids and moustache features have independent geometry;
+  texture-only features may need a local deformation mesh that retains the DS
+  artwork and appearance. Their geometry has not yet been verified.
+- Implement one real nose grab/release, then the full listed set of handles,
+  independent left/right features, eyelids and elastic return. Keep eyes,
+  teeth/mouth interiors, hat, normals and connected surfaces aligned.
+- Connect separate face-play and Mario/drawing controls through the title's
+  existing native input flow; preserve original drawing and file-menu behavior.
+- Verify repeated grabs, drag limits, reset, exit/re-entry, focus loss, screen
+  resizing, Native DS/720p/4K and both GPU/software render paths. Show muted
+  before/during/after screenshots for every handle. Confirm no in-game model
+  changes or save changes from title face play.
+
+Primary source references inspected 2026-10-24:
+https://github.com/n64decomp/sm64/tree/master/src/goddard
+https://github.com/n64decomp/sm64/blob/master/src/goddard/particles.c
+https://github.com/n64decomp/sm64/blob/master/src/goddard/skin.c
+https://github.com/n64decomp/sm64/blob/master/src/goddard/skin_movement.c
+https://github.com/n64decomp/sm64/blob/master/src/goddard/joints.c
+Pin a reviewed upstream revision and preserve credits when implementation
+begins. Reuse local DS resources; do not silently depend on N64 head assets.
+
+2. Optional Classic Physics for Mario and Yoshi
+
+Add a saved native Gameplay setting: Physics = ORIGINAL DS / CLASSIC N64.
+Original DS remains the initial selection. Classic aims to give both Mario
+and Yoshi the original N64 Mario's base movement and physics, using the actual
+N64 source as the reference. This requires an adapter between two engines,
+not copying a few speed values or changing the global game clock.
+
+Cover analog response, acceleration, running speed, turning/skidding/braking,
+ground friction and slopes, momentum, jump takeoff/height/hold behavior, gravity,
+air steering, landing and jump chains, long jumps, back/side flips, diving,
+ground pounds, wall/ledge interaction, and the relevant water/flight variants.
+Map original N64 action transitions and movement/collision results into native
+DS actors, terrain, moving surfaces, animation, sound and camera/input systems.
+Keep movement independent of the selected 60/120/240 presentation rate.
+
+Mario and Yoshi are explicitly in scope. Retain DS-only interactions and
+progression: hats/character changes, Yoshi tongue/swallow/eggs, scripted actors,
+doors, stars and saves. Document how Yoshi's flutter and other unique actions
+coexist with the N64 base movement before changing them; do not silently remove
+abilities or describe the full Yoshi moveset as identical to N64 Mario.
+Luigi/Wario behavior requires its own explicit design and acceptance.
+
+Implementation milestones:
+- Pin a reviewed N64 revision/version and inventory DS/N64 movement state,
+  timing, units, analog and collision differences. Record measurable baseline
+  trajectories from the reference instead of relying on remembered feel.
+- Implement isolated movement calculations/action mapping behind the setting,
+  starting with grounded Mario acceleration/braking/turning and basic jump.
+  Keep the native DS path available and compare it before/after the change.
+- Extend to the complete agreed movement scope, then Yoshi and DS abilities.
+  Switch modes only at a safe idle boundary or after explicit course reload;
+  never mix action-state layouts while airborne, in a door or in a cutscene.
+- Expose the working persistent setting through the original styled native
+  menus and make its active mode clear. Add it to any deterministic replay
+  configuration; VS peers must agree on physics before shared play is accepted.
+- Verify speed/time, stop distance, turning arcs, jump trajectories/landing,
+  slopes/materials, wall/ledge interaction and moving-platform carry against
+  the N64 reference with documented tolerances. Repeat in DS geometry and
+  test both modes across Mario/Yoshi, hats, eggs, enemies, water, doors,
+  course transitions, star/save/reload and 60/120/240 presentation settings.
+  Show muted runtime screenshots. Record unsupported states explicitly;
+  do not present a small speed/gravity patch as completed Classic Physics.
+
+Primary movement references inspected 2026-10-24:
+https://github.com/n64decomp/sm64/blob/master/src/game/mario.c
+https://github.com/n64decomp/sm64/blob/master/src/game/mario_actions_moving.c
+https://github.com/n64decomp/sm64/blob/master/src/game/mario_actions_airborne.c
+https://github.com/n64decomp/sm64/blob/master/src/game/mario_actions_submerged.c
+https://github.com/n64decomp/sm64/blob/master/src/game/mario_step.c
+
+Model guidance: planning/recording is bounded work. Implementation should start
+with Sol High because head mesh deformation and cross-engine movement adapters
+need architectural work and original-engine investigation. Reassess after each
+verified milestone before assigning routine checks to a lower model.

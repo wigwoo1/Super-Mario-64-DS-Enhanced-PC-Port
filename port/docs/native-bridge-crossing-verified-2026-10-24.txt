@@ -1,0 +1,55 @@
+Battlefield tilting bridge - selected Mario crossing verified, 2026-10-24
+
+Later update: Yoshi crossings in both directions now pass. See
+native-yoshi-bridge-roundtrip-2026-10-24.txt for current scope and evidence.
+The Mario-only acceptance below is preserved as its original checkpoint.
+
+Status: VERIFIED for one original Mission2 Mario crossing and the diagnosed
+QA geometry mismatch. Other characters/return crossings/reentry remain open.
+Native executable SHA256:
+33865AC6454F638ECB77DFC81330561BDBF991FA5CBEC58C42E6579FCAAC50A4.
+
+Diagnosis: the bridge model and collider have identical rotation matrices;
+their translation ratio is the original8:1 model/world unit conversion.
+All25 disputed old samples lie on one long outer edge of the bridge. The
+private route planner used ideal floating-point yaw and zero floor-edge body
+clearance. Applying the ACTUAL captured native inverse matrix and the original
+ITCM octree XZ bounds rejects all25 old samples. This is not evidence of a
+missing part of the native bridge or a model/collider transform disagreement.
+The original collision algorithm and player/bridge physics were not changed.
+
+Private planner correction: read original Q12 sine/cosine values for moving
+actor rotations and retain the original Player radius50 margin from bridge
+long sides. The route follows a qualified interior corridor. Its input-only
+pilot avoids unnecessary intermediate stops on a deliberately tilting surface
+and uses horizontal progress on the bridge, then requires a grounded750-high
+far-bank landing. It no longer waits for a moving floor to retain its initial
+height. No teleport, actor placement, collider/event/physics changes or forced
+win/reward are used. Only the opt-in QA probe gained a native matrix snapshot.
+Matched src/include remain unchanged.
+
+Live acceptance:
+- Release native build and4clock/input/clsn/Stage graph CTests PASS.
+- Native actor/data provenance audit PASS.
+- Original title/FileA/castle/painting selects actual Battlefield Mission2.
+- Near-bridge production probe at6000:342/342ground hits,0height mismatches,
+  maximum plane-height difference0.015625;77samples identify bridge39.
+-56grounded native contacts on bridge39/uid117, ticks6070..6345. PlayerY
+  exactly matches collision groundY; heights588.545..1074.660 demonstrate
+  original tilt and carry. Far bank reached6404, destination6424.
+-381captured samples from6600 onward remain idle, grounded at750, alive and
+  with normal control on the far bank. Koopa remains idle; race not started.
+-8500frames, exit0, mixererrors0, device samples0, isolated synthetic saves
+  unchanged. Automated tests muted. Bridge and far-bank screenshots inspected.
+
+Private evidence: bridge-interior-crossing-acceptance-20261024.json,
+bridge-fixed-boundary-acceptance-20261024.json, matching checkers and r18 case.
+All geometry, matrix/query captures, saves, images, PCM/logs, generated assets
+and full executables remain local. No F install or public release in this task.
+The existing public clock kit remains at2e0be44. This diagnostic changes only
+opt-in QA observation; current normal bridge gameplay matches that build.
+
+Next bounded Luna Medium task: run the qualified route with Yoshi and check
+return crossing/settling. Use Sol High for the later unverified upper ledge
+jump and switch/gate/race progression. Full platform/lift, Koopa win/Star/save/
+reload, all-course and broader port features remain open. Full goal incomplete.

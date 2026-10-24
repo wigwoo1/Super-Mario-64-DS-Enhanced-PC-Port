@@ -22,7 +22,8 @@ struct Framebuffer {
     uint32_t px[SCREEN_H][SCREEN_W];   // 0xAARRGGBB
 };
 
-// Rasterise text/affine backgrounds with rectangular and OBJ window masks.
+// Rasterise text/affine backgrounds and opaque constant 3D rear-planes,
+// with rectangular and OBJ window masks.
 // Bitmap backgrounds, mosaic and color effects are not implemented.
 void ppu_scanout(Engine eng, Framebuffer &fb, bool transparent_backdrop = false,
                  uint8_t background_mask = 0x0f);

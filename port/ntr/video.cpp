@@ -935,6 +935,18 @@ bool video_present_frame() {
     ppu_scanout(ENGINE_A, g_top);
     ppu_scanout_obj(ENGINE_A, g_top);
     const bool geometry_visible=!g_pause_screen && ppu_geometry_active();
+    if(std::getenv("SM64DS_PC_BACKGROUND_TRACE")) {
+        static bool observed=false;static uint32_t previous[5]{};
+        const uint32_t values[]={static_cast<uint32_t>(io_read(0x04000000,4)),
+            static_cast<uint32_t>(io_read(0x04000008,2)),
+            static_cast<uint32_t>(io_read(0x04000350,4)),
+            static_cast<uint32_t>(io_read(0x05000000,2)),unsigned(geometry_visible)};
+        if(!observed || std::memcmp(previous,values,sizeof(values))) {
+            observed=true;std::memcpy(previous,values,sizeof(values));
+            std::fprintf(stderr,"[native background] tick=%llu display=%08x bg0=%04x clear=%08x palette0=%04x geometry=%u\n",
+                static_cast<unsigned long long>(rt_frame()),values[0],values[1],values[2],values[3],values[4]);
+        }
+    }
     uint8_t foreground_mask=ppu_backgrounds_above_3d();
     ppu_scanout(ENGINE_A,g_foreground,true,foreground_mask);
     const bool dialogue_card=g_dialogue_card_active && !g_pause_screen && !g_minigame_active &&

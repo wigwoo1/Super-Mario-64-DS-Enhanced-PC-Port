@@ -1,0 +1,70 @@
+Battlefield tilting bridge - Yoshi crossing both directions, 2026-10-24
+
+Status: VERIFIED for original Battlefield Mission2 Yoshi crossing both ways
+after leaving the course and re-entering. The full port and Koopa race win/Star
+remain incomplete. Current QA-enabled native EXE SHA256:
+A53B0185E91CA263183B6FF96D73EE37FBD568BF9EF0A922D756BE234B6CB0A5.
+
+The previously blocked Yoshi tests had two input-route problems. An early-jump
+waypoint requested Y750 where the original sloping approach bridge's floor was
+about345, so the pilot stopped underneath the requested height and retried
+jumping. Correct the private route using original KCL floor heights and the
+existing measured approach-lip jump. This reaches the tilting bridge through
+the original title/FileA/castle/painting and confirmed Battlefield Mission2.
+
+The first qualified Yoshi run (r4) crossed outbound. On return it unnecessarily
+stopped near the exit while the original spring/stander behavior tilted the end
+below the bank. Native contact showed exact playerY==groundY throughout that
+descent. Removing that intermediate stop (r5) lets Yoshi walk off continuously,
+reaching the return bank before the end tips down. No change to game collision,
+actor state, player physics, positions, velocities, health, events or rewards.
+The only modifications in this task are private QA tools and documentation.
+
+R5 runtime acceptance:
+- Current native build check succeeds (Ninja: no work to do).
+- 14000 presentation frames, exit0. Native audio engine enabled; device output
+  muted, submitted nonzero samples0, mixer errors0. Isolated saves unchanged.
+- Yoshi remains original character/body3. Original Mission2 confirmed.
+- Read-only native ground probe:342/342 hits,77 on bridge39,0 height mismatches,
+  maximum height error0.015625 against the qualified candidate.
+-57 grounded contacts on bridge39/uid117 outbound at8400..8680;47 inbound at
+  9530..9760. All contact player heights equal the actual native collision.
+- Far bank reached8812; return entry9526; near bank9770; destination9858.
+-111 far-bank samples and805 final return-bank samples show Wait, alive, normal
+  control and groundedY750. No jump input during the tilting-bridge round trip.
+- Koopa remains idle; no race, win or reward forced. The approach encounters
+  original Goombas and takes damage; bridge acceptance does not imply a clean
+  no-damage traversal of the entire approach.
+- Forward/return/returned-bank screenshots inspected. All jobs terminal.
+
+Private reproducibility: work/prepare-yoshi-bridge-roundtrip-20261024.py,
+work/run-yoshi-bridge-roundtrip-20261024.ps1,
+work/check-yoshi-bridge-roundtrip-20261024.py and
+work/yoshi-bridge-roundtrip-acceptance-20261024.json. Source geometry, generated
+data, queries/matrices, saves, logs/audio, screenshots and complete executables
+remain private. No F installation, public export, push or release in this task.
+
+Exit/re-entry acceptance (2026-10-24) used two isolated runs to separate the
+bridge reset observation from route survival. In r1, Yoshi completed the full
+round trip, then exited and re-entered; the used bridge UID117 was replaced by
+UID329, first observed at angleX0. Yoshi then took a fatal Goomba hit before
+reaching it, so that run did not establish the second crossing. In accepted r2,
+the test exited after initial Battlefield entry, re-entered through the original
+castle painting, confirmed Mission2 again, then ran the full course route. Fresh
+bridge UID326 first appeared at angleX0; tilt ranged -2902..5185 and collision
+became active. Yoshi recorded 57 grounded contacts outbound at ticks10110..10390
+and 47 on return at11240..11470; every sampled player height matched native
+bridge ground exactly. Route completed at11570. Muted audio had zero device
+samples and zero mixer errors; isolated save hash did not change. Six targeted
+CTests passed. Evidence/checker:
+work/native-muted-audio-walk-yoshi-battlefield-reentry-r2-20261021/acceptance.json
+and work/check-yoshi-battlefield-reentry-20261024.ps1. Screenshots include
+frame-8000.bmp (approach), frame-10000.bmp (bridge/far-bank), and frame-14000.bmp
+(post-return course view). Private lifecycle route support was added to main.cpp
+for this QA only; no bridge collision, actor, movement, reward or save gameplay
+code was changed.
+
+Next unresolved gameplay targets remain Koopa the Quick spawn/race, missing
+cannon crosshair, first-course bridge/moving-platform actors, then the other
+course and full-game acceptance milestones. F installation, source publication
+and a new public build kit were not part of this check.

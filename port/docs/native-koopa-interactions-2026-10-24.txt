@@ -1,0 +1,44 @@
+Koopa decline/retry and Yoshi refusal - 2026-10-24
+Status: VERIFIED for the specified interactions. Full game port unfinished.
+Current diagnostic build SHA256:
+11EAEC32F627EA3D90AE272BE1AC94A91AC821B3348F588F3F57FADE4BD35E05
+
+Opt-in input-only Koopa replay gains decline-retry and refusal modes. The first
+mode reads the original message choice state/highlight and presses D-pad/A to
+select Don't go, waits for the original cooldown/reoffer, then selects Go. The
+second uses the existing one-Star Yoshi seed, completes the original refusal
+dialogue and walks450units away so it does not immediately trigger another
+conversation. Observations log original actor state, cooldown and answer.
+These modes require AUTOMATION_ONLY=1 and an explicit TEST_KOOPA mode.
+No player/actor placement, state, message answer, timer, save or reward writes.
+Matched original src/include, normal controls and game behavior unchanged.
+
+Build passed; seven focused CTests passed: game_clock, input, pc_session,
+input_state, input_history, stage_graph and clsn.
+
+Both7000-presentation-tick muted runs use original title/FileA/castle/painting
+Mission2 entry and separate existing one-Star synthetic prerequisites.
+Mario: firstoffer4228, decline4476 (native answer2, waitstate0/cooldown60),
+retryoffer4598, acceptedretry4836 (native answer1/state2). Original Koopa CSV
+confirms idle during cooldown, no earlier race and subsequent racing/path
+movement. Original dialogue trace confirms No highlight then Go on retry.
+Yoshi: firstoffer4396; original message158; refused4520 (cooldown60/state0);
+walked away4634. No race state, all racing flags0, final Koopa idle, final
+distance575.25units. Both players finish Wait with normal control; both runs
+exit0, submitted sound samples0, mixer errors0, slot/minigame saves unchanged.
+Screens4450 inspected/shown: Mario choice and Yoshi refusal text.
+
+Private acceptance: work/koopa-interactions-acceptance-20261024.json and
+work/check-koopa-interactions-20261024.py. Cases:
+native-muted-audio-walk-koopa-decline-retry-20261024-r1-20261021
+native-muted-audio-walk-koopa-yoshi-refusal-20261024-r1-20261021
+Message observer runs before Update, so final answers are read from the native
+actor transition and cross-checked against original actor CSV/highlight; an
+answer need not appear in the next pre-update message snapshot.
+
+Still open: race win/loss result/reward, Star collection/save/reload/no duplicate,
+legitimate gate/switch route, full lift dismount and later-course race variant.
+The Princess's Secret Slide green void/missing Star box/finish/timer report is
+queued in native-castle-secret-slide-report-2026-10-24.txt. No fix claimed there.
+No F install, stable promotion or publication in this task. Full executables,
+assets, original scene inventories, saves, logs and screenshots remain private.
