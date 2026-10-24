@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
+#include <cmath>
 #include <vector>
 
 int main() {
@@ -88,5 +89,17 @@ int main() {
        scaled[3]-scaled[1]>5*(native[3]-native[1]))return 15;
     const auto antialiased=std::count_if(high.begin(),high.end(),[](uint32_t p){const unsigned a=p>>24;return a>0xd9&&a<255;});
     if(antialiased<20)return 16;
-    std::puts("PASS original OBJ decode bounds/stride/palette/flips/priority and four minimap counters with health/character selection");
+    // A sight is square and centered even when the map is hidden or the
+    // viewport aspect differs from the original DS screen.
+    solid(art.cannon_sight,0xbfffffff);minimap_hud_set_art(art);
+    for(const auto size: {std::array<unsigned,2>{256,192},{640,360},{1280,720},{3840,2160},{1024,768}}) {
+        std::vector<uint32_t> sight(size_t(size[0])*size[1]);
+        cannon_sight_build(sight.data(),size[0],size[1]);
+        const auto box=bounds(sight,size[0],size[1]);
+        if(box[2]-box[0]!=box[3]-box[1])return 25;
+        if(std::abs(int(box[0]+box[2])-int(size[0]))>1 ||
+           std::abs(int(box[1]+box[3])-int(size[1]))>1)return 26;
+        if(!sight[size_t(size[1]/2)*size[0]+size[0]/2])return 27;
+    }
+    std::puts("PASS original OBJ decode, counter composition and centered square cannon sight at native/360p/720p/4K/4:3");
 }

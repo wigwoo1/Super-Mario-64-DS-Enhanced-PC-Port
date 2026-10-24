@@ -85,6 +85,12 @@ def write_sources(root, directory):
 
 
 def transform(text):
+    render='int dCamera_c::Render()\n{'
+    assert text.count(render)==1,'camera render changed'
+    text=text.replace(render,render+'\n    ntr::video_set_cannon_sight(false);',1)
+    sight='_ZN3OAM6RenderEbP7OamAttriiii5Fix12IiES3_ii(0, (OamAttr *)&data_ov002_0210c3b0, 0x80, 0x60, -1, -1, 0x1000, 0x1000, 0, -1);'
+    assert text.count(sight)==1,'original cannon sight submission changed'
+    text=text.replace(sight,'ntr::video_set_cannon_sight(true);',1)
     old = 'typedef int (CamPmfHost::*CamPmf)();'
     new = ('struct CamPmf { int (__cdecl *function)(void *); int adjustment; };\n'
            'static_assert(sizeof(CamPmf) == 8, "camera callback stride");')

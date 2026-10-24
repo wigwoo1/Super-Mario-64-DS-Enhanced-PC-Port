@@ -45,3 +45,52 @@ Preserve the original ROM and user saves. Full executables, extracted assets,
 scene inventories, private traces and screenshots remain local under the
 existing publication rules. Refresh ROM-free build support only through the
 reviewed reconstruction and publication workflow when source closure grows.
+
+## Confirmed report: Koopa the Quick missing (2026-10-23)
+
+Update2026-10-23: the original race actor188 and finish flag205 are now native.
+Mission2 spawn, original offer/accept/start and autonomous26-node summit finish
+pass muted runtime checks. Mario's winning route and Star lifecycle remain
+unverified; the input pilot stalls on a steep slope. The original integration
+gap described below is resolved for these two profiles, while full race
+acceptance is still open. See native-koopa-integration-2026-10-23.txt.
+
+The original Battlefield Mission2 placement exists for RACE_NOKO(actor188,
+daRNk_c, ov062), but the current native profile registry and boot closure do
+not register this actor. Its race flag/finish actor(daRFlag_c, actor205) is also
+unregistered. Thus this report has a confirmed native integration gap; a new
+save or a render-distance setting cannot supply the missing implementation.
+
+After the current timed-switch checks, integrate the original race actor,
+flag and their resource/state/path/dialogue/timer dependencies. Preserve
+original mission and entry conditions. Verify Mission2 spawn through the
+original course selection, talking/accepting/declining, normal racing to the
+finish, win/loss/retry and Power Star collection/save/reload without duplicate
+credit. Later verify the other authored Koopa race/course variant separately.
+Keep tests muted, saves isolated and show screenshots. Do not count a visible
+stationary Koopa or a forced reward as the completed race integration.
+
+## Battlefield navigation and brick effects reports (2026-10-23)
+
+Prioritize missing UPDOWN_LIFT29 (two authored rotating lifts), BOMB_SEESAW39
+(tilting bridge), and SWITCHDOOR40 (two switch gates). Native actor profiles
+were absent. Connect genuine factories/resources/collision and preserve paths,
+standing and ground-pound responses, switch-event rotation, original ranges,
+cleanup and re-entry. Verify each independently with isolated muted replays,
+visible screenshots and contact/motion traces. Other shared-class variants
+require separate resource review and acceptance before registration.
+
+The large brick Kill method already requests original particle effect0x0a
+(variant46 uses0x48). A break/actor-destruction check does not establish visual
+effect acceptance. Trace resource loading, emitter creation, updates and draw
+submission for a genuine break. Restore original effects rather than adding
+placeholder geometry. Show before/during/after screenshots; preserve original
+character/attack restrictions and reward rules. Cause and repair remain open.
+
+Update2026-10-23: selected original block16/Mario debris is now VERIFIED.
+Native Stage graphics slot1 was a no-op; it now calls the original particle
+renderer. Two native renderer callback tables restored as well. Paired input
+replays retain identical gameplay/camera observations and visibly render the
+original debris/dust/stars. See native-particle-rendering-2026-10-23.txt for
+scope. Yoshi small brick15, intro bubble and other effects still need checks.
+This does not complete the Battlefield scenery/race or overall actor coverage.

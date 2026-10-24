@@ -1,0 +1,86 @@
+Native Battlefield moving scenery - 2026-10-23
+Status: PARTIALLY VERIFIED. Diagnostic local build; no stable-install promotion.
+
+Release EXE SHA256:
+00f0043dc93b29b73b0984aa392ad7d92f4bee09b4a52da81e2936a787d26e56
+
+Original profiles29 UPDOWN_LIFT,39 BOMB_SEESAW and40 SWITCHDOOR now bind to
+their genuine native factories. Descriptor priorities, flags and ranges match
+the local original image. The authored two lifts, their dynamically created
+watcher, one tilting bridge and two gates all spawn in Battlefield.
+
+Host-only adapters in battlefield_platform_host.py defer SharedFilePtr handle
+construction until the filesystem is ready and rebase the reviewed resource
+rows to native handles/materials. Lift shadow and pitch fields use actual
+native member locations. The original lift TU uses the nested matrix spelling;
+its generated native copy retains that spelling. Gate direction/state remain
+in base padding with compile-time layout checks; timer/event use concrete
+native members. Matched src/ and include/ were not edited.
+
+The original paths, tilt/contact/ground-pound callbacks, watcher respawn,
+Mega-hit behavior, event checks, gate rotation and cleanup are retained. New
+opt-in diagnostics only observe state/render submissions. No forced positions,
+spawns, hits, events or reward credit were used in these replays. Only profile39
+of the shared seesaw class is enrolled; its other course resource variants need
+separate review before registration. Lift30 is not enrolled. Profile29's two
+ordinary-course paths share reviewed files, but only Battlefield was exercised.
+
+Data generation preserves all three ten-node lift paths (360bytes) and reads
+node5.y from that same allocation, instead of a separate interior-label array.
+Three-word movement/shadow tables and four character weights retain complete
+spans. The PE audit checks these spans, original collision materials and all
+three descriptors. No original asset bytes are embedded in the adapter source;
+the private generators read the user's local original image.
+
+Build/checks:
+- Native Release build PASS. Four new adapter checks and four existing switch
+  adapter checks PASS. Three collision/camera foundation CTests PASS.
+- Native actor/data PE audit PASS, including the three new profiles and complete
+  lift tables. Embedded particle archive check PASS (321definitions/46textures).
+  The archive check is not acceptance of visible brick effects.
+- Reviewed symbol-only support:5246->5255bindings;3183->3190requests. Nine new
+  names contain no asset payload. Fresh private link-data generation is byte
+  identical to the successfully linked source (SHA2569a45d1ab274bbb782083b1dd
+  087b4429b476c9a24d78d4e3470e72cac4aefa70). This is not a new kit reconstruction.
+
+Private muted runtime evidence:
+- Gate-r1:14000frames. All authored actors/watcher alive. Bridge1493 and
+  gates5125 visible render samples. Both lifts traverse all10nodes, Y140..860.
+  Both closed gate colliders enable. Old floor-switch walking route is blocked
+  at the restored gate; neither gate event fires. No opening acceptance.
+- Bridge-r2:13000frames. A Goomba knocks Yoshi off the upper approach ramp.
+- Dodge-r3:13000frames. Ordinary jump avoidance gets past that ramp; Yoshi
+  subsequently dies near Chain Chomp and returns to the castle. Course actors
+  clean up without a crash. This is a failed approach, not bridge acceptance.
+  Stop after these two focused approach attempts; inspect hazards before any
+  further route changes rather than guessing more coordinates.
+- Lift-r4:10000frames. Natural ground approach succeeds. The legacy waypoint
+  advances before boarding, so this is not a riding acceptance.
+- Height-r5:10500frames. Height-aware target keeps ordinary neutral jump inputs
+  active.36grounded samples on original lift29/uid12, with playerY==groundY and
+  carry across heights167..440. Visible lifts3575samples. The target landing
+  was not reached; the replay ends St_Squish_Main underneath a descending lift.
+  Full ride, safe disembark and recovery remain unverified.
+- Actual diagnostic preview EXE:2600frames through original title/FileA/castle
+  startup, ending living Yoshi Wait with normal control.
+All six runs exit0, mixer errors0, device output muted/nonzero samples0 and
+isolated QA FileA unchanged. Evidence and screenshots stay private in work/.
+Machine records: battlefield-platforms-acceptance-20261023.json,
+battlefield-platform-support-review-20261023.json and
+battlefield-platform-preview-startup-acceptance-20261023.json.
+
+Local playtest: work/battlefield-platforms-player-preview-20261023,
+PLAY-WITH-AUDIO.cmd / PLAY-MUTED.cmd. Original menus and isolated one-Star
+Yoshi save. Depends on the C: development ROM/asset cache; not standalone.
+Full EXE contains ROM-derived data and must remain local. Existing F: install,
+older floor-switch preview and public kit remain unchanged. No source export,
+commit, push, release or new kit was produced for this diagnostic milestone.
+
+Next: verify full lift ride/disembark/recovery; original bridge contact/tilt;
+reach the switch by a safe original upper approach and verify both gates open;
+then painting exit/re-entry and reload. Keep timed/Star-switch checks open.
+User reports also remain open for Koopa the Quick/race flag, cannon reticle and
+big-brick break effects. The brick Kill already requests effect0x0a (0x48 for
+variant46); diagnose creation/update/drawing before adding any replacement.
+Sol High remains appropriate for the remaining collision/effects investigation.
+Goal active; no model-switch pause recommended at this checkpoint.

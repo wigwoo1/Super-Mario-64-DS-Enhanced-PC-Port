@@ -1,0 +1,82 @@
+Native cannon aiming sight - selected acceptance 2026-10-24
+
+Status: VERIFIED for the selected D3D11 English gameplay paths below.
+Full port remains unfinished. Koopa win/reward and scenery gameplay are open.
+Final local EXE SHA256:
+36037CC51441A9CC4721AB4887C41385F5B5B57544E5F205D88981B7938D6021
+Initial renderer verification EXE:
+8D10AA6EE58D073464D89C63DC1215DFA3BE542F37263D0DCC21723FCF1B05A2
+The only subsequent code change loads an opt-in input-only QA return route.
+
+Cause and repair
+Original dCamera_c::Render submits OAM template data_ov002_0210c3b0
+at (128,96) through its original aiming-mode gate. Native Stage has no live
+dMeter initializer, so the original reticle tiles were absent from live OBJ
+memory even though the circular sight mask appeared. camera_host.py replaces
+only that original sprite submission with native overlay visibility. The
+original mode conditions, camera logic and circular mask are preserved.
+minimap_hud_art.cpp privately decodes the original four-part 32x32 gold sight
+from the same original resources as the HUD. No replacement art or live OBJ,
+palette or OAM writes. The output-resolution compositor centers a square sight
+scaled by render height and clears visibility on inactive Stage/aim exit.
+Map visibility does not suppress it; pause/minigame/dual/letter views do.
+Source alpha is 12/16 using standard PC RGBA composition; exact DS destination
+blend coefficient reproduction is not claimed. Matched src/include unchanged.
+
+Build / static checks
+Release native build PASS. Four selected CTests PASS: smoke_minimap_hud,
+smoke_gpu, smoke_stage_graph, smoke_video. Sprite tests cover DS, 360p,
+720p, 4K and 4:3 centered square composition. Native profile/state PE audit
+PASS; 419 shared-data bindings, zero divergent. Fresh private link data
+exactly matches linked SHA256
+2FA1F19905A7A9AB54FB7685C528B544B3D656026EEEE50AC331EECB8985C78C.
+Support metadata remains 5255 bindings / 3190 requests.
+
+Runtime / local evidence (all under workspace work/)
+Original title/File A/castle/painting -> actual Battlefield Mission 2.
+Isolated synthetic prerequisite saves; no personal save or forced live
+positions, actors, hits, message results or rewards.
+- native-muted-audio-walk-cannon-sight-720p-r2-20261023-20261021:
+  1280x720, aim 4955 -> launch 5077, 7000 ticks, exit 0.
+- ...cannon-sight-4k-mapoff-r3-20261023-20261021:
+  3840x2160, minimap hidden; same aim interval and centered sight, exit 0.
+- ...cannon-sight-ds-native-r4-20261023-20261021:
+  256x192, centered (128,96), same aim interval, exit 0.
+- ...cannon-sight-repeat-reentry-detour-r6-20261024-20261021:
+  Final EXE, 16000 ticks, two rides -> original Exit Course/castle/painting
+  Mission 2 re-entry -> third ride. Sight intervals 4929..5051,
+  6353..6475, 8422..8544; normal grounded control at end, exit 0.
+  Aim turn/pitch visibly checked. Native cannon UID changes after scene reload.
+Every accepted case has zero mixer errors, output_muted=1 and zero submitted
+nonzero device samples; saves byte-identical to isolated seed. Automated
+tests were muted, not a listening or physical-controller acceptance.
+
+Paired baseline/new 720p pixels: tick 5000 changes only 4792 pixels inside
+the centered 120x120 sight bounds [580,300,700,420]. Whole frames at ticks
+5200,6000,6900 match the baseline exactly after firing. Original world,
+mask and other HUD preserved in those samples.
+Private checker: work/check-cannon-sight-20261023.py.
+Report: work/cannon-sight-acceptance-20261023.json.
+
+The first repeat pilot (r5) hit restored brick actor 15 on its old return
+footpath and did not complete repeated acceptance. A static KCL/wall-checked
+CSV walking detour around the brick fixed only that private QA route; no
+player physics or collision were changed. Keep r5 diagnostic.
+
+Local playable preview: work/cannon-sight-player-preview-20261024.
+Own synthetic one-Star Mario save and settings, audio/muted launchers.
+Actual preview binary startup verified separately for 2600 muted ticks through
+title/File A/castle, normal idle/control, exit 0, zero mixer errors, unchanged
+isolated saves; acceptance.json. Uses C: development assets; not standalone.
+Do not upload full executable (embeds ROM-derived data), private assets,
+captures, traces, save files or tested kit directories. F: unchanged; no new
+kit, export, commit, push or release in this milestone.
+
+Limits / next checkpoint
+Other renderer backends, languages and physical-controller/window-aspect
+combinations remain unverified. No stable-install promotion. Koopa still needs
+a legitimate Mario ascent/win/Star/save/reload test after two failed route
+pilots; do not force a reward or repeat speculative route guesses.
+Luna Medium is suitable next for the existing ROM-free build-kit refresh and
+fresh-folder reconstruction workflow. Pause at the user's model-switch
+checkpoint after saving this handoff; goal status tool is authoritative.

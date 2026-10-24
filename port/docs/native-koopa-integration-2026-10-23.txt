@@ -1,0 +1,91 @@
+Native Koopa the Quick / finish flag - 2026-10-23
+Status: PARTIALLY VERIFIED. Diagnostic; no stable-install promotion.
+
+Current Release EXE SHA256:
+9053B4EBE0CAD5EA3D52B6C32F9177AABAD792E4A5C10AD471EC08214D1A4E72
+Original actor implementation was first accepted on43BA6263244B624A278665778
+2853DEB2F08CB01F76C51017379E0B7D0BE507A; the subsequent difference adds only
+the opt-in input-only player race pilot.
+
+The native registry now enrolls RACE_NOKO188/daRNk_c and RACE_FLAG205/daRFlag_c
+using their original ov062 descriptor priorities/flags/ranges and genuine
+factories. Boot closure compiles their recovered methods, six-state native
+member-pointer table and original finish-flag logic. Native sizes0x3e0/0x174
+and state-table stride4 are compile-time checked. Host koopa_host.py delays
+shared model/animation handle construction until InitResources, after the
+filesystem is ready. Source resources/model/animation/state/path/dialogue/
+timer/win/cheat/reward rules are retained. No matched src/include edits.
+
+Build and data:
+- Release game build PASS. Three selected CTests PASS: input, collision and
+  Stage graph. Native actor/profile audit PASS on the current executable,
+  including both descriptors and six ROM-identified native state targets.
+-419 C/C++ shared-data bindings, zero divergent addresses. Fresh local link
+  data generation has4258regions/4414references/zero unknowns and exactly
+  matches the linked source SHA2FA1F19905A7A9AB54FB7685C528B544B3D656026EEEE50AC
+  331EECB8985C78C. Symbol-only metadata is unchanged (5255bindings/3190requests).
+- No new kit, source export, commit, push, release or stable F installation.
+
+Muted original-game acceptance (private isolated one-Star Mario prerequisites):
+The normal title/File A/castle/painting route selects actual Mission2. Koopa
+and the summit finish flag spawn at their original positions. Mario approaches
+through ordinary input, gets original English message0x91, accepts, exits
+the starting talk/countdown and retains control. Koopa runs all26path nodes,
+plays his real animation/dust, reaches the summit, pulls up, stops and enters
+original post-race state5. The flag arms then records Koopa arriving first.
+All six states0..5 are observed. No forced actor spawn, position, hit, message
+answer, timer, result or reward credit. Final idle/control accepted on43BA.
+
+Case native-muted-audio-walk-koopa-dialogue-race-r4-20261023-20261021:
+14000presentation ticks, original state0=3996/offer1=4228/race2=4432,
+pull-up3=9930/stop4=9938/post-race5=9958, final Mario Wait/control.
+Case native-muted-audio-walk-koopa-player-race-r5-20261023-20261021:
+16000ticks on current9053 build. Same original actor state/path finish passes.
+The player pilot reaches original nodes1..7, then stalls on the steep grassy
+line toward node8. Final player is alive in SlopeJump with control enabled.
+This is a failed QA navigation route, not evidence of a broken win/reward.
+Both exit0, mixer errors0, muted device samples0, isolated save hashes equal.
+Machine checker: outer work/check-koopa-integration-20261023.py; each case's
+acceptance.json. Screenshots4350(original accepted offer text),4700(running
+Koopa and dust) inspected. Earlier two fixed-timing menu runs never entered
+Mission2 and are excluded. A third case entered but its waypoint hit Buddy;
+it verifies visible spawn, not the race. State-driven menu input and the
+previously accepted spawn waypoint correct those private test setup issues.
+
+Remaining acceptance:
+Mario's legitimate full ascent/first flag touch, winning/losing result talk,
+Star collection/save/reload/no duplicate credit, decline/retry, Yoshi refusal,
+mission1 conditional absence, unload/re-entry and later-course race variant.
+The native clock start/stop rules remain original, but visible timer HUD and
+elapsed-time correctness have not been accepted by this milestone.
+
+Follow-up8FA14DD5 diagnostic (no race gameplay change): corrected the QA
+old-node distance comparison, added a private KCL-derived ramp-detour input
+and read-only floor class/material/normal logging. The18000-tick muted replay
+hits a Goomba, falls beneath the first bridge and reaches only player node1,
+then reports OnWall at about702,0,5500. It never reaches the ramp detour;
+that detour is UNTESTED, not disproven. Original Koopa still finishes all26
+nodes; exit0/muted0/errors0/saves equal. This second focused player-route
+attempt is preserved in outer work/native-muted-audio-walk-koopa-player-ramp-
+detour-r7-20261023-20261021/acceptance.json. Stop further route guesses.
+The earlier pilot's incidental jump had masked the first-bridge gap/hazard;
+use actual collision/material/contact evidence before the next race route.
+Work proceeded to the separately requested cannon-sight integration.
+
+Do not keep following Koopa's direct path or alter player physics to make the
+QA pilot win. Use original runtime collision/materials and valid player paths.
+Private static KCL samples find the node7->8 approach connected at default
+floor thresholds; more conservative0.9/0.85normal-Y graphs (100/50unit grids)
+do not connect the full ascent, reaching about2470worldY. These are incomplete
+candidate graphs, not proof that the original course is impassable. Investigate
+the actual loaded collision/path surfaces and slope/material rules before
+another route attempt. Prior Battlefield hazard-route failures also remain
+recorded; don't repeat guessed coordinates or force a win/reward.
+
+Local manual diagnostic: outer work/koopa-player-preview-20261023,
+PLAY-WITH-AUDIO.cmd / PLAY-MUTED.cmd. Its own synthetic one-Star Mario save,
+separate settings, original menus and C: development ROM/assets dependency.
+Its actual executable also passes2600ticks of original title/FileA/castle
+startup, ending Mario Wait/control; exit0/muted0/errors0/QA saves unchanged.
+Not standalone. The full executable embeds ROM-derived data; keep it and all
+assets, screenshots, traces and saves local. The full PC-port goal is unfinished.

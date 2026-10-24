@@ -58,6 +58,8 @@ bool video_save_settings(const char *path = nullptr);
 void video_cycle_resolution(VideoSettings &settings, int direction=1);
 uint16_t video_minimap_angle(uint16_t camera_heading);
 void video_set_minimap_gameplay(bool active);
+// Published by the original camera's sight branch, independent of map settings.
+void video_set_cannon_sight(bool active);
 // Live course totals shown beside the minimap, even when the map itself is hidden.
 void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives,unsigned health=8,unsigned character=3);
 // Peach's 2D letter text follows the widened projection of its 3D panel.

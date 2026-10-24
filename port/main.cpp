@@ -154,6 +154,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 // positions, save flags, actors or scene state.
 #include "hal/warp_probe.h"
 #include "hal/warp_replay.h"
+#include "hal/koopa_replay.h"
 static bool replay_course_route_complete;
 static unsigned replay_course_route_waypoint=0;
 // Observes original contact/state and supplies normal input only. Never
@@ -1122,11 +1123,29 @@ static bool replay_cannon_cycle_controls() {
     if(!target) {target=c->uniqueID;event("approach");}
     if(phase==RETURN) {
         if(tick<land_tick+90 || !ready())return controls();
-        const int route[][2]={{0,6500},{-5950,6500}};
-        if(waypoint<2) {
-            // The second landmark is the Buddy's position; stop outside his
-            // collision body before turning toward the nearby cannon hole.
-            if(move(route[waypoint][0],route[waypoint][1],waypoint==1?180:70)) {++waypoint;event("return-waypoint");}
+        struct ReturnPoint {int x,z,radius;};
+        static ReturnPoint route[128]={{0,6500,70},{-5950,6500,180}};
+        static unsigned count=2;static bool loaded=false;
+        if(!loaded) {
+            loaded=true;
+            if(const char *path=std::getenv("SM64DS_PC_TEST_CANNON_RETURN_ROUTE")) {
+                count=0;
+                if(FILE *file=std::fopen(path,"r")) {
+                    ReturnPoint point;
+                    while(count<128 && std::fscanf(file,"%d,%d,%d ",&point.x,&point.z,&point.radius)==3) {
+                        if(std::abs(point.x)>32767 || std::abs(point.z)>32767 || point.radius<1 || point.radius>1000)break;
+                        route[count++]=point;
+                    }
+                    std::fclose(file);
+                }
+                std::fprintf(stderr,"[native cannon return route] points=%u\n",count);
+            }
+        }
+        if(!count)return controls();
+        if(unsigned(waypoint)<count) {
+            // Optional private collision-derived waypoints avoid newly
+            // restored actors. This remains normal stick/button input only.
+            if(move(route[waypoint].x,route[waypoint].z,route[waypoint].radius)) {++waypoint;event("return-waypoint");}
         } else {phase=RIDE;shot=false;aim_tick=0;event("repeat-ready");}
         return controls();
     }
@@ -1727,7 +1746,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

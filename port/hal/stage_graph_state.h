@@ -12,6 +12,7 @@ extern "C" {
 #endif
 extern struct PcStageGraphState data_0209f3c4;
 int pc_stage_graph_apply(void *self);
+int pc_stage_graph_draw_particles(void *self);
 void pc_stage_graph_prepare(void);
 #ifdef __cplusplus
 }

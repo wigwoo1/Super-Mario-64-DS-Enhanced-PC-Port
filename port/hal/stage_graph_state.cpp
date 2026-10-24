@@ -58,6 +58,14 @@ int pc_stage_graph_apply(void *self)
 {
     return static_cast<dScStage_c *>(self)->GraphCallback2();
 }
+#if defined(SM64DS_GAME_TARGET)
+int pc_stage_graph_draw_particles(void *self)
+{
+    // Restore the original slot1 worker in the game's graphics phase, before
+    // SWAP_BUFFERS. before_present() can repeat at120/240Hz and is too late.
+    return static_cast<dScStage_c *>(self)->GraphCallback1();
+}
+#endif
 void pc_stage_graph_prepare()
 {
 #if defined(SM64DS_GAME_TARGET)
@@ -66,6 +74,7 @@ void pc_stage_graph_prepare()
     // The fiber runtime does not execute the ARM VBlank IRQ dispatcher.
     // Upload this active Stage callback's latest transform before scanout.
     const bool active = data_0209d4a8 == &data_0209f3c4;
+    if(!active)ntr::video_set_cannon_sight(false);
     ntr::video_set_minimap_gameplay(active);
 #if defined(SM64DS_GAME_TARGET)
     const unsigned player_slot=data_0209f250<4?data_0209f250:0;

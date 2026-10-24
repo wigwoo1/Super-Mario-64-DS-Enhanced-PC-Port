@@ -1,0 +1,87 @@
+# Native floor switches: selected interaction verified, broader behavior open
+
+Build SHA256:
+446FBE7680522EB9EC2A5547BB7345115F5E8A6CB8768F3E673634B88EF7A219
+
+## Changes
+
+Register the original HANSWITCH(11) and STAR_SWITCH(12) profiles with their
+original priorities, flags and ranges, replacing only factory addresses.
+The host-only adapter allocates the actual native daObjSwitch_c class instead
+of the cartridge's fixed-size allocation and vtable pointer. It initializes
+four shared file handles lazily after the runtime file table becomes available,
+and constructs native resource rows pointing to the original collision materials.
+The original five state pairs retain their native C++ member-function targets.
+
+The contact worker retains the original player/underwater/metal/mega checks
+and distance threshold, but accesses native fields rather than the ARM-derived
+tail offset. The foreign Star null-player check likewise uses the named field.
+No matched src/ or shared include/ files were edited. Original event, timing,
+press, ground-pound and Star logic remain in the recovered methods. Opt-in
+switch and render traces observe behavior without forcing interaction/state.
+
+## Build and structural checks
+
+Native CMake build PASS. Four new adapter tests plus ten related callback/
+warp adapter tests PASS(14 total). Native PE audit PASS, including original
+switch profile metadata, ten native member pointers in five state rows and
+the two complete32-byte original collision-material blocks.
+
+Symbol-only support refreshed from5242 to5246 names; four older block-table
+requests were newly retained, with no removed/changed mappings. Requests contain
+3183 sanitized declarations. Fresh private data generation from that metadata
+has zero unknown symbols and is byte-identical to the successfully linked
+pc_link_data.cpp(SHA2560AB21B9575048750A9EFC805A4B002699DB0CAC4D5194079DEEB5E2BFE159D79).
+This is not a new ROM-free kit reconstruction or public release.
+
+## Runtime acceptance
+
+Battlefield,13500 frames: original permanent switch11/uid10, Yoshi QA FileA,
+development-picker entry. Normal walking/stepping reaches the authored switch.
+140 grounded collision-owner samples and1820 visible render-probe samples are
+recorded. The switch depresses from scale4096 to819, its displacement becomes
+about48 world units, and event0 changes from off to on(first sampled on12980).
+Yoshi finishes in Wait on the depressed switch with normal control. Screenshot
+13200 was visually inspected and shown. This exercises stepping, not a ground
+pound on the switch. Original permanent-switch behavior does not expire here.
+
+Two earlier input routes stopped against an existing brick and a cliff below
+the bridge. Their intact switch does not prove a contact failure. The accepted
+route was derived privately from original KCL floors and346 wall triangles,
+with64-unit wall clearance and the authored brick excluded. Gameplay collision,
+player position, actor state and event flags were not overridden.
+
+Scene8,4000 frames: original timed switch11/uid7, Star switch12/uid23 and all
+eight original linked block19 actors load and continue running without the
+previous missing-switch dependency. Both switches remain initially unpressed;
+the timed limit is600 original game ticks. This establishes scene load only,
+not linked-block appearance, contact, expiry, Star reveal or collection.
+
+Original startup,2600 frames: actual local preview executable passes automated
+title/FileA/castle-ground startup with normal player control. Screenshot2500
+was inspected and shown. It does not verify physical controller hardware.
+
+All three accepted runs exit0, submit zero nonzero audio samples while muted,
+report zero mixer errors and leave isolated QA save bytes unchanged. Listening
+fidelity and full campaign progression remain outside this evidence.
+
+## Private evidence and next work
+
+work/floor-switch-battlefield-acceptance-20261023.json
+work/floor-switch-scene8-baseline-acceptance-20261023.json
+work/floor-switch-preview-startup-acceptance-20261023.json
+work/native-floor-switch-battlefield-kcl-route-r3-muted-20261023/
+work/native-floor-switch-linked-blocks-scene8-baseline-r4-muted-20261023/
+work/native-muted-audio-walk-floor-switch-preview-original-startup-20261023-20261021/
+
+Private local playtest folder: work/floor-switch-player-preview-20261023.
+PLAY-WITH-AUDIO.cmd enables audio for user play; PLAY-MUTED.cmd is silent.
+It uses a separate one-Star Yoshi test save and the existing development asset/
+ROM cache. It is not standalone or redistributable. F: installation and personal
+saves remain unchanged. No source export, push, release or new kit was made.
+
+Next: verify original timed-switch press, linked blocks appearing/colliding,
+expiry and repeat activation; then Star-switch behavior and course re-entry.
+Preserve authored mission/event/character conditions. Sol High is already
+selected and remains appropriate; no model-switch pause is requested here.
+Full actor coverage and the complete PC-port roadmap remain unfinished.

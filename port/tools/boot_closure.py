@@ -14,6 +14,8 @@ import sys
 
 
 DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
+                 "_ZN10dScStage_c14GraphCallback1Ev",
+                 "func_0204c194", "func_0204c0a8", "func_0204c0e8",
                  "daKinopio_c_classInit", "_ZN11daKinopio_cD1Ev",
                  "daSBird_c_classInit", "_ZN9daSBird_cD1Ev",
                  "daCnn_c_classInit", "daWbm_c_classInit", "daTree_c_classInit",
@@ -23,7 +25,13 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daObjFl_London_c_classInit",
                  "daObjFl_Seesaw_c_classInit",
+                 "daObjSeesaw_c_classInit_BOMB_SEESAW",
+                 "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT",
+                 "daObjBSwdoor_c_classInit",
+                 "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
+                 "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
+                 "_ZN13daObjSwitch_c13InitResourcesEv",
                  "daObjC0_Switch_c_classInit", "daObjC0Water_c_classInit",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
                  "daChScene_c_classInit", "daDoor_c_classInit", "daStarGate_c_classInit", "dMap_c_classInit",
@@ -395,6 +403,22 @@ def main() -> int:
                 sys.path.insert(0, str(root / "port/tools"))
                 import hostgen  # pylint: disable=import-outside-toplevel
                 transformed, rewrites = hostgen.transform(markerless)
+                if path.name in ('daRNk_c.cpp', 'daRFlag_c.cpp'):
+                    import koopa_host
+                    transformed=koopa_host.transform(transformed,path.name)
+                    rewrites+=1
+                if path.name in ('_ZN8Particle7Manager9AddSystemEiR7Vector3.cpp',
+                                 '_ZN8Particle10SysTracker6UpdateEv.cpp','func_0204a5c8.c',
+                                 '_ZN10dScStage_c13InitResourcesEv.cpp','_ZN10dScStage_c14GraphCallback1Ev.cpp'):
+                    import particle_host
+                    transformed=particle_host.transform(transformed,path.name)
+                    cpp_marker=True
+                    rewrites+=1
+                if path.name in ('daObjSeesaw_c.cpp','daObjRotateUpdownLift_c.cpp',
+                                 'd_a_obj_b_swdoor.cpp','daObjSwdoor_c.cpp'):
+                    import battlefield_platform_host
+                    transformed=battlefield_platform_host.transform(transformed,path.name)
+                    rewrites+=1
                 if path.name=='d_a_warpkun.cpp':
                     import warp_host
                     transformed=warp_host.transform(transformed)
@@ -406,6 +430,12 @@ def main() -> int:
                 if path.name == 'daObjBlockL_c.cpp':
                     import block_host
                     transformed=block_host.transform(transformed)
+                    rewrites+=1
+                if path.name in ('daObjSwitch_c.cpp', 'd_a_obj_switch_hanswitch.c',
+                                 'd_a_obj_switch_star_switch.c', 'func_ov002_020baa2c.c'):
+                    import floor_switch_host
+                    transformed=floor_switch_host.transform(transformed,path.name)
+                    cpp_marker=True
                     rewrites+=1
                 if path.name=='d_a_star_gate.cpp':
                     import star_gate_host

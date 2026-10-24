@@ -100,8 +100,14 @@ bool pc_minimap_hud_art_prepare() {
         std::memcpy(colors.data()+0x60,data_ov002_0210c310+offset,32);
         if(!decode(art.health[health],combined.data(),combined.size(),colors.data()))return failed(__LINE__);
     }
+    // dCamera_c::Render uses this four-part original OAM template at128,96.
+    // Its HUD tiles/palette are decoded privately, like the counter artwork.
+    if(!decode(art.cannon_sight,stage.at(0x0210c3b0),32,palette.data()) ||
+       art.cannon_sight.width!=32 || art.cannon_sight.height!=32)return failed(__LINE__);
+    for(auto &pixel:art.cannon_sight.pixels)if(pixel>>24)
+        pixel=(pixel&0xffffffu)|0xbf000000u; // original source coefficient12/16
     if(live_hash()!=before)return failed(__LINE__);
     ntr::minimap_hud_set_art(std::move(art));ready=true;
-    std::fprintf(stderr,"[minimap HUD art] original Star/coin/4 life/9 health sprites decoded privately, live OBJ/palettes/OAM unchanged, language=%d\n",language);
+    std::fprintf(stderr,"[minimap HUD art] original Star/coin/4 life/9 health/32x32 cannon sight sprites decoded privately, live OBJ/palettes/OAM unchanged, language=%d\n",language);
     return true;
 }

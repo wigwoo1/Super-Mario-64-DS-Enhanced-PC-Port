@@ -42,6 +42,7 @@ HAL_OWNED_DATA = {
     "data_ov014_0211476c",
     "data_0209b3ec",  # shared camera/view matrix, also read by native paintings
     "data_02082214",  # sine table already has canonical romdata.c storage
+    "data_02099fb4", "data_02099fbc",  # native particle draw/rotation callbacks
     "gTouchHeld", "gTouchEdge", "gTouchX", "gTouchY",
     "data_0209f61c",  # constructed native scene-wipe singleton
     "data_0209e674", "data_0209e67c", "data_0209e694", "data_0209ea74",
@@ -127,6 +128,8 @@ HAL_OWNED_DATA.update(f'data_ov002_{address:08x}' for address in (
     *range(0x0210de00, 0x0210de68, 8),
     *range(0x0210951c, 0x021095ac, 8),
     *range(0x0210df04, 0x0210df94, 16)))
+HAL_OWNED_DATA.update(f'data_ov002_{address:08x}' for address in (
+    0x0210dfd4, 0x0210dfc4, 0x0210dfcc, 0x0210dfbc, 0x0210e00c))
 
 # Canonical boss handles and native callback records belong to its host TU.
 HAL_OWNED_DATA.update(f'data_ov078_{address:08x}' for address in (
@@ -189,6 +192,15 @@ def records(root: pathlib.Path):
             following = next((item["address"] for item in group[index + 1:]
                               if item["address"] > row["address"]), row["segment_end"])
             row["size"] = max(4, min(following - row["address"], 0x100000))
+            if module == "ov091" and row["address"] == 0x02134cdc:
+                # Three ten-node paths. Interior coordinate labels do not end
+                # the array; the native lift also reads node5.y from this span.
+                row["size"] = 3 * 10 * 12
+            if module == "ov091" and row["address"] in (
+                    0x021344e8,0x02134bac,0x02134bd0,0x02134bb8,0x02134ba0):
+                row["size"] = 3 * 4
+            if module == "ov095" and row["address"] == 0x02136f58:
+                row["size"] = 4 * 4
             if module == "ov084" and row["address"] == 0x02130208:
                 # Four Goomba-type cylinder heights. Ambiguous interior labels
                 # at +3/+10 are not array boundaries; callers index all 4 ints.
@@ -296,7 +308,8 @@ def main() -> int:
     # The indirect message workers are seeded explicitly, so include their
     # font/control data even when the historical link log predates them.
     external_names = {'_' + name: name for name in (
-        'data_0208ee64', 'data_0208ee6c', 'data_0209d688', 'data_0209d6e4')}
+        'data_0208ee64', 'data_0208ee6c', 'data_0209d688', 'data_0209d6e4',
+        'data_ov014_02114578','data_ov014_02114598')}
     external_names.update({'_'+name:name for name in NATIVE_CPP_DATA})
     # Native cap factories now make these indirect resource tables reachable.
     external_names.update({'_' + name: name for name in (

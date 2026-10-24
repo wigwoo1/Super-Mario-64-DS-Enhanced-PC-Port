@@ -1,3 +1,23 @@
+## 2026-10-24 — Original cannon sight restored and selected lifecycle verified
+
+Original gold aiming artwork now renders in the native output-resolution HUD through the original camera mode gate. Release build, four selected CTests, native profile/state audit and 419 shared bindings pass. Muted original-game runs verify DS/720p/4K (including map hidden), three cannon rides across castle/painting course re-entry, correct clearing on launch, normal control and unchanged isolated saves. Paired captures change only the aiming sight; sampled postfire captures match the baseline exactly. Final executable is `36037CC5...D6021`; a separate local audio/muted preview passes actual-binary title/File A/castle startup. Other renderers/languages/physical window aspect combinations remain unverified. Koopa win/Star and scenery gameplay remain open after two unsuccessful player route pilots. No stable F: promotion or public release. See `native-cannon-sight-verified-2026-10-24.txt`. Recommend Luna Medium next for the established ROM-free kit refresh/reconstruction workflow, pausing at the user-requested model-switch checkpoint.
+
+## 2026-10-23 — Native Koopa/finish flag connected; race start and autonomous finish verified
+
+Current9053B4EB build enrolls the original Koopa188/finish flag205 factories, resources and native state table. Build, three selected CTests, original profile/state PE audit and419shared-data bindings pass. Two muted original Mission2 replays verify Koopa's visible model, original offer/acceptance, start/control return and all26path nodes through summit/post-race state; exit0/errors0/device output0/isolated saves unchanged. Mario's pilot reaches node7 then stalls on a steep line toward node8. Win/Star/save/reload and decline/loss/retry remain unverified; do not change original physics or force rewards to pass a QA route. Conservative static floor graphs also leave the full ascent disconnected, requiring loaded collision/material review. Separate local diagnostic preview prepared; F: and public kit unchanged. See native-koopa-integration-2026-10-23.txt. Goal remains unfinished; keep Sol High for the remaining player ascent/reward acceptance.
+
+## 2026-10-23 — Latest build: upstairs 60-Star gate and Toad lifecycle verified
+
+Current native build SHA256 `B47E8FACFB6CF8F587A5B71BD7AA6FF1CAE53D19785F98CC8533D645AED9A230` was checked with three muted isolated replays. Yoshi with synthetic60-Star prerequisites reached the upstairs gate and was denied; the recovered original `d_a_star_gate.cpp` confirms this 50-Star gate deliberately requires Mario. Mario passed the same gate, completed the original upstairs Toad dialogue, collected the original Star naturally, and saved61 Stars with course Star bit `0x10`. A fresh process loaded that exact QA save and repeated the conversation; the Star reward did not respawn, the total stayed61 and the save bytes were unchanged. All runs exited0 with audio output muted, zero submitted samples and zero mixer errors. QA prerequisites and saves were isolated. This does not claim a natural60-Star campaign or physical controller test. The Yoshi restriction is original behavior; a PC option to bypass it would change the game rule. Detailed private evidence is recorded in `work/toad60-b47-acceptance-20261023.json`.
+
+## 2026-10-23 — Original brick debris rendering verified
+
+Restored the original Stage particle draw callback, which the PC callback table had replaced with a no-op. Two indirect renderer tables now bind native workers. Paired muted original block16/Mario ground-pound replays show20 debris particles drawn across28 updates, with matching2161 gameplay/camera samples and pixel-identical frames after the effect clears. The dust, stars and brick fragments are visibly restored. Release build, six adapter checks, four selected CTests, particle/actor PE audits and actual playtest title/FileA/castle startup pass. Saves and the F: install are unchanged. Yoshi small-brick effects, intro bubble pop, other variants and the outstanding Battlefield scenery interactions still need acceptance. See `native-particle-rendering-2026-10-23.txt`.
+
+## 2026-10-23 — Battlefield moving scenery connected; gameplay checks partial
+
+Native profiles29/39/40 now load the original two rotating lifts, tilting bridge and two switch gates, plus the original lift watcher. Build, eight adapter checks, three collision/camera foundation tests and native profile/data audits pass. Five muted scene replays verify spawning, visible models, complete lift movement paths and36 grounded rider samples across heights167..440. Original title/File A/castle startup of the diagnostic playtest also passes. All six runs exit0 without audio errors or QA save changes. Full riding/disembark/recovery, bridge tilt and gate opening remain unverified: two upper approaches failed around enemies, and the boarding replay ends squished beneath a descending platform. The build is diagnostic and has not replaced the stable F: install. Brick effects, Koopa's race and the cannon reticle remain open. See `native-battlefield-platforms-2026-10-23.txt` for exact scope and evidence.
+
 ## 2026-10-23 — Native dialogue cards verified
 
 Current native Release build (`C9B8BCDE7BE972791ACD236D2F767942773D1870A383806B0F8C22D6DA1FCBF4`) was exercised through muted normal-game routes. Lakitu's opening `Yoshi...` dialogue and upstairs Toad's text both appear on the translucent card with gold border. Toad's dialogue closes and player control returns. Both runs exit 0; the Toad audio device receives zero samples, and its isolated save seed hashes are unchanged. Six focused CTests and three dialogue override Python tests pass. Local captures and full evidence are in `work/native-muted-audio-walk-dialogue-card-lakitu-correct-route-post-linkfix-20261023-20261021` and `work/native-muted-audio-walk-dialogue-card-correct-route-20261023-20261021`; screenshots and private data stay local. The Toad visual route uses a Mario prerequisite save. Other NPC message variants remain untested. See `native-dialogue-card-runtime-2026-10-23.txt`.
@@ -2182,3 +2202,54 @@ fresh evidence: `native-black-block-coin-followup-2026-10-23.txt` and outer
 `work/native-muted-audio-walk-block17-transition-cleanup-audit-20261023-20261021/acceptance.json`.
 The previous model escalation for an actor leak is retracted. Luna Medium is
 suitable for the established fresh ROM-free kit reconstruction follow-up.
+
+## 2026-10-23: Whomp oversized brick Mario ground-pound verified
+
+Unchanged71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128
+passes a12500-frame muted original-level7/developer-picker Mario replay.
+Ordinary jump lands beyond the fence, then Mario climbs onto actor16(uid19),
+records38 grounded collision-owner samples, ground-pounds it, and the block
+is absent in three later same-course actor censuses. Before/after screenshots
+inspected; normal control returns, route coin count remains5 as expected for
+actor16's no-coin Kill path. Exit0/mixererrors0/deviceoutput0, QA FileA unchanged.
+Only private replay route/launcher changed; no physics/gameplay source repair.
+Prior route-model escalation superseded. See native-block16-verified-2026-10-23.txt.
+Original painting entry, Yoshi denial, repeat/reload, variants19/46 and broader
+actor coverage remain open. Luna Medium is suitable for bounded reuse of this
+accepted route; missing switch11 integration remains a later source milestone.
+
+## 2026-10-23: Oversized brick Yoshi denial and fresh-load respawn verified
+
+Unchanged build71D completed a15000-frame muted Yoshi test in original level7.
+Holding the normal jump button longer corrected the private replay's short-tap
+approach: Yoshi landed on actor16/uid19 (845 grounded collision-owner samples),
+performed repeated real ground pounds, and the brick remained alive and visible.
+Final state was Wait with normal control. A separate4000-frame process loaded
+the exact QA FileA from Mario's earlier destruction test and confirmed the same
+brick alive again. Both runs exited0 with muted output0/mixer errors0 and
+unchanged saves. No gameplay code, physics, build kit or installation changed.
+This supersedes the earlier open Yoshi/fresh-process checks, while original
+castle-painting exit/re-entry and broader actor coverage remain unverified.
+See native-block16-verified-2026-10-23.txt for evidence and the failed short-tap
+attempt's narrower meaning. Native switch11 plus its linked block19 behavior
+is a subsequent integration milestone; Sol High is recommended for its original
+callback tables, resource initialization and timed/event/Star dependencies.
+
+## 2026-10-23: Native floor switches integrated; Battlefield step press verified
+
+Build446FBE7680522EB9EC2A5547BB7345115F5E8A6CB8768F3E673634B88EF7A219
+adds original floor/Star-switch profiles11/12, native-size factories, lazy
+resource handles/rows, native state pairs and a typed contact-field adapter.
+Matched game source and original event/timing rules are preserved. Build,
+14 related Python tests and the native PE data/callback audit pass. A13500-frame
+muted original Battlefield replay steps onto switch11, records140 grounded
+contacts, depresses it and sets its original event bit. A4000-frame scene8
+baseline loads the timed switch, Star switch and all eight linked blocks without
+hanging; activation/expiry remain untested. A2600-frame check of the local
+preview passes original title/FileA/castle startup. All accepted runs exit0
+with muted output0/mixer errors0 and unchanged QA saves; screenshots inspected.
+Symbol-only support is refreshed and fresh private data generation matches the
+linked source exactly. No new kit/export/publication/F: installation was made.
+See native-floor-switch-integration-2026-10-23.txt for scope and private evidence.
+Sol High is already selected. Goal remains active; next work is timed switch/
+linked-block behavior, Star-switch reward flow and course re-entry.

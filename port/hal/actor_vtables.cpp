@@ -301,6 +301,36 @@ struct PcNativeActorProfile {
     int clipOffsetY, clipRadius, clipDistance, farDistance;
 };
 static_assert(sizeof(PcNativeActorProfile) == 0x1c, "native actor descriptor");
+extern "C" void *daRNk_c_classInit(), *daRFlag_c_classInit();
+// Original ov062 race actor and finish flag descriptors, native constructors.
+static PcNativeActorProfile pc_koopa_race_profile = {
+    (void *)&daRNk_c_classInit,188,29,0x00800002,0xc8000,0xc8000,0x17d0000,0x17d0000
+};
+static PcNativeActorProfile pc_koopa_flag_profile = {
+    (void *)&daRFlag_c_classInit,205,30,2,0x190000,0x190000,0x13e8000,0x13e8000
+};
+extern "C" void *daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT();
+extern "C" void *daObjSeesaw_c_classInit_BOMB_SEESAW();
+extern "C" void *daObjBSwdoor_c_classInit();
+// Original ov091/095/014 descriptors; only the constructor pointer is rebased.
+static PcNativeActorProfile pc_updown_lift_profile = {
+    (void *)&daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT,29,297,0x01000002,0,0x200000,0x1000000,0x1000000
+};
+static PcNativeActorProfile pc_battlefield_seesaw_profile = {
+    (void *)&daObjSeesaw_c_classInit_BOMB_SEESAW,39,173,2,0,0x400000,0x1000000,0
+};
+static PcNativeActorProfile pc_battlefield_gate_profile = {
+    (void *)&daObjBSwdoor_c_classInit,40,137,3,0x120000,0x400000,0x1000000,0
+};
+extern "C" void *daObjSwitch_c_classInit_HANSWITCH();
+extern "C" void *daObjSwitch_c_classInit_STAR_SWITCH();
+// Original ov002 descriptors at02109900/0210991c, with native factories.
+static PcNativeActorProfile pc_floor_switch_profile = {
+    (void *)&daObjSwitch_c_classInit_HANSWITCH,11,135,2,0,0x100000,0x1000000,0
+};
+static PcNativeActorProfile pc_star_switch_profile = {
+    (void *)&daObjSwitch_c_classInit_STAR_SWITCH,12,136,2,0,0x100000,0x1000000,0
+};
 // Original ov002 big-brick actor: five distinct profile IDs share one class.
 extern "C" void *daObjBlockL_c_classInit_BK_FUTA();
 extern "C" void *daObjBlockL_c_classInit_BLOCK_LL();
@@ -483,6 +513,13 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[16] = &pc_heavy_block_profile;
     data_020a4bb8_storage[17] = &pc_big_block_profile;
     data_020a4bb8_storage[19] = &pc_switch_block_profile;
+    data_020a4bb8_storage[11] = &pc_floor_switch_profile;
+    data_020a4bb8_storage[12] = &pc_star_switch_profile;
+    data_020a4bb8_storage[29] = &pc_updown_lift_profile;
+    data_020a4bb8_storage[39] = &pc_battlefield_seesaw_profile;
+    data_020a4bb8_storage[40] = &pc_battlefield_gate_profile;
+    data_020a4bb8_storage[188] = &pc_koopa_race_profile;
+    data_020a4bb8_storage[205] = &pc_koopa_flag_profile;
     data_020a4bb8_storage[46] = &pc_fortress_wall_profile;
     pc_fl_seesaw_init_resources();
     data_020a4bb8_storage[77] = &pc_fl_seesaw_profile;

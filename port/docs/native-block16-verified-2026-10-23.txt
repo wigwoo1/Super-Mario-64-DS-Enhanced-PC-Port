@@ -1,0 +1,71 @@
+# Oversized brick: selected Mario interaction verified — 2026-10-23
+
+On unchanged native build SHA256
+71D64BA67CC101E03C5F8BB60C9B0A093E6C334C7D8EF8BC38A8E3C278738128,
+an isolated Mario prerequisite save entered the original Whomp's Fortress map
+through the development picker. Ordinary walking/jumping crossed the authored
+fences, reached the oversized brick (actor16), climbed onto it and performed a
+ground pound. The collision trace recorded38 grounded samples owned by actor16,
+uid19. A real ground-pound state followed; the actor was absent in three later
+censuses while the same course remained active. The final capture shows Mario
+on the ground in the cleared alcove, with normal control available.
+
+The12500-frame run exited0, audio output was muted with zero nonzero submitted
+samples, mixer errors0, and the isolated FileA bytes matched their starting
+fixture. Five route coins were collected before the block interaction; their
+total stayed5 afterwards. This matches the recovered actor16 Kill path, which
+does not spawn the three-coin payout used by actors15/17.
+
+No production game code, player position/state, collision rules, actor callbacks
+or save flags were changed. Private replay setup uses the existing precise
+route mode and one normal-jump landing target beyond the entire fence. Earlier
+targets inside the fence caused premature stopping and were test-route errors.
+The prior model escalation for that route is superseded by this accepted run.
+
+Scope remains selected Mario contact/destruction in an original scene, using
+synthetic60-Star prerequisites and developer-picker entry. Original castle
+painting entry, Yoshi denial, repeat/reload, other block variants and full
+campaign progression remain unverified by this test. The full port is unfinished.
+
+Private acceptance: work/block16-mario-acceptance-20261023.json.
+Verifier: work/check-block16-ground-pound-20261023.py.
+Runtime/screenshots: work/native-block16-beyond-fence-landing-r5-muted-20261023/.
+Screenshots frame9000/frame11000 inspected and shown; raw logs, collision
+geometry, saves and screenshots stay local and are excluded from publication.
+
+## Follow-up: Yoshi ground-pound denial and same-save fresh load verified
+
+The unchanged executable completed a15000-frame Yoshi run in original level7.
+The accepted Mario walking route was reused with an isolated Yoshi FileA.
+The first short-tap replay never landed on the brick and proves no ground-pound
+rejection. A second input-only replay held DS B through polls9925..10104 using
+the existing additive button schedule. Yoshi reached the top, recording845
+grounded collision-owner samples for actor16/uid19 beginning at tick9970.
+Real St_GroundPound_Main states were captured from10165 through14920, with
+landings and further jumps between attempts. The brick remained alive in
+censuses10500/11500/12400 and visible in the final14500 capture. Yoshi finished
+in Wait with normal control at the block's top. This agrees with the original
+OnGroundPounded early return for character parameter3.
+
+A separate4000-frame fresh process loaded the EXACT isolated FileA from the
+accepted Mario destruction run. Actor16/uid19 was alive again at tick3500 in
+original level7. This verifies same-save fresh-process respawn; it does not
+verify leaving and returning through the original castle painting.
+
+Both accepted follow-ups exited0, submitted zero nonzero audio samples while
+muted, reported zero mixer errors, and left their QA save bytes unchanged.
+No production code, physics or callback changes were made; no recompile or
+new installation/build kit was needed. Private launcher now accepts optional
+ExtraButtons; omitting it retains the earlier replay schedule.
+
+Private assertions/evidence:
+work/check-block16-yoshi-20261023.py
+work/block16-yoshi-acceptance-20261023.json
+work/check-block16-same-save-reload-20261023.py
+work/block16-same-save-reload-acceptance-20261023.json
+work/native-block16-yoshi-held-jump-r6-muted-20261023/
+work/native-block16-mario-same-save-fresh-load-r7-muted-20261023/
+
+Yoshi screenshots10500/14500 inspected and shown. All fixtures, screenshots,
+logs and runtime executables remain private. Original painting re-entry,
+variants19/46, missing switch11 and broader campaign coverage remain open.

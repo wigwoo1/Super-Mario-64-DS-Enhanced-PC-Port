@@ -149,6 +149,13 @@ bool minimap_hud_decode(HudSprite &out,const uint8_t *attributes,size_t bytes,
     out=std::move(result);return true;
 }
 
+void cannon_sight_build(uint32_t *pixels,unsigned width,unsigned height) {
+    if(!pixels||!width||!height)return;
+    const int size=std::max(1,int(std::lround(double(height)*32.0/192.0)));
+    icon(pixels,width,height,(int(width)-size)/2,(int(height)-size)/2,
+         size,size,art.cannon_sight,true);
+}
+
 void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
                        const VideoSettings &settings,bool visible,
                        unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character,

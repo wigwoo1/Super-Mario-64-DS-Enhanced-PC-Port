@@ -476,13 +476,20 @@ def emit(src_path, out_dir, decomp_root):
     # compiles everything as C++ anyway, so drop it.
     text = re.sub(r"\A//cpp[^\n]*\n", "", text)
     new, n = transform(text)
+    own_linkage = src_path.name == 'func_0204a5c8.c'
+    if own_linkage:
+        # The explicit particle renderer slice uses emit(), independently of
+        # the boot closure. Keep the C++ observation header outside C linkage.
+        import particle_host
+        new = particle_host.transform(new, src_path.name)
+        n += 1
     # Everything is emitted as C++ (NTR_MMIO expands to a template proxy), but
     # a .c source's symbols must keep C linkage: the port's other slices
     # compile the decomp's .c files as real C, and mixing linkages per-symbol
     # is exactly the bug class the HAL bridges exist to catch. The decomp's
     # own headers are C-only typedefs, so including them inside the wrap is
     # sound.
-    if src_path.suffix == ".c":
+    if src_path.suffix == ".c" and not own_linkage:
         new = 'extern "C" {\n' + new + '\n}  /* extern "C" (hostgen: .c source) */\n'
     rel = src_path.relative_to(decomp_root)
     out = out_dir / rel.with_suffix(".cpp")

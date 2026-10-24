@@ -1,3 +1,5 @@
+2026-10-23 current-build recheck: current native build B47E8FACFB6CF8F587A5B71BD7AA6FF1CAE53D19785F98CC8533D645AED9A230 was tested with isolated muted Yoshi and Mario replays. The upstairs 50-Star Star Gate correctly denies Yoshi and admits Mario under the original source rule in d_a_star_gate.cpp. Mario reaches the original 60-Star Toad, collects Star4 naturally and saves61 Stars. Fresh reload/repeat dialogue leaves the primary save byte-identical and does not respawn the reward. Result: work/toad60-b47-acceptance-20261023.json. Companion/variant dialogue and naturally earned campaign prerequisites remain separate coverage.
+
 Next native gameplay milestone: Toad / daKinopio_c
 Status: PARTIALLY VERIFIED overall; lobby interactions and original20-Star
 Toad reward collection/save/reload/no-duplicate are VERIFIED. The original

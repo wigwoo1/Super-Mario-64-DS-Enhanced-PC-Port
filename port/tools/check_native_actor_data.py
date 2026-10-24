@@ -79,6 +79,13 @@ def main():
             ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
             ('g_profile_FL_LONDON', 'daObjFl_London_c_classInit', 22, 0x02113f4c),
             ('pc_fl_seesaw_profile', 'daObjFl_Seesaw_c_classInit', 22, 0x02114010),
+            ('pc_floor_switch_profile', 'daObjSwitch_c_classInit_HANSWITCH', 2, 0x02109900),
+            ('pc_star_switch_profile', 'daObjSwitch_c_classInit_STAR_SWITCH', 2, 0x0210991c),
+            ('pc_updown_lift_profile', 'daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT',91,0x02134bf8),
+            ('pc_battlefield_seesaw_profile','daObjSeesaw_c_classInit_BOMB_SEESAW',95,0x02137484),
+            ('pc_battlefield_gate_profile','daObjBSwdoor_c_classInit',14,0x021145e4),
+            ('pc_koopa_race_profile','daRNk_c_classInit',62,0x0211db78),
+            ('pc_koopa_flag_profile','daRFlag_c_classInit',62,0x0211dc30),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
@@ -91,7 +98,50 @@ def main():
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
 
+    base62,rom62=overlay(62)
+    koopa_states=((0x0211db48,0x0211a9c4),(0x0211db30,0x0211a740),
+                  (0x0211db58,0x0211a1f4),(0x0211db50,0x0211a168),
+                  (0x0211db40,0x0211a0f0),(0x0211db38,0x02119be0))
+    koopa_targets=[]
+    for record,guest_target in koopa_states:
+        if struct.unpack_from('<II',rom62,record-base62)!=(guest_target,0):
+            raise ValueError('Original Koopa state record changed')
+        matches={address for name,address in symbols.items()
+                 if name.startswith(f'?func_ov062_{guest_target:08x}@daRNk_c@@')}
+        if len(matches)!=1:raise ValueError('Missing/divergent native Koopa state')
+        koopa_targets.append(matches.pop())
+    if struct.unpack('<6I',pe_bytes(args.exe,named('data_ov062_0211e0a4'),24))!=tuple(koopa_targets):
+        raise ValueError('Koopa state table does not bind to the six original handlers')
+
+    switch_methods=('020ba3fc','020ba3a8','020ba4c0','020ba2d0',
+                    '020ba2ac','020ba1ac','020ba4c0','020ba0f8','020ba4c0','020ba0bc')
+    targets=[]
+    for method in switch_methods:
+        prefix=f'?func_ov002_{method}@daObjSwitch_c@@'
+        matches={address for name,address in symbols.items() if name.startswith(prefix)}
+        if len(matches)!=1:raise ValueError('Missing/divergent floor-switch state method '+method)
+        targets.append(matches.pop())
+    if struct.unpack('<10I',pe_bytes(args.exe,named('data_ov002_0210e00c'),40))!=tuple(targets):
+        raise ValueError('Floor switch state pairs do not bind to ten native member pointers')
+    base2,rom2=overlay(2)
+    for address in (0x0210d854,0x0210d894):
+        # Each selected CLPS block ends at the next32-byte symbol boundary.
+        if pe_bytes(args.exe,named(f'data_ov002_{address:08x}'),32)!=rom2[address-base2:address-base2+32]:
+            raise ValueError('Floor switch collision-material bytes differ from original')
+
     base64,rom64=overlay(64)
+    # Complete movement paths and collision materials, rather than only their
+    # first named coordinate/word. Interior labels must not truncate a table.
+    for number,address,size in (
+            (91,0x02134cdc,360),(91,0x021344e8,12),
+            (91,0x02134bac,12),(91,0x02134bd0,12),
+            (91,0x02134bb8,12),(91,0x02134ba0,12),
+            (95,0x02136f58,16),(14,0x02114578,32),
+            (14,0x02114598,32),(2,0x0210d834,32)):
+        base,rom=overlay(number)
+        name=f'data_ov{number:03d}_{address:08x}'
+        if pe_bytes(args.exe,named(name),size)!=rom[address-base:address-base+size]:
+            raise ValueError('Battlefield platform data differs from original: '+name)
     if pe_bytes(args.exe,named('data_ov064_0211bb2c'),32)!=rom64[0x0211bb2c-base64:0x0211bb4c-base64]:
         raise ValueError('Lava bridge collision properties differ from original')
     if pe_bytes(args.exe,named('data_ov064_0211bacc'),32)!=rom64[0x0211bacc-base64:0x0211bacc-base64+32]:

@@ -53,6 +53,7 @@ MinimapHudBounds g_minimap_bounds;
 bool g_minimap_gameplay = false;
 struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0,health=8,character=3;};
 MinimapCounters g_minimap_counters;
+bool g_cannon_sight=false;
 bool g_cutscene_letter = false;
 bool g_dialogue_card_active = false;
 bool g_pause_screen = false;
@@ -470,6 +471,7 @@ bool video_open(const char *title) {
 }
 
 void video_close() {
+    g_cannon_sight=false;
     video_set_minimap_editor(false);
     g_editor_background.clear();g_editor_map_ready=false;g_editor_cache_tick=~uint64_t(0);
     gpu_close(); g_gpu=false;
@@ -650,6 +652,8 @@ void video_set_minimap_gameplay(bool active) {
     }
     g_minimap_gameplay = active;
 }
+void video_set_cannon_sight(bool active) {g_cannon_sight=active;}
+
 void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character) {
     g_minimap_counters={active,stars,coins,lives,health,character};
     if(const char *path=std::getenv("SM64DS_PC_HUD_CAPTURE")) {
@@ -1053,28 +1057,41 @@ bool video_present_frame() {
 
     const bool hud_visible=g_minimap_counters.active && !g_pause_screen && !dual &&
         !g_minigame_active && !g_cutscene_letter;
+    const bool sight_visible=g_cannon_sight && g_minimap_gameplay && !g_pause_screen && !dual &&
+        !g_minigame_active && !g_cutscene_letter;
+    const bool overlay_visible=hud_visible || sight_visible;
     const unsigned hud_width=g_gpu?g_settings.width:SCREEN_W;
     const unsigned hud_height=g_gpu?g_settings.height:SCREEN_H;
-    static std::array<uint32_t,15> previous_hud_key{};
+    static std::array<uint32_t,16> previous_hud_key{};
     static bool have_hud_key=false;
     static uint64_t hud_revision=0;
-    const std::array<uint32_t,15> hud_key{{
-        unsigned(hud_visible),hud_width,hud_height,map_settings.minimap_x,map_settings.minimap_y,
+    const std::array<uint32_t,16> hud_key{{
+        unsigned(hud_visible),unsigned(sight_visible),hud_width,hud_height,map_settings.minimap_x,map_settings.minimap_y,
         g_settings.minimap_scale,g_minimap_counters.stars,g_minimap_counters.coins,
         g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character,
         hud_map_bounds.left,hud_map_bounds.top,hud_map_bounds.right,hud_map_bounds.bottom}};
     if(!have_hud_key||hud_key!=previous_hud_key) {
         previous_hud_key=hud_key;have_hud_key=true;
         if(++hud_revision==0)++hud_revision;
-        if(hud_visible) {
+        if(overlay_visible) {
             gpu_hud_pixels.resize(size_t(hud_width)*hud_height);
-            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,map_settings,true,
+            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,map_settings,hud_visible,
                 g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,
                 g_minimap_counters.health,g_minimap_counters.character,hud_map_bounds);
+            if(sight_visible)cannon_sight_build(gpu_hud_pixels.data(),hud_width,hud_height);
         } else gpu_hud_pixels.clear();
     }
-    if(!g_gpu&&hud_visible)
+    if(!g_gpu&&overlay_visible)
         minimap_hud_blend(g_output.data(),gpu_hud_pixels.data(),SCREEN_W,SCREEN_H);
+    if(const char *path=std::getenv("SM64DS_PC_CANNON_SIGHT_TRACE")) {
+        static FILE *file=nullptr;static int previous=-1;static unsigned pw=0,ph=0;
+        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,visible,width,height,center_x,center_y\n",file);}
+        if(file && (previous!=int(sight_visible)||pw!=hud_width||ph!=hud_height)){
+            std::fprintf(file,"%llu,%u,%u,%u,%u,%u\n",static_cast<unsigned long long>(rt_frame()),
+                unsigned(sight_visible),hud_width,hud_height,hud_width/2,hud_height/2);std::fflush(file);
+            previous=int(sight_visible);pw=hud_width;ph=hud_height;
+        }
+    }
     if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_COUNTERS_TRACE")) {
         static bool reported=false;
         if(!reported&&trace[0]&&trace[0]!='0'&&rt_frame()>=1800&&hud_visible) {
@@ -1090,7 +1107,7 @@ bool video_present_frame() {
         if (!gpu_render(main_view,video_minimap_visible()?gpu_map_pixels.data():nullptr,
                         map_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
                         dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay,
-                        hud_visible?gpu_hud_pixels.data():nullptr,hud_width,hud_height,hud_revision) ||
+                        overlay_visible?gpu_hud_pixels.data():nullptr,hud_width,hud_height,hud_revision) ||
             !gpu_present(width,height,dual)) {
             std::fprintf(stderr,"[video] native GPU presentation failed; reverting to software on the next frame\n");
             gpu_close();g_gpu=false;

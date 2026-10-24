@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "162fce591b4a4bf001d93f7ee3f4a64eaee23ee4337e91ca13d7bac75dc8f3bf",
-      "bytes": 450992
+      "sha256": "d9ac7b290b88ace7776026cb51b10783476a6eb1bf693b9f73b745d13b90bce2",
+      "bytes": 453080
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "e28f8203a2e8f2b9f9d4cac031784c33b724855e4b9328cd796c880a1ba3a765",
-      "bytes": 249696
+      "sha256": "e2a80e63a73e25e9c5c53e6639123af5f64a68742cc35c93e85c3d1ed4e61818",
+      "bytes": 250435
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "701fad559ac5eba0f95921fe2f7b8e62da81c917b143995a1b8676de28ccaeae",
-      "bytes": 83239
+      "sha256": "cd222223bdca3410dd1233675a7de8eae3a7392513bb9137700c0e68fdcaf1ab",
+      "bytes": 84775
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6455,8 +6455,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "65d9bb1aeb168688215791645c7f2ecef8b2084188f9e895ccb1c39b07d53fc5",
-      "bytes": 3196
+      "sha256": "d85ad2752b230fb4a3cc59583249c348a0eb92798512179b79d0ce431d3fe184",
+      "bytes": 6306
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6504,6 +6504,11 @@
       "bytes": 2960
     },
     {
+      "path": "port/docs/native-battlefield-platforms-2026-10-23.txt",
+      "sha256": "e4b8c423a64902dc4286113bab846f80ecf1dc07839e0334784457f7edff8d33",
+      "bytes": 5578
+    },
+    {
       "path": "port/docs/native-black-block-2026-10-23.txt",
       "sha256": "14d3173846779bf5f902903456f8bc87bd08a052716e92c42595b23947c59c91",
       "bytes": 2570
@@ -6512,6 +6517,11 @@
       "path": "port/docs/native-black-block-coin-followup-2026-10-23.txt",
       "sha256": "08183de331f16fd99cbff4cbfaeb0b4e1123e667e39f30b38f1b177f5e6cb905",
       "bytes": 2714
+    },
+    {
+      "path": "port/docs/native-block16-verified-2026-10-23.txt",
+      "sha256": "014ca22e6aa5e76db34b3faf884127e598d13cbdaf16b0415933b8d9f0a13d9f",
+      "bytes": 4260
     },
     {
       "path": "port/docs/native-buddy-cannon-verified-2026-10-18.txt",
@@ -6557,6 +6567,11 @@
       "path": "port/docs/native-cannon-repeat-2026-10-19.txt",
       "sha256": "85393d5194b3f71a152a2b37ec7e9a560036ec969edda8b1ec7e27eb6cf98219",
       "bytes": 3294
+    },
+    {
+      "path": "port/docs/native-cannon-sight-verified-2026-10-24.txt",
+      "sha256": "afbdb2d8d52c1b1a8a704f8b1cb8b8a6b94a96c54f26b4dd8f210db3cf989905",
+      "bytes": 4896
     },
     {
       "path": "port/docs/native-castle-birds-2026-10-21.txt",
@@ -6654,6 +6669,11 @@
       "bytes": 4715
     },
     {
+      "path": "port/docs/native-floor-switch-integration-2026-10-23.txt",
+      "sha256": "d46516159c76181f1d624f2e16932319c0ac42005685f83e3d1a01eec36e443b",
+      "bytes": 5032
+    },
+    {
       "path": "port/docs/native-footsteps-2026-10-21.txt",
       "sha256": "8582ef0370c80d847d8868899bac6e1c565f85045aa06ea3780c6ab21cad713e",
       "bytes": 2649
@@ -6672,6 +6692,11 @@
       "path": "port/docs/native-internal-resolution-2026-10-21.txt",
       "sha256": "a06a6b49fc590c9f7fcfc3f7257bb91a1eff04f6fefd8f3dd46352640c0c44f3",
       "bytes": 2499
+    },
+    {
+      "path": "port/docs/native-koopa-integration-2026-10-23.txt",
+      "sha256": "31866b37d6d90280b2f87bb98439e0d1f3e9b38c554e5924a1a7dabaf1e6a478",
+      "bytes": 5975
     },
     {
       "path": "port/docs/native-menu-artwork-handoff-2026-10-16.txt",
@@ -6742,6 +6767,11 @@
       "path": "port/docs/native-options-settings-style-2026-10-21.txt",
       "sha256": "7fc97f6477b6c06fe883c909fada92f4e638e584d3ad0c66688cc7a8a56d197b",
       "bytes": 2868
+    },
+    {
+      "path": "port/docs/native-particle-rendering-2026-10-23.txt",
+      "sha256": "61da78c41c9d81bf10b1830250b37850f832d0fe7c1a63c4b4e9bdd525ef786c",
+      "bytes": 5200
     },
     {
       "path": "port/docs/native-pause-display-checkpoint-2026-10-15.txt",
@@ -6865,8 +6895,8 @@
     },
     {
       "path": "port/docs/native-toad-integration-plan-2026-10-21.txt",
-      "sha256": "a5fa56cc36c046a4bde418414c2412835b561eada26cc4120723755540569617",
-      "bytes": 13253
+      "sha256": "9d030a878935f900e1a269e343e93cac342b7f45dc859f81a8006cf2536b5938",
+      "bytes": 13887
     },
     {
       "path": "port/docs/native-touch-menu-controller-2026-10-20.txt",
@@ -6910,13 +6940,13 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "d8f4b61abcc9be6b461c02519f06f97247c49fee8cef7dbf12bf0aaebecd09a0",
-      "bytes": 277830
+      "sha256": "92aa9b813a1dcc69f938e71d937651a71b240b1c0e2e659a8e3d85104c7e4649",
+      "bytes": 286465
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
-      "sha256": "2fbeb7559c853ae4dbccbafea4f78d622493a8e5da3e7812b2117f3eaca03c5d",
-      "bytes": 2092
+      "sha256": "626367f53a196c0086a030d19bccf1c1d46fb1c0398fb9b6750d32ac14c6c950",
+      "bytes": 2801
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -7105,8 +7135,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "f47d8af05c076853d228bdf337a8ffd1dcc497a2b5da9be98ed9f750d339935c",
-      "bytes": 38355
+      "sha256": "6e7c8b71b0cdf765be5f63df15bfedc58457f2a0ef47e3efc0ffa89493f2cd6c",
+      "bytes": 40347
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7269,6 +7299,11 @@
       "bytes": 11117
     },
     {
+      "path": "port/hal/koopa_replay.h",
+      "sha256": "9a2a78d5c248438f50c41d34d3cc604242d666d5ec59f7cf69c0f2305af017c6",
+      "bytes": 7465
+    },
+    {
       "path": "port/hal/level_overlay.cpp",
       "sha256": "c71d790af293e47281e8789a20778098a756e45f3c8ec4f79e3aa4b9effc237d",
       "bytes": 3072
@@ -7290,8 +7325,8 @@
     },
     {
       "path": "port/hal/minimap_hud_art.cpp",
-      "sha256": "7e9d627668b9b15e8d8bbc5a838432c35f990f7cd741cc1aaa8e580c5b7c9413",
-      "bytes": 5786
+      "sha256": "3019a1d20d1e7bdb362224970a89fa2c999e430082000dc5b021fd69863b46c2",
+      "bytes": 6264
     },
     {
       "path": "port/hal/model_host.cpp",
@@ -7347,6 +7382,16 @@
       "path": "port/hal/os_time.cpp",
       "sha256": "82144dff1925a30dd45143cea6afa073e54b6d1be9185e61b6541eee97f33b29",
       "bytes": 1762
+    },
+    {
+      "path": "port/hal/particle_probe.h",
+      "sha256": "2728262ca6086c5bd32711dcab85f101aaab286506165b200274c5bc3705fc90",
+      "bytes": 3768
+    },
+    {
+      "path": "port/hal/particle_render_callbacks.cpp",
+      "sha256": "c907f37d50ae17c80dd37cb456e7f0f56157b5b8dacbb2b9ac0df61660dc68a5",
+      "bytes": 764
     },
     {
       "path": "port/hal/pc_pause_settings.cpp",
@@ -7425,13 +7470,13 @@
     },
     {
       "path": "port/hal/stage_graph_state.cpp",
-      "sha256": "b1eb8b57cd40cc30e52bbf841fe23240b4289bc936d6a3aa96e36fc35a9f6de6",
-      "bytes": 8355
+      "sha256": "68487722270edb27f20dbfcf5de25db18c1da0524691d83521254f0ec20e7077",
+      "bytes": 8713
     },
     {
       "path": "port/hal/stage_graph_state.h",
-      "sha256": "dcaa314ff2dd6f44530ea85bb56b7f636c7f202113f7dc96009520ab68e3e5a3",
-      "bytes": 551
+      "sha256": "191ef48e5ed5fb07214a4a42c2b2254dfd9b18f3ea0985c2a18cc783fc68b197",
+      "bytes": 598
     },
     {
       "path": "port/hal/stage_options_input.cpp",
@@ -7505,8 +7550,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "35b30209fd9dafedb882afa872c03a5d6938f2ed8d9ef388c588cf6a92eb7696",
-      "bytes": 142792
+      "sha256": "0fa55389686d87d2863fafe2d15c58f8ccac290539dd4574ce7e395f2b4d9692",
+      "bytes": 143798
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7625,8 +7670,8 @@
     },
     {
       "path": "port/ntr/include/ntr/minimap_hud.h",
-      "sha256": "6906422cea1734c1a6acc426da407f18d0bbb42c6456fa080a161d5398166aa9",
-      "bytes": 1411
+      "sha256": "e5e9439c21b0e227a86bd30d2688d392f35211530b282c66f90488cad82c4ed5",
+      "bytes": 1576
     },
     {
       "path": "port/ntr/include/ntr/minimap_layout.h",
@@ -7685,8 +7730,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "9e6d0c49f28887b42b26fcf38f8eada1109e5a6f8e2a8c1e6407419dbb198be0",
-      "bytes": 4916
+      "sha256": "0c756ab849f4491927cd24403baaa96fb7810ab44a91c8d53c4474ebc2705344",
+      "bytes": 5039
     },
     {
       "path": "port/ntr/input.cpp",
@@ -7705,8 +7750,8 @@
     },
     {
       "path": "port/ntr/minimap_hud.cpp",
-      "sha256": "8431624fceac18b7471227056bec383598c1425ee98e11c7be4cdd4fba369d2b",
-      "bytes": 12821
+      "sha256": "a97f58cbfd3270f5dc1893cafc992fcd36bd8aa720d3a420e5a6e3d0a701e524",
+      "bytes": 13129
     },
     {
       "path": "port/ntr/ppu.cpp",
@@ -7770,8 +7815,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "5f9695550f4c806a834b6875a3ffbe39a6ca2ffd7125049edda3627d17cb4387",
-      "bytes": 61934
+      "sha256": "db1de711c644e55f0e9f0a8930442409090853f1f01e06afd714701a84627226",
+      "bytes": 63044
     },
     {
       "path": "port/README.md",
@@ -7995,8 +8040,8 @@
     },
     {
       "path": "port/tests/smoke_minimap_hud.cpp",
-      "sha256": "7f45d219f4b5a086d8173375aff5ef79565a05d097d9d004416d61a2f1f7c02b",
-      "bytes": 6167
+      "sha256": "bbbad3d4997f5ecc1fb6883ab98e1704b3dbcff21d77f62af12dd291fda547a4",
+      "bytes": 6895
     },
     {
       "path": "port/tests/smoke_model.cpp",
@@ -8037,6 +8082,11 @@
       "path": "port/tests/smoke_overlay9.cpp",
       "sha256": "ffdbea7c6ccc81a302b815fa3fcf6f247734e25bfc5ef10b9059541d89e6bfeb",
       "bytes": 1603
+    },
+    {
+      "path": "port/tests/smoke_particle_callbacks.cpp",
+      "sha256": "aa594dc3f70b2fa7270161dfabd79b0223609caa02fccb190523bf98d1d35801",
+      "bytes": 1135
     },
     {
       "path": "port/tests/smoke_pause_settings.cpp",
@@ -8424,6 +8474,11 @@
       "bytes": 1476
     },
     {
+      "path": "port/tools/battlefield_platform_host.py",
+      "sha256": "9fe2b85c498f0457af6d9c1d3b6836ccff6802da07af9bb16c48218b49c46dd1",
+      "bytes": 10587
+    },
+    {
       "path": "port/tools/bird_host.py",
       "sha256": "d29b7cf117fe478b599e4757266271956031ad64f9beba354c3b6aa68a383e71",
       "bytes": 3512
@@ -8440,8 +8495,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "cfeb45c5b94048e62d28f95bc05bbf78812c0217759eb89ad11e46d549d20251",
-      "bytes": 40979
+      "sha256": "fc48dd5879466bd8f5bd121b327a22734a358a42b52d72e7fe0e4430eb5d40ec",
+      "bytes": 42875
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8450,8 +8505,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "e7344795a74df18f9f7fbacfcf1e8ff99530cd141467b0bf95006ff983ef17cc",
-      "bytes": 23166
+      "sha256": "12bb491e4d0ff13ad2cbd32a2a024b5e236583690784f70388ad34dca5598f84",
+      "bytes": 23625
     },
     {
       "path": "port/tools/cannon_host.py",
@@ -8580,8 +8635,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "250d01fb06d090296cec2fc2d280af646888b9abc81fb621ef63d292c0f39628",
-      "bytes": 24287
+      "sha256": "7bdaf545f52745fa3dcbda5bd9b97950011760beb9a6056af7652dbcbdf6a73b",
+      "bytes": 27532
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8590,8 +8645,8 @@
     },
     {
       "path": "port/tools/check_particle_archive.py",
-      "sha256": "f746648f20b77897ccd8f8832ffe1bdc8012e34cd181ebb1322f71efbf115f70",
-      "bytes": 1560
+      "sha256": "b26244d98c14f7f7ca2b86845640fe1d931c401b73529b05ba9c2b7c55c9f3af",
+      "bytes": 3915
     },
     {
       "path": "port/tools/check_player_animation_data.py",
@@ -8714,6 +8769,11 @@
       "bytes": 1766
     },
     {
+      "path": "port/tools/floor_switch_host.py",
+      "sha256": "f0ca8ed5a3827455128e338d7829ef80505b7381e9712ff11fbcdaa3b310c066",
+      "bytes": 5299
+    },
+    {
       "path": "port/tools/goomba_host.py",
       "sha256": "fc337acf729016f53a3c4182eb61553d63371bc7ffb6c4fd15d1c26cb9c8bd62",
       "bytes": 6512
@@ -8730,8 +8790,8 @@
     },
     {
       "path": "port/tools/hostgen.py",
-      "sha256": "383a45a59ee840c6d6c41257e2cbae98a5991547ef165bed284d3dd24f6e4a30",
-      "bytes": 28980
+      "sha256": "4e13eaea794b9d35565e328bc8492aff68c7b11bb0e027dc735d3febb0f73dc0",
+      "bytes": 29331
     },
     {
       "path": "port/tools/intro_host.py",
@@ -8742,6 +8802,11 @@
       "path": "port/tools/jump_input_host.py",
       "sha256": "df3dde1edc13ce095f1e7036433e8c89a40c9699a08ffe61a0c899664913c882",
       "bytes": 676
+    },
+    {
+      "path": "port/tools/koopa_host.py",
+      "sha256": "1f62cc41e4d996fbe53edb5a8e200c68f2c441d59569c102979113f990bf0459",
+      "bytes": 3359
     },
     {
       "path": "port/tools/lakitu_host.py",
@@ -8765,8 +8830,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "8d2ccf8e0bcd48abce1b98190193a4fb81d244418187ff388d6a632a47695e12",
-      "bytes": 26707
+      "sha256": "87d6816417217cd14879ec296b82fe0648b69c7d1e1a1e6909d87e734ef710b1",
+      "bytes": 27513
     },
     {
       "path": "port/tools/linkage.py",
@@ -8795,8 +8860,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "ab45bf42166e2450d0e06c44ea4f1d38e5e45d5173fc416924a6e6bc5f352b81",
-      "bytes": 6992
+      "sha256": "6ebf7a231752f0e2d5811109271f0c6725702515fe111e8e3e84c215ba03eee3",
+      "bytes": 7277
     },
     {
       "path": "port/tools/native_kit_data.py",
@@ -8832,6 +8897,11 @@
       "path": "port/tools/overlay_data.py",
       "sha256": "40d6ab1c13e1a2a8d6fc18821a808913164b11ddb2b47e73b6b6d29f36a3e618",
       "bytes": 6258
+    },
+    {
+      "path": "port/tools/particle_host.py",
+      "sha256": "963bd7dedfbedf824f50045be2d135784499f35a64115a3dcc5ae63558bf72f1",
+      "bytes": 2029
     },
     {
       "path": "port/tools/pc_title_session.py",
@@ -8899,6 +8969,11 @@
       "bytes": 4955
     },
     {
+      "path": "port/tools/test_battlefield_platform_host.py",
+      "sha256": "85fa6c18776c2c5ae2024a20874f4405df4897c7447a4eee86b7111e6778cdcb",
+      "bytes": 3325
+    },
+    {
       "path": "port/tools/test_bombking_host.py",
       "sha256": "615e708f2c2050cef317eeb8b7ee02b9b48fe0f8db478b9b51962216a0ffd463",
       "bytes": 1959
@@ -8917,6 +8992,16 @@
       "path": "port/tools/test_cannon_host.py",
       "sha256": "fd1219645da87be5ed25d7029bc7b87e3fc363584434fedefd737c9846ddcec6",
       "bytes": 1943
+    },
+    {
+      "path": "port/tools/test_floor_switch_host.py",
+      "sha256": "e7a813a7855ab6162c28154e18d7173e20c04c5184d86be48909b32f7b8ca848",
+      "bytes": 2559
+    },
+    {
+      "path": "port/tools/test_particle_host.py",
+      "sha256": "4cfe391d61bd6efbf68d9cb3d772b0e3f8c3a522b90b0d48770c76d747f32c43",
+      "bytes": 2900
     },
     {
       "path": "port/tools/test_rabbit_host.py",

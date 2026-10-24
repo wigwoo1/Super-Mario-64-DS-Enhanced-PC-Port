@@ -1,0 +1,84 @@
+Original particle rendering and brick debris - 2026-10-23
+Status: VERIFIED for the selected original large-brick break and menu startup.
+Full game and other effect variants remain incomplete/unverified.
+
+Native Release EXE SHA256:
+b47e8facfb6cf8f587a5b71bd7aa6ff1cae53d19785f98cc8533d645aed9a230
+
+Cause:
+The native dScStage_c::InitResources adapter's graphics vtable used a return1
+no-op in slot1. The original slot1, GraphCallback1, calls Particle::RenderAll.
+Consequently original emitters were created and updated, but never drawn.
+The selected block Kill already requested effect10; no replacement effect,
+actor, reward or extra destruction rule was needed.
+
+Repair:
+- Host-only particle_host.py replaces that one native no-op table entry with
+  pc_stage_graph_draw_particles. It enrolls the original GraphCallback1 and
+  binds its call to the actual native Particle::RenderAll namespace function.
+- Draw in the existing original graphics phase before SWAP_BUFFERS, not in
+  before_present (which can repeat at120/240Hz and follows geometry publication).
+  No extra particle simulation updates or frame-rate-dependent spawning.
+- Two renderer callback tables02099fb4/02099fbc previously linked zero-filled
+  generic data. Their original ARM9 words identify two quad and two rotation
+  code targets. particle_render_callbacks.cpp supplies native pointers, using
+  exact byte-argument wrappers for quad dimensions and original native math.
+  The recovered offset-quad and rotation workers join the closure.
+- Read-only optional particle_probe.h observes creation/update/draw counts.
+  SM64DS_PC_PARTICLE_TRACE chooses a private output file; TRACE_ID defaults10.
+  Both boot-closure generation and the separately generated renderer slice
+  receive the probe. The C++ probe header stays outside the C linkage block.
+- Matched src/ and include/ files were not changed. Original effect bytes,
+  simulation, lifetime, sprite art, character restrictions and rewards remain.
+
+Build/checks:
+Native Release build PASS.6 particle host-generation tests PASS.4 selected
+CTests PASS: graphics bank state, stage graph, native particle callback ABI/
+original rotation math, GX. Native actor/data audit PASS. Particle PE audit
+checks all49684 archive bytes,321 parsed definitions/46 textures, valid original
+draw/rotation indices, all4 native callback bindings and the Stage slot1/2
+targets. This is not runtime acceptance of all321 definitions.
+
+Private paired runtime:
+Original Whomp's Fortress(scene7), isolated Mario60-Star prerequisite save,
+original actor16/uid22 at its authored position. Ordinary input route and
+ground pound; no forced hits/spawns/positions/events/save credit. Tests muted.
+Before diagnostic EXE661978...D80:10800frames, effect10 created10088,20particles,
+28updates; no render calls. After B47E8F...230: same10800frames and effect lifetime,
+28draw updates,910submitted triangles/874clipped triangles. The inspected10100
+capture shows original orange debris, white dust and ground-pound stars.
+120179pixels change in the effect frame; all2161 sampled selected gameplay/
+camera observations match exactly. At10700, after effects clear, entire captures
+are pixel-identical. The original block disappears; no added coin payout.
+Both exit0, mixer errors0, muted device/nonzero samples0 and QA saves unchanged.
+
+Actual new local preview EXE:2600frames original title/FileA/castle startup,
+living Yoshi Wait/control; exit0/muted0/errors0/QA save unchanged. Screenshots
+inspected/shown. Private evidence:
+work/brick-particle-render-acceptance-20261023.json,
+work/particle-effects-preview-startup-acceptance-20261023.json;
+cases native-block16-particle-create-update-draw-r1-muted-20261023,
+native-block16-particle-native-draw-r2-muted-20261023,
+native-muted-audio-walk-particle-effects-preview-startup-20261023-20261021.
+
+Symbol support unchanged5255bindings/3190requests; no new payload in metadata.
+Fresh private link-data source matches linked output, SHA256
+2fa1f19905a7a9ab54fb7685c528b544b3d656026eeee50ac331eecb8985c78c.
+Two data regions now have native callback ownership instead of zero arrays.
+No fresh kit reconstruction/export/commit/push/release/stable F: install here.
+
+Local diagnostic playtest work/particle-effects-player-preview-20261023:
+PLAY-WITH-AUDIO.cmd / PLAY-MUTED.cmd; original menus, separate1-StarYoshi save,
+C: ROM/development asset cache dependency. Full EXE embeds ROM-derived data;
+keep it local along with logs, screenshots, saves and generated data. F: and
+previous playtest folders are unchanged.
+
+Next bounded visual checks: Yoshi breaking a standard small brick15, intro
+sleep-bubble pop, then another scene/transition with particles. Do not claim
+these are fixed solely from this one Mario/actor16 replay. Remaining native
+Battlefield lift disembark/recovery, bridge tilt, gate opening and course
+re-entry remain diagnostic; prior failed upper routes must not be repeated by
+guessing. Koopa race and cannon reticle remain open.
+Luna Medium is a reasonable next checkpoint for these focused repeat checks
+and the established kit refresh workflow. Return to Sol for new renderer/ABI
+faults rather than speculative repeated fixes. Full port goal is unfinished.

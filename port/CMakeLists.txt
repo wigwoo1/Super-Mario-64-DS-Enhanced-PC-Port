@@ -312,12 +312,17 @@ function(sm64ds_hostgen_symbols out_var)
         list(APPEND seen_sources "${sym_src}")
         string(REGEX REPLACE "\\.(c|cpp)$" ".cpp" sym_out_rel "${sym_rel}")
         set(sym_out "${CMAKE_BINARY_DIR}/host-src/${sym_out_rel}")
+        set(hostgen_extra_deps "")
+        if(sym STREQUAL "func_0204a5c8")
+            list(APPEND hostgen_extra_deps "${CMAKE_CURRENT_SOURCE_DIR}/tools/particle_host.py")
+        endif()
         add_custom_command(OUTPUT "${sym_out}"
             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py"
                     --out "${CMAKE_BINARY_DIR}/host-src" ${sym}
             DEPENDS "${sym_src}"
                     "${PORT_REPO_ROOT_ABS}/tools/srcpath.py"
                     "${CMAKE_CURRENT_SOURCE_DIR}/tools/hostgen.py"
+                    ${hostgen_extra_deps}
             COMMENT "hostgen ${sym_rel}")
         list(APPEND generated "${sym_out}")
     endforeach()
@@ -469,6 +474,8 @@ set(OV002_DATA_SYMBOLS
     data_ov002_0210c080 data_ov002_0211110c
     data_ov002_0210d7f4
     data_ov002_0210d794 data_ov002_0210d8f4
+    data_ov002_0210d854 data_ov002_0210d894
+    data_ov002_0210d834
     data_ov002_02110064 data_ov002_020ff120 data_ov002_021101cc)
 set(OV002_DATA_CPP "${CMAKE_BINARY_DIR}/host-src/ov002_data.cpp")
 set(PC_GAME_LINK_HISTORY "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log")
@@ -1009,6 +1016,10 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/floor_switch_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/battlefield_platform_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/koopa_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/particle_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/basement_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py"
@@ -1058,6 +1069,10 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/floor_switch_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/battlefield_platform_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/koopa_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/particle_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/basement_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/cannon_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/rabbit_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -1347,6 +1362,7 @@ add_executable(sm64ds_pc EXCLUDE_FROM_ALL
     hal/pc_session.cpp hal/pc_pause_settings.cpp hal/pc_pause_settings_state.cpp hal/touch_menu_navigation.cpp hal/course_clear_input.cpp hal/stage_options_input.cpp
     hal/dialogue_overrides.cpp hal/dialogue_runtime.cpp
     hal/wanted_pause_settings.cpp hal/wanted_settings_surface.cpp hal/distant_actor_shadows.cpp
+    hal/particle_render_callbacks.cpp
     hal/actor_bss.cpp hal/actor_runtime_bridge.cpp hal/minimap_hud_art.cpp hal/stage_graph_state.cpp hal/gx_bank_state.asm hal/input_state.asm hal/touch_state.asm
     "${ROMDATA_C}" "${OV002_DATA_CPP}" "${OV015_DATA_CPP}" "${OV012_DATA_CPP}" "${OV001_IMAGE_CPP}"
     "${LEVEL_OVERLAY_TABLE_CPP}" "${OV002_DATA_CPP}" "${TITLE_OVERLAY_DATA_CPP}"
@@ -1386,6 +1402,13 @@ if(BUILD_TESTING)
     target_compile_definitions(smoke_stage_graph PRIVATE SM64DS_PLATFORM_PC)
     target_link_libraries(smoke_stage_graph PRIVATE ntr)
     add_test(NAME smoke_stage_graph COMMAND smoke_stage_graph)
+    sm64ds_hostgen_symbols(PARTICLE_CALLBACK_MATH_GEN func_0204c0a8 func_0204c0e8)
+    add_executable(smoke_particle_callbacks tests/smoke_particle_callbacks.cpp
+        hal/particle_render_callbacks.cpp ${PARTICLE_CALLBACK_MATH_GEN})
+    target_include_directories(smoke_particle_callbacks PRIVATE "${PORT_REPO_ROOT_ABS}/include")
+    target_compile_definitions(smoke_particle_callbacks PRIVATE SM64DS_PLATFORM_PC)
+    target_link_libraries(smoke_particle_callbacks PRIVATE ntr)
+    add_test(NAME smoke_particle_callbacks COMMAND smoke_particle_callbacks)
     add_executable(smoke_ppu_affine tests/smoke_ppu_affine.cpp)
     target_link_libraries(smoke_ppu_affine PRIVATE ntr)
     add_test(NAME smoke_ppu_affine COMMAND smoke_ppu_affine)
