@@ -1,0 +1,59 @@
+Native Koopa race surface investigation - 2026-10-24
+Status: PARTIALLY VERIFIED. No player win or reward acceptance.
+
+Added opt-in, read-only production ground queries to the Koopa QA adapter.
+The supplied sample coordinates and output geometry/material data remain
+private. Ordinary play does not enable this probe or the replay controls.
+No matched src/include files or player physics/reward rules were changed.
+
+The original Mission2 title/FileA/castle/painting run queried 1775 points.
+All queries hit real loaded collision. Of576 static floor-centroid samples,
+573 agree with the reconstructed source plane height within4 world units;
+three very steep/overlapping-face samples differ and are not floor acceptance.
+Production CLPS bits12..14 identify the slipperiness class. The previously
+proposed hill detour includes class3 faces with normalY3724/4096. Original
+Player::func_ov002_020c0cbc uses0xf04 as its class3 ground-slope cutoff;
+func_ov002_020f035c uses0xfc1 for class3 slope acceleration. Therefore the old
+planner's uniform0.65/0.85 normal threshold cannot qualify a Mario route.
+Do not change these original rules to make an automated test pass.
+
+The production first-bridge centerline is continuous: heights about644..750,
+normalY0.957..1.0. Two subsequent normal-input race attempts both naturally
+cross its upper floor, grounded and with control. This accepts only that
+crossing; the tilting bridge and moving-platform full lifecycles remain open.
+
+QA driver changes: Goomba proximity can request an ordinary jump under the
+existing opt-in dodge flag; waypoints now require landing/height agreement;
+the driver continues its route after Koopa finishes, allowing eventual loss
+conversation testing. A separate opt-in normal-takeoff experiment was also
+tested. It is diagnostic and did not qualify the ascent.
+
+Muted original-game runs (isolated synthetic one-Star Mario prerequisites):
+- Production probe:5200 frames, exit0, audio errors0, muted device samples0,
+  saves unchanged; native Koopa offer/accept/start observed.
+- Measured-ramp attempt:18000 frames, native Koopa states0..5/all26path nodes
+  finish. Mario passes path nodes1..7, then repeatedly slides on the class3
+  detour; no summit arrival or player win.
+- Normal-takeoff attempt:14000 frames, same autonomous Koopa finish and
+  first-bridge crossing.26 normal-input hop requests still fail to qualify
+  the hill. No Star reward/result conversation/save credit acceptance.
+Both attempts exit0, mixer errors0, submitted device samples0, unchanged QA
+saves. Runtime screenshots inspected. Release build and input/collision/Stage
+graph CTests pass. Final diagnostic executable SHA256:
+F1A4219F386811F4038FFBA4D3AB3FC0A7E9DEC47B1434C1DC9C09CF699DE68C.
+
+Stop route guessing after these two focused attempts. Next inspect original
+Walk/Wait/ButtSlide/normal-jump decision ordering and input sampling, or derive
+the genuine player ascent using production surfaces and original actor meshes.
+Do not replay the same low-threshold ramp, force a placement/win/timer, or
+alter material properties. Class3 Walk observations alone do not prove that
+a normal jump request was accepted. SlopeJump's original main decelerates
+horizontal speed and is not a substitute for a normal running takeoff.
+
+Winning result talk, Star collection, save/reload/no duplicate credit, loss
+conversation/retry, other characters/missions and complete course navigation
+remain unverified. No stable F installation or new publication in this task.
+The existing ROM-free cannon-sight release remains the published kit.
+Keep full EXEs, extracted assets, generated geometry, traces, screenshots and
+saves private. New source export/kit publication must repeat its normal review
+and fresh reconstruction workflow. The full game-port goal remains unfinished.

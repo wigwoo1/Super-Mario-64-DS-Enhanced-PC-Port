@@ -11,6 +11,12 @@ game assets, personal saves, or proprietary compiler is included here.
 
 ## Current state
 
+- The October24 checkpoint corrects the native OS clock units: the original
+  stopwatch conversion now agrees with real elapsed time in a focused Windows
+  test. Complete timer rendering, pause, high-score and timed-Star flows still
+  need gameplay acceptance. Battlefield lifts, the tilting bridge and switch
+  gates are partially integrated; full rides and gate-opening interactions
+  remain unverified. Koopa's player-win and Star-reward lifecycle remains open.
 - Native original title/file flow, selected courses and actors, Power Star
   rewards, course-clear behavior, Wanted, and portions of the Rec Room work.
 - Controller navigation is verified for several original title, file, pause,

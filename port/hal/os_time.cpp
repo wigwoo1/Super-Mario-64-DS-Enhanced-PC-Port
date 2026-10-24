@@ -1,22 +1,16 @@
 // Host implementation of the system tick, func_02059650.
 //
-// On the DS this reads the OS tick counter (timer hardware + IRQ-maintained
-// high bits). Timer::Start/Stop/GetTime take differences of it, so any
-// monotonic s64 with a stable rate is semantically faithful. The Timer TUs
-// declare it with C++ linkage, which is why this is a .cpp -- a C definition
-// does not mangle to what they reference.
-//
-// GATE 1: the tick is a manually-advanced counter so the smoke tests are
-// deterministic -- sm64ds_hal_advance_ticks() stands in for time passing.
-// When the main-loop seam lands, this becomes a QueryPerformanceCounter read
-// scaled to the DS tick rate, and the manual hook moves behind a test flag.
+// The game requires the original tick units as well as monotonicity:
+// dMeter_c::RenderTimeTimer and Player's timed-Star check both multiply the
+// result by64 before dividing by33514000 to obtain seconds. The host game
+// uses QPC at this rate; smoke slices retain their explicit manual counter.
 typedef long long s64;
 
 #if defined(SM64DS_GAME_TARGET) && defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-// Nintendo DS OS ticks run at half the ARM9 clock: 33,513,982 ticks/s.
+// The DS timer prescales its33,513,982-Hz bus clock by64 for OS ticks.
 // Convert QPC using quotient/remainder so the intermediate never multiplies
 // the ever-growing counter by the full tick rate.
 extern "C" s64 func_02059650()
@@ -27,9 +21,10 @@ extern "C" s64 func_02059650()
     if (frequency.QuadPart <= 0) return 0;
     const unsigned long long qpc = static_cast<unsigned long long>(counter.QuadPart);
     const unsigned long long hz = static_cast<unsigned long long>(frequency.QuadPart);
-    const unsigned long long ticks_per_second = 33513982ull;
-    return static_cast<s64>((qpc / hz) * ticks_per_second +
-                            ((qpc % hz) * ticks_per_second) / hz);
+    const unsigned long long bus_ticks_per_second = 33513982ull;
+    const auto bus_ticks=(qpc / hz) * bus_ticks_per_second +
+                         ((qpc % hz) * bus_ticks_per_second) / hz;
+    return static_cast<s64>(bus_ticks / 64ull);
 }
 #else
 static s64 g_ticks;

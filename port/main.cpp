@@ -1725,22 +1725,27 @@ static bool trace_script_progress(uint64_t frame)
     // presentation cannot skip the neutral input at a waypoint boundary.
     pc_trace_warp_player(static_cast<Player *>(data_0209f394[0]));
     pc_trace_warp_ground(static_cast<Player *>(data_0209f394[0]));
+    pc_probe_koopa_ground(static_cast<Player *>(data_0209f394[0]));
     if(const char *path=std::getenv("SM64DS_PC_MOVING_CONTACT_CAPTURE")) {
         static FILE *file=nullptr;static uint64_t last=~uint64_t(0);
         const auto tick=ntr::rt_frame();
         auto *p=static_cast<Player *>(data_0209f394[0]);
         static const unsigned interval=[](){const char *v=std::getenv("SM64DS_PC_MOVING_CONTACT_INTERVAL");return v?(std::max)(1u,unsigned(std::strtoul(v,nullptr,10))):5u;}();
-        if(!file) {file=std::fopen(path,"w");if(file)std::fputs("tick,level,grounded,airborne,owner_kind,owner_uid,x,y,z,ground_y,normal_x,normal_y,normal_z,clsn_flags,wall_x,wall_y,wall_z\n",file);}
+        if(!file) {file=std::fopen(path,"w");if(file)std::fputs("tick,level,grounded,airborne,owner_kind,owner_uid,x,y,z,ground_y,normal_x,normal_y,normal_z,clsn_flags,wall_x,wall_y,wall_z,wall_owner_kind,wall_owner_uid,wall_triangle\n",file);}
         if(file && p && p->aliveState==1 && tick%interval==0 && tick!=last) {
             last=tick;
             const bool grounded=p->mMeshClsn.IsOnGround()!=0;
             const auto *hit=grounded?static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
             const auto *owner=hit && hit->colliderIdx<24 ? hit->owner:nullptr;
-            std::fprintf(file,"%llu,%d,%u,%u,%u,%u,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d\n",
+            const auto *wall=p->mMeshClsn.IsOnWall()?static_cast<dBgPi *>(p->mMeshClsn.GetWallResult()):nullptr;
+            const auto *wallOwner=wall && wall->colliderIdx<24?wall->owner:nullptr;
+            std::fprintf(file,"%llu,%d,%u,%u,%u,%u,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d,%u,%u,%u\n",
                 static_cast<unsigned long long>(tick),int(data_0209f2f8),unsigned(grounded),unsigned(p->mIsAirborne),
                 owner?unsigned(owner->actorID):0,owner?unsigned(owner->uniqueID):0,
                 p->mPosX,p->mPosY,p->mPosZ,p->mGroundY,p->mFloorNormalX,p->mFloorNormalY,p->mFloorNormalZ,
-                unsigned(p->mClsnFlags),p->mWallNormalX,p->mWallNormalY,p->mWallNormalZ);std::fflush(file);
+                unsigned(p->mClsnFlags),p->mWallNormalX,p->mWallNormalY,p->mWallNormalZ,
+                wallOwner?unsigned(wallOwner->actorID):0,wallOwner?unsigned(wallOwner->uniqueID):0,
+                wall?unsigned(wall->triangleID):0);std::fflush(file);
         }
     }
     static uint64_t last_controls_tick=~uint64_t(0);

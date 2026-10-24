@@ -1,0 +1,77 @@
+Native OS clock correction and Koopa/gate diagnosis - 2026-10-24
+
+Clock correction VERIFIED. Full Koopa result/reward lifecycle remains OPEN.
+Final diagnostic executable SHA256:
+4A0A40765A8684465DBA32007EE65D6842C1E1E5CDB76A4BA43244302793BCD7.
+
+Actual game correction:
+port/hal/os_time.cpp previously returned33513982 ticks/second. Original
+dMeter_c::RenderTimeTimer multiplies Timer::GetTime by64 then divides by
+33514000. Player's timed-Star check uses the same conversion. Therefore
+the host seam must supply OS ticks at bus/64, not bus-clock ticks. QPC
+conversion now divides the bus count by64. Original Timer methods, matched
+src/include, player physics/materials, actor/flag/reward rules are unchanged.
+
+New smoke_game_clock compiles the ACTUAL game os_time.cpp branch and compares
+its elapsed result through the original HUD conversion with Windows QPC.
+Before:0.133810 real seconds ->8.563824 original-HUD seconds (64x error).
+After:0.137394 real seconds ->0.137394 original-HUD seconds.1000 successive
+reads are monotonic. Game build and clock/input/collision/Stage graph4CTests
+pass. This accepts the tick-unit correction, not complete timer HUD rendering,
+pause/high-score lifecycles, all timed-Star missions or full-game acceptance.
+Manual-counter smoke slices retain their deterministic unit semantics.
+
+Original jump decision VERIFIED using unchanged executable/input from the
+prior attempt, with read-only trace enabled. At tick5641 a real jump edge2
+reaches Walk's gate, enters St_Jump, and immediately redirects to SlopeJump.
+Native stack maps the redirect to original func_ov002_020e2be4. The complete
+selected1201 gameplay observations through6000 equal the earlier run. This is
+the original uphill slippery-surface rule, not a lost test jump input. A second
+request while the first button hold remains active is not a fresh press.
+Do not count QA hop requests as accepted normal jumps.
+
+Private route investigation:
+CLPS class1/2 have zero slope acceleration and no Player ground-slope cutoff;
+original collision classifies normalY>0x600 as floor. Old planners incorrectly
+excluded class2 faces below0.79. Player InitResources uses radius50/height50;
+old wall XZ bounding boxes spanning150Y are over-conservative. A private
+material-aware, 3D wall-distance planner now includes these original rules.
+All524 candidate road points were checked with production ground queries:
+all hit, max plane-height difference2.53125, actual classes0/2, min normalY.78125.
+This is floor evidence only; STATIC ground does not qualify dynamic-actor access.
+
+The actual next blocker is native gate40/uid120, triangle5. Production lines
+at the failed approach return that owner and normal1858,0,3650; subsequent
+player wall contact returns the same owner. Thus this actor's real collision
+must be respected. Its floor switch is inside the enclosure. Earlier accepted
+floor-switch navigation predates native gate integration and is not a valid
+current approach. Gates remain closed/event0 in both current attempts.
+
+An input-only QA steering bug was also corrected: full-speed motion orbited
+a35-radius waypoint at70.64..79.20 distance. Partial-stick braking near precise
+corners advances past that waypoint and three more. Captures every5 ticks
+sample minimum37.56; the strict-radius crossing is logged between samples.
+This modifies only opt-in automation, not real controller movement.
+
+Two measured physical-road/switch approaches are diagnostic failures: they
+do not reach/press the switch or open gates. Stop repeating either path.
+Next include the original closed-gate/other actor meshes in navigation, or
+qualify a legitimate upper-field approach and press the switch BEFORE the
+race. Never pass closed bars, force event bits/colliders, move actors or alter
+player physics to obtain a win. Native Koopa autonomous path finish remains
+accepted; player result talk, Star, save/reload and duplicate credit are open.
+
+All runtime checks muted, native audio engine active, submitted samples0,
+mixer errors0, exit0, isolated synthetic QA save bytes unchanged. Screenshots
+of the original slope jump, gate contact and preview startup were inspected.
+The separate player preview's ACTUAL executable passes original title/FileA/
+castle2600-frame startup, ending idle with control. It includes audio/muted
+launchers, its own synthetic one-Star Mario save and verified720p/60 settings.
+It depends on the user's existing local development ROM/assets cache.
+Any F copy must be new, isolated, hash-verified and labeled diagnostic.
+
+No source export, commit/push, new ROM-free kit or public release in this task.
+Existing public cannon-sight kit remains at e4c02ec. Next publication must
+review source and repeat fresh kit reconstruction/runtime/source/digest checks.
+Keep full EXEs, extracted/generated data, private geometry, traces, WAVs,
+screenshots and saves local. Full port goal remains ACTIVE and incomplete.

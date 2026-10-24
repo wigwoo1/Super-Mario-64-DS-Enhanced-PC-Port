@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 project(sm64ds-port C CXX ASM_MASM)
 include(CTest)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+if(WIN32)
+    add_executable(smoke_game_clock tests/smoke_game_clock.cpp hal/os_time.cpp)
+    target_compile_definitions(smoke_game_clock PRIVATE SM64DS_GAME_TARGET)
+    add_test(NAME smoke_game_clock COMMAND smoke_game_clock)
+endif()
 set(TOAD_REWARD_ORIGINAL "${CMAKE_BINARY_DIR}/toad-reward-test/toad_reward_original.inc")
 add_custom_command(OUTPUT "${TOAD_REWARD_ORIGINAL}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/toad_reward_test_source.py"
