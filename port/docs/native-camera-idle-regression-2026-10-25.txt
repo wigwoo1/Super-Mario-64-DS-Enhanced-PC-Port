@@ -1,0 +1,29 @@
+2026-10-25: camera idle zoom regression checked on current QA build
+
+Current private EXE SHA256:
+ff4fdaee69ba2fda45d809eca4e52bf7b3c9718ac0a93cf38668f1b31d797ff4
+
+The normal original-menu Battlefield input replay used Yoshi, moved with the
+left stick, and stopped. In the 17 sampled camera traces from ticks3500..3992,
+player state is idle St_Wait_Main and camera-to-target distance remained
+794.98 world units (min=max). The current regression does not reproduce the
+reported zoom-in while stopped. Yoshi ends alive/in level6 with normal control;
+isolated slot/minigames saves match their seed. Process exits0. Audio output was
+disabled for this test. Screenshots3100/3500/3900 show gameplay during movement
+and after stopping. Evidence is private at
+work/native-movement-AnalogFull-off-20261020-resume-camera-idle-20261025;
+camera-idle-acceptance.json records the measured result.
+
+This selected Battlefield case does not test doors, cap pickup, physical Switch
+Pro input, every camera zoom preset, or the user's installed F: executable.
+The F: installation was not changed. The existing lens correction was only
+regression-tested; no code changed in this camera test.
+
+Next difficult target from the user's open reports: ordinary castle-to-Secret-
+Slide entry and missing finish/timer UI. Earlier two route pilots fell from the
+narrow slide and failed to reach the native Star box; no gameplay fault was
+proven. The evidence-led route progress/pilot repair needs Astra Low, as the
+existing handoff recommends. After that investigate the slide's genuine finish
+and timer using original objects and rules. Keep runtime audio muted and show
+screenshots. The Koopa pickup/save/reload/repeat lifecycle has since been
+verified separately; older Koopa-open notes are historical.

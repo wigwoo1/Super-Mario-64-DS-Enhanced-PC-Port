@@ -25,6 +25,7 @@ FILE_BACKED_AFTER_BSS = ((0x020994D4, 0x02099CE4),
 # production linker map showed C++ references landing in separate generated
 # ROM/BSS copies. Bind every recovered spelling to the live HAL object.
 HAL_OWNED_DATA = {
+    "data_ov002_0210d9b8",  # shared coin model cache also used by mushroom triggers
     "g_profile_FL_LONDON", "data_ov022_02114580", "data_ov022_02114578",
     "g_profile_KINOPIO", "data_ov085_0212fe88", "data_ov085_02130480", "data_ov085_02130488", "data_ov085_02130490",
     "g_profile_SBIRD", "data_ov009_02113c20", "data_ov009_02113c28", "data_ov009_02113c48", "data_ov009_021138fc",
@@ -192,6 +193,10 @@ def records(root: pathlib.Path):
             following = next((item["address"] for item in group[index + 1:]
                               if item["address"] > row["address"]), row["segment_end"])
             row["size"] = max(4, min(following - row["address"], 0x100000))
+            if module == "ov002" and row["address"] in (0x020ff0d4,0x020ff0d8,0x020ff0dc):
+                # Signpost carrying offsets are two XYZ rows (12-byte stride).
+                # The three coordinate labels must each retain the second pose.
+                row["size"] = 0x020ff0ec - row["address"]
             if module == "ov091" and row["address"] == 0x02134cdc:
                 # Three ten-node paths. Interior coordinate labels do not end
                 # the array; the native lift also reads node5.y from this span.

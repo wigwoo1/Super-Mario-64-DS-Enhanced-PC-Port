@@ -1,0 +1,42 @@
+Battlefield switch and gate reset after original course re-entry - 2026-10-25
+Status: VERIFIED for one original Mission2 Mario exit/re-entry/re-press/pass cycle.
+This is selected actor lifecycle coverage, not full course or race progression.
+
+The first visit used the already accepted original route, pressed switch11/event0,
+opened both original gate40 actors and walked through. Mario then used the original
+pause Exit Course menu, returned to the castle, entered the Battlefield painting,
+and selected Mission2 through the original flow. No direct level, event, collision,
+position, reward or save writes were used.
+
+Lifecycle and actors:
+- Original course exit request: tick11784; castle return: tick12076.
+- Original Mission2 re-entry: tick13354; lifecycle replay complete: tick21144.
+- Previous switch UID118 was replaced by a fresh switch UID332. Its first sampled
+  state was event-off and full height (scale4096); normal grounded input pressed it
+  again at tick20435 and event0 activated.
+- Previous gates UIDs119/120 were replaced by fresh UIDs333/334. Their first
+  sampled state was closed (state0), event-off and collision-enabled. Both began
+  moving at tick20445 and reached open state2 at tick20575.
+- Mario again walked through while grounded, without jumping, from tick21066 to
+  tick21142. Fifteen sampled floor contacts were grounded on the ordinary static
+  floor; controls remained active.
+- Both original-menu course selections confirmed Mission2. Runtime exited0;
+  native mixer errors0 and muted device samples0. Slot1 and minigames save files
+  remained byte-identical to the isolated seed. Star total stayed at the existing
+  one-Star prerequisite; no race reward or new Star was tested.
+
+The first QA attempt did not leave the castle because its private route started
+with an exterior level segment after Exit Course had already returned to lobby
+level2. The replay wrapper was corrected to begin with the existing lobby-only
+route. This was a test setup issue; it did not require a gameplay code change.
+
+Evidence is private in `work/native-muted-audio-walk-battlefield-gate-exit-reentry-r2-20261025-20261021`.
+`work/check-battlefield-gate-reentry-20261025.py` writes the acceptance JSON.
+Screenshots at ticks14000,20000 and22000 were inspected: course re-entry, fresh
+closed switch/gates, then open-gate passage. The current QA executable hash is
+3afa1501704fbd481c27bef44ebb329949169543e63fad7316c392d75d2296a6. No original
+gameplay source or F: installation was changed. Build check had no work to do and
+all seven focused CTests passed.
+
+Koopa player race win/loss, Star reward/save/reload/repeat, alternate characters
+and missions, other gate/switch instances, and broader actor coverage remain open.

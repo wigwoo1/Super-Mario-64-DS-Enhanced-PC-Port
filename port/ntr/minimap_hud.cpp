@@ -62,6 +62,92 @@ void number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,unsigned
     }
 }
 
+void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
+          int target_width,int target_height,const HudSprite &sprite,bool smooth);
+
+void timer_number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
+                  unsigned hundredths,int cell_width,int cell_height) {
+    const unsigned capped=std::min(hundredths,599999u);
+    const unsigned minutes=capped/6000,seconds=(capped/100)%60,cs=capped%100;
+    char text[9]{};std::snprintf(text,sizeof(text),"%02u:%02u.%02u",minutes,seconds,cs);
+    const bool original_digits=std::all_of(art.timer_digits,art.timer_digits+10,
+        [](const HudSprite &digit){return digit.width&&digit.height&&digit.pixels.size()==size_t(digit.width)*digit.height;});
+    if(original_digits) {
+        const int scale=std::max(1,int(std::lround(double(height)/192.0)));
+        const int gap=std::max(1,scale/2),small=std::max(2,2*scale);
+        int total=0;
+        for(const char *ch=text;*ch;++ch) {
+            total+=*ch>='0'&&*ch<='9'?int(art.timer_digits[*ch-'0'].width)*scale:
+                (*ch==':'?3*scale:2*scale);
+            if(ch[1])total+=gap;
+        }
+        int cursor=(int(width)-total)/2;
+        const int top=std::max(2,int(std::lround(double(height)*4.0/192.0)));
+        for(const char *ch=text;*ch;++ch) {
+            if(*ch>='0'&&*ch<='9') {
+                const auto &digit=art.timer_digits[*ch-'0'];
+                const int draw_w=int(digit.width)*scale,draw_h=int(digit.height)*scale;
+                icon(pixels,width,height,cursor,top,draw_w,draw_h,digit,false);
+                cursor+=draw_w;
+            } else {
+                const int block=std::max(1,scale);
+                const int mark_width=*ch==':'?3*scale:2*scale;
+                const int cx=cursor+(mark_width-small)/2;
+                if(*ch==':') {
+                    rect(pixels,width,height,cx,top+scale*3,small,small,0xffa91620u);
+                    rect(pixels,width,height,cx,top+scale*3+1,small,small,0xffffd34bu);
+                    rect(pixels,width,height,cx,top+scale*9,small,small,0xffa91620u);
+                    rect(pixels,width,height,cx,top+scale*9+1,small,small,0xffffd34bu);
+                } else {
+                    rect(pixels,width,height,cx,top+scale*11,small,block,0xffa91620u);
+                    rect(pixels,width,height,cx,top+scale*11+1,small,block,0xffffd34bu);
+                }
+                cursor+=mark_width;
+            }
+            if(ch[1])cursor+=gap;
+        }
+        return;
+    }
+
+    const int bold_x=std::max(1,cell_width/5);
+    const int outline_x=bold_x+2,outline_y=std::max(2,cell_height/3);
+    int text_width=0;
+    for(const char *ch=text;*ch;++ch) {
+        text_width+=(*ch>='0'&&*ch<='9')?6*cell_width+bold_x:3*cell_width;
+        if(ch[1])text_width+=std::max(1,cell_width/2);
+    }
+    x=std::max(0,(int(width)-text_width)/2);
+    y=std::max(0,int(std::lround(double(height)*4.0/192.0)));
+    int cursor=x;
+    for(const char *ch=text;*ch;++ch) {
+        if(*ch>='0'&&*ch<='9') {
+            const auto &rows=kDigits7[*ch-'0'];
+            for(int py=0;py<7;++py)for(int px=0;px<5;++px)if(rows[py]&(1u<<(4-px)))
+                rect(pixels,width,height,cursor+px*cell_width-outline_x,
+                     y+py*cell_height-outline_y,cell_width+2*outline_x,
+                     cell_height+2*outline_y,kTextOutline);
+        }
+        cursor+=(*ch==':'||*ch=='.')?3*cell_width:6*cell_width+bold_x;
+    }
+    cursor=x;
+    for(const char *ch=text;*ch;++ch) {
+        if(*ch>='0'&&*ch<='9') {
+            const auto &rows=kDigits7[*ch-'0'];
+            for(int py=0;py<7;++py)for(int px=0;px<5;++px)if(rows[py]&(1u<<(4-px))) {
+                const int cx=cursor+px*cell_width,cy=y+py*cell_height;
+                rect(pixels,width,height,cx,cy,cell_width,cell_height,kText);
+                rect(pixels,width,height,cx+bold_x,cy,cell_width,cell_height,kText);
+            }
+        } else if(*ch==':') {
+            rect(pixels,width,height,cursor+cell_width,y+2*cell_height,cell_width,cell_height,kText);
+            rect(pixels,width,height,cursor+cell_width,y+5*cell_height,cell_width,cell_height,kText);
+        } else if(*ch=='.') {
+            rect(pixels,width,height,cursor+cell_width,y+6*cell_height,cell_width,cell_height,kText);
+        }
+        cursor+=(*ch==':'||*ch=='.')?3*cell_width:6*cell_width+bold_x;
+    }
+}
+
 int count_width(unsigned value,int cell_width) {
     char text[12]{};std::snprintf(text,sizeof(text),"%u",std::min(value,999u));
     const int digits=std::max(1,int(std::strlen(text)));
@@ -159,7 +245,7 @@ void cannon_sight_build(uint32_t *pixels,unsigned width,unsigned height) {
 void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
                        const VideoSettings &settings,bool visible,
                        unsigned stars,unsigned coins,unsigned lives,unsigned health,unsigned character,
-                       MinimapHudBounds visible_bounds) {
+                       MinimapHudBounds visible_bounds,bool timer_visible,unsigned timer_hundredths) {
     if(!pixels||!width||!height)return;
     std::fill(pixels,pixels+size_t(width)*height,0u);
     if(!visible)return;
@@ -213,6 +299,11 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     const int side_y=std::clamp(map_y,0,std::max(0,int(height)-2*(row_height+1)));
     draw_card(side_x,side_y,0);
     draw_card(side_x,side_y+row_height+1,1);
+    if(timer_visible) {
+        const int timer_cell_w=std::max(2,2*digit_width);
+        const int timer_cell_h=std::max(2,2*digit_height);
+        timer_number(pixels,width,height,0,0,timer_hundredths,timer_cell_w,timer_cell_h);
+    }
 
     const int health_width=card_width(counts[2]),life_width=card_width(counts[3]);
     const int bottom_width=health_width+gap+life_width;

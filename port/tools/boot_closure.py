@@ -30,6 +30,9 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
+                 "da1up_c_classInit_ONEUPKINOKO",
+                 "daObj1UpLogo_c_classInit",
+                 "daObjTatefuda_c_classInit",
                  "daObjHatenaBlock_c_classInit_ITEM_BLOCK",
                  "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
@@ -431,6 +434,18 @@ def main() -> int:
                 if path.name == 'daObjBlockL_c.cpp':
                     import block_host
                     transformed=block_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'da1up_c.cpp':
+                    import oneup_host
+                    transformed=oneup_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'daObj1UpLogo_c.cpp':
+                    import oneup_host
+                    transformed=oneup_host.transform_logo(transformed)
+                    rewrites+=1
+                if path.name == 'daObjTatefuda_c.cpp':
+                    import signpost_host
+                    transformed=signpost_host.transform(transformed)
                     rewrites+=1
                 if path.name == 'daObjHatenaBlock_c.cpp':
                     import item_block_host

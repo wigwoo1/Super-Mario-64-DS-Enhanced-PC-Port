@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "d9ac7b290b88ace7776026cb51b10783476a6eb1bf693b9f73b745d13b90bce2",
-      "bytes": 453080
+      "sha256": "54250c585c5108ea131492b97a5082711d787da6fb1212e8eb70a14dd60f02a5",
+      "bytes": 453510
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "e2a80e63a73e25e9c5c53e6639123af5f64a68742cc35c93e85c3d1ed4e61818",
-      "bytes": 250435
+      "sha256": "f86653163cd0506921fc9aaac7d95aecb72d8e7525edf290a11f13359573519a",
+      "bytes": 250834
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "7f5692d66a3b67ef0e3150389b00506f45b9c8889553a70728c5c3646256a5f8",
-      "bytes": 85289
+      "sha256": "3f4800e8b9c1f203fbb15ec50baad53f6115f2653a744f1dee00f4ffaf98326a",
+      "bytes": 85591
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "c9f12828095e049037b1c638fd25cd9a5c11f28a815d4eff316d42692f280c74",
-      "bytes": 8025
+      "sha256": "8e4d523a8da5c4e038ef5894d744120c4ed8c24b5e37468e4d5a4ada8bbc5c88",
+      "bytes": 15907
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6514,6 +6514,16 @@
       "bytes": 3024
     },
     {
+      "path": "port/docs/native-battlefield-gate-opening-verified-2026-10-25.txt",
+      "sha256": "93091c3f49b893eee617174e7ff0ef5ec28fd73ef3b877fc8c802e769a88cd1a",
+      "bytes": 3979
+    },
+    {
+      "path": "port/docs/native-battlefield-gate-reentry-verified-2026-10-25.txt",
+      "sha256": "080fc18add737c2de0a14f17d3ea12c10faa968f50abcc7d2b6d494818078596",
+      "bytes": 2736
+    },
+    {
       "path": "port/docs/native-battlefield-platforms-2026-10-23.txt",
       "sha256": "e4b8c423a64902dc4286113bab846f80ecf1dc07839e0334784457f7edff8d33",
       "bytes": 5578
@@ -6564,6 +6574,11 @@
       "bytes": 2076
     },
     {
+      "path": "port/docs/native-camera-idle-regression-2026-10-25.txt",
+      "sha256": "bdfa35cadcca66e64c69b152bd8243b9d9a70769a9ceb4676fb95472551fe0f5",
+      "bytes": 1775
+    },
+    {
       "path": "port/docs/native-camera-pause-followup-2026-10-22.txt",
       "sha256": "c3071debe53f01849c020ce01129d761c8f049fa5869212af12b0fa568c10e65",
       "bytes": 2755
@@ -6610,8 +6625,8 @@
     },
     {
       "path": "port/docs/native-clock-and-koopa-gates-2026-10-24.txt",
-      "sha256": "068b85b15ac391a6a3a0f1226096de63957b8e78dcab26864499a10cc7626f08",
-      "bytes": 4910
+      "sha256": "9ea0520aa3898a17b75c381547f7bce1065db4b9832277f77e536aed5f27b364",
+      "bytes": 5200
     },
     {
       "path": "port/docs/native-coin-hud-audio-verified-2026-10-22.txt",
@@ -6657,6 +6672,11 @@
       "path": "port/docs/native-current-build-installation-2026-10-16.txt",
       "sha256": "b6a86c812a9aa8e57f5794c5925e92ee7b16b7ebfa49b373ad10fe37b6d95d8d",
       "bytes": 4773
+    },
+    {
+      "path": "port/docs/native-dialogue-card-contrast-2026-10-25.txt",
+      "sha256": "5daa3ab13bf1aba0d6ac45156b70007e44fbb4ff93d881e744c2ead2f8fa2b6a",
+      "bytes": 2239
     },
     {
       "path": "port/docs/native-dialogue-card-link-fix-2026-10-23.txt",
@@ -6739,9 +6759,39 @@
       "bytes": 2930
     },
     {
+      "path": "port/docs/native-koopa-pickup-save-verified-2026-10-25.txt",
+      "sha256": "7ecda56394972ce770b223b66c12a4c0dff235db194e917fcbd7039e4eac3b93",
+      "bytes": 2520
+    },
+    {
+      "path": "port/docs/native-koopa-repeat-credit-verified-2026-10-25.txt",
+      "sha256": "bb358c5291d891382145915f4b2a79d7f0594ac7d6361f53403666a3060a53ff",
+      "bytes": 2179
+    },
+    {
       "path": "port/docs/native-koopa-surface-investigation-2026-10-24.txt",
       "sha256": "2a626eb3403fb209cf9ae826aad0e0ed9334b4001f4d1127ade91fa7f411d62e",
       "bytes": 3801
+    },
+    {
+      "path": "port/docs/native-koopa-win-and-star-spawn-2026-10-25.txt",
+      "sha256": "070023c5325bc74c30e483b9b2ab44fc85a046df9246daf8e38000766fedde90",
+      "bytes": 3887
+    },
+    {
+      "path": "port/docs/native-lift-reentry-verified-2026-10-24.txt",
+      "sha256": "f78601b8c6bd13dc8d98fcf5d7ee57185d6748161be059cef4215f0404fe6a17",
+      "bytes": 3694
+    },
+    {
+      "path": "port/docs/native-lift-ride-verified-2026-10-24.txt",
+      "sha256": "17d7605b32e792cb171e3936097c291dc552a512f7afb9b2a96e6cf97ef2d141",
+      "bytes": 3900
+    },
+    {
+      "path": "port/docs/native-lift-variant7-verified-2026-10-24.txt",
+      "sha256": "a6e79436f58aab0f39fa8829276b0dbb17d83402ffa3eb4a5fbcc02d6ad415c7",
+      "bytes": 2304
     },
     {
       "path": "port/docs/native-menu-artwork-handoff-2026-10-16.txt",
@@ -6802,6 +6852,11 @@
       "path": "port/docs/native-minimap-surround-layout-2026-10-22.txt",
       "sha256": "39b34874b1aabc024ba17e2dd60a03883511c90164fac95574156a234a2b55da",
       "bytes": 1306
+    },
+    {
+      "path": "port/docs/native-oneup-verified-2026-10-25.txt",
+      "sha256": "f2da839a6aab9779d840986ea2040b41ab46e6d333416b8a32f4e8db5347d2f7",
+      "bytes": 2521
     },
     {
       "path": "port/docs/native-opengl-cpu-checkpoint-2026-10-16.txt",
@@ -6879,9 +6934,34 @@
       "bytes": 3769
     },
     {
+      "path": "port/docs/native-secret-slide-castle-route-boundary-2026-10-25.txt",
+      "sha256": "584e5fd0dd1724f351a063771fa2c5027398e93c23b670243320608263bcb283",
+      "bytes": 4458
+    },
+    {
+      "path": "port/docs/native-secret-slide-character-room-2026-10-25.txt",
+      "sha256": "61cba2b7f4582d583d38c0c0e2a389bb2af255f0db03905b84c4282aca0d8980",
+      "bytes": 3952
+    },
+    {
       "path": "port/docs/native-secret-slide-item-block-handoff-2026-10-24.txt",
       "sha256": "e96636ad9d61eb1530dc27f0c7fdf2abd41bc88969e384de90cb9541560f1f56",
       "bytes": 5350
+    },
+    {
+      "path": "port/docs/native-secret-slide-original-box-save-verified-2026-10-25.txt",
+      "sha256": "ce7e3cfa9ac529797ea8a6c9c175d080d131f4ec73467ec77c9a7c1cdb1dd54e",
+      "bytes": 1836
+    },
+    {
+      "path": "port/docs/native-secret-slide-original-entry-verified-2026-10-25.txt",
+      "sha256": "a74e19bf9d0a3a96b0f9e795f297c05ee75dfb7d98e25f3771cf5576f26d72de",
+      "bytes": 2975
+    },
+    {
+      "path": "port/docs/native-secret-slide-repeat-save-verified-2026-10-25.txt",
+      "sha256": "0d5d0121eac73469d29eb6d704f095f2c1094391d94943115e81cb8557a15261",
+      "bytes": 1128
     },
     {
       "path": "port/docs/native-secret-slide-save-reload-handoff-2026-10-24.txt",
@@ -6902,6 +6982,16 @@
       "path": "port/docs/native-shadow-masks-checkpoint-2026-10-15.txt",
       "sha256": "2017dbd983cde5bb737902355b524ae908788ac0ecffdd06500b613dd5342980",
       "bytes": 7294
+    },
+    {
+      "path": "port/docs/native-signpost-ground-pound-verified-2026-10-25.txt",
+      "sha256": "8384f43aba9126f999c13e132174d68fea10ef11487ecc5fe4409093ebf95c43",
+      "bytes": 3546
+    },
+    {
+      "path": "port/docs/native-signpost-verified-2026-10-25.txt",
+      "sha256": "90bf44100827ef6d29f16d1080a2bf30a175f337568c6176e4b129e855a2264b",
+      "bytes": 2576
     },
     {
       "path": "port/docs/native-slide-conversion-2026-10-21.txt",
@@ -7020,13 +7110,13 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "92aa9b813a1dcc69f938e71d937651a71b240b1c0e2e659a8e3d85104c7e4649",
-      "bytes": 286465
+      "sha256": "ce08f88e4c636acb62019951eb55a0f0d46be61fabd9083d1ebdb9f4b6660210",
+      "bytes": 288205
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
-      "sha256": "626367f53a196c0086a030d19bccf1c1d46fb1c0398fb9b6750d32ac14c6c950",
-      "bytes": 2801
+      "sha256": "8307962b6445657f8ed5e4ca1e982f5ca99f36362afdbd3aef2a84ade1b57f1a",
+      "bytes": 4778
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -7060,8 +7150,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "f8d5a4b27a52f216818ba462b5390198d2846b1ab9bcc31184fdc7b2b916bfb7",
-      "bytes": 11117
+      "sha256": "00e7f900cdf7da1c8a8994daf6823be60bac4af45dd9215dfb7ea3e97379e517",
+      "bytes": 12118
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7215,8 +7305,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "2318bf650e3b1bdbf81905bf5386108c6389a724503d1519a4dc6351d7620785",
-      "bytes": 40691
+      "sha256": "c434642e9fb915574f93a9e1b8c53671e8991aa87b2101e6485c76278adbbd94",
+      "bytes": 41535
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7295,8 +7385,8 @@
     },
     {
       "path": "port/hal/dialogue_runtime.cpp",
-      "sha256": "718abd10e76cddd6dd76d611bf843a7b2c3c9b9bbc7123f7498a90acff61eff1",
-      "bytes": 4548
+      "sha256": "230647f29711aefa7a5f4dd01d4b31e32650c0a4f294daa808a63009d40d501d",
+      "bytes": 4747
     },
     {
       "path": "port/hal/distant_actor_shadows.cpp",
@@ -7380,8 +7470,8 @@
     },
     {
       "path": "port/hal/koopa_replay.h",
-      "sha256": "3f9e60aa738f3520e8701daaf058e42f84f6b1fdf4c8d01f92c025c9e9a7cb5e",
-      "bytes": 19025
+      "sha256": "b975b9d43ad90e63a0afb0632b341736a261f9f216dc00e33fbed406f9c6486c",
+      "bytes": 21012
     },
     {
       "path": "port/hal/level_overlay.cpp",
@@ -7392,6 +7482,11 @@
       "path": "port/hal/level_overlay.h",
       "sha256": "908ca4b6501f485bc5fabaa79050a59a80aafe8028328ef55be99fba13cbd61f",
       "bytes": 800
+    },
+    {
+      "path": "port/hal/lift_replay.h",
+      "sha256": "daf17acd728302af8f065920c35dd55d7ba7ae766b346c80641a30b94510e16d",
+      "bytes": 7089
     },
     {
       "path": "port/hal/megachar_stub.cpp",
@@ -7405,8 +7500,8 @@
     },
     {
       "path": "port/hal/minimap_hud_art.cpp",
-      "sha256": "3019a1d20d1e7bdb362224970a89fa2c999e430082000dc5b021fd69863b46c2",
-      "bytes": 6264
+      "sha256": "57c18aabfc6b5515647f61940ff54f6eda3c522d6f1ff41c8a3c51419a92efbc",
+      "bytes": 6862
     },
     {
       "path": "port/hal/model_host.cpp",
@@ -7549,14 +7644,19 @@
       "bytes": 2589
     },
     {
+      "path": "port/hal/signpost_replay.h",
+      "sha256": "b49a486a97550b5937150b353be3ce27897fdf4a0a9464b9d20363fea6890ad9",
+      "bytes": 2499
+    },
+    {
       "path": "port/hal/smoke_sound_bridge.cpp",
       "sha256": "7d856d743d819c75d40d60d83911d66d8e3ad003ecdb517e22019812aa5803fc",
       "bytes": 1134
     },
     {
       "path": "port/hal/stage_graph_state.cpp",
-      "sha256": "68487722270edb27f20dbfcf5de25db18c1da0524691d83521254f0ec20e7077",
-      "bytes": 8713
+      "sha256": "f9c9360d3c7d32cb5b6a200b6cd0d63836c40ee61776f3e780ecacd597026772",
+      "bytes": 9565
     },
     {
       "path": "port/hal/stage_graph_state.h",
@@ -7635,8 +7735,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "0cef5d974ddeeeef97b624464c9cf384ad7c9ce50185fe9689f3224afafda5a3",
-      "bytes": 151192
+      "sha256": "ee54c288f07ec2e1287fa9ec1faa6b5c7eefd11dab2c0ba26a93bc032ebd24ac",
+      "bytes": 156078
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -7755,8 +7855,8 @@
     },
     {
       "path": "port/ntr/include/ntr/minimap_hud.h",
-      "sha256": "e5e9439c21b0e227a86bd30d2688d392f35211530b282c66f90488cad82c4ed5",
-      "bytes": 1576
+      "sha256": "0a7c683e108a08f7234c5647adb44c3dcaeb88167081e8616c9bd383f4f8b2c5",
+      "bytes": 1670
     },
     {
       "path": "port/ntr/include/ntr/minimap_layout.h",
@@ -7815,8 +7915,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "0c756ab849f4491927cd24403baaa96fb7810ab44a91c8d53c4474ebc2705344",
-      "bytes": 5039
+      "sha256": "c86c80ae977a6c2eb215c18db6902dd307cc6b9b8f55d691a3ff18882775d1c3",
+      "bytes": 5208
     },
     {
       "path": "port/ntr/input.cpp",
@@ -7835,8 +7935,8 @@
     },
     {
       "path": "port/ntr/minimap_hud.cpp",
-      "sha256": "a97f58cbfd3270f5dc1893cafc992fcd36bd8aa720d3a420e5a6e3d0a701e524",
-      "bytes": 13129
+      "sha256": "ad1adc576a1df4f1184374ac35ec37250b5a89fb3c4a77673ff3bf4e3fcad3dc",
+      "bytes": 17784
     },
     {
       "path": "port/ntr/ppu.cpp",
@@ -7900,8 +8000,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "beba48e9ca9a65a451fcefdd09a8b3adcabcf0993c375205be43c0408378bb9f",
-      "bytes": 63839
+      "sha256": "dfc1572ba4319c713825112aeedb49e3ab0be0e13eba9e8df8a50d3c64d83a45",
+      "bytes": 64407
     },
     {
       "path": "port/README.md",
@@ -8130,8 +8230,8 @@
     },
     {
       "path": "port/tests/smoke_minimap_hud.cpp",
-      "sha256": "bbbad3d4997f5ecc1fb6883ab98e1704b3dbcff21d77f62af12dd291fda547a4",
-      "bytes": 6895
+      "sha256": "cc9fdf148bce9cd0db2b8ea259bb7c807b009370251a4e8e3ee3d05a82e9da96",
+      "bytes": 9603
     },
     {
       "path": "port/tests/smoke_model.cpp",
@@ -8590,8 +8690,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "ab197b6b38041b56af6afc5ed1743721db581455c242ffc27f56496cf9c63a9f",
-      "bytes": 43139
+      "sha256": "909506944aaa9636daff1f744bf514fbe0962a56e9d70e475c333e4226a9ca3c",
+      "bytes": 43855
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8730,8 +8830,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "41ce10e539040546a6cebc2ff0778edfc08e2253e26253ca250581ae24ed5030",
-      "bytes": 28950
+      "sha256": "15cdc0025937d84b31da16e82c9c4df5337df951f3db101870d6d11185bd180d",
+      "bytes": 31333
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8782,6 +8882,11 @@
       "path": "port/tools/check_shared_data.py",
       "sha256": "f66b2923ce7f2c0a2ef5fbed5f650930079c912e9e4cc12a09b803e3eace4f9f",
       "bytes": 1739
+    },
+    {
+      "path": "port/tools/check_signpost_pound.py",
+      "sha256": "4192a92e05b4c04ac05ff774a86a61523661256fdb487e638e66e615146f9746",
+      "bytes": 3803
     },
     {
       "path": "port/tools/check_sound_obj_native_data.py",
@@ -8930,8 +9035,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "87d6816417217cd14879ec296b82fe0648b69c7d1e1a1e6909d87e734ef710b1",
-      "bytes": 27513
+      "sha256": "d0fc87c423eadea9141c3ce52871b4f6fa9e34c92330f5eee19503400a013cf0",
+      "bytes": 27906
     },
     {
       "path": "port/tools/linkage.py",
@@ -8960,8 +9065,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "1c02cfb03d174686915efbedd61057369f21d7231038a351543a4df2bc7c30d4",
-      "bytes": 8027
+      "sha256": "fe0fbe51c0922c33f30b77858bdd1d55ce6a15d5edd534ea8c6faf871e72c2b4",
+      "bytes": 9282
     },
     {
       "path": "port/tools/native_kit_data.py",
@@ -8977,6 +9082,11 @@
       "path": "port/tools/ntr_manifest.py",
       "sha256": "de44695fec6d9310dcd4cdee7a74e2a88e741be6117e896165a5b1a412a9625f",
       "bytes": 916
+    },
+    {
+      "path": "port/tools/oneup_host.py",
+      "sha256": "2d8b00800dcf7be5a04a7741741fa8b40371d47b76a1d585a9054ded5b8f5e06",
+      "bytes": 5058
     },
     {
       "path": "port/tools/overlay1_image.py",
@@ -9052,6 +9162,11 @@
       "path": "port/tools/setup_mesa_runtime.ps1",
       "sha256": "a300760e2c4b7e6af36a0b172037475e3ddd21c2b5ac7b96e4241519ca2a26e9",
       "bytes": 3460
+    },
+    {
+      "path": "port/tools/signpost_host.py",
+      "sha256": "5835b6ed5f84b02d44f5022aefcecd6564014e28ef7a4903b5121423c7dc7752",
+      "bytes": 3146
     },
     {
       "path": "port/tools/sound_host.py",
@@ -27260,8 +27375,8 @@
     },
     {
       "path": "tools/ovsweep.py",
-      "sha256": "9ddbb3ebdbafebc216d077049613735d531d318919af65346f89811b999640ea",
-      "bytes": 23674
+      "sha256": "be7339e27e8a5028abfeda71c7c31bf8cb753b228a4194b227fd5624366aabe8",
+      "bytes": 23561
     },
     {
       "path": "tools/paramclone.py",
@@ -27675,8 +27790,8 @@
     },
     {
       "path": "tools/test_check_header_offsets.py",
-      "sha256": "e1fa1b1bb92fa3ecd678c89f2e25e748df9a92124b95ce8b4eb4cbac9604d61a",
-      "bytes": 58180
+      "sha256": "2100bb0bdfec13b6d1fa2cee88066ebbe768d1bd89a7597ef45ce61ffb8eeeb6",
+      "bytes": 56536
     },
     {
       "path": "tools/test_check_literal_load.py",

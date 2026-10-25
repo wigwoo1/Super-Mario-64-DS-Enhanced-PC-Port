@@ -9,6 +9,9 @@
 #include <cstdlib>
 #include <cstring>
 #if defined(SM64DS_GAME_TARGET)
+#include "Timer.h"
+#include "Event.h"
+#include <algorithm>
 #include "hal/dsmt_scene.h"
 #include "hal/wanted_pause_settings.h"
 #include "hal/touch_menu_navigation.h"
@@ -37,6 +40,8 @@ extern signed char data_0209f2f4;
 extern short data_0209f358[];
 extern unsigned char NumStars(void);
 extern short data_02092144[];
+extern unsigned char data_0209d4c8[],data_ov002_02111184[];
+extern signed char data_0209f2f8;
 // The C IRQ/OAM shards use cdecl tables. The minigame registry is a real
 // native C++ object, whose virtual methods require the MSVC thiscall ABI.
 extern signed char data_0208e42c;
@@ -85,8 +90,21 @@ void pc_stage_graph_prepare()
     ntr::video_set_minimap_counters(hud_ready,NumStars(),
         unsigned(coin_count<0?0:coin_count),unsigned(life_count<0?0:life_count),
         unsigned((data_02092144[player_slot]>>8)&255),hud_player?hud_player->mCharacter:3);
+    unsigned timer_hundredths=0;
+    const bool slide_timer=active && data_0209f2f8==29 &&
+        data_ov002_02111184[0]!=0 && Event::GetBit(0x1d)==0;
+    if(slide_timer) {
+        auto *timer=reinterpret_cast<Timer *>(data_0209d4c8);
+        const unsigned long long ds_ticks=static_cast<unsigned long long>(timer->GetTime())<<6;
+        const unsigned long long seconds=ds_ticks/33514000;
+        const unsigned long long centiseconds=(ds_ticks/33514)%1000/10;
+        timer_hundredths=unsigned(seconds*100+centiseconds);
+        timer_hundredths=std::min(timer_hundredths,599999u);
+    }
+    ntr::video_set_minimap_timer(slide_timer,timer_hundredths);
 #else
     ntr::video_set_minimap_counters(false,0,0,0);
+    ntr::video_set_minimap_timer(false,0);
 #endif
     const bool paused = active && data_0209f2c4 != 0;
     bool custom_settings = false;

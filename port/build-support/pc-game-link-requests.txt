@@ -3188,3 +3188,10 @@ unresolved external symbol "struct VariantWords data_ov091_02134bd0" (?data_ov09
 unresolved external symbol "struct VariantWords data_ov091_02134bb8" (?data_ov091_02134bb8@@3UVariantWords@@A) referenced in function "public: virtual int __thiscall daObjRotateUpdownLift_c::Behavior(void)" (?Behavior@daObjRotateUpdownLift_c@@UAEHXZ)
 unresolved external symbol "struct VariantWords data_ov091_02134ba0" (?data_ov091_02134ba0@@3UVariantWords@@A) referenced in function "public: virtual int __thiscall daObjRotateUpdownLift_c::Behavior(void)" (?Behavior@daObjRotateUpdownLift_c@@UAEHXZ)
 unresolved external symbol _data_ov095_02136f58 referenced in function "public: virtual void __thiscall daObjSeesaw_c::OnGroundPounded(struct dActor_c &)" (?OnGroundPounded@daObjSeesaw_c@@UAEXAAUdActor_c@@@Z)
+unresolved external symbol "unsigned char * data_ov002_020ff040" (?data_ov002_020ff040@@3PAEA)
+unresolved external symbol "unsigned char * data_ov002_020ff050" (?data_ov002_020ff050@@3PAEA)
+unresolved external symbol _data_ov002_020ff0d0
+unresolved external symbol _data_ov002_020ff0d4
+unresolved external symbol _data_ov002_020ff0d8
+unresolved external symbol _data_ov002_020ff0dc
+unresolved external symbol _data_ov002_0210d714

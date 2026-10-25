@@ -284,10 +284,39 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
             point={koopa->mPosX,koopa->mPosY,koopa->mPosZ};move=true;
             for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;actor=dActor_c::FindWithActorID(178,actor)) {
                 auto *star=static_cast<daStar_c *>(actor);
-                if(star->aliveState!=1 || star->mState!=4)continue;
+                // Other placed Stars can be collectible elsewhere in the
+                // course. Follow only the original race reward, after its
+                // normal launch/landing sequence has made it collectible.
+                if(star->aliveState!=1 || star->mState!=daStar_c::STATE_IDLE ||
+                   star->mStarID!=koopa->mStarID || star->mKind!=daStar_c::KIND_4)continue;
+                static unsigned rewardTarget=0;
+                if(rewardTarget!=star->uniqueID) {
+                    rewardTarget=star->uniqueID;
+                    std::fprintf(stderr,"[native Koopa reward replay] tick=%llu target=%u star=%u kind=%d; ordinary input only\n",
+                        static_cast<unsigned long long>(tick),rewardTarget,unsigned(star->mStarID),int(star->mKind));
+                }
                 point={star->mPosX,star->mPosY,star->mPosZ};
-                if(point.y-player->mPosY>120*4096 && !player->mIsAirborne && tick>=nextJump) {
+                // Leave the finish pole on foot before attempting the elevated
+                // reward. Jumping straight from the flag grabs its climb node.
+                static unsigned pickupLeg=0;
+                auto *flag=static_cast<daRFlag_c *>(dActor_c::FindWithActorID(205,nullptr));
+                if(flag && pickupLeg<2) {
+                    point={pickupLeg==0?flag->mPosX:star->mPosX,
+                        flag->mPosY,flag->mPosZ+350*4096};
+                    brakeForWaypoint=true;
+                    if(!player->mIsAirborne && std::hypot(double(point.x)-player->mPosX,
+                        double(point.z)-player->mPosZ)<60*4096.0) {
+                        ++pickupLeg;
+                        std::fprintf(stderr,"[native Koopa pickup approach] tick=%llu leg=%u; ordinary walking input\n",
+                            static_cast<unsigned long long>(tick),pickupLeg);
+                    }
+                }
+                const double rewardDistance=std::hypot(double(star->mPosX)-player->mPosX,
+                    double(star->mPosZ)-player->mPosZ);
+                if(pickupLeg>=2 && rewardDistance<250*4096.0 &&
+                   point.y-player->mPosY>120*4096 && !player->mIsAirborne && tick>=nextJump) {
                     jumpUntil=tick+18;nextJump=tick+90;
+                    neutralTakeoff=!std::strcmp(pc_player_state_name(player),"St_Wait_Main");
                 }
                 break;
             }

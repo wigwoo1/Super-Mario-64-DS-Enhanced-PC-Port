@@ -1,0 +1,61 @@
+Native Koopa player win and Power Star spawn - 2026-10-25
+Status: PARTIALLY VERIFIED. Original player win, result dialogue and reward
+spawn pass. Collection, save/reload and duplicate credit remain UNVERIFIED.
+
+Two muted original title/File A/castle/painting/Mission2 Mario runs now use
+the accepted bridge/rear-switch route, press switch11 and open both gate40
+actors through original input. A private, KCL-derived walking path returns
+to Koopa while staying outside his talk trigger until the route is complete.
+The original dialogue accepts the race. The player follows original path
+nodes with a material-qualified walking detour through the opened shortcut;
+no actor, position, event, timer, physics or reward state is assigned by QA.
+
+The same native race outcome is observed in both runs:
+- Race active at sampled tick15055.
+- Mario UID108 contacts flag251 at tick19795, while Koopa250 is still in
+  race state2 at node21. The flag's original contact owner is UID108.
+- Koopa finishes at sampled tick20255. Original mPlayerWon=1; cannon-used=0.
+- Original result message0x92 (146) is shown, followed by the existing
+  UntrackAndSpawnStar path. Native Star UID274, StarID2, kind4/param66 spawns
+  at tick20486 and reaches collectible state4 at tick20658.
+
+The tests do NOT establish Star collection:
+1. Initial QA EXE3afa1501704fbd481c27bef44ebb329949169543e63fad7316c392d75d2296a6
+   chose the first collectible Star in the course. That was the unrelated
+   placed Star7 UID249, not Koopa's reward, and the pilot ran off the summit.
+2. port/hal/koopa_replay.h now filters the original reward's StarID and kind4,
+   and logs its target once. New EXE1f525bbed59be194a18e28504f9d49ca89d6eb6310263747ad97f53d60ea9a43
+   correctly selects UID274 at20658. Mario then grabs the finish flagpole.
+   St_Climb_Main step0 starts20750 with the earlier jump still held; step1
+   is ready20815, after that hold has ended. No further jump is sent while
+   climbing, because the old generic pickup jump guard requires !mIsAirborne
+   and climbing reports airborne=1. The pilot climbs to the top and stays.
+   This is a measured input-pilot blocker; no native gameplay defect is proven.
+
+Original Player::St_Climb_Main is in src/actors/Player.cpp at0x020cb5bc.
+Its step1 handles a fresh normalized flagsE&0x400 dismount input. The next
+investigation should qualify ordinary input to avoid the pole or dismount
+toward the Star, without changing that state machine or directly moving Mario.
+Two focused collection attempts have failed; stop further trial runs until
+the next model/handoff. Recommended next model: Astra Low for the flagpole
+dismount and elevated reward pickup, then original Save & Continue.
+
+Build and focused7CTest checks pass after the QA-target change. Both28000-tick
+runs exit0 with native mixer errors0 and muted device nonzero samples0. Live
+Star total stays1; slot1 and minigames save bytes remain identical to the
+isolated synthetic one-Star Mario prerequisite. Its CRC-valid course0 mask
+is0x02; a first actual pickup of StarID2 should add only0x04 (mask0x06 and
+total2), followed by original saving. Do not manufacture that expected result.
+
+Private evidence:
+work/run-koopa-preopened-gates-20261025.ps1
+work/check-koopa-first-win-20261025.py
+work/koopa-first-win-acceptance-20261025.json
+case native-muted-audio-walk-koopa-preopened-gates-r1-20261025-20261021
+case native-muted-audio-walk-koopa-preopened-gates-reward-target-r2-20261025-20261021
+build-koopa-reward-target-20261025.log
+Screens15000 Koopa/start,20500 reward spawn and24000 flagpole/visible reward
+were inspected and shown. Native Player/Koopa/flag source hashes still agree
+with the reviewed public source. All geometry, logs, images, audio, saves,
+generated data and full EXEs remain local. No F install, source publication,
+release or stable promotion occurred. The complete PC-port goal is unfinished.

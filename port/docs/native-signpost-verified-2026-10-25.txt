@@ -1,0 +1,38 @@
+Native wooden signpost integration - 2026-10-25
+Status: VERIFIED for five authored castle signs spawning and one original Yoshi read interaction.
+
+The original TATEFUDA actor184 now has a native profile/factory. Host adapter
+signpost_host.py preserves its ten original enter/update handlers through typed
+native wrappers and initializes model/collision handles when the file catalog
+is ready. Three recovered scalar calls now reach the real native Player/dActor
+methods. The sign carrying XYZ constants retain both original 12-byte poses;
+interior coordinate symbols are not treated as the end of their arrays.
+Original src/ and include/ files are unchanged.
+
+Final executable SHA256 BE3CBF48A8C9C4ACC5F32756CCA553E0EBE22E2C0E94886341729E02EE3C1BB3.
+Native build and eight focused CTests PASS. Extended native-data checker verifies
+original descriptor fields, typed state table and complete attachment constants,
+alongside existing actor/camera/input/resource checks. Reviewed build-support
+metadata grows by five symbol-only names to5263. Fresh private data generation
+matches the linked source SHA2567623BDC5C3D294BB7A86B7FC0D4E6FD9C08AFAEDCDDB6E171314C703996FB378;
+4266 data regions,4420 references,0 unknown. This is not a new full build kit.
+
+Muted original title/FileA/castle replay, isolated QA saves: five original signs
+spawn; selected sign uses its original contact/read behavior. Yoshi enters Talk,
+original English message92 displays, dialogue finishes and normal Wait/control
+returns. Sign remains visible/idle; saved slot1 and minigames bytes unchanged.
+Process exit0, mixer errors0, submitted nonzero samples0. Screens1750/2100/3300
+inspect sign appearance, original dialogue and restored camera/control.
+Private evidence: work/native-muted-audio-walk-signpost-castle-final-r2-20261025-20261021/
+signpost-acceptance.json and work/check-signpost-castle-20261025.py.
+
+Limits: carrying, throwing, ground-pounding, destruction, respawn/area re-entry,
+other courses/messages/characters remain unverified. Dialogue black text over
+the existing dark PC card has weak contrast and needs a separate visual fix.
+No F install, public export or release. Full port remains incomplete.
+
+Correction: the previous Koopa flagpole escalation was stale. Its collection,
+save/reload and no-duplicate-credit tests already passed; the successful pilot
+walks around the flag. Repeat checker was rerun successfully this turn. Do not
+redo that repair. The actor inventory now reads current source instead of the
+older public export; private placements remain excluded from publication.

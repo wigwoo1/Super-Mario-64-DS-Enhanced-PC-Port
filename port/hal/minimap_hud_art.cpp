@@ -84,6 +84,15 @@ bool pc_minimap_hud_art_prepare() {
         unsigned address;std::memcpy(&address,life_table+character*4,4);
         if(!decode(art.lives[character],common.at(address),common.available(address),palette.data()))return failed(__LINE__);
     }
+    bool timer_digits_ready=true;
+    // NUMBERSE is a direct 20-entry table at its recovered overlay address,
+    // unlike POWER_STAR/COIN/LIFE_ICONS, which are relocated pointer symbols.
+    const auto *number_table=common.at(0x020aba70u);
+    if(!number_table)timer_digits_ready=false;
+    for(unsigned digit=0;timer_digits_ready&&digit<10;++digit) {
+        unsigned address;std::memcpy(&address,number_table+digit*4,4);
+        timer_digits_ready=decode(art.timer_digits[digit],common.at(address),common.available(address),palette.data());
+    }
     const auto *health_table=language==5?data_ov002_0210c254:
         language==4 || language==2?data_ov002_0210c278:data_ov002_0210c230;
     const auto *frame=language==5?data_ov002_0210d5d0:
@@ -108,6 +117,6 @@ bool pc_minimap_hud_art_prepare() {
         pixel=(pixel&0xffffffu)|0xbf000000u; // original source coefficient12/16
     if(live_hash()!=before)return failed(__LINE__);
     ntr::minimap_hud_set_art(std::move(art));ready=true;
-    std::fprintf(stderr,"[minimap HUD art] original Star/coin/4 life/9 health/32x32 cannon sight sprites decoded privately, live OBJ/palettes/OAM unchanged, language=%d\n",language);
+    std::fprintf(stderr,"[minimap HUD art] original Star/coin/4 life/9 health/32x32 cannon sight sprites decoded privately, timer digits=%u, live OBJ/palettes/OAM unchanged, language=%d\n",unsigned(timer_digits_ready),language);
     return true;
 }

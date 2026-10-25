@@ -52,10 +52,13 @@ MinimapDrag g_editor_drag;
 MinimapHudBounds g_minimap_bounds;
 bool g_minimap_gameplay = false;
 struct MinimapCounters {bool active=false;unsigned stars=0,coins=0,lives=0,health=8,character=3;};
+struct MinimapTimer {bool active=false;unsigned hundredths=0;};
 MinimapCounters g_minimap_counters;
+MinimapTimer g_minimap_timer;
 bool g_cannon_sight=false;
 bool g_cutscene_letter = false;
 bool g_dialogue_card_active = false;
+bool g_dialogue_card_dark_text = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
 bool g_minigame_active = false;
@@ -67,7 +70,7 @@ VideoRenderer g_active_renderer=VideoRenderer::D3D11;
 unsigned g_output_width=SCREEN_W,g_output_height=SCREEN_H;
 
 // The retail dialogue glyphs are a transparent PPU foreground layer. Add a
-// small parchment-colored panel only to transparent pixels in that layer, so
+// contrasting panel only to transparent pixels in that layer, so
 // glyphs remain sharp and untouched in both the native GPU and software paths.
 uint32_t dialogue_card_color(uint32_t destination, uint32_t source) {
     const unsigned alpha=source>>24;
@@ -108,7 +111,8 @@ void dialogue_card_on_scene(Framebuffer &frame,const DialogueCardBounds &bounds)
         const bool inner_border=x==left+2 || x==right-3 || y==top+2 || y==bottom-3;
         const bool corner=(x<left+4 || x>=right-4) && (y<top+4 || y>=bottom-4);
         if(corner && !border && !inner_border) continue;
-        const uint32_t color=border?0xe8e8b850u:inner_border?0xffedcf86u:0xb8172033u;
+        const uint32_t fill=g_dialogue_card_dark_text?0xe8fff0c8u:0xb8172033u;
+        const uint32_t color=border?0xe8e8b850u:inner_border?0xffedcf86u:fill;
         auto &pixel=frame.px[y][x];
         pixel=dialogue_card_color(pixel,color);
     }
@@ -125,7 +129,7 @@ void dialogue_card_on_foreground(Framebuffer &frame,const DialogueCardBounds &bo
         if(pixel>>24) continue; // retain every original text and UI pixel
         if(border) pixel=0xe8e8b850u;
         else if(inner_border) pixel=0xffedcf86u;
-        else pixel=0xb8172033u;
+        else pixel=g_dialogue_card_dark_text?0xe8fff0c8u:0xb8172033u;
     }
 }
 
@@ -666,6 +670,9 @@ void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsign
         }
     }
 }
+void video_set_minimap_timer(bool active,unsigned elapsed_hundredths) {
+    g_minimap_timer={active,std::min(elapsed_hundredths,599999u)};
+}
 void video_set_menu_focus(int left,int top,int right,int bottom) {
     g_focus_left=left;g_focus_top=top;g_focus_right=right;g_focus_bottom=bottom;
 }
@@ -679,8 +686,9 @@ void video_set_cutscene_letter(bool active) {
     g_cutscene_letter = active;
     gpu_set_letter_overlay(active);
 }
-void video_set_dialogue_card_active(bool active) {
+void video_set_dialogue_card_active(bool active, bool dark_text) {
     g_dialogue_card_active = active;
+    g_dialogue_card_dark_text = dark_text;
 }
 void video_set_pause_screen(bool active, bool custom_settings) {
     if(active && !g_pause_screen && g_minimap_gameplay && g_gpu) {
@@ -1074,14 +1082,15 @@ bool video_present_frame() {
     const bool overlay_visible=hud_visible || sight_visible;
     const unsigned hud_width=g_gpu?g_settings.width:SCREEN_W;
     const unsigned hud_height=g_gpu?g_settings.height:SCREEN_H;
-    static std::array<uint32_t,16> previous_hud_key{};
+    static std::array<uint32_t,18> previous_hud_key{};
     static bool have_hud_key=false;
     static uint64_t hud_revision=0;
-    const std::array<uint32_t,16> hud_key{{
+    const std::array<uint32_t,18> hud_key{{
         unsigned(hud_visible),unsigned(sight_visible),hud_width,hud_height,map_settings.minimap_x,map_settings.minimap_y,
         g_settings.minimap_scale,g_minimap_counters.stars,g_minimap_counters.coins,
         g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character,
-        hud_map_bounds.left,hud_map_bounds.top,hud_map_bounds.right,hud_map_bounds.bottom}};
+        hud_map_bounds.left,hud_map_bounds.top,hud_map_bounds.right,hud_map_bounds.bottom,
+        unsigned(g_minimap_timer.active),g_minimap_timer.hundredths}};
     if(!have_hud_key||hud_key!=previous_hud_key) {
         previous_hud_key=hud_key;have_hud_key=true;
         if(++hud_revision==0)++hud_revision;
@@ -1089,7 +1098,8 @@ bool video_present_frame() {
             gpu_hud_pixels.resize(size_t(hud_width)*hud_height);
             minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,map_settings,hud_visible,
                 g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,
-                g_minimap_counters.health,g_minimap_counters.character,hud_map_bounds);
+                g_minimap_counters.health,g_minimap_counters.character,hud_map_bounds,
+                g_minimap_timer.active,g_minimap_timer.hundredths);
             if(sight_visible)cannon_sight_build(gpu_hud_pixels.data(),hud_width,hud_height);
         } else gpu_hud_pixels.clear();
     }

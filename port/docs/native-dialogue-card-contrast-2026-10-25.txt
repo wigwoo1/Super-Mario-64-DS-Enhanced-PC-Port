@@ -1,0 +1,36 @@
+Dialogue card contrast - 2026-10-25
+
+VERIFIED for black castle-sign text and white opening Lakitu text on D3D11.
+The original message style byte (data_0209d6c4), also used by Message::AddChar
+to choose its glyph mask, now reaches the video API. Style1 gets a light
+parchment fill; style0 retains the existing dark translucent fill. Original
+glyph pixels, gold border, bounds, message content and gameplay are unchanged.
+The same style selection is applied in GPU and software composition; software
+runtime appearance was not exercised in this task.
+
+Native EXE SHA256:
+4714E069C38FA4C69100B9BD20FB7AB3BB9ED8122BCC188A8415769268733CCF
+Release build succeeds. Eight existing HUD/input/session/clock/collision/stage
+checks and four rebuilt PPU/dialogue checks pass. A direct renderer-test link
+initially lacked the Visual Studio SDK environment; rerunning through the
+established VsDevCmd build wrapper passes all four tests.
+
+Muted original title/FileA/castle sign replay: selected sign184 message92
+uses black text on parchment at frame2100, closes, and restores Yoshi's normal
+Wait/control. Five authored signs present, isolated saves byte-identical.
+Separate new-game intro replay: Lakitu's white Listen... text remains on the
+dark card at frame7685. This is a visual intro regression, not full intro or
+Lakitu conversation completion acceptance. Both processes exit0, mixer errors0,
+and submitted nonzero audio samples0. Exact local cases and hashes are in
+work/dialogue-contrast-acceptance-20261025.json. Screenshots remain private.
+
+Also corrected stale slide escalation references: original-window slide box
+collection/save/repeat and 1-Up re-entry were already verified. Use current
+dedicated reports and CURRENT-GAMEPLAY-HANDOFF.txt before repeating old failures.
+The timer verification report now references the final r3 runtime and exact
+pre-contrast executable hash. No ROM, user saves, F install or public release
+was changed. Full game and other dialogue styles/renderers remain incomplete.
+
+Next bounded task: Luna Medium can refresh the ROM-free build kit using the
+reviewed source/export/reconstruction/runtime/publication workflow. Include
+current signpost, 1-Up and timer changes; full EXEs and private assets stay local.

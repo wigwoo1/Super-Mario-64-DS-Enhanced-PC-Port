@@ -1,0 +1,43 @@
+Native 1-Up mushroom and original popup - 2026-10-25
+
+Status: VERIFIED for the original moving Secret Slide mushroom (actor276,
+type2) collected by Yoshi, followed by the original box Star and Save & Continue.
+Complete mushroom-variant and course coverage remains open.
+
+The native registry now binds ONEUPKINOKO276 and OBJ_1UPLOGO331 to their
+recovered factories. Their priorities, flags and clipping ranges match the
+local cartridge descriptors. The Mega Mushroom profile277 is not enabled by
+this milestone.
+
+Host adaptation stays under port/: fourteen typed dispatch adapters preserve
+the recovered mushroom behavior initializer and call the int-returning handler
+through its proper signature. Mushroom and logo resource handles initialize
+after the runtime file catalog is ready. The shared coin model cache used by
+the trigger variants binds to its existing native allocation. Original actor
+movement, collision eligibility, GiveLives and popup animation remain intact.
+No src/ or include/ file changed.
+
+The native PE audit verifies both profiles, the fourteen original behavior
+identities and their native targets, and both fourteen-entry original type
+flag tables. Eight focused clock/input/HUD/session/scene/collision checks pass.
+Reviewed symbol metadata adds two array declarations; a fresh local data
+generation is byte-identical to the linked development data. This is not a
+fresh build-kit reconstruction or public release.
+
+Muted runtime uses original title/File A/castle/Peach-window/slide entry and
+ordinary controls. The authored mushroom begins at its original placement,
+its cylinder contacts Yoshi, and exactly one life reward occurs: 4 to5.
+The mushroom is removed and its original textured 1UP popup renders, bounces,
+and disappears. The run continues to box Star pickup and original Save &
+Continue; course credit changes only for that Star and castle control returns.
+Audio errors0, device output muted, exit0. Screenshots show the mushroom,
+popup and HUD life increase. ROM, personal saves and installed F build unchanged.
+
+Verified executable SHA256:
+24CAF6ADD5B9BB7AD7B654E08480601BD6893FD238EFDDD15BA4A974246FADFB
+
+Scope limits: hidden/trigger/chasing mushrooms, every course placement,
+Yoshi tongue collection, actor respawn on re-entry and the Mega Mushroom
+transformation are not established by this one accepted moving pickup.
+Next bounded test: reload the isolated accepted save, re-enter the course and
+collect its original mushroom again, checking one life reward and normal cleanup.

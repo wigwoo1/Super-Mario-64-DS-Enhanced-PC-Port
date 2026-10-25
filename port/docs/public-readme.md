@@ -11,20 +11,28 @@ game assets, personal saves, or proprietary compiler is included here.
 
 ## Current state
 
-- The Secret Slide's opaque black background now replaces the incorrect green
-  palette backdrop in a selected muted native replay. Shared background-layer
-  priority, window and renderer checks pass. Mario can hit its original Star
-  box, collect the Star, save, reload and collect it again without duplicate
-  credit in muted isolated development-level tests. The standard castle-to-slide
-  entrance, Yoshi-specific box hit, finish mechanism, timer display and complete
-  course flow remain unverified. This does not establish complete rear-plane,
-  fog or all-course rendering support.
+- The Secret Slide's opaque black background replaces the incorrect green
+  palette backdrop. Mario's original castle route through Peach's window,
+  Star-box hit, Star pickup, Save & Continue, reload and repeat without duplicate
+  credit have muted isolated checks. The timer now uses the game's colorful
+  number sprites at the top center, and the original timer start/stop behavior
+  has a selected runtime check. Yoshi-specific box contact and full course
+  completion remain unverified; a separate visible finish marker is not
+  implemented. Rear-plane, fog and all-course rendering still need coverage.
 - The October24 checkpoint corrects the native OS clock units: the original
   stopwatch conversion now agrees with real elapsed time in a focused Windows
-  test. Complete timer rendering, pause, high-score and timed-Star flows still
-  need gameplay acceptance. Battlefield lifts, the tilting bridge and switch
-  gates are partially integrated; full rides and gate-opening interactions
-  remain unverified. Koopa's player-win and Star-reward lifecycle remains open.
+  test. Timer rendering is verified, while pause, high-score and timed-Star
+  flows still need gameplay acceptance. Battlefield lifts, the tilting bridge and switch
+  gates have selected gameplay checks. Yoshi boards and dismounts both original
+  orange lifts; one also passes original menu exit, painting re-entry and a
+  repeated ride. In Mission2, Mario reaches the original switch from the rear,
+  activates it, opens both shortcut gates and walks through. After original Exit
+  Course and painting re-entry, the switch and both gates reset to their original
+  off/closed states; Mario can press and pass through them again. Wider variants
+  remain unverified. Koopa's original player win, winning dialogue, Star spawn,
+  actual reward collection and original Save & Continue pass selected tests with
+  a CRC-valid disk save. A fresh-process reload and repeat pickup also pass
+  without duplicate Star credit.
   A selected Mission2 Mario crossing of the tilting bridge now passes with
   native contact, tilt, player carry and stable landing on the far bank.
   Yoshi now also crosses in both directions with native grounded contact and
@@ -32,6 +40,11 @@ game assets, personal saves, or proprietary compiler is included here.
   Other characters and broader course-reload coverage remain unverified.
 - Native original title/file flow, selected courses and actors, Power Star
   rewards, course-clear behavior, Wanted, and portions of the Rec Room work.
+- Five original castle signposts spawn; Yoshi's selected sign read, dialogue
+  closure and two ground pounds have muted runtime checks. Black sign text now
+  appears on a light parchment card, while white Lakitu dialogue retains its
+  dark translucent card. Dialogue appearance was checked on D3D11; software
+  renderer appearance and wider dialogue coverage remain unverified.
 - Controller navigation is verified for several original title, file, pause,
   Game Options, course-clear and minigame menus. Physical Xbox hardware and all
   menu/game combinations have not been accepted. Recent player feedback reports

@@ -1,0 +1,36 @@
+2026-10-25: selected native Koopa race reward collection and saving VERIFIED
+
+Only port/hal/koopa_replay.h input-only automation changed. After the correct
+kind4/StarID2 reward lands, the pilot walks south of the flag by350 world units,
+then across toward the reward, before jumping within250 units of it. Ordinary
+stick/button input avoids the pole; no player placement, climb-state, actor,
+collision, reward or save flags were changed. Original Player, Koopa, flag and
+Star decoded source agrees with the reviewed public checkout (line endings may
+differ). All seven focused clock/input/session/stage/collision CTests pass.
+
+Private case: native-muted-audio-walk-koopa-pole-avoidance-r1-20261025-20261021
+EXE SHA256 ff4fdaee69ba2fda45d809eca4e52bf7b3c9718ac0a93cf38668f1b31d797ff4
+Original title/FileA/castle/painting/Mission2; original gates opened before race.
+Race starts15055; Mario108 touches flag251 at19795 before Koopa250 finishes20255.
+Original win1/cannon0/message146; native reward274/Star2/kind4 spawns and lands.
+Ordinary pickup approach legs finish20772/20846; actual player contact and Star
+collection20866. Star states0/2/3/4/5/6/7 observed, total1->2 and course mask2->6.
+No Climb state after reward spawn. Original course return level2/clear21392,
+Save & Continue confirmation21510, save-running21530, committed slot0 payload68,
+control-restored21652. Final28000: living Wait in castle with normal control.
+CRC-valid disk course0 mask0x06 (only new bit0x04), total2. Other course Star
+masks and selected character unchanged; isolated minigames save byte-identical.
+Exit0, native mixer errors0 and submitted output nonzero_samples0 (muted).
+Screenshots21000 show Mario collecting the Star;21500 shows course clear.
+
+Private checker work/check-koopa-pickup-save-20261025.py PASS and case-local
+pickup-save-acceptance.json contain exact evidence. Initial checker comparison
+of Star source raw hash was corrected to decoded text: Git's CRLF normalization
+was the sole difference, git diff --no-index showed no source changes.
+
+Next bounded task: fresh-process reload of this generated save, Mission2 race,
+collect the same reward again and verify no duplicate credit. NOT yet tested.
+Luna Medium is suitable for this known-route verification. Current milestone
+passes on first resumed runtime attempt. No F install, public push or release;
+the current executable and all extracted data/saves/traces/screens remain private.
+Full game completion and wider character/course/race coverage remain incomplete.

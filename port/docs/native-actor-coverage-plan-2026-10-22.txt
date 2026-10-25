@@ -1,4 +1,61 @@
+UPDATE2026-10-25: Yoshi's two original ground pounds on castle signpost184 now VERIFIED: native floor contact, two45-unit sinks,2->1->0 remaining pounds, original effects and restored control. Default reading also passes on the final build. See native-signpost-ground-pound-verified-2026-10-25.txt. Only the opt-in input pilot changed; original sign gameplay code is unchanged. Respawn/carry/throw and broader variants remain open. Earlier ground-pound route escalation is superseded.
+
+UPDATE2026-10-25: signpost184 selected castle reading VERIFIED; see native-signpost-verified-2026-10-25.txt. Other actions/re-entry remain open. Koopa pickup/save/repeat already VERIFIED; older failures below are historical.
+
+CORRECTION 2026-10-25: Koopa flagpole escalation was stale. Native pickup/save and fresh-process duplicate-credit acceptance already pass; check-koopa-pickup-save-20261025.py was rerun against the accepted repeat case and passes. Current koopa_replay.h contains the successful two-leg walk-around-pole input. Do not redo that repair. See native-koopa-pickup-save-verified-2026-10-25.txt and native-koopa-repeat-credit-verified-2026-10-25.txt. Current next actor candidate: wooden signpost184, 106 authored placements and no native profile before this turn. Signpost integration is now in progress; no runtime acceptance yet. Private static audit now reads CURRENT source registry, not the older public export; output private-actor-scene-inventory-20261025. Pre-signpost audit:64 explicit profiles,5388 placements,1666 placements/523 level-actor pairs without explicit profile. Static inventory does not prove runtime support.
+
+UPDATE 2026-10-25: Native1up276 and original popup331 now integrated. Yoshi collects an original Secret Slide type2 mushroom for exactly one life (4 to5); popup, cleanup, Star/save regression pass in muted runtime. See native-oneup-verified-2026-10-25.txt. Other mushroom variants and respawn after re-entry remain open. The older big-brick integration candidate in the private first-pass inventory is superseded.
+
+UPDATE 2026-10-25: Original title/castle/lobby/character-room/Secret Slide entry
+is VERIFIED with existing two-Star Mario QA save, muted runtime and screenshots.
+Only test approach changed; native gameplay unchanged. See
+native-secret-slide-original-entry-verified-2026-10-25.txt. Next Luna Medium for
+original exit/re-entry checks. Historical routing failures below superseded.
+
+CURRENT SECRET SLIDE ROUTING CORRECTION 2026-10-25: Lobby2 -> one-Star side
+door -> character room50 is now verified. The key door/upper hall5 is unrelated.
+Actual slide window remains unentered after two approaches; Astra Medium
+recommended. See native-secret-slide-character-room-2026-10-25.txt.
+
 # Complete native actor and level-object coverage
+
+Update2026-10-25: original Mission2 Mario now legitimately wins Koopa's race
+after opening the gates. Flag player contact precedes Koopa's finish; winning
+dialogue and native StarID2/kind4 spawn pass twice. Pickup/save/reload/repeat
+remain open because the opt-in pilot grabs the finish flagpole and sends no
+dismount edge after climb entry. Stop after two focused collection attempts;
+see native-koopa-win-and-star-spawn-2026-10-25.txt. Original gameplay code is
+unchanged; only the QA pilot's reward target filter was corrected.
+
+Update2026-10-25: after opening both Mission2 gates, Mario can use original Exit
+Course, castle painting and Mission2 re-entry. Fresh switch11 returns full height
+with event0 off; fresh gate40 actors return closed with collision enabled. A
+second normal press opens both and Mario walks through grounded. Koopa race
+result/reward and wider actor variants remain open. See native-battlefield-gate-
+reentry-verified-2026-10-25.txt and native-battlefield-gate-opening-verified-
+2026-10-25.txt.
+
+Update2026-10-24: Yoshi has now ridden both authored Battlefield orange lifts
+(actor29 params2 and7) from original Mission2, with native grounded contact,
+neutral ascent and safe upper-bank dismount. Param2 also survives Exit Course,
+castle return and Mission2 re-entry. See native-lift-variant7-verified-
+2026-10-24.txt and native-lift-reentry-verified-2026-10-24.txt. Other characters,
+other courses, destruction/respawn and gate/race progression remain open.
+
+Update2026-10-24: selected Yoshi lift29/param2 ride -> original Exit Course ->
+castle painting/Mission2 re-entry -> new lift ride now passes in one muted
+native run. Old actors unload, fresh lifts reset and move, native contacts
+match ground height and both dismounts restore control. See
+native-lift-reentry-verified-2026-10-24.txt.
+
+Update2026-10-24: selected Yoshi original lift29 boarding, neutral-input
+ascent, jump to the upper bank and restored control now pass. Native contacts
+match ground height exactly; original actor code is unchanged. Second lift,
+broader course coverage and gate/switch/race reward lifecycles remain open. Current
+reconstructed-kit original Mission1/Mission2 tests also verify Koopa's expected
+conditional spawn and common lift/bridge/gate presence. Read
+native-lift-ride-verified-2026-10-24.txt. This supersedes broad missing-spawn
+and unqualified full-ride statements for these selected cases only.
 
 Update2026-10-24: native ITEM_BLOCK21 setup/spawn, Mario hit, Star reward,
 save/reload and repeat collection without duplicate credit pass. The two earlier
@@ -15,8 +72,9 @@ Ordinary castle portrait entry, complete slide and Star rewards remain unverifie
 See native-secret-slide-background-2026-10-24.txt for current evidence and limits.
 See native-castle-secret-slide-report-2026-10-24.txt.
 
-Requested 2026-10-22. Status: PLANNED; missing-object reports are not yet
-reproduced or fixed. This milestone remains part of the full PC-port goal.
+Requested 2026-10-22. Status: IN PROGRESS; specific integrations and selected
+gameplay checks are recorded below. Complete actor/course coverage remains
+part of the full PC-port goal.
 
 Player report: bridges, metal gates, buttons/switches and other objects are
 missing in some levels. Audit every course, castle area, sub-area and minigame
@@ -121,3 +179,12 @@ replays retain identical gameplay/camera observations and visibly render the
 original debris/dust/stars. See native-particle-rendering-2026-10-23.txt for
 scope. Yoshi small brick15, intro bubble and other effects still need checks.
 This does not complete the Battlefield scenery/race or overall actor coverage.
+
+Update2026-10-25: Koopa race Star pickup, original save, fresh-process reload and repeat collection without duplicate credit now pass; see native-koopa-repeat-credit-verified-2026-10-25.txt. The selected Yoshi idle-camera regression test also holds a constant 794.98-unit distance for 17 samples after stopping; see native-camera-idle-regression-2026-10-25.txt. The narrow-slide failures are historical and superseded by the later projected-route pilot that collected the Star (native-slide-pilot-and-box-verified-2026-10-24.txt). A fresh normal-menu route with a two-Star save now passes the exterior-to-lobby door, then stops at the original keyhole door because the isolated save has not earned that key; see native-secret-slide-castle-route-boundary-2026-10-25.txt. Continue from legitimate key progression or a clearly labeled prerequisite-seeded QA save. Remaining Secret Slide gates include its original entrance, Yoshi-specific box contact and finish/timer HUD. Preserve original physics and rules.
+Key-seeded follow-up 2026-10-25: With the established isolated 40-Star/key-held QA save, the original doors and stairs reached level5; the trace confirms level2->5 at tick3536 and Yoshi visible on the red stairwell. A shortened geometry route later stalled against the inner stairwell wall at approximately (-975,1100,-1947), before its last waypoint. Do not classify this as a collision bug or fresh-save progression. Next use the full original geometry path in work/toad40-stair-and-upper-route-20261021.json, then locate and test the authored Secret Slide opening. Evidence is appended to native-secret-slide-castle-route-boundary-2026-10-25.txt.
+Full-route update: The previously documented complete stairwell route now passes normal original transitions level1->2 at tick2762 and level2->5 at tick3536. It reached waypoints through58 and visibly placed Yoshi in the upper hall beside Toad (frames7000/9000), but its last two narrow points and the Secret Slide entrance remain unverified. Exit0, muted output with zero device samples, isolated save unchanged. See the full-route follow-up in native-secret-slide-castle-route-boundary-2026-10-25.txt. Next inspect authored upstairs exits/paintings near this position and approach the correct slide opening by normal input; no state forcing.
+
+
+Update 2026-10-25: Secret Slide special floor types15 and16 now start/stop the recovered Timer in a natural muted entry test, and the PC HUD displays elapsed time beside the minimap counters. Timed Star actor178/param66 spawns at the finish. The visible finish-line marker/geometry is still unverified; see native-secret-slide-timer-hud-2026-10-25.txt. Full actor coverage remains open.
+
+

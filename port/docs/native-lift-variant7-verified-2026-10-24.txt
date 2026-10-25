@@ -1,0 +1,38 @@
+Battlefield's second orange lift (actor29/param7): Yoshi ride - 2026-10-24
+Status: VERIFIED for original-menu Battlefield Mission2, Yoshi, one approach,
+one full ride and upper-bank dismount. Broader course/character coverage remains open.
+
+The QA-only lift replay gained a variant selector. It reads the selected lift's
+original param and path, then supplies ordinary stick/jump inputs. It does not
+change actor/player placement, actor state, collision, path, physics, progression
+or saves. The native lift actor source is unchanged from the published source.
+
+Native build SHA256:
+3afa1501704fbd481c27bef44ebb329949169543e63fad7316c392d75d2296a6
+
+The original title/FileA/castle/painting path selected Battlefield Mission2.
+The isolated Yoshi test completed a muted 13000-presentation-tick runtime with
+exit0, mixer errors0 and device output samples0. Original controls produced:
+- staging7778 and boarding jump7824, targeting native lift UID116/param7;
+- original grounded contact7860, then 212 neutral-input ride samples while the
+  moving platform carried Yoshi from height179.496 to 695.038;
+- upper-bank jump8072, landing8140, and normal Wait/control8206;
+- 43 sampled grounded contacts in the native actor29 collider, all with exact
+  playerY==groundY, and 959 later samples alive/grounded/idle at upper-bank Y750.
+
+Both the slot1 and minigame files in the isolated QA directory match their seed.
+Seven focused clock/input/session/history/stage/collision CTests pass. Screenshots
+at ticks8000 (Yoshi on the orange lift) and8200 (Yoshi on the upper bank) were
+inspected and shown in chat.
+
+The initial selector attempt timed out before boarding because the QA pilot was
+looking at the wrong waypoint. The next trace showed the second lift's low point
+near Z4500, so aligning the staging point with that observed route enabled the
+accepted ride. These were QA route fixes only, not gameplay defects.
+
+Private evidence: work/lift-variant7-acceptance-20261024.json;
+work/check-lift-variant7-20261024.py; case
+native-muted-audio-walk-lift-variant7-ride-r3-20261024-20261021.
+The QA executable, ROM-derived assets, saves, traces and screenshots stay local.
+This does not verify Mission1, Luigi/Mario/Wario, lift destruction/respawn,
+every other lift-like actor, nor completion of the full native port.

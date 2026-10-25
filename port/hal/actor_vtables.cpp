@@ -300,6 +300,20 @@ struct PcNativeActorProfile {
     unsigned int flags;
     int clipOffsetY, clipRadius, clipDistance, farDistance;
 };
+extern "C" void *da1up_c_classInit_ONEUPKINOKO();
+extern "C" void *daObjTatefuda_c_classInit();
+// Original ov002 TATEFUDA descriptor, with the native constructor.
+static PcNativeActorProfile pc_signpost_profile = {
+    (void *)&daObjTatefuda_c_classInit,184,167,0x82,0x40000,0x80000,0x1000000,0x1000000
+};
+// Original ONEUPKINOKO descriptor with its native factory.
+static PcNativeActorProfile pc_oneup_profile = {
+    (void *)&da1up_c_classInit_ONEUPKINOKO,276,140,3,0x32000,0x12c000,0x1000000,0x1000000
+};
+extern "C" void *daObj1UpLogo_c_classInit();
+static PcNativeActorProfile pc_oneup_logo_profile = {
+    (void *)&daObj1UpLogo_c_classInit,331,333,0x4800000,0,0xa000,0,0
+};
 extern "C" void *daObjHatenaBlock_c_classInit_ITEM_BLOCK();
 // Original ov102 ITEM_BLOCK descriptor; only its constructor is native.
 static PcNativeActorProfile pc_item_block_profile = {
@@ -519,6 +533,9 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[17] = &pc_big_block_profile;
     data_020a4bb8_storage[19] = &pc_switch_block_profile;
     data_020a4bb8_storage[21] = &pc_item_block_profile;
+    data_020a4bb8_storage[276] = &pc_oneup_profile;
+    data_020a4bb8_storage[184] = &pc_signpost_profile;
+    data_020a4bb8_storage[331] = &pc_oneup_logo_profile;
     data_020a4bb8_storage[11] = &pc_floor_switch_profile;
     data_020a4bb8_storage[12] = &pc_star_switch_profile;
     data_020a4bb8_storage[29] = &pc_updown_lift_profile;

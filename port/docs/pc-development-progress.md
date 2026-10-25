@@ -2253,3 +2253,14 @@ linked source exactly. No new kit/export/publication/F: installation was made.
 See native-floor-switch-integration-2026-10-23.txt for scope and private evidence.
 Sol High is already selected. Goal remains active; next work is timed switch/
 linked-block behavior, Star-switch reward flow and course re-entry.
+
+
+## 2026-10-25: Secret Slide stopwatch shown in the PC HUD
+
+Secret Slide timer HUD — 2026-10-25
+
+Status: VERIFIED for the original start/stop timer triggers, PC HUD time display, and timed Star spawn. Secret Slide floor type15 starts the original Timer at tick6520; floor type16 stops it at tick7750. The key event was clear, so the native dMeter timer path was eligible, but its OAM timer never appeared in the PC capture, even when the minimap was disabled. Added an output-resolution PC HUD stopwatch beside the map counters. It reads the same original Timer and is shown only in level29 after its original start flag, while the key event is clear. The rendered display follows mm:ss.cc. Surface16 stopped the clock and spawned the original timed Star actor178/param66.
+
+Build SHA256 8D116FC5707A23B0C7DF19FCAF34F4075C748910CC22882492F06237A1E9D5ED. Eight focused CTests pass, including HUD formatting/visibility; process exit0, audio errors0, muted output0. Seed saves match runtime saves byte for byte. Runtime evidence and hashes: work/native-muted-audio-walk-slide-timer-hud-final-r1-20261025-20261021/timer-hud-acceptance.json. Screenshots frame-7400.bmp (00:14.83 during the slide) and frame-7800.bmp (00:20.66 stopped timer and timed Star).
+
+This verifies the timer HUD and timing surfaces only. A distinct visible finish-line marker/geometry has not been identified or verified. Full course/actor coverage, F installation and public build promotion remain open. Next: inspect the slide finish area for the authored visible finish marker and confirm collision/render condition without forcing a spawn. Luna Medium is suitable for that bounded trace; escalate only if this becomes a difficult native scene/asset reconstruction.

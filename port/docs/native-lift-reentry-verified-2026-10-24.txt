@@ -1,0 +1,57 @@
+Battlefield lift ride, original course exit/re-entry and repeat ride - 2026-10-24
+Status: VERIFIED for selected original Mission2 Yoshi lift29/param2 lifecycle.
+The second authored lift's ride is verified for Yoshi in Mission2; read
+native-lift-variant7-verified-2026-10-24.txt. Broader lifecycle coverage and the
+full native port remain incomplete.
+
+Native QA-enabled build SHA256:
+a9455d8afd26fc372df9f7e666b41b20b9313ff1f82ab9c7d4f20c38f978bde1
+
+Changed only opt-in QA: the lift pilot hands control to the existing original
+Exit Course/painting input pilot after its first completed ride. After actual
+course re-entry and the repeated ground approach, it resets its OWN counters
+and target ID and rides a newly loaded lift. A final handoff lets the existing
+lifecycle observer record completion. Original actor/player/collision/physics/
+resource/save code remains unchanged. Normal play does not enable this pilot.
+
+Native build and seven focused clock/input/session/history/Stage/collision
+CTests passed. A single20000-presentation-tick muted original-title/FileA/castle/
+painting run uses an isolated existing one-Star Yoshi seed and selects actual
+Mission2 twice. No player placement, actor creation, event bits, dialogue results
+or live save/progression were forced. Original controls perform every action.
+
+Acceptance:
+- First lift114: jump8176, contact8218, jump off8422, upper-bank landing8488,
+  normal Wait/control8554. Real original Exit Course requested8554.
+- Castle return8924. Actor censuses9000/9500 contain no old Battlefield lifts,
+  bridge, gates, Koopa or finish flag. No cleanup crash.
+- Original Mission2 re-entry10264. Fresh lifts325/327 first observed10165,
+  pitch0, native nodes3/8, heights295.024/704.976; these equal the first entry's
+  initial samples. Both move through their original full height range again.
+- Repeated original ground approach completes13962. The input pilot resets
+  its own target; old114 is retired. New lift325: jump14296, contact14338,
+  jump off14542, upper-bank landing14608, normal Wait/control14674.
+- Each ride has204 neutral-input observations across heights205.286..695.031,
+  including more than100 standing/Wait samples.41 native grounded contact
+  samples per ride in the contact-to-jump interval have EXACT playerY==groundY.
+-1066 subsequent state samples remain alive, grounded and idle on the upper
+  bank at height750, with normal control. Final level6/Yoshi/state Wait.
+- Exit0, native mixer errors0, device output muted/nonzero samples0; isolated
+  slot1 and minigame save bytes unchanged. Personal saves were not used.
+- Screens14500 (second ride) and15000 (safe bank) inspected and shown in chat.
+
+Private evidence: work/lift-reentry-acceptance-20261024.json;
+work/check-lift-reentry-20261024.py; work/run-lift-ride-20261024.ps1 -Reentry;
+case native-muted-audio-walk-lift-ride-reentry-r1-20261024-20261021.
+This supersedes the selected lift reload limitation in the prior ride report;
+the first report's own build/evidence and other limitations remain historical.
+
+Scope: both rides in this report selected the param2 lift (old114/new325).
+Separate param7 boarding/ride/dismount evidence is now accepted for Yoshi in
+Mission2 as documented in native-lift-variant7-verified-2026-10-24.txt. Other
+characters, other courses/shared-class variants, destruction/respawn watcher
+behavior, gate opening and Koopa's complete race/result/Star/save/repeat remain
+open. No stable promotion,
+new public release or F executable replacement in this QA-only task. The existing
+current F playtest remains available. Full EXEs/assets/geometry/saves/traces/
+screenshots remain local; future source/kit publication keeps its normal gates.

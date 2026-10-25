@@ -62,10 +62,12 @@ void video_set_minimap_gameplay(bool active);
 void video_set_cannon_sight(bool active);
 // Live course totals shown beside the minimap, even when the map itself is hidden.
 void video_set_minimap_counters(bool active,unsigned stars,unsigned coins,unsigned lives,unsigned health=8,unsigned character=3);
+// Show the original Secret Slide stopwatch in the PC HUD, in hundredths.
+void video_set_minimap_timer(bool active,unsigned elapsed_hundredths);
 // Peach's 2D letter text follows the widened projection of its 3D panel.
 void video_set_cutscene_letter(bool active);
 // The native game bridge updates this when DS dialogue opens or closes.
-void video_set_dialogue_card_active(bool active);
+void video_set_dialogue_card_active(bool active, bool dark_text = false);
 bool video_minimap_visible();
 // Present the original bottom-screen pause/options interface as the main view.
 void video_set_pause_screen(bool active, bool custom_settings = false);

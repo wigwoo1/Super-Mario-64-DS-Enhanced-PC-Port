@@ -13,11 +13,14 @@ extern int16_t data_0209d6d4;
 extern uint8_t data_0208f074[];
 int GetOwnerLanguage();
 extern uint8_t data_0209d6bc,data_0209d6b4,data_0209d68c,data_0209d684,data_0209d694,data_0209d660;
+extern uint8_t data_0209d6c4;
 }
 extern "C" void pc_dialogue_observe(){
     // Keep the platform renderer synchronized through its normal ntr API.
     // This also lets renderer-only test targets link without game globals.
-    ntr::video_set_dialogue_card_active(data_0209d660!=0);
+    // Original Message::AddChar selects its glyph mask using this style byte.
+    // Style 1 is black sign/letter text; style 0 is white NPC dialogue.
+    ntr::video_set_dialogue_card_active(data_0209d660!=0,data_0209d6c4==1);
     const char *path=std::getenv("SM64DS_PC_DIALOGUE_CAPTURE");
     if(!path || !*path)return;
     static FILE *file=nullptr;static uint32_t previous[7]={};static bool observed=false;

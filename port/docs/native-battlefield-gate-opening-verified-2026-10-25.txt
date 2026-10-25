@@ -1,0 +1,61 @@
+Battlefield switch and both native shortcut gates - 2026-10-25
+Status: VERIFIED for the selected original Mission2 Mario route, switch press,
+both gates opening and grounded passage. Full Koopa race/Star and full port remain open.
+
+Native QA executable SHA256:
+3afa1501704fbd481c27bef44ebb329949169543e63fad7316c392d75d2296a6
+
+The earlier low-ground road was legitimately blocked by closed gate collision.
+Read-only queries in the loaded original course confirm the tunnel roof, ground
+and open rear entrance. The route must enter from the opposite side first. The
+private route now combines the accepted Mario tilting-bridge crossing, an
+ordinary western ledge jump, upper-plateau travel and rear-tunnel approach.
+The first approach cleared the ledge but stopped in the original flower-warp
+trigger. A KCL-derived bypass keeps the trigger active and walks around it.
+No original actor/player movement, collision, material, position, state, event,
+timer, reward or save code changed. No live progression was forced.
+
+Current native build check: Ninja has no work to do. Seven focused clock/input/
+session/history/stage/collision CTests pass. The accepted 18000-presentation-tick
+muted runtime uses original title/FileA/castle/painting/Mission2 and an isolated
+existing one-Star Mario prerequisite save. Original controls perform all actions:
+- 56 sampled grounded contacts on the original tilting bridge, with exact
+  playerY==groundY, then the accepted far-bank exit.
+- Western ledge source7280; original jump; grounded 1000-high landing7466.
+- Rear tunnel reached without any teleport-state episode in the accepted run.
+- Original switch11/uid118 depresses to scale819/displacement about48 units,
+  activates event0 at sampled tick11075 and retains its permanent pressed state.
+  111 sampled grounded switch contacts have exact playerY==groundY.
+- Both original gate40 actors observe the event and transition state0 ->1 ->2.
+  Moving first sampled11085; both fully open11215. Their original opposite
+  rotations are -16128 and+16128 angle units; colliders remain enabled.
+- Mario walks through the open doorway at11706..11782, no jump, with15 sampled
+  grounded contacts on the static floor and normal control throughout.
+- 1238 subsequent Wait samples; final Mario alive, grounded, outside the gates,
+  with normal control. Exit0, native mixer errors0, muted device nonzero samples0.
+  Isolated slot1 and minigame files remain byte-identical to their seed.
+
+Screens11000 (switch and closed gates) and12000 (Mario beyond the open gates)
+were inspected and shown in chat. This is automated input acceptance, not a
+physical-controller hardware check. The approach encounters ordinary enemies;
+it is not a no-damage route qualification.
+
+Private evidence:
+work/battlefield-gate-opening-acceptance-20261025.json
+work/check-battlefield-gate-opening-20261025.py
+work/run-battlefield-rear-switch-20261024.ps1 -WarpBypass -PassGate
+case native-muted-audio-walk-battlefield-rear-switch-warp-bypass-r2-20261025-20261021.
+The private topology probe has3601 ground queries and24 line probes; its separate
+5200-tick run also exits0/mixererrors0/muted0 with original Mission2 confirmed.
+All raw geometry/queries, logs, images, audio, saves, generated assets and full
+executables remain local. No F replacement, source push or release in this task.
+
+Follow-up re-entry check now passes: original Exit Course and painting flow load
+fresh closed/event-off switch and gates; normal input presses the switch again
+and Mario walks through. See native-battlefield-gate-reentry-verified-
+2026-10-25.txt. Next qualify Koopa's player race result/Star: the previously
+blocked physical road can be tested after the player legitimately opens the
+shortcut first.
+Do not force gate events, bypass closed colliders, change original physics or
+assume a Star award. Koopa win/loss, reward collection, save/reload/no duplicate,
+other characters/missions/gate variants and the full PC-port roadmap remain open.

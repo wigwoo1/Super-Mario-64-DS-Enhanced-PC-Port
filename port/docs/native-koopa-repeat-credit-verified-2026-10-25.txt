@@ -1,0 +1,33 @@
+2026-10-25: Koopa Star save/reload/repeat credit VERIFIED
+
+The first collection/save acceptance is documented in
+native-koopa-pickup-save-verified-2026-10-25.txt. This follow-up ran the same
+original title/FileA/castle/painting/Mission2 route in a fresh process seeded
+only with the first accepted slot1.sav and minigames.sav. Seed checksums:
+slot1 D81CB4E1A64694FE80C024A04B8A51F0728C130F567D66D65243FDC692C2CD1F;
+minigames 519F44A34AA6A28F865F49A176A3C5ED7F9F1136151FCC9FA34980CE8BB229E6.
+No user save was read or changed.
+
+Private case native-muted-audio-walk-koopa-repeat-credit-r1-20261025-20261021
+uses the same QA-only EXE SHA256 ff4fdaee69ba2fda45d809eca4e52bf7b3c9718ac0a93cf38668f1b31d797ff4.
+From the loaded mask0x06/total2, the native Mission2 race repeats normally:
+Mario touches flag251 at19795, Koopa finishes20255/won1/cannon0, and original
+reward UID274/StarID2/kind4 is collected20866. Original course clear/save flow
+returns to the castle. The second CRC-valid save retains mask0x06 and total2;
+all other course masks and selected character match the seed. This confirms no
+duplicate credit for this repeat. Native mixer errors0, submitted device samples
+nonzero0, process exit0; normal living Wait/control restored at final frame28000.
+Screenshots21000 show the reward celebration with total2;21500 the original
+course-clear card. Seven focused CTests remain green from the identical EXE build.
+
+Private checker work/check-koopa-pickup-save-20261025.py returns VERIFIED and
+case-local pickup-save-acceptance.json records duplicate_credit_test=true.
+The repeat acceptance checker validates collision with the original player's UID,
+all reward states, no flag climb, CRC, original save event, only the expected Star
+bit, unchanged other masks and unchanged minigames save.
+
+No gameplay fix was needed after the first pilot route adjustment. The QA-only
+input helper still walks around the flag before jumping to the reward. There was
+no F install, source export/push or release. Public and installed builds remain
+older. Continue broader game/PC feature work; this two-Star lifecycle milestone
+does not establish full game completion or all-course correctness.

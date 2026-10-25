@@ -326,35 +326,11 @@ class GateStillWorksTests(unittest.TestCase):
 # and main is green on a runner again; what follows is about the NEXT rewrite, not that
 # one.
 #
-# THIS IS NOT A RECURRENCE ARGUMENT, IT IS AN EXPOSURE ONE. Rewrites are rare: this
-# clone's `git reflog show origin/main` covers 872 fetches over 31 days with exactly one
-# forced-update, the 2026-09-13 scrub. The reason to stop pinning anyway is that the
-# material that triggered it is still here. The scrub was over a personal Windows
-# username in a hardcoded path -- tools/ovsweep.py:48, which now reads
-# `C:/Users/tango/...` -- and origin/main @ 1224afd11 still spells THIRTY-ONE paths of
-# that shape across six tracked files, sixteen under one username and fourteen under
-# another:
-#
-#     git grep -ohE 'C:[\\/]{1,2}Users[\\/]{1,2}(andre|alexs|tango)' origin/main -- .
-#
-#     25  config/match_attempts.jsonl        1  notes/tu-cpp-census-2026-08.md
-#      2  notes/real-cpp-migration-runbook.md    1  notes/agents/LAUNCH.md
-#      1  notes/agents/references/pipeline-v1.md 1  tools/ovsweep.py
-#
-# Twenty-five of the thirty-one are recorded "srcPath" values in
-# config/match_attempts.jsonl -- a generated log that keeps growing -- so the exposure is
-# not a handful of stale notes, and it is not static. Mind the separator when re-checking:
-# JSON escapes the path, so those 25 read `C:\\Users\\...` and a pattern matching a single
-# separator misses every one of them. The maintainer designed for the repeat: repin's
-# `--check` is documented as "the same predicate a pre-merge gate would use", dc3dbbdfa
-# swapped a real corpus id in tools/test_repin_commit_ids.py for a synthetic
-# `a1a1a1a1...` "so the test stays hermetic and idempotent under a future re-sweep", and
-# the treadmill already needed a second pass 98 minutes later (b9ba3a59b). This file is
-# the one repin names as more than stale prose, because a pin that no longer resolves
-# fails CI outright rather than merely reading wrong. Applying the same synthetic-fixture
-# treatment here finishes that job. The reconstruction below is built by real `git` in a
-# tmpdir, so these tests assert the same things and depend on no repository history
-# whatsoever.
+# THIS IS NOT A RECURRENCE ARGUMENT, IT IS AN EXPOSURE ONE. Upstream audit notes
+# recorded personal Windows account names in local paths. Do not repeat those
+# private names or paths in this fixture. The tests below reconstruct the relevant
+# Git history with synthetic commits in a tmpdir, so they assert the same behavior
+# without reading private paths or depending on repository history.
 #
 # WHAT IS RECONSTRUCTED AND WHAT IS NOT. The counts are not invented. Each was measured
 # with `git diff --name-status <sha>^...<sha>` while the objects were still readable, and

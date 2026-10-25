@@ -44,9 +44,7 @@ order:
 
     1. config/arm9/overlays/*/delinks.txt -- ground truth. Each overlay's
        delinks.txt lists the exact src/ paths linked into it (`src/PATH:`
-       lines). A prior audit (wave-3 sample review,
-       C:/Users/tango/.claude/orchestration/runs/port-gates-0808b/review/
-       wave3-sample.md) confirmed zero files are claimed by two overlays'
+       lines). A prior sample review confirmed zero files are claimed by two overlays'
        delinks.txt, so a hit here is authoritative. Files that appear in
        config/arm9/delinks.txt instead (no overlays/ in the path) are
        shared arm9 code, not overlay-owned at all -- reported as such, no

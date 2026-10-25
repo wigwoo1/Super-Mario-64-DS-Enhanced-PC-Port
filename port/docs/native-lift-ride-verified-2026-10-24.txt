@@ -1,0 +1,60 @@
+Battlefield lift: selected Yoshi boarding, ride and dismount - 2026-10-24
+Status: VERIFIED for one original lift and original Mission2 entry below.
+Update: the selected lift's original course exit/re-entry/repeat ride now passes;
+see native-lift-reentry-verified-2026-10-24.txt. The first-run evidence below keeps
+its own build/scope. The other lift, wider lifecycles and Koopa reward remain open.
+
+Native QA-enabled EXE SHA256:
+c6d5ec9248b2ad2ad7312743e33bf0d00c64c733a47ada18adb8892c2240d970
+
+Added an explicit AUTOMATION_ONLY + TEST_LIFT_RIDE input pilot in lift_replay.h.
+After the existing normal-input ground route, it waits outside the lift for the
+original low path segment, jumps/approaches with ordinary controls, recognizes
+actual native floor ownership, releases all input during the ascent, jumps to
+the upper bank and walks away. Only private replay state/buttons/stick change.
+No actor/player position, state, collision, geometry, physics, event or save writes.
+The original actor TU is byte-identical to the currently published source file.
+
+Native build and seven focused clock/input/session/history/Stage/collision CTests
+pass. Muted13000-presentation-tick runtime uses original title/FileA/castle/
+painting/Mission2 and the existing isolated one-Star Yoshi prerequisite save.
+It preserves that seed and the copied slot/minigame save bytes, exits0, reports
+mixer errors0 and device nonzero samples0. Physical controller use is separate.
+
+Accepted input/contact sequence:
+- staging7842; original jump8176; native ledge-grab/floor contact8218 on lift114;
+-204 neutral-input ride observations, original player states LedgeGrab/Walk/Wait,
+  with more than100 Wait samples. Player height205.286..695.031 world units;
+-44 sampled grounded contacts on original actor29/uid114, every player height
+  exactly equals the native ground height; original collider carries the player;
+- upper-bank jump8422, original ground landing8488, normal Wait/control8554;
+-890 later samples remain grounded/idle on the static upper bank at height750.
+  The red coin encountered during dismount is an ordinary unsaved pickup.
+Screens8400 on the lift and8600 on the bank inspected and shown in chat.
+
+First pilot r1 was diagnostic: its low-height condition selected a path segment
+whose original minimum was already above that threshold, so it never jumped.
+Original path inspection corrected the INPUT trigger to the true low segment.
+Its timeout was not a collision/gameplay failure. No repeated blind route trials.
+
+Private reproduction/evidence:
+work/run-lift-ride-20261024.ps1; work/check-lift-ride-20261024.py;
+work/lift-ride-acceptance-20261024.json; actual case
+native-muted-audio-walk-lift-ride-contact-r2-20261024-20261021.
+The runner's LiftRide switch and trace are opt-in; ordinary launch has no pilot.
+
+Separately, current ROM-free reconstruction DD3BC462...F067D4 now has accepted
+original-menu Mission1/Mission2 comparisons. Koopa188 and flag205 are absent in
+Mission1 and present in Mission2; both lifts/watcher, bridge39 and gates40 spawn
+in both missions and lifts move. The preceding wrong-scene replay accidentally
+enabled DevelopmentMenu; omitting that switch restores the original title path.
+Do not repeat its map0 result as a Koopa failure. Private accepted comparison:
+work/koopa-reconstructed-original-menu-acceptance-20261024.json.
+
+Remaining: second lift ride, leave/re-enter and full lift lifecycle, other
+characters/course variants, genuine upper-field floor-switch/gate access and
+Koopa race win/loss/Star/save/repeat. The now-qualified upper-bank approach may
+help reach the switch; production ground/wall checks must still respect gates.
+The selected tilting-bridge Yoshi roundtrip/re-entry has separate acceptance.
+Full EXEs, extracted/generated data, geometry, saves, traces and captures stay
+private. This report does not promote a stable game or establish full coverage.

@@ -30,6 +30,8 @@
 #include "daObjWanwanShutter_c.h"
 #include "daKinopio_c.h"
 #include "SaveData.h"
+#include "Timer.h"
+#include "Event.h"
 #include "daObjC0_Switch_c.h"
 #include "daObjC0Water_c.h"
 #include "dCamera_c.h"
@@ -60,6 +62,8 @@ extern "C" signed char data_02092110;
 extern "C" signed char data_0209f2f8;
 extern "C" void *data_0209f394[];
 extern "C" unsigned char data_0209caa0[];
+extern "C" unsigned char data_0209d4c8[];
+extern "C" unsigned char data_ov002_02111184[];
 extern "C" unsigned char data_02092128[];
 extern "C" unsigned char data_0209f498[];
 extern "C" unsigned char data_0209f49c[],data_0209f49e[],data_0209f4a0[],data_0209f4a6[],data_0209f4ae[];
@@ -181,6 +185,8 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/warp_probe.h"
 #include "hal/warp_replay.h"
 #include "hal/koopa_replay.h"
+#include "hal/lift_replay.h"
+#include "hal/signpost_replay.h"
 static bool replay_course_route_complete;
 static bool replay_lava_bridge_reentered;
 static unsigned replay_course_route_waypoint=0;
@@ -351,6 +357,11 @@ static bool replay_star_save_controls() {
         saving=true;event("original-save-running");
     }
     auto *p=static_cast<Player *>(data_0209f394[0]);
+    // A newly reached Star threshold can show a castle message after saving.
+    // Dismiss it with ordinary confirmation before checking restored control.
+    if(!done && saving && !data_0209f20c && p &&
+       !std::strcmp(pc_player_state_name(p),"St_Talk_Main") && tick%45<3)
+        buttons=1;
     if(!done && saving && !data_0209f20c && p && p->aliveState==1 &&
        !p->mIsNoControl && !p->mIsControlDisabled) {
         done=true;event("original-save-complete-control-restored");
@@ -401,6 +412,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
         if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
     }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
+    if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
     auto &waypoint=replay_course_route_waypoint;
     const char *segment=route;
     for(unsigned i=0;i<waypoint && segment;++i) {
@@ -453,7 +465,12 @@ static bool replay_course_route(const char *route_override=nullptr) {
     static uint64_t jump_until=0,next_jump=0;
     static uint64_t settle_until=0;
     const char *settle=std::getenv("SM64DS_PC_TEST_ROUTE_SETTLE");
-    const bool precise=route_override || (settle && !std::strcmp(settle,"1"));
+    const char *slide_route=std::getenv("SM64DS_PC_TEST_SLIDE_ROUTE");
+    const bool slide_course=level==29 && slide_route && !std::strcmp(slide_route,"1");
+    // Castle waypoints need precise stops, but the verified slide approach
+    // needs continuous input into its ledge jump. Settling there carries the
+    // player beneath the box before takeoff and causes an underside collision.
+    const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course);
     if(precise && ntr::rt_frame()<settle_until) {
         ntr::input_test_controls(true,0,0,0);return true;
     }
@@ -467,32 +484,48 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
-        const char *slide_route=std::getenv("SM64DS_PC_TEST_SLIDE_ROUTE");
         if(slide_route && !std::strcmp(slide_route,"1") &&
            !std::strcmp(state,"St_ButtSlide_Main") && !has_y && !jump) {
-            replay_path::Point points[256];unsigned count=0;
-            bool valid=true;
-            for(const char *s=route;s && *s;s=std::strchr(s,',')) {
-                if(*s==',')++s;
-                int l,px,pz,r,n=0;
-                if(count==256 || std::sscanf(s,"%d:%d:%d:%d%n",&l,&px,&pz,&r,&n)!=4 ||
-                   l!=level || r<1 || r>1000 || (s[n] && s[n]!=',' && s[n]!=':')) {valid=false;break;}
-                if(s[n]==':') {
-                    int action=0,used=0;
-                    if(std::sscanf(s+n,":%d%n",&action,&used)!=1 || action<1 || action>3 ||
-                       (s[n+used] && s[n+used]!=',')) {valid=false;break;}
-                }
-                points[count++]={double(px),double(pz),double(r)};
+            // A single QA route may begin in the castle and continue into
+            // Secret Slide. Once the player enters ButtSlide, project only
+            // onto the remaining same-course suffix. Keep the original
+            // waypoint base so lookahead retains the preceding slide point
+            // on every frame; this changes test input only, never physics.
+            static bool slide_route_started=false;
+            static unsigned slide_route_base=0;
+            if(!slide_route_started) {
+                slide_route_base=waypoint;
+                slide_route_started=true;
             }
-            if(valid && count && waypoint<count) {
+            replay_path::Point points[256];unsigned count=0,route_index=0;
+            bool valid=true;
+            for(const char *s=route;s && *s;) {
+                if(route_index>=slide_route_base) {
+                    int l,px,pz,r,n=0;
+                    if(count==256 || std::sscanf(s,"%d:%d:%d:%d%n",&l,&px,&pz,&r,&n)!=4 ||
+                       l!=level || r<1 || r>1000 || (s[n] && s[n]!=',' && s[n]!=':')) {valid=false;break;}
+                    if(s[n]==':') {
+                        int action=0,used=0;
+                        if(std::sscanf(s+n,":%d%n",&action,&used)!=1 || action<1 || action>3 ||
+                           (s[n+used] && s[n+used]!=',')) {valid=false;break;}
+                    }
+                    points[count++]={double(px),double(pz),double(r)};
+                }
+                const char *next=std::strchr(s,',');
+                s=next?next+1:nullptr;
+                ++route_index;
+            }
+            const unsigned local_waypoint=waypoint>=slide_route_base?waypoint-slide_route_base:0;
+            if(valid && count && local_waypoint<count) {
                 const double speed=std::abs(double(player->mHorzSpeed))/4096.0;
                 const double ahead=(std::max)(300.0,(std::min)(900.0,speed*12));
-                const auto aim=replay_path::follow(points,count,waypoint,
+                const auto aim=replay_path::follow(points,count,local_waypoint,
                     player->mPosX/4096.0,player->mPosZ/4096.0,ahead,600);
-                if(aim.waypoint!=waypoint || tick%30==0)
+                const unsigned absolute_waypoint=slide_route_base+unsigned(aim.waypoint);
+                if(absolute_waypoint!=waypoint || tick%30==0)
                     std::fprintf(stderr,"[native slide route] tick=%llu waypoint=%u->%u aim=%.1f,%.1f speed=%.1f\n",
-                        static_cast<unsigned long long>(tick),waypoint,unsigned(aim.waypoint),aim.x,aim.z,speed);
-                waypoint=unsigned(aim.waypoint);
+                        static_cast<unsigned long long>(tick),waypoint,absolute_waypoint,aim.x,aim.z,speed);
+                waypoint=absolute_waypoint;
                 replay_course_route_complete=aim.complete;
                 if(!aim.complete) {
                     const double angle=std::atan2(aim.x-player->mPosX/4096.0,
@@ -537,7 +570,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
             char extra=0;
             if(std::sscanf(target,"%d:%d%c",&block_level,&block_actor,&extra)!=2 ||
                block_level<0 || block_level>=52 ||
-               (block_actor!=15 && block_actor!=16 && block_actor!=17 && block_actor!=19 && block_actor!=46))
+               (block_actor!=15 && block_actor!=16 && block_actor!=17 && block_actor!=19 &&
+                block_actor!=21 && block_actor!=46))
                 block_level=-1;
         }
         if(block_replay && !std::strcmp(block_replay,"1") && level==block_level) {
@@ -598,33 +632,49 @@ static bool replay_course_route(const char *route_override=nullptr) {
                     if(!block_top_since)block_top_since=tick;
                 }
                 if(climbed_onto_block) { sx=0;sy=0; }
-                if(pound_jump_pending && !player->mIsAirborne && tick>=next_pound)
+                const char *pound_from_floor=std::getenv("SM64DS_PC_TEST_BLOCK_GROUND_POUND");
+                const bool direct_ground_pound=pound_from_floor && !std::strcmp(pound_from_floor,"1");
+                static bool direct_pound_pending=false;
+                static uint64_t direct_next_jump=0,direct_r_until=0;
+                if(direct_ground_pound && !direct_pound_pending && !player->mIsAirborne && grounded_state &&
+                   block_distance<180*4096.0 && tick>=direct_next_jump) {
+                    buttons=2; // Ordinary jump, followed by the DS R ground-pound input in air.
+                    direct_pound_pending=true;
+                    direct_next_jump=tick+180;
+                } else if(direct_ground_pound && player->mIsAirborne && direct_pound_pending &&
+                          !std::strcmp(state,"St_Jump_Main")) {
+                    buttons=0x100;
+                    direct_pound_pending=false;
+                    direct_r_until=tick+3;
+                } else if(direct_ground_pound && tick<direct_r_until) {
+                    buttons=0x100;
+                } else if(!direct_ground_pound && pound_jump_pending && !player->mIsAirborne && tick>=next_pound)
                     pound_jump_pending=false;
-                if(!climbed_onto_block && !player->mIsAirborne && grounded_state &&
+                if(!direct_ground_pound && !climbed_onto_block && !player->mIsAirborne && grounded_state &&
                    block_distance<260*4096.0 && tick>=next_climb) {
                     buttons=2; // DS B jump; the PC A binding maps here.
                     climb_jump_pending=true;
                     climb_until=tick+5;
                     next_climb=tick+90;
-                } else if(!climbed_onto_block && !player->mIsAirborne &&
+                } else if(!direct_ground_pound && !climbed_onto_block && !player->mIsAirborne &&
                           climb_jump_pending && tick<climb_until) {
                     buttons=2;
-                } else if(!climbed_onto_block && climb_jump_pending && tick>=climb_until) {
+                } else if(!direct_ground_pound && !climbed_onto_block && climb_jump_pending && tick>=climb_until) {
                     climb_jump_pending=false;
-                } else if(climbed_onto_block && !player->mIsAirborne && grounded_state &&
+                } else if(!direct_ground_pound && climbed_onto_block && !player->mIsAirborne && grounded_state &&
                           !pound_jump_pending && tick>=next_pound && tick>=block_top_since+100) {
                     buttons=2; // Jump from the block before pressing R in midair.
                     pound_jump_pending=true;
                     climb_until=tick+8;
                     next_pound=tick+180;
-                } else if(player->mIsAirborne && pound_jump_pending &&
+                } else if(!direct_ground_pound && player->mIsAirborne && pound_jump_pending &&
                           !std::strcmp(state,"St_Jump_Main")) {
                     buttons=0x100; // DS R while airborne initiates a ground pound.
                     r_until=tick+3;
                     pound_jump_pending=false;
-                } else if(pound_jump_pending && !player->mIsAirborne && tick<climb_until) {
+                } else if(!direct_ground_pound && pound_jump_pending && !player->mIsAirborne && tick<climb_until) {
                     buttons=2; // Hold through input polling, as during the ledge approach.
-                } else if(tick<r_until) {
+                } else if(!direct_ground_pound && tick<r_until) {
                     buttons=0x100;
                 }
                 static const char *last_state=nullptr;
@@ -658,7 +708,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // retain their repeated neutral jumping until the collector finishes.
         if(jump==2 && horizontal<320*4096.0 &&
            !(has_y && horizontal_reached && height_reached)) {
-            if(tick<jump_until) {
+            if(tick<jump_until && (!pc_sign_pound_replay_enabled() || !player->mIsAirborne)) {
                 ntr::input_test_controls(true,2,0,0);return true;
             }
             if(!player->mIsAirborne && tick>=next_jump &&
@@ -1871,7 +1921,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -2117,6 +2167,31 @@ static bool trace_script_progress(uint64_t frame)
                             g->mAngleX,g->mAngleZ,g->mHorzSpeed,g->mTerminalVelocity,g->unk_0a4,g->mVertSpeed,g->unk_0ac,g->mCloseDoorTimer);
                     }
                 }
+            }
+        }
+    }
+    // Opt-in diagnostic for the original Secret Slide timed surfaces. The
+    // matched Player routine starts/stops this same native Timer on types 15/16.
+    if (const char *timer_path = std::getenv("SM64DS_PC_SLIDE_TIMER_TRACE")) {
+        static FILE *timer_file = nullptr;
+        static unsigned long long last_timer_tick = ~0ull;
+        const auto tick = ntr::rt_frame();
+        if (tick != last_timer_tick && tick % 10 == 0) {
+            last_timer_tick = tick;
+            if (!timer_file) {
+                timer_file = std::fopen(timer_path, "w");
+                if (timer_file)
+                    std::fputs("tick,level,player_surface,timer_running,timer_started,key_event,elapsed_sec,player_x,player_y,player_z\n", timer_file);
+            }
+            auto *p = static_cast<Player *>(data_0209f394[0]);
+            if (timer_file && p && p->aliveState == 1) {
+                auto *timer = reinterpret_cast<Timer *>(data_0209d4c8);
+                const unsigned long long elapsed = (static_cast<unsigned long long>(timer->GetTime()) << 6) / 33514000;
+                std::fprintf(timer_file, "%llu,%d,%d,%u,%u,%d,%llu,%d,%d,%d\n",
+                    tick, int(data_0209f2f8), int(p->mSurfaceType), unsigned(timer->mIsRunning),
+                    unsigned(data_ov002_02111184[0]), Event::GetBit(0x1d), elapsed,
+                    p->mPosX, p->mPosY, p->mPosZ);
+                std::fflush(timer_file);
             }
         }
     }

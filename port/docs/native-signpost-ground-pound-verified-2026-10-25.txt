@@ -1,0 +1,61 @@
+Native signpost ground-pound acceptance - 2026-10-25
+
+Status: VERIFIED for Yoshi pounding one original castle sign twice.
+
+Executable SHA256:
+34F0BA7EDE6BD7891573EC52C807783650AEA0940862F48B190A0F7AAEBFEDFD
+
+The earlier pilots did not reach the intended action. Their later waypoints
+had already been consumed before the conversation; after it, Yoshi walked
+back into the sign's mesh. Contact telemetry identifies actor184 as that
+wall, so the earlier hillside-wall diagnosis is superseded. Jumping while
+touching the sign's front also started its original reading interaction.
+
+Added an opt-in input-only pilot in port/hal/signpost_replay.h. It observes
+the selected original sign and presses ordinary DS R only after an ordinary
+Yoshi jump has reached its narrow top. Route mode2 retains neutral input
+through takeoff, then this pilot alone holds jump while steering in air.
+The existing behavior of every other route is retained. Both the test flag
+and AUTOMATION_ONLY are required. The pilot writes no actor/player pose,
+velocity, collision, state, save, reward or counter fields. The isolated
+runner records its explicit SignPoundReplay switch in test-config.json.
+Recovered src/ and include/ files are unchanged.
+
+The original title/File A/castle route approaches the back of sign184,
+parameter1800, UID39. Two natural jump-to-ground-pound transitions follow
+R inputs at ticks1774 and1862, each within9.5 world units of its center.
+The original native callback lowers the sign by45 units per impact:
+remaining pounds2 ->1 ->0; world Y254 ->209 ->164. Native floor contacts
+identify the sign as owner, and the cooldown prevents duplicate sinking
+within one impact. Normal grounded control returns at tick1946 and Yoshi
+remains in Wait with control enabled through tick3400. Original dust/stars
+and the sinking sign are visible in the captures.
+
+The Release build and six focused replay/input/stage/collision CTests pass.
+Extended native-data audit passes, including the original sign descriptor,
+typed handlers, and attachment constants. check_signpost_pound.py verifies
+both distinct impacts,45-unit changes, sign-owned floor contacts, Yoshi's
+ground-pound state, restored control, unchanged isolated saves, mute and
+process exit0. Audio mixer errors0; submitted nonzero samples0.
+
+A second muted replay uses the same final executable with the pound pilot
+disabled. All five authored castle signs match the local scene inventory;
+the original message92 read opens, closes and returns control. The existing
+read checker passes. This also preserves the previously verified read path.
+
+Private evidence:
+work/native-muted-audio-walk-signpost-input-pilot-sol-r2-20261025-20261021/
+  signpost-pound-acceptance.json, sign.csv, contact.csv, state.csv, run.log
+  frame-1750.bmp (before), frame-1850.bmp (first sink), frame-1900.bmp
+  (second impact), frame-2200.bmp (fully sunk, normal control)
+work/native-muted-audio-walk-signpost-read-pilot-disabled-sol-20261025-20261021/
+  signpost-acceptance.json, frame-2100.bmp, frame-3300.bmp
+
+Scope limits: offscreen/distance respawn, carrying, throwing, Wario/Mega
+variants and other signs/courses remain unverified. Existing dialogue-card
+contrast remains a separate visual issue. No F installation, public export,
+release or fresh build-kit reconstruction occurred in this task.
+
+Next: Luna Medium can refresh the ROM-free kit through the established
+publication/reconstruction workflow, including the new signpost_replay.h
+and check_signpost_pound.py sources. The full native port remains incomplete.

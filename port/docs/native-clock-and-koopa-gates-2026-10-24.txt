@@ -1,5 +1,10 @@
 Native OS clock correction and Koopa/gate diagnosis - 2026-10-24
 
+Update2026-10-25: the legitimate rear approach, switch activation, both native
+gate openings and grounded passage now pass. See native-battlefield-gate-
+opening-verified-2026-10-25.txt. Historical failed road evidence below remains
+diagnostic; full Koopa race result/reward is still open.
+
 Clock correction VERIFIED. Full Koopa result/reward lifecycle remains OPEN.
 Final diagnostic executable SHA256:
 4A0A40765A8684465DBA32007EE65D6842C1E1E5CDB76A4BA43244302793BCD7.

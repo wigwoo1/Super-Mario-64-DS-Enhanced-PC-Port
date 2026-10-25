@@ -87,6 +87,9 @@ def main():
             ('pc_koopa_race_profile','daRNk_c_classInit',62,0x0211db78),
             ('pc_koopa_flag_profile','daRFlag_c_classInit',62,0x0211dc30),
             ('pc_item_block_profile','daObjHatenaBlock_c_classInit_ITEM_BLOCK',102,0x0214e404),
+            ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
+            ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
+            ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
@@ -98,6 +101,33 @@ def main():
             raise ValueError(f'{name}: factory does not point at the native constructor')
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
+
+    base2,rom2=overlay(2)
+    sign_targets = tuple(named(f'pc_sign_dispatch_{i}') for i in range(10))
+    if struct.unpack('<10I', pe_bytes(args.exe, named('data_ov002_0210e084'), 40)) != sign_targets:
+        raise ValueError('Signpost state dispatch does not use the ten typed native handlers')
+    for name in ('data_ov002_020ff0d0','data_ov002_020ff0d4','data_ov002_020ff0d8','data_ov002_020ff0dc'):
+        address=int(name.rsplit('_',1)[1],16)
+        length=4 if address==0x020ff0d0 else 0x020ff0ec-address
+        if pe_bytes(args.exe,named(name),length)!=rom2[address-base2:address-base2+length]:
+            raise ValueError('Signpost attachment constants differ from original data: '+name)
+    print('PASS: original signpost descriptor, typed state handlers and attachment constants')
+    mushroom_targets=(0x020aff10,0x020afe4c,0x020afd10,0x020afc44,0x020afbb4,
+                      0x020afa98,0x020afa6c,0x020af950,0x020af924,0x020af838,
+                      0x020af7cc,0x020afa50,0x020af908,0x020af724)
+    # The compiler stores the fourteen PMF constants in a different order
+    # from the dispatch array initialized from them. Check their identities;
+    # the recovered source initializer specifies the dispatch order below.
+    original_mushroom=[struct.unpack_from('<II',rom2,0x02108300+i*8-base2) for i in range(14)]
+    if sorted(original_mushroom)!=sorted((target,0) for target in mushroom_targets):
+        raise ValueError('Original mushroom behavior identities changed')
+    native_mushroom=struct.unpack('<14I',pe_bytes(args.exe,named('data_ov002_0210dc00'),56))
+    if native_mushroom!=tuple(named('pc_oneup_dispatch_'+str(i)) for i in range(14)):
+        raise ValueError('Mushroom behavior dispatch does not use its fourteen typed native targets')
+    for address in (0x020ff040,0x020ff050):
+        if pe_bytes(args.exe,named(f'data_ov002_{address:08x}'),14)!=rom2[address-base2:address-base2+14]:
+            raise ValueError('Mushroom type flags differ from the original fourteen entries')
+    print('PASS: 1-Up and logo profiles, fourteen mushroom behavior identities/native adapters and original type flags')
 
     # The recovered item block uses ARM member-pointer constants. Its host
     # tables use typed native adapters instead. Check both original identities

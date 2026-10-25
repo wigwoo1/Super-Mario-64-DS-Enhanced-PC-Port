@@ -33,12 +33,29 @@ int main() {
     solid(art.star,0xffff0000u);solid(art.coin,0xff00ff00u);
     for(auto &s:art.health)solid(s,0xff0000ffu);
     for(auto &s:art.lives)solid(s,0xffffff00u);
+    for(unsigned digit=0;digit<10;++digit)solid(art.timer_digits[digit],0xffe8b830u+digit);
     minimap_hud_set_art(art);
     constexpr unsigned w=256,h=192;std::vector<uint32_t> pixels(w*h),other(w*h);
     VideoSettings s;s.minimap=true;s.minimap_x=710;s.minimap_y=35;s.minimap_scale=260;
     minimap_hud_build(pixels.data(),w,h,s,true,21,47,6,8,3);
     const auto count=[](const auto &p){return std::count_if(p.begin(),p.end(),[](uint32_t x){return (x>>24)!=0;});};
     const auto normal=count(pixels);if(normal<500 || normal>2500)return 7;
+    std::vector<uint32_t> timed(w*h);
+    minimap_hud_build(timed.data(),w,h,s,true,21,47,6,8,3,{},true,1420);
+    if(count(timed)<=normal || timed==pixels)return 28;
+    unsigned timer_left=w,timer_top=h,timer_right=0,timer_bottom=0,timer_color=0;
+    for(unsigned y=0;y<h;++y)for(unsigned x=0;x<w;++x)if(timed[y*w+x]!=pixels[y*w+x]) {
+        timer_left=std::min(timer_left,x);timer_top=std::min(timer_top,y);
+        timer_right=std::max(timer_right,x+1);timer_bottom=std::max(timer_bottom,y+1);
+        timer_color+=timed[y*w+x]==0xffe8b830u;
+    }
+    if(timer_right<=timer_left || timer_bottom<=timer_top || timer_color<16)return 31;
+    if(std::abs(int(timer_left+timer_right)-int(w))>4 || timer_top>8 || timer_bottom>32)return 32;
+    if(timer_right-timer_left<48 || timer_bottom-timer_top<12)return 33;
+    minimap_hud_build(other.data(),w,h,s,true,21,47,6,8,3,{},false,1420);
+    if(other!=pixels)return 29; // no timer until the original timer trigger fires
+    minimap_hud_build(timed.data(),w,h,s,true,21,47,6,8,3,{},true,599999);
+    if(count(timed)<=normal)return 30; // capped 99:59.99 value remains drawable
     // At the standard upper-right map position, transparent Star/coin icons
     // sit just left of the map; health/lives sit just below it.
     if(pixels[8*w+156]!=0xffff0000u || pixels[23*w+156]!=0xff00ff00u)return 8;
@@ -89,6 +106,28 @@ int main() {
        scaled[3]-scaled[1]>5*(native[3]-native[1]))return 15;
     const auto antialiased=std::count_if(high.begin(),high.end(),[](uint32_t p){const unsigned a=p>>24;return a>0xd9&&a<255;});
     if(antialiased<20)return 16;
+    const auto difference_bounds=[](const std::vector<uint32_t> &base,const std::vector<uint32_t> &with,
+                                    unsigned width,unsigned height) {
+        unsigned left=width,top=height,right=0,bottom=0;
+        for(unsigned y=0;y<height;++y)for(unsigned x=0;x<width;++x) {
+            const size_t i=size_t(y)*width+x;
+            if(base[i]==with[i])continue;
+            left=std::min(left,x);top=std::min(top,y);right=std::max(right,x+1);bottom=std::max(bottom,y+1);
+        }
+        return std::array<unsigned,4>{left,top,right,bottom};
+    };
+    std::vector<uint32_t> timed_high(size_t(rw)*rh);
+    minimap_hud_build(timed_high.data(),rw,rh,s,true,21,47,6,8,3,{},true,1420);
+    const auto timer720=difference_bounds(high,timed_high,rw,rh);
+    if(timer720[2]<=timer720[0] || std::abs(int(timer720[0]+timer720[2])-int(rw))>4 ||
+       timer720[1]>24 || timer720[3]-timer720[1]<48)return 34;
+    constexpr unsigned fourk_w=3840,fourk_h=2160;
+    std::vector<uint32_t> fourk(size_t(fourk_w)*fourk_h),fourk_timer(size_t(fourk_w)*fourk_h);
+    minimap_hud_build(fourk.data(),fourk_w,fourk_h,s,true,21,47,6,8,3);
+    minimap_hud_build(fourk_timer.data(),fourk_w,fourk_h,s,true,21,47,6,8,3,{},true,1420);
+    const auto timer4k=difference_bounds(fourk,fourk_timer,fourk_w,fourk_h);
+    if(timer4k[2]<=timer4k[0] || std::abs(int(timer4k[0]+timer4k[2])-int(fourk_w))>4 ||
+       timer4k[1]>72 || timer4k[3]-timer4k[1]<132)return 35;
     // A sight is square and centered even when the map is hidden or the
     // viewport aspect differs from the original DS screen.
     solid(art.cannon_sight,0xbfffffff);minimap_hud_set_art(art);
@@ -101,5 +140,5 @@ int main() {
            std::abs(int(box[1]+box[3])-int(size[1]))>1)return 26;
         if(!sight[size_t(size[1]/2)*size[0]+size[0]/2])return 27;
     }
-    std::puts("PASS original OBJ decode, counter composition and centered square cannon sight at native/360p/720p/4K/4:3");
+    std::puts("PASS original OBJ decode, centered top timer at720p/4K, counter composition and centered square cannon sight at native/360p/720p/4K/4:3");
 }
