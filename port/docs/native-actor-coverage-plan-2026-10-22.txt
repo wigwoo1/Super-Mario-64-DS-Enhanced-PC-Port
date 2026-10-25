@@ -1,5 +1,11 @@
 # Complete native actor and level-object coverage
 
+Update2026-10-24: native ITEM_BLOCK21 setup/spawn, Mario hit, Star reward,
+save/reload and repeat collection without duplicate credit pass. The two earlier
+failed input-only approaches were superseded by the accepted projected route.
+Original castle-to-slide entry, Yoshi-specific hit and finish/timer HUD remain
+open. Read native-secret-slide-save-repeat-verified-2026-10-24.txt.
+
 New user report2026-10-24: Princess's Secret Slide has a green background where
 the void should be black, plus missing Star box, finish line and counter/timer.
 The opaque black rear-plane now renders correctly in a muted native diagnostic

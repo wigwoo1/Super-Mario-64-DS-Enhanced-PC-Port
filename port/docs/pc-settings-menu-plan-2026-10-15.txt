@@ -1,5 +1,11 @@
-2026-10-24 requested: optional Physics = ORIGINAL DS / CLASSIC N64, applying
-the N64 Mario movement reference to Mario and Yoshi. Also add DS title Mario
+2026-10-24 requested: achievements based on RetroAchievements game9983, with
+an Xbox360/RetroArch-inspired decorative unlock banner. Local persistence,
+native conditions and official account-service compatibility require separate
+verification. PLANNED, not implemented. See native-achievements-plan-2026-10-24.txt.
+
+2026-10-24 corrected: optional Physics = ORIGINAL DS / CLASSIC N64, applying
+the N64 Mario movement reference ONLY to Mario. Yoshi/Luigi/Wario keep DS physics.
+This supersedes the earlier Mario-and-Yoshi scope. Also add DS title Mario
 face stretching with a separate Mario button for original drawing mode.
 Both are PLANNED, not implemented. Requirements, source references and staged
 acceptance: native-title-face-and-classic-physics-plan-2026-10-24.txt.

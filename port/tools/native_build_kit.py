@@ -83,6 +83,10 @@ def main():
     metadata['status']=(
         'Experimental incomplete native port. Format2 omits all17 reviewed ROM-derived '
         'data objects, including camera/minigame/stage-sound data, for local regeneration. '
+        'Secret Slide original ITEM_BLOCK21 was hit by Mario; its Star was collected, saved, '
+        'reloaded and collected again without duplicate credit in muted isolated development-level '
+        'tests. Standard castle-to-slide entry, Yoshi box hits, and full finish-line/timer HUD '
+        'remain unverified. '
         'Selected title/file/course, Toad/Star Gate reward/save/reload/repeat, cannon, '
         'original gold cannon aiming sight at DS/720p/4K (including map-hidden), repeat rides '
         'and Battlefield re-entry, Chain Chomp release, Battlefield flower-warp return/re-entry, '

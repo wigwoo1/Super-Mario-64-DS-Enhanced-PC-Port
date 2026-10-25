@@ -13,9 +13,12 @@ game assets, personal saves, or proprietary compiler is included here.
 
 - The Secret Slide's opaque black background now replaces the incorrect green
   palette backdrop in a selected muted native replay. Shared background-layer
-  priority, window and renderer checks pass. Its Star box, finish mechanism,
-  timer display and complete course/reward flow remain unfinished. This does
-  not establish complete rear-plane, fog or all-course rendering support.
+  priority, window and renderer checks pass. Mario can hit its original Star
+  box, collect the Star, save, reload and collect it again without duplicate
+  credit in muted isolated development-level tests. The standard castle-to-slide
+  entrance, Yoshi-specific box hit, finish mechanism, timer display and complete
+  course flow remain unverified. This does not establish complete rear-plane,
+  fog or all-course rendering support.
 - The October24 checkpoint corrects the native OS clock units: the original
   stopwatch conversion now agrees with real elapsed time in a focused Windows
   test. Complete timer rendering, pause, high-score and timed-Star flows still

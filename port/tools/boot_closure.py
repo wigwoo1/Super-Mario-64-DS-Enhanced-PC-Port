@@ -30,6 +30,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
+                 "daObjHatenaBlock_c_classInit_ITEM_BLOCK",
                  "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
                  "daObjC0_Switch_c_classInit", "daObjC0Water_c_classInit",
@@ -430,6 +431,10 @@ def main() -> int:
                 if path.name == 'daObjBlockL_c.cpp':
                     import block_host
                     transformed=block_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'daObjHatenaBlock_c.cpp':
+                    import item_block_host
+                    transformed=item_block_host.transform(transformed)
                     rewrites+=1
                 if path.name in ('daObjSwitch_c.cpp', 'd_a_obj_switch_hanswitch.c',
                                  'd_a_obj_switch_star_switch.c', 'func_ov002_020baa2c.c'):

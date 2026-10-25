@@ -1,5 +1,7 @@
 DS title Mario face stretching and optional N64 Classic Physics
 Requested 2026-10-24. Status: PLANNED; neither feature is implemented.
+User correction2026-10-24: Classic Physics applies ONLY to Mario. This supersedes
+the earlier Mario-and-Yoshi scope. Other characters retain their original physics.
 These extend the full native PC-port goal. Complete the current gameplay
 milestone before beginning either implementation; do not add inactive settings.
 
@@ -48,11 +50,11 @@ https://github.com/n64decomp/sm64/blob/master/src/goddard/joints.c
 Pin a reviewed upstream revision and preserve credits when implementation
 begins. Reuse local DS resources; do not silently depend on N64 head assets.
 
-2. Optional Classic Physics for Mario and Yoshi
+2. Optional Classic Physics for Mario only
 
 Add a saved native Gameplay setting: Physics = ORIGINAL DS / CLASSIC N64.
-Original DS remains the initial selection. Classic aims to give both Mario
-and Yoshi the original N64 Mario's base movement and physics, using the actual
+Original DS remains the initial selection. Classic aims to give Mario
+the original N64 Mario's base movement and physics, using the actual
 N64 source as the reference. This requires an adapter between two engines,
 not copying a few speed values or changing the global game clock.
 
@@ -64,12 +66,12 @@ Map original N64 action transitions and movement/collision results into native
 DS actors, terrain, moving surfaces, animation, sound and camera/input systems.
 Keep movement independent of the selected 60/120/240 presentation rate.
 
-Mario and Yoshi are explicitly in scope. Retain DS-only interactions and
-progression: hats/character changes, Yoshi tongue/swallow/eggs, scripted actors,
-doors, stars and saves. Document how Yoshi's flutter and other unique actions
-coexist with the N64 base movement before changing them; do not silently remove
-abilities or describe the full Yoshi moveset as identical to N64 Mario.
-Luigi/Wario behavior requires its own explicit design and acceptance.
+Only Mario receives the Classic movement path. Yoshi, Luigi and Wario retain
+their original DS physics and abilities with the setting enabled or disabled.
+Retain DS interactions/progression: hats/character changes, scripted actors,
+doors, stars and saves. Gate the adapter by verified active character/form
+identity. Verify hat changes and returning to Yoshi restore the proper DS path;
+do not let Mario's movement settings leak into Yoshi tongue/flutter/egg actions.
 
 Implementation milestones:
 - Pin a reviewed N64 revision/version and inventory DS/N64 movement state,
@@ -78,7 +80,7 @@ Implementation milestones:
 - Implement isolated movement calculations/action mapping behind the setting,
   starting with grounded Mario acceleration/braking/turning and basic jump.
   Keep the native DS path available and compare it before/after the change.
-- Extend to the complete agreed movement scope, then Yoshi and DS abilities.
+- Extend Mario to the complete agreed movement scope and DS interactions.
   Switch modes only at a safe idle boundary or after explicit course reload;
   never mix action-state layouts while airborne, in a door or in a cutscene.
 - Expose the working persistent setting through the original styled native
@@ -87,8 +89,10 @@ Implementation milestones:
 - Verify speed/time, stop distance, turning arcs, jump trajectories/landing,
   slopes/materials, wall/ledge interaction and moving-platform carry against
   the N64 reference with documented tolerances. Repeat in DS geometry and
-  test both modes across Mario/Yoshi, hats, eggs, enemies, water, doors,
+  test both modes with Mario, hats, enemies, water, doors,
   course transitions, star/save/reload and 60/120/240 presentation settings.
+  Add regression checks that Yoshi/Luigi/Wario retain DS physics in both settings,
+  including Yoshi's tongue, flutter and eggs after character/hat transitions.
   Show muted runtime screenshots. Record unsupported states explicitly;
   do not present a small speed/gravity patch as completed Classic Physics.
 

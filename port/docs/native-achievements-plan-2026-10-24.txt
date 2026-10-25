@@ -1,0 +1,51 @@
+Native achievements and decorative unlock banners - 2026-10-24
+Status: PLANNED; no achievements, banners or account integration implemented.
+Add to the full PC-port goal without interrupting the current Star-box milestone.
+
+User reference: https://retroachievements.org/game/9983
+The official page identifies Super Mario64 DS and lists157 base achievements
+when checked2026-10-24. This records the requested reference set, not a completed
+inventory or a promise of official RetroAchievements account compatibility.
+
+Implement achievements corresponding to the linked set, with a decorative
+banner that appears when the player earns one. Use an Xbox360/RetroArch-inspired
+presentation: badge/icon, readable achievement name and unlocked indication,
+smooth entrance/exit and optional notification sound. Use original decorative
+art/code; review permitted badge/metadata use and preserve source attribution.
+Match the reference achievement requirements rather than replacing them with
+generic star milestones. Version the reviewed IDs and requirements; cover the
+full set as the underlying courses/minigames/actors become functional.
+
+Milestones:
+1. Inventory the complete reference set through supported public documentation/
+   metadata access; preserve stable IDs and record the reviewed revision/date.
+   Classify persistent counters, course/character state, timed/challenge rules,
+   missable conditions and minigames. Verify exact trigger/reset semantics.
+2. Connect native game events and verified state to each requirement. Do not
+   assume the DS set's original memory addresses describe the PC object layout.
+   Begin with one real earnable achievement, then extend to the full inventory.
+   Keep failed attempts/reset/pause/character transitions and save/reload correct.
+3. Persist unlocks/progress in a versioned per-profile store with safe writes,
+   separate from original cartridge saves. Repeated events/reloads must not
+   grant duplicate credit or replay a banner for an already recorded unlock.
+   Preserve personal saves and isolate automation/QA fixture unlocks.
+4. Render the native popup at the output resolution, with readable outlined
+   text and proper placement at Native DS through4K and after window resizing.
+   Queue simultaneous unlocks, keep input/controls responsive, and prevent the
+   banner from hiding critical dialogue, pause controls or minimap counters.
+   Add notification enable/disable controls in the existing native options.
+   Notification audio obeys game volume/mute and the muted test requirement.
+5. Investigate supported official RetroAchievements account integration using
+   its documented client/runtime and service requirements. Verify native-port,
+   game/set identification, authentication, modified-physics and eligibility
+   requirements before any server submission. Do not submit QA/fixture results
+   or label local unlocks as official account awards. This remains an explicit
+   feasibility item; local achievements alone do not prove official sync works.
+6. Test real unlock and failure cases, no duplicate credit, simultaneous popup
+   queue, persistence after restart, resolution/fullscreen/renderer changes,
+   controller navigation, option persistence and mute. Compare native behavior
+   with each original reference requirement. Show muted runtime screenshots.
+
+The full game and many reference conditions remain incomplete. Track which
+achievement rules are implemented and verified; do not display unverified rules
+as supported or declare the whole set complete after one milestone passes.

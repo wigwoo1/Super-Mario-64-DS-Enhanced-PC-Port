@@ -86,6 +86,7 @@ def main():
             ('pc_battlefield_gate_profile','daObjBSwdoor_c_classInit',14,0x021145e4),
             ('pc_koopa_race_profile','daRNk_c_classInit',62,0x0211db78),
             ('pc_koopa_flag_profile','daRFlag_c_classInit',62,0x0211dc30),
+            ('pc_item_block_profile','daObjHatenaBlock_c_classInit_ITEM_BLOCK',102,0x0214e404),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
@@ -97,6 +98,26 @@ def main():
             raise ValueError(f'{name}: factory does not point at the native constructor')
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
+
+    # The recovered item block uses ARM member-pointer constants. Its host
+    # tables use typed native adapters instead. Check both original identities
+    # and actual linked pointer storage; no guest code address may survive.
+    from item_block_host import BINDINGS
+    base102,rom102=overlay(102)
+    config102=(ROOT/'config/arm9/overlays/ov102/symbols.txt').read_text()
+    functions102={name:int(address,16) for name,address in re.findall(
+        r'^(\S+) kind:function\([^)]*\) addr:0x([0-9a-fA-F]+)',config102,re.M)}
+    data102={name:int(address,16) for name,address in re.findall(
+        r'^(\S+) kind:data\([^)]*\) addr:0x([0-9a-fA-F]+)',config102,re.M)}
+    for constant,method in BINDINGS.items():
+        original=functions102['_ZN18daObjHatenaBlock_c19'+method+'Ev']
+        target,adjustment=struct.unpack_from('<II',rom102,data102[constant]-base102)
+        if (target,adjustment)!=(original,0):
+            raise ValueError('Original item-block callback changed: '+constant)
+        actual=struct.unpack('<I',pe_bytes(args.exe,named(constant),4))[0]
+        if actual!=named('pc_item_'+constant):
+            raise ValueError('Item-block callback is not its native typed adapter: '+constant)
+    print('PASS: item-block profile and all42 original callback identities bind to native typed adapters')
 
     base62,rom62=overlay(62)
     koopa_states=((0x0211db48,0x0211a9c4),(0x0211db30,0x0211a740),

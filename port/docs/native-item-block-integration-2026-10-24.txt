@@ -1,0 +1,104 @@
+Native ITEM_BLOCK21 integration - 2026-10-24
+LATEST UPDATE 2026-10-24: Secret Slide box hit, Star reward, save/reload and
+repeat collection without duplicate credit are now VERIFIED. Read
+native-secret-slide-save-repeat-verified-2026-10-24.txt for the accepted runs.
+The earlier two failed approach pilots below remain historical diagnostics;
+they preceded the verified projected route. Original castle-to-slide entry,
+Yoshi-specific box hit and finish/timer HUD remain open.
+Status: PARTIALLY VERIFIED. Native setup/spawn, Mario hit/reward, persistence
+and duplicate-credit behavior pass; broader Secret Slide/course coverage remains.
+Full PC-port goal and Secret Slide gameplay remain incomplete.
+
+Current native EXE SHA256:
+7DFB287724506AFEB74BA614D2AFDB4A72996D9CD3443E6E0737529DC16D37B9
+No F installation, new public export/release or stable promotion for this actor.
+
+Registered original ITEM_BLOCK21 using its recovered daObjHatenaBlock_c factory
+and exact original profile priority/flags/ranges. Added the original class to
+the native source closure. Matched src/ and original include/ remain unchanged.
+The family20..25 shares code, but only21 is newly registered; other variants
+and unsupported prize actors still require their own integration/acceptance.
+
+Host adapter item_block_host.py maps all42 original callback identities to
+typed native free-function adapters calling the recovered methods. Replaced
+only the five member-pointer dispatch sites. State/prize selections, collision
+eligibility, original bounce logic and Star parameters remain in original code.
+No ARM code pointer is executed. Eight SharedFilePtr model/animation/collision
+handles defer Construct until filesystem startup is complete. Host copies of
+three ignored integer-return helpers have defined fallthrough returns.
+
+Measured layout probe before adaptation: native base0x320, item0x3fc, animation
+0x324, shadow0x388, state0x3ec, held actor0x3f8. MSVC does not reuse dBgActor's
+two tail-padding bytes. Extend the existing CannonShutter header-overlay rule
+to remove only this redundant derived pad in the build-only item-block header.
+Native sizeof0x3f8 and embedded offsets0x320/0x384/0x3e8/0x3f4 now assert at
+compile time, along with eight-byte file handles and typed dispatch strides.
+The recovered source/header and original game movement/collision stay intact.
+
+Final build +7 focused CTests PASS: game_clock, input, pc_session, input_state,
+input_history, stage_graph, clsn. Native profile/factory metadata and all42
+original callback identities vs actual linked adapter pointers PASS. Shared
+data audit:419 bindings,0 divergent addresses. Symbol-only support remains5255
+names and3190 requests; no new ROM-data recipe/object was introduced.
+
+Muted runtime, isolated synthetic saves:
+- Final2800-tick original development picker/confirmation enters level29.
+  Census2200 has native actor21, original parameter0x0101, authored position,
+  correct Star content/id, idle state and60 total actors (previously59).
+  No hit is supplied. Box is distant; its nearby visual/collision not verified.
+- Final5800-tick original title/FileA/castle/painting/Battlefield Mission1 and
+  original pause menu passes. Final player Wait, paused; sky/geometry/menu
+  screenshot checked. Both final runs exit0, mixererrors0, device samples0,
+  isolated slot/minigame save hashes unchanged.
+- Two earlier7000-tick navigation attempts on the first integration build also
+  exit cleanly with muted audio/unchanged saves, but both FALL OFF the slide.
+  They are failed navigation diagnostics, never course/reward acceptance.
+  Final build differs by a defined ignored return in the popped update helper;
+  no third navigation attempt was made. Do not relabel old cases as final EXE.
+
+Private checker/evidence:
+work/check-native-item-block-integration-20261024.py
+work/native-item-block-integration-acceptance-20261024.json
+work/item-block-native-data-audit-20261024.log
+work/item-block-shared-data-audit-20261024.log
+work/build-item-block-final-20261024.log
+Cases contain secret-slide-item-block-spawn-final-20261024-r1 and
+item-block-original-entry-final-20261024-r1; tests muted, screenshots shown.
+
+NEXT MODEL: Astra Low recommended after two focused failed navigation attempts.
+Current selected model for this work was explicitly Sol High. The block's ABI
+integration is no longer the immediate blocker; the input-only slide pilot is.
+Keep original player/camera/physics/collision/box/reward rules unchanged.
+
+Navigation evidence and proposed next investigation:
+1. Initial measured coin-line route with500-unit markers gets around the circle
+   but accepts its exit too early and leaves the narrow deck. Actual course KCL
+   supports roughlyx1425..2200 acrossz2000..4500; player drifts nearx1200 and falls.
+2. Tight150-unit circular markers plus centreline exit points instead leave
+   waypoint8 unfinished. Closest recorded distance428.58 at2235; pilot then
+   steers toward an already-passed target and falls. No native box hit occurs.
+   This is evidence of inadequate waypoint progress/steering, not a justified
+   reason to widen collision or change original slide physics.
+Inspect projected progress along course segments/lookahead and original
+St_ButtSlide_Main/func_ov002_020c06fc before designing another input pilot.
+Private routes secret-slide-navigation-route-20261024-r1/r2.json and the two
+secret-slide-item-block-approach cases preserve the exact commands/state traces.
+
+Correct collision data is ARCHIVE/vs3.narc member0, named
+data/stage/peach_slider/peach_slider.kcl. high_slider is ANOTHER course; its
+initial rejected samples are not Secret Slide evidence. Original finish box
+remains at the authored end platform; no teleport, alternate forced entrance,
+fake reward, forced collider or manual player/actor state was used.
+
+Still needed: actual original castle-to-slide entry, reach original platform,
+nearby box model/collision, accepted hit/bounce/particles/audio, original Star
+release, collection/save/reload/no duplicate credit, death/retry/re-entry. Finish
+mechanism and timer/HUD remain separate open work. Stopping after two focused
+failed pilot attempts follows the user's escalation rule; do not guess more radii.
+
+Build tooling note: explicitly configure CMake after closure changes. Older
+private CMD wrappers using `if errorlevel1` failed to catch Ninja exit-1 and ran
+tests after a failed link; those early logs are rejected. The new private
+build-item-block-20261024.cmd checks ERRORLEVEL!=0 before proceeding. First
+host adapter also needed to consume hostgen's transformed handle constructors.
+These setup failures are resolved; final build/test logs are authoritative.

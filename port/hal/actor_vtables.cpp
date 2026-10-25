@@ -300,6 +300,11 @@ struct PcNativeActorProfile {
     unsigned int flags;
     int clipOffsetY, clipRadius, clipDistance, farDistance;
 };
+extern "C" void *daObjHatenaBlock_c_classInit_ITEM_BLOCK();
+// Original ov102 ITEM_BLOCK descriptor; only its constructor is native.
+static PcNativeActorProfile pc_item_block_profile = {
+    (void *)&daObjHatenaBlock_c_classInit_ITEM_BLOCK,21,39,2,0x60000,0x100000,0x1000000,0x1000000
+};
 static_assert(sizeof(PcNativeActorProfile) == 0x1c, "native actor descriptor");
 extern "C" void *daRNk_c_classInit(), *daRFlag_c_classInit();
 // Original ov062 race actor and finish flag descriptors, native constructors.
@@ -513,6 +518,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[16] = &pc_heavy_block_profile;
     data_020a4bb8_storage[17] = &pc_big_block_profile;
     data_020a4bb8_storage[19] = &pc_switch_block_profile;
+    data_020a4bb8_storage[21] = &pc_item_block_profile;
     data_020a4bb8_storage[11] = &pc_floor_switch_profile;
     data_020a4bb8_storage[12] = &pc_star_switch_profile;
     data_020a4bb8_storage[29] = &pc_updown_lift_profile;

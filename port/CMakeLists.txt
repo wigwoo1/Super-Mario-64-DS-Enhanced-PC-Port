@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(sm64ds-port C CXX ASM_MASM)
 include(CTest)
+add_executable(smoke_replay_path tests/smoke_replay_path.cpp)
+add_test(NAME smoke_replay_path COMMAND smoke_replay_path)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 if(WIN32)
     add_executable(smoke_game_clock tests/smoke_game_clock.cpp hal/os_time.cpp)
@@ -1021,6 +1023,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/item_block_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/floor_switch_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/battlefield_platform_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/koopa_host.py"
@@ -1074,6 +1077,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/item_block_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/floor_switch_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/battlefield_platform_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/koopa_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"

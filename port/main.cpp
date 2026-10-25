@@ -34,6 +34,7 @@
 #include "daObjC0Water_c.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
+#include "hal/replay_path.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -88,6 +89,9 @@ extern "C" int data_0209b490, data_0209b49c;
 // signature used by original door/message callers, rather than its C++ wrapper.
 extern "C" int _ZN5Sound7PlaySubEjjj5Fix12IiEb(unsigned,unsigned,unsigned,int,int);
 extern "C" unsigned short data_ov100_02148708[];
+extern "C" unsigned char data_0209f2bc,data_0209f2fc,data_0209f20c,data_0209f2d4;
+extern "C" unsigned char data_ov002_02111178;
+extern "C" signed char data_02092124;
 
 static int observed_story_course() {
     const int level=data_0209f2f8;
@@ -98,6 +102,28 @@ static unsigned observed_power_star_total() {
     for(unsigned course=0;course<30;++course)
         for(unsigned mask=data_0209caa0[0x14+course];mask;mask>>=1)total+=mask&1;
     return total;
+}
+
+// Read-only native completion telemetry: distinguish a pending original save
+// choice from a stalled player-entry callback without changing either state.
+static void trace_star_completion() {
+    const char *path=std::getenv("SM64DS_PC_STAR_FLOW_TRACE");
+    if(!path || !*path)return;
+    static FILE *file=nullptr;static uint64_t last=~uint64_t(0);
+    const auto tick=ntr::rt_frame();
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!file) {file=std::fopen(path,"w");if(file)std::fputs("tick,level,player_state,step,work,timer,wait_timer,no_control,disabled,entry_mode,countdown,clear_active,clear_step,hud_step,pause_state,pause_step,message,answer,stars,previous_level\n",file);}
+    if(file && p && p->aliveState==1 && tick!=last && tick%5==0) {
+        last=tick;
+        std::fprintf(file,"%llu,%d,%s,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%d\n",
+            static_cast<unsigned long long>(tick),int(data_0209f2f8),pc_player_state_name(p),
+            unsigned(p->mStateStep),unsigned(p->mStateWork),unsigned(p->mStateTimer),unsigned(p->mStateWaitTimer),
+            unsigned(p->mIsNoControl),unsigned(p->mIsControlDisabled),unsigned(data_0209f2fc),unsigned(data_0209f2bc),
+            unsigned(data_0209f20c),unsigned(data_0209f2d4),unsigned(data_ov002_02111178),
+            unsigned(data_0209f2c4),unsigned(data_0209f1ec),unsigned(data_0209d660),unsigned(data_0209d684),
+            observed_power_star_total(),int(data_02092124));
+        std::fflush(file);
+    }
 }
 
 
@@ -300,6 +326,37 @@ static bool replay_drain_save_controls() {
     }
     ntr::input_test_controls(true,buttons,0,0);return true;
 }
+// Select the original post-course Save & Continue choice using ordinary pad
+// confirmation. Player control returns only after this screen finishes.
+static bool replay_star_save_controls() {
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *enabled=std::getenv("SM64DS_PC_TEST_STAR_SAVE");
+    if(!automation || std::strcmp(automation,"1") || !enabled || std::strcmp(enabled,"1"))return false;
+    static bool started=false,saving=false,done=false;
+    const auto tick=ntr::rt_frame();
+    auto event=[&](const char *name) {
+        std::fprintf(stderr,"[native star save replay] %s tick=%llu level=%d clear_active=%u clear_step=%u selected=%u stars=%u\n",
+            name,static_cast<unsigned long long>(tick),int(data_0209f2f8),unsigned(data_0209f20c),
+            unsigned(data_0209f2d4),unsigned(data_0209f2e0),observed_power_star_total());
+    };
+    if(!started) {
+        if(data_0209f2f8!=2 || !data_0209f20c)return false;
+        started=true;event("original-clear-screen");
+    }
+    uint16_t buttons=0;
+    if(!done && data_0209f20c && data_0209f2d4==3 && tick%45<3) {
+        buttons=1;event("confirm-original-save-continue");
+    }
+    if(!saving && data_0209f20c && data_0209f2d4==5) {
+        saving=true;event("original-save-running");
+    }
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!done && saving && !data_0209f20c && p && p->aliveState==1 &&
+       !p->mIsNoControl && !p->mIsControlDisabled) {
+        done=true;event("original-save-complete-control-restored");
+    }
+    ntr::input_test_controls(true,buttons,0,0);return true;
+}
 static bool replay_pillar_controls() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     if(!automation || std::strcmp(automation,"1") || data_0209d660)return false;
@@ -410,6 +467,42 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        const char *slide_route=std::getenv("SM64DS_PC_TEST_SLIDE_ROUTE");
+        if(slide_route && !std::strcmp(slide_route,"1") &&
+           !std::strcmp(state,"St_ButtSlide_Main") && !has_y && !jump) {
+            replay_path::Point points[256];unsigned count=0;
+            bool valid=true;
+            for(const char *s=route;s && *s;s=std::strchr(s,',')) {
+                if(*s==',')++s;
+                int l,px,pz,r,n=0;
+                if(count==256 || std::sscanf(s,"%d:%d:%d:%d%n",&l,&px,&pz,&r,&n)!=4 ||
+                   l!=level || r<1 || r>1000 || (s[n] && s[n]!=',' && s[n]!=':')) {valid=false;break;}
+                if(s[n]==':') {
+                    int action=0,used=0;
+                    if(std::sscanf(s+n,":%d%n",&action,&used)!=1 || action<1 || action>3 ||
+                       (s[n+used] && s[n+used]!=',')) {valid=false;break;}
+                }
+                points[count++]={double(px),double(pz),double(r)};
+            }
+            if(valid && count && waypoint<count) {
+                const double speed=std::abs(double(player->mHorzSpeed))/4096.0;
+                const double ahead=(std::max)(300.0,(std::min)(900.0,speed*12));
+                const auto aim=replay_path::follow(points,count,waypoint,
+                    player->mPosX/4096.0,player->mPosZ/4096.0,ahead,600);
+                if(aim.waypoint!=waypoint || tick%30==0)
+                    std::fprintf(stderr,"[native slide route] tick=%llu waypoint=%u->%u aim=%.1f,%.1f speed=%.1f\n",
+                        static_cast<unsigned long long>(tick),waypoint,unsigned(aim.waypoint),aim.x,aim.z,speed);
+                waypoint=unsigned(aim.waypoint);
+                replay_course_route_complete=aim.complete;
+                if(!aim.complete) {
+                    const double angle=std::atan2(aim.x-player->mPosX/4096.0,
+                        aim.z-player->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    sx=static_cast<int16_t>(std::sin(angle)*32767);
+                    sy=static_cast<int16_t>(-std::cos(angle)*32767);
+                }
+                ntr::input_test_controls(true,0,sx,sy);return true;
+            }
+        }
         // Isolated block-contact replay: use ordinary jump plus midair R to
         // test the block's ground-pound callback. This only injects input
         // under automation; it never edits actor, player, collision or save
@@ -1750,6 +1843,7 @@ static bool trace_script_progress(uint64_t frame)
     // Advance input-only replay state once per game tick, so a repeated
     // presentation cannot skip the neutral input at a waypoint boundary.
     pc_trace_warp_player(static_cast<Player *>(data_0209f394[0]));
+    trace_star_completion();
     pc_trace_warp_ground(static_cast<Player *>(data_0209f394[0]));
     pc_probe_koopa_ground(static_cast<Player *>(data_0209f394[0]));
     if(const char *path=std::getenv("SM64DS_PC_MOVING_CONTACT_CAPTURE")) {
@@ -1777,7 +1871,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -2451,5 +2545,6 @@ int main(int argc, char **argv)
     trace("terminating process after native shutdown");
     ExitProcess(0);
 }
+
 
 

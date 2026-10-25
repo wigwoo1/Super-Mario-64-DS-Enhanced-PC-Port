@@ -1,0 +1,50 @@
+Native Secret Slide pilot and Star-box runtime verification - 2026-10-24
+
+Status: VERIFIED pilot navigation, box collision/hit, reward spawn and collection.
+Save/reload/no-duplicate-credit and ordinary castle-to-slide entrance remain open.
+
+The original radius-only input pilot missed a marker while sliding and steered
+back toward it. The new opt-in SM64DS_PC_TEST_SLIDE_ROUTE follows projected
+segment progress with bounded lateral acceptance and forward lookahead. It only
+supplies controller inputs during St_ButtSlide; other gameplay and existing
+walking routes use their previous behavior. It never edits player positions,
+velocities, physics, actor states, collisions, rewards or saves.
+
+Changed: main.cpp, hal/replay_path.h, tests/smoke_replay_path.cpp, CMakeLists.txt.
+The private muted runner exposes SlideRoute and records that choice per run.
+The pure helper tests cover overshot markers, out-of-corridor rejection, corner
+lookahead, mandatory final arrival and repeated points. Native build and eight
+focused CTests passed. No matched original source/header changed this milestone.
+
+Current EXE SHA256:
+c3d1225d3d68b94947f526bf68a03b1b859139ad4f74c73760a584f573f356d7
+
+Four accepted muted runtime cases: slide approach, jump onto box, jump/pound,
+and original title/File A/castle/painting/Battlefield Mission 1/pause regression.
+The first approach has its own earlier executable hash; evidence retains that
+identity. Jump, pound and regression use the current executable. Each exits 0,
+reports zero mixer errors and zero nonzero device samples; isolated saves remain
+unchanged. The first regression invocation omitted mission-selection automation
+and route settling, stopped at the selector, and is explicitly rejected.
+
+The original native actor21 is visible and supports the player on its top.
+Ordinary jump followed by midair R starts ground pound; block changes to bounce
+and releases native actor178, parameter0x41, StarId1 at runtime tick3663.
+Collection changes total Stars1->2 and the original in-memory course mask0->2;
+the game returns to castle. This run ends before saving: on-disk save is unchanged.
+The test uses Mario, development level selection and real inputs, not original
+castle-slide entry. Do not imply Yoshi coverage, persistence or full-course QA.
+
+Private evidence: work/check-slide-pilot-box-20261024.py,
+work/slide-pilot-box-acceptance-20261024.json and associated case directories.
+Screenshots show approach, standing on box, reward and collection, and original
+pause regression. All screenshots/logs/ROM-derived evidence stay private.
+A separate StarId2 is visible near the finish and looks large in the foreground;
+camera perspective may explain that appearance. It is not a confirmed scale bug.
+Its timed-release criteria, finish-line rendering and timer HUD need separate QA.
+
+No F install, stable promotion or public release yet. Next bounded task: extend
+the proven pound replay through the original save choice, relaunch that isolated
+save, repeat the same collection and verify persistent credit stays at2.
+The difficult navigation investigation is complete; Luna Medium is appropriate
+for those bounded replay/save checks. Escalate if new code/ABI problems emerge.
