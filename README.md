@@ -16,8 +16,9 @@ game assets, personal saves, or proprietary compiler is included here.
   Star-box hit, Star pickup, Save & Continue, reload and repeat without duplicate
   credit have muted isolated checks. The timer now uses the game's colorful
   number sprites at the top center, and the original timer start/stop behavior
-  has a selected runtime check. Yoshi-specific box contact and full course
-  completion remain unverified; a separate visible finish marker is not
+  has a selected runtime check. Yoshi's original box hit, Star collection,
+  saving and repeat collection without duplicate credit also have isolated
+  checks. Full course completion remains unverified; a separate visible finish marker is not
   implemented. Rear-plane, fog and all-course rendering still need coverage.
 - The October24 checkpoint corrects the native OS clock units: the original
   stopwatch conversion now agrees with real elapsed time in a focused Windows
@@ -40,6 +41,11 @@ game assets, personal saves, or proprietary compiler is included here.
   Other characters and broader course-reload coverage remain unverified.
 - Native original title/file flow, selected courses and actors, Power Star
   rewards, course-clear behavior, Wanted, and portions of the Rec Room work.
+- Original particle rendering has selected brick-debris and opening sleep-bubble
+  pop checks. Mario breaks a red brick and collects its three coins; Yoshi's
+  original character restriction is preserved. A fresh-file intro shows the
+  original yellow pop and smaller bubbles, cleanup, and return of Yoshi's normal
+  control. Wider effects, renderers and resolutions still need acceptance.
 - Five original castle signposts spawn; Yoshi's selected sign read, dialogue
   closure and two ground pounds have muted runtime checks. Black sign text now
   appears on a light parchment card, while white Lakitu dialogue retains its

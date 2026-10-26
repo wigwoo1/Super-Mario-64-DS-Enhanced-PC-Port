@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "8e4d523a8da5c4e038ef5894d744120c4ed8c24b5e37468e4d5a4ada8bbc5c88",
-      "bytes": 15907
+      "sha256": "f284d87c7bb6a77e8f4b50e8b89645b7df67936a4313b7f79b5c00a5b8b40757",
+      "bytes": 17413
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6542,6 +6542,11 @@
       "path": "port/docs/native-block16-verified-2026-10-23.txt",
       "sha256": "014ca22e6aa5e76db34b3faf884127e598d13cbdaf16b0415933b8d9f0a13d9f",
       "bytes": 4260
+    },
+    {
+      "path": "port/docs/native-brick-character-rules-verified-2026-10-25.txt",
+      "sha256": "a9f93f517c5dc46986a7fc4615de1a9a09e741d581a030ca1f106fe639b48e07",
+      "bytes": 3688
     },
     {
       "path": "port/docs/native-bridge-crossing-verified-2026-10-24.txt",
@@ -6739,6 +6744,11 @@
       "bytes": 2499
     },
     {
+      "path": "port/docs/native-intro-sleep-bubble-verified-2026-10-26.txt",
+      "sha256": "9b20cf3dc413e0c5420a97a4aaf92b7e3a53e8c09707b331f054f7068890460c",
+      "bytes": 3470
+    },
+    {
       "path": "port/docs/native-item-block-integration-2026-10-24.txt",
       "sha256": "a7e2110b6d34172760ff12c755a0bdf14b2938e847784578e184571a98786489",
       "bytes": 6679
@@ -6870,8 +6880,8 @@
     },
     {
       "path": "port/docs/native-particle-rendering-2026-10-23.txt",
-      "sha256": "61da78c41c9d81bf10b1830250b37850f832d0fe7c1a63c4b4e9bdd525ef786c",
-      "bytes": 5200
+      "sha256": "5c61f1fac15381fb67661b35b9f4f4338352ea2c019bfa23b7dea47e7a5beca2",
+      "bytes": 6196
     },
     {
       "path": "port/docs/native-pause-display-checkpoint-2026-10-15.txt",
@@ -7110,8 +7120,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "ce08f88e4c636acb62019951eb55a0f0d46be61fabd9083d1ebdb9f4b6660210",
-      "bytes": 288205
+      "sha256": "ced14d832e8053b9aee8c3c6cbd39482045885e412caa2191c5960b1f0a85ca3",
+      "bytes": 289779
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -7150,8 +7160,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "00e7f900cdf7da1c8a8994daf6823be60bac4af45dd9215dfb7ea3e97379e517",
-      "bytes": 12118
+      "sha256": "e24176d02f9af029f8bc697f11a40556b4fd15d69cfb9e14ee51976898473b8c",
+      "bytes": 12604
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7322,6 +7332,11 @@
       "path": "port/hal/bg_ctor_bridge.cpp",
       "sha256": "3317e1ccda5edd8fc7a56b6fa14882887ce66a94267eae9c68197bb9cbcf4272",
       "bytes": 4293
+    },
+    {
+      "path": "port/hal/block_probe.h",
+      "sha256": "08805242b345776a5cb64cce00fb166abfacc1dded868b97a2a4415c47a0df6a",
+      "bytes": 1255
     },
     {
       "path": "port/hal/bombking_storage.cpp",
@@ -7560,8 +7575,8 @@
     },
     {
       "path": "port/hal/particle_probe.h",
-      "sha256": "2728262ca6086c5bd32711dcab85f101aaab286506165b200274c5bc3705fc90",
-      "bytes": 3768
+      "sha256": "c3dd48fb84c3a71c4fb43e86c17e7ae61cb7477f8e12d62b262094ea775fbccf",
+      "bytes": 4155
     },
     {
       "path": "port/hal/particle_render_callbacks.cpp",
@@ -8680,8 +8695,8 @@
     },
     {
       "path": "port/tools/block_host.py",
-      "sha256": "fe9506c5a789127b69679bbe228d4d8928a5043b2219e6bc689177005ec64a52",
-      "bytes": 4985
+      "sha256": "271d276c5b5d24b4eba8ff6345fd548493558ca0f2457cf7e7d1de0b81bd8647",
+      "bytes": 5617
     },
     {
       "path": "port/tools/bombking_host.py",
@@ -9065,8 +9080,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "fe0fbe51c0922c33f30b77858bdd1d55ce6a15d5edd534ea8c6faf871e72c2b4",
-      "bytes": 9282
+      "sha256": "859793fd41525394bffa60fbf17ed84844c293698304f2efae76bcc641060ced",
+      "bytes": 9491
     },
     {
       "path": "port/tools/native_kit_data.py",

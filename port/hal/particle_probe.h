@@ -24,7 +24,18 @@ inline int definition(const void *manager,const void *system){
 }
 inline bool selected(int id){
     const char *s=std::getenv("SM64DS_PC_PARTICLE_TRACE_ID");
-    return id==int(s?std::strtoul(s,nullptr,0):10);
+    if(!s || !*s)return id==10;
+    // Some original effects are a pair of emitters (e.g. the sleep bubble).
+    // A comma-separated observation filter records both in the same run.
+    while(*s){
+        char *end=nullptr;
+        const auto value=std::strtoul(s,&end,0);
+        if(end==s)return false;
+        if(value==static_cast<unsigned>(id))return true;
+        if(*end!=',')return false;
+        s=end+1;
+    }
+    return false;
 }
 inline void row(const char *phase,const void *manager,const void *system,int id,
                 size_t triangles=0,unsigned clipped=0){

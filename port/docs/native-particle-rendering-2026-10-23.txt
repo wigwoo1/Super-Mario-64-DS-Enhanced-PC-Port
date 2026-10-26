@@ -1,3 +1,18 @@
+UPDATE2026-10-26: The original intro sleep-bubble pop is separately VERIFIED.
+Both original particle definitions254/255 start naturally at7603 and visibly
+render the yellow burst/smaller bubbles before cleanup. Two fresh-file muted
+original-menu runs exit0/errors0/device0, leave pristine saves and restore
+normal Yoshi control. Read native-intro-sleep-bubble-verified-2026-10-26.txt.
+The only code change is a multiple-ID diagnostic filter; the previous Stage
+particle draw repair already covers this effect. Broader effects remain open.
+
+UPDATE2026-10-25: Current original-menu brick15 checks resolve the Yoshi question:
+the original ROM/source intentionally reject his ground pound. Native callback
+tracing verifies that guard is reached. Mario breaks the same authored block and
+visibly renders original debris/dust/stars; six focused CTests and both muted
+runtime checks pass. See native-brick-character-rules-verified-2026-10-25.txt.
+Intro sleep-bubble pop and other variants remain open.
+
 Original particle rendering and brick debris - 2026-10-23
 Status: VERIFIED for the selected original large-brick break and menu startup.
 Full game and other effect variants remain incomplete/unverified.

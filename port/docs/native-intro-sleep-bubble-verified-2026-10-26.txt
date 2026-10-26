@@ -1,0 +1,57 @@
+Original intro sleep-bubble pop - 2026-10-26
+Status: VERIFIED for the selected original fresh-file opening at1280x720.
+The earlier Stage particle-renderer repair also restores this reported effect.
+
+Original Lakitu StateTurnMain calls func_ov002_020c3f18 at timer90. That calls
+func_ov002_020d2e74, which creates particle definitions254 and255 at Yoshi's
+bubble position. Independent BLZ decoding of the user's Europe Rev0 ROM verifies
+both original IDs and the two original Particle::System::NewSimple calls.
+Player.cpp and daC_Jugem_c.cpp are unchanged from the published original source.
+
+The optional particle observation filter now accepts comma-separated IDs, so
+both emitters can be traced during one run. This changes only diagnostic
+selection; original effect creation, simulation, sprite art and rendering stay
+unchanged. No replacement effect was added.
+
+Native Release executable SHA256:
+60f0e07af1cb0fb37b74b1bd421705f7a117ce122433cc44620041e3626f527b
+Compilation/linking PASS. Six focused CTests PASS: input, input_state,
+input_history, stage_graph, particle_callbacks and clsn.
+
+Two original-title/FileA new-file replays start with genuinely empty, isolated
+save directories and normal controller Start/A events. No state, position,
+particle or story flag is forced. Both effects start naturally at tick7603:
+- definition254: one particle,5 render updates,10 triangles/10 clipped triangles.
+- definition255: at most15 particles,15 render updates,354 triangles/338 clipped
+  triangles; final draw at7631.
+The original Lakitu timer crosses90 at that event. The two runs have identical
+creation/draw statistics. A broad scout found the exact event; the second run
+then captured the burst directly rather than inferring its appearance.
+
+Inspected screenshots:7595 shows the intact large bubble;7605/7607 show the
+yellow burst and smaller bubbles;7617 shows their dispersal;7635 shows cleanup.
+At9190 Yoshi has completed the intro and returned to normal Wait. Final traces
+have intro-ready1 and both control-disable flags0, with Yoshi character3 and
+zero Stars. These observations do not establish physical-controller acceptance.
+
+Scout9500 frames and visual repeat9200 frames both exit0. Native audio remains
+enabled with output muted, zero audio errors and zero nonzero submitted device
+samples. The save directories contain only zero-length lock files after exit;
+no user save was read/copied and no personal save or ROM changed. No F install,
+public export/push, new kit or release was made. Full EXEs, extracted/generated
+game data, traces, saves and screenshots remain private.
+
+Private runner/checker: work/run-intro-bubble-20261026.ps1 and
+work/check-intro-bubble-20261026.py. Acceptance:
+work/intro-bubble-acceptance-20261026.json. Cases:
+native-intro-bubble-original-pair-scout-r1-20261026
+native-intro-bubble-original-pair-visual-r2-20261026
+
+This closes only the selected visual bubble-pop report. Other effects,
+renderers/resolutions and broad campaign coverage remain open. Tests were muted;
+Lakitu cloud timbre/listening fidelity remain open. Full port is incomplete.
+Next native-actor candidate: wooden crate194 (daObjBlockS_c), eight authored
+placements across five levels in the private static inventory, with no native
+profile/factory entry in the current registry. Its original seven-state
+carry/throw/eat/break/resource lifecycle needs native integration and runtime
+acceptance. Sol is appropriate for that callback/collision integration.

@@ -1,8 +1,20 @@
-"""Adapt the original big-brick block's file handles for native startup."""
+"""Adapt original brick resources and optionally observe native callbacks."""
 import re
 
 
 def transform(text):
+    # Observe the real callbacks before their original character guards run.
+    # A player state alone cannot establish that a block received an attack.
+    for signature, observation in (
+        ('void daObjBlockL_c::OnGroundPounded(dActor_c &other)',
+         'pc_block_probe::event("ground_pound", this, &other);'),
+        ('void daObjBlockL_c::Kill()', 'pc_block_probe::event("kill", this);'),
+    ):
+        target = signature + '\n{'
+        assert text.count(target) == 1, signature + " changed"
+        text = text.replace(target, target + '\n    ' + observation, 1)
+    text = '#include "hal/block_probe.h"\n' + text
+
     for kind in ("BlockModelFile", "daObjBlockLClsnFile"):
         pattern = rf'{kind}\(unsigned int (\w+)\) \{{ pc_sharedfile_handle_construct\(this, \1\); \}}'
         text, count = re.subn(

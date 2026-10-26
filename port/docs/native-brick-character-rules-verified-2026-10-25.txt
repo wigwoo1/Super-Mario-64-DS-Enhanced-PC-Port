@@ -1,0 +1,56 @@
+Native Battlefield brick15 character rules and debris - 2026-10-25
+Status: VERIFIED for the selected original red brick, Yoshi ground-pound
+denial and Mario destruction/debris. Full actor and campaign coverage remains open.
+
+The earlier ground-pound handoff overlooked the first original character guard.
+daObjBlockL_c::OnGroundPounded returns immediately when the attacker's param1 is
+3 (Yoshi). The original Europe Rev0 ROM callback at ov002 020b382c loads that
+field at offset8, compares3 and returns on equality. An independent BLZ decode
+matches the local extracted overlay. Original src/ and include/ remain identical
+to the published source. A missing native callback was not the cause here.
+
+Added optional read-only observation through port/hal/block_probe.h and the
+existing block_host.py adapter. SM64DS_PC_BLOCK_TRACE logs actual ground-pound
+and Kill invocations with actor/attacker identities. The original character
+guard, collision response, reward and particle rules are unchanged. The private
+muted runner enables this trace for its existing block-interaction tests.
+
+Current native Release executable SHA256:
+46efc1eefa97a0b538214b534ea499da0c252640387f74d14f61b075b661e20d
+Explicit CMake reconfiguration, compilation and linking PASS. Six focused CTests
+PASS: input, input_state, input_history, stage_graph, particle_callbacks and clsn.
+
+Two original-title/FileA/Battlefield normal-input replays use this same binary.
+Yoshi uses the isolated one-Star fixture and original Mission2. He climbs onto
+authored brick15/unique195 and delivers36 real native ground-pound callbacks,
+first at5584, with attacker actor191/param3. Kill is never called; the same brick
+is alive at6495, and brick-debris definition10 is never created or drawn.
+Normal Wait/control returns between the repeated attacks. This is the original
+restriction working. Wooden crates are a separate actor194 with separate rules.
+
+Mario uses an isolated synthetic60-Star prerequisite fixture and original
+Mission7. The same authored brick15/unique195 receives his ground-pound callback
+with attacker param0 and calls Kill at5514. Original debris definition10 starts
+at5514:20 particles,28 render updates,862 submitted triangles/803 clipped
+triangles. Screenshot5530 visibly contains the original orange fragments, white
+dust, yellow stars and coin payout. Before5500/after5600 captures confirm the
+brick is removed; three new original coin actors appear at5515 and normal
+collection advances the real course counter0->3. At6500 Mario is alive in normal
+Wait/control with HUD3. Wider reward persistence is outside this selected check.
+
+Both6500-frame runs exit0, mixer errors0, device output muted with zero nonzero
+submitted samples. Both isolated source-save files remain byte-identical.
+No personal saves, ROM, F install, public source or release assets were changed.
+This full executable and all game data, raw traces, screenshots and QA saves
+remain private. No fresh build kit is claimed for this instrumentation change.
+
+Private evidence: work/check-brick15-character-rules-20261025.py and
+work/brick15-character-rule-acceptance-20261025.json. Runtime cases:
+native-muted-audio-walk-brick15-yoshi-original-rule-callback-r1-20261025-20261021
+native-muted-audio-walk-brick15-mario-original-debris-callback-r1-20261025-20261021
+
+The Yoshi brick15 check is resolved as original denial. Do not repeat route
+guesses or bypass its character guard to make a test break the brick. Next
+bounded particle milestone: original intro sleep-bubble pop visual acceptance.
+Luna Medium is appropriate for that focused capture; escalate only if a new
+renderer/callback fault is established. Full game remains incomplete.
