@@ -1,0 +1,37 @@
+Native wooden crate194 - Yoshi egg spit and three-coin reward - 2026-10-26
+Status: VERIFIED for one authored Hazy Maze Cave crate and nearby wall.
+
+Executable SHA256:
+94f02b13d804c7c4f199f9be93e0941af35cbbf97c02a2326c103c0080f7daeb
+Build, six focused input/collision/scene/particle CTests and native-data audit
+pass. The replay enters Hazy Maze Cave via the diagnostic picker, confirms the
+normal mission panel, and uses only normal stick and attack input. No actors,
+positions, states, collision, rewards or saves are forced.
+
+The selected crate UID22 was captured by Yoshi's normal tongue at2334 and
+swallowed by the original animation and callback at2551. It registered the
+original three-coin payload on egg UID126 (param224). At2731 the replay pressed
+the normal attack input. The egg entered its original flight state at2733,
+hit the nearby wall and burst at2747. Three new coin actors (UID127/128/129)
+appeared, were ordinarily collected by Yoshi, and moved the course counter
+from0 to3. The egg's payout index/bits show one payout. Yoshi returned to
+St_Wait_Main with control enabled and continued to the end of the6500-frame run.
+
+The run exited0 with audio errors0 and zero nonzero samples sent to the device.
+The isolated minigames.sav and slot1.sav files are byte-identical to their
+seeds. Frames2700/2800/3000/3500 show the egg before flight, the burst and
+coin reward/HUD. Acceptance JSON and all traces remain in private case
+work/native-crate-yoshi-eat-spit-scout-r1-20261026. Re-run checker:
+port/tools/check_native_crate_spit.py CASE_DIRECTORY.
+
+The opt-in input pilot uses no state manipulation and only runs with the test
+environment switch. The crate actor/gameplay implementation and original
+Player/egg sources are unchanged. No new code/data symbols were needed; the
+symbol-only support list remains5269 names.
+
+This does not verify aiming the egg at distant targets, other egg types, every
+crate placement, course re-entry, or the original castle-to-course route. The
+test used the diagnostic picker and a nearby wall. Carrying/throwing the crate
+itself and wider campaign behavior remain open. No full actor/campaign claim,
+F: installation, stable promotion, public export or release is made here.
+The full port goal remains active.

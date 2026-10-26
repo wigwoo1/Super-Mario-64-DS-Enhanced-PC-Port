@@ -46,6 +46,14 @@ game assets, personal saves, or proprietary compiler is included here.
   original character restriction is preserved. A fresh-file intro shows the
   original yellow pop and smaller bubbles, cleanup, and return of Yoshi's normal
   control. Wider effects, renderers and resolutions still need acceptance.
+- The native wooden crate has a selected authored Hazy Maze Cave check: Yoshi
+  ground-pounds it, original debris renders and all three released coins are
+  collected. A same-session distance/off-screen respawn and second Yoshi
+  ground-pound also pass with no extra coins. Yoshi can capture this crate,
+  swallow it and create its original cuboid egg containing three coins.
+  Entry used the diagnostic course picker; a nearby-wall egg flight, burst,
+  and three-coin pickup are verified. Long-distance egg targeting, carrying,
+  throwing the crate, course re-entry and wider variants remain unverified.
 - Five original castle signposts spawn; Yoshi's selected sign read, dialogue
   closure and two ground pounds have muted runtime checks. Black sign text now
   appears on a light parchment card, while white Lakitu dialogue retains its
@@ -185,3 +193,4 @@ and the attribution files. The upstream [README](README.upstream.md) is retained
 Source is distributed under the original [MIT license](LICENSE). Nintendo game
 assets are not covered by that license and are supplied locally by the user.
 This is an independent fan development project and is not affiliated with Nintendo.
+

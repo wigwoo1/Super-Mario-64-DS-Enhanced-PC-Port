@@ -187,6 +187,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/koopa_replay.h"
 #include "hal/lift_replay.h"
 #include "hal/signpost_replay.h"
+#include "hal/crate_replay.h"
 static bool replay_course_route_complete;
 static bool replay_lava_bridge_reentered;
 static unsigned replay_course_route_waypoint=0;
@@ -413,6 +414,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
     }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
     if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
+    if(!route_override && pc_replay_crate_pound(static_cast<Player *>(data_0209f394[0])))return true;
     auto &waypoint=replay_course_route_waypoint;
     const char *segment=route;
     for(unsigned i=0;i<waypoint && segment;++i) {

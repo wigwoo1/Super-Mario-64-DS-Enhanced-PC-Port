@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "54250c585c5108ea131492b97a5082711d787da6fb1212e8eb70a14dd60f02a5",
-      "bytes": 453510
+      "sha256": "af73786578f5ae2b71dda396c9a250e4c7994e76922ecf232b4cf2bf90173604",
+      "bytes": 453798
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "f86653163cd0506921fc9aaac7d95aecb72d8e7525edf290a11f13359573519a",
-      "bytes": 250834
+      "sha256": "6297e94eaf9ab4bc6d70341088699c8f2ef79f0ee13963a85f272564c6c7f4c8",
+      "bytes": 251128
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "3f4800e8b9c1f203fbb15ec50baad53f6115f2653a744f1dee00f4ffaf98326a",
-      "bytes": 85591
+      "sha256": "cd8d80f5c1cce5fd2a5468c9e4bd7e5d6c430509792cddf09776dfc6ac851abf",
+      "bytes": 85739
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "f284d87c7bb6a77e8f4b50e8b89645b7df67936a4313b7f79b5c00a5b8b40757",
-      "bytes": 17413
+      "sha256": "78799be5f2d73cc8726b790f40941dce6f7a2d8277a629e390e8f6d63a06c28e",
+      "bytes": 19437
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -7104,6 +7104,26 @@
       "bytes": 4364
     },
     {
+      "path": "port/docs/native-wooden-crate-eat-verified-2026-10-26.txt",
+      "sha256": "b15a1a2baa018f94d8571cbb1f7f838d4bd052a7004b289c0f5c5d85da1b8430",
+      "bytes": 3278
+    },
+    {
+      "path": "port/docs/native-wooden-crate-pound-verified-2026-10-26.txt",
+      "sha256": "45cf879613cfdcad2cb7f6fed41c74c460d5c4cc7690c487c184a999d873b004",
+      "bytes": 3740
+    },
+    {
+      "path": "port/docs/native-wooden-crate-respawn-verified-2026-10-26.txt",
+      "sha256": "3c4092258721c6ed2498a843eaeccfdabcb30d58a6008b66df7384f108b2acb7",
+      "bytes": 2220
+    },
+    {
+      "path": "port/docs/native-wooden-crate-spit-verified-2026-10-26.txt",
+      "sha256": "e9588d096cb089a37bbb600f29f2519abe81b850fb87572b04694940eab87c8e",
+      "bytes": 2259
+    },
+    {
       "path": "port/docs/native-yoshi-bridge-roundtrip-2026-10-24.txt",
       "sha256": "5fe41117c734656efb355f303346396169022f85675bdedbe1b9c94b86b9b4ef",
       "bytes": 4587
@@ -7120,8 +7140,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "ced14d832e8053b9aee8c3c6cbd39482045885e412caa2191c5960b1f0a85ca3",
-      "bytes": 289779
+      "sha256": "218249c71fc80af7fa40c1d8fb24020bd6afed7b8d2ad14b525bb900b9ba1c8b",
+      "bytes": 292014
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -7160,8 +7180,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "e24176d02f9af029f8bc697f11a40556b4fd15d69cfb9e14ee51976898473b8c",
-      "bytes": 12604
+      "sha256": "c0012e65d146bc8eb7c1bfdb158a865fe2f16daa71ab91ead8a7dc711f046efa",
+      "bytes": 13210
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7315,8 +7335,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "c434642e9fb915574f93a9e1b8c53671e8991aa87b2101e6485c76278adbbd94",
-      "bytes": 41535
+      "sha256": "8db36e125799c98937e68053a58cf0b55a8835784362465de8bc2a6d0ddc30ab",
+      "bytes": 41841
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7362,6 +7382,16 @@
       "path": "port/hal/course_clear_input.h",
       "sha256": "e3ba9afa0ed0eb7fcf7e9bcd9f0729ef1f777f535d76d4a936ba5167e0bd0224",
       "bytes": 1533
+    },
+    {
+      "path": "port/hal/crate_probe.h",
+      "sha256": "c89baf5f1b1f50a734a71ed4bb5317292f7080c329167affba3e31f83308d2c1",
+      "bytes": 2201
+    },
+    {
+      "path": "port/hal/crate_replay.h",
+      "sha256": "5f32263ff71b9907c989f5d7682e783db9e3a6c737aa499dbb67eacd34ab444f",
+      "bytes": 9644
     },
     {
       "path": "port/hal/cstd_div.c",
@@ -7750,8 +7780,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "ee54c288f07ec2e1287fa9ec1faa6b5c7eefd11dab2c0ba26a93bc032ebd24ac",
-      "bytes": 156078
+      "sha256": "868062f03dcf0a7578a8d4fb40250e3328fbeead5f3a89985d1acd703f4f471f",
+      "bytes": 156210
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8705,8 +8735,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "909506944aaa9636daff1f744bf514fbe0962a56e9d70e475c333e4226a9ca3c",
-      "bytes": 43855
+      "sha256": "70475b1e42616c7a11e78a030c342addb4ee30632ce666bfff071e930ba4949b",
+      "bytes": 44088
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8845,8 +8875,23 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "15cdc0025937d84b31da16e82c9c4df5337df951f3db101870d6d11185bd180d",
-      "bytes": 31333
+      "sha256": "02da0a5e058165e076a92ac8c6fd4b2a3045e96671642043e721c3846851002c",
+      "bytes": 33229
+    },
+    {
+      "path": "port/tools/check_native_crate_eat.py",
+      "sha256": "930adfd9233bc179ad558ce30640e27c2ed1152010557fea6ab99adf0254bc3a",
+      "bytes": 4902
+    },
+    {
+      "path": "port/tools/check_native_crate_pound.py",
+      "sha256": "73ec80bd22f4e58d2332510b8f66c4095f971fea36d2647de9ae134370989901",
+      "bytes": 7110
+    },
+    {
+      "path": "port/tools/check_native_crate_spit.py",
+      "sha256": "051cc1fd382730d72b03a2e7f7c983d99d79ba420d562ea80259185895f99c09",
+      "bytes": 5414
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",
@@ -8959,6 +9004,11 @@
       "bytes": 7751
     },
     {
+      "path": "port/tools/crate_host.py",
+      "sha256": "0a4d653574d68b609ada5658c631c19c3b23b182be0688610b3d549e51fad063",
+      "bytes": 5197
+    },
+    {
       "path": "port/tools/demo_callbacks.py",
       "sha256": "97329810647e2950179858a2594a894ae85cd9b1d9becfdd565e7d6abc263cec",
       "bytes": 6705
@@ -9050,8 +9100,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "d0fc87c423eadea9141c3ce52871b4f6fa9e34c92330f5eee19503400a013cf0",
-      "bytes": 27906
+      "sha256": "a3ce8d287164c83216328c634d33dfef430fa13653d6d15b43f97fee9958d524",
+      "bytes": 28205
     },
     {
       "path": "port/tools/linkage.py",
@@ -9080,8 +9130,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "859793fd41525394bffa60fbf17ed84844c293698304f2efae76bcc641060ced",
-      "bytes": 9491
+      "sha256": "0e2632312b181933f379066fca34bd59490cda845dca2fbb816562d6c264d507",
+      "bytes": 10026
     },
     {
       "path": "port/tools/native_kit_data.py",

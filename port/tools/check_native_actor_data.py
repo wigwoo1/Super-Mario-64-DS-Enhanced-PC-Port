@@ -90,6 +90,7 @@ def main():
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
+            ('pc_crate_profile','daObjBlockS_c_classInit',98,0x0213c510),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
@@ -112,6 +113,29 @@ def main():
         if pe_bytes(args.exe,named(name),length)!=rom2[address-base2:address-base2+length]:
             raise ValueError('Signpost attachment constants differ from original data: '+name)
     print('PASS: original signpost descriptor, typed state handlers and attachment constants')
+    from crate_host import STATE_METHODS
+    crate_base,crate_rom=overlay(98)
+    crate_descriptors=(0x0213c4a8,0x0213c488,0x0213c490,0x0213c468,
+                       0x0213c498,0x0213c470,0x0213c4b0,0x0213c480,
+                       0x0213c4a0,0x0213c478,0x0213c458,0x0213c460,
+                       0x0213c4c0,0x0213c4b8)
+    for descriptor,method in zip(crate_descriptors,(m for pair in STATE_METHODS for m in pair)):
+        target,adjustment=struct.unpack_from('<II',crate_rom,descriptor-crate_base)
+        if adjustment or target!=int(method.rsplit('_',1)[1],16):
+            raise ValueError('Original crate state identity/adjustment changed')
+    expected=tuple(named(f'pc_crate_dispatch_{i}') for i in range(14))
+    if struct.unpack('<14I',pe_bytes(args.exe,named('data_ov098_0213c878'),56))!=expected:
+        raise ValueError('Crate dispatch does not use fourteen typed native callbacks')
+    files=struct.unpack('<3I',pe_bytes(args.exe,named('pc_crate_files'),12))
+    if files!=tuple(named(n) for n in ('data_ov098_0213c850','data_ov098_0213c858','data_ov002_0210d934')):
+        raise ValueError('Crate resource table contains noncanonical native pointers')
+    for address,length in ((0x0213bf60,48),(0x0213bf64,44),(0x0213bf68,40),
+                           (0x0213c4e0,16),(0x0213c4f0,16)):
+        if pe_bytes(args.exe,named(f'data_ov098_{address:08x}'),length)!=crate_rom[address-crate_base:address-crate_base+length]:
+            raise ValueError('Crate attachment/throw constants differ from original data')
+    if pe_bytes(args.exe,named('data_ov002_0210d934'),16)!=rom2[0x0210d934-base2:0x0210d944-base2]:
+        raise ValueError('Crate CLPS differs from original data')
+    print('PASS: original crate descriptor, fourteen typed callbacks, resources, four carry poses and throw constants')
     mushroom_targets=(0x020aff10,0x020afe4c,0x020afd10,0x020afc44,0x020afbb4,
                       0x020afa98,0x020afa6c,0x020af950,0x020af924,0x020af838,
                       0x020af7cc,0x020afa50,0x020af908,0x020af724)

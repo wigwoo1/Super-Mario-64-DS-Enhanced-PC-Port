@@ -197,6 +197,10 @@ def records(root: pathlib.Path):
                 # Signpost carrying offsets are two XYZ rows (12-byte stride).
                 # The three coordinate labels must each retain the second pose.
                 row["size"] = 0x020ff0ec - row["address"]
+            if module == "ov098" and row["address"] in (0x0213bf60,0x0213bf64,0x0213bf68):
+                # Crate carry offsets: four XYZ rows. Coordinate labels are
+                # interior views, including the two original Wario poses.
+                row["size"] = 0x0213bf90 - row["address"]
             if module == "ov091" and row["address"] == 0x02134cdc:
                 # Three ten-node paths. Interior coordinate labels do not end
                 # the array; the native lift also reads node5.y from this span.

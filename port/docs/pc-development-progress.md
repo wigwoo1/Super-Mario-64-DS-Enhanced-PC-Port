@@ -1,3 +1,19 @@
+## 2026-10-26 - Crate egg flight and coin payout verified
+
+The same crate egg was launched with normal attack input, hit a nearby wall and burst once. Exactly three coins appeared and were ordinarily collected; the course counter advanced0->3. Muted6500-frame run, build, six CTests and native-data audit pass, with normal Yoshi control and unchanged saves. Diagnostic picker used. Long-distance egg targeting, crate carrying and throwing, course re-entry and original course entry remain open. See native-wooden-crate-spit-verified-2026-10-26.txt.
+
+## 2026-10-26 - Yoshi crate capture and egg creation verified
+
+Yoshi capture/swallow of one authored Hazy Maze Cave crate and creation of its original cuboid egg carrying three coins are VERIFIED. Normal-input muted4500-frame replay, build, six CTests and native-data audit pass; saves unchanged. Diagnostic picker used. See native-wooden-crate-eat-verified-2026-10-26.txt. Spitting/carrying/throwing, egg launch/reward release, course re-entry and wider variants remain open.
+
+## 2026-10-26 - Wooden crate same-session respawn verified
+
+One authored Hazy Maze Cave crate respawns after the original off-screen and 2,000-unit conditions. Yoshi ground-pounds that same crate again without receiving duplicate coins. The muted 10,000-frame replay, original-rule check, build, six CTests, and native-data audit pass; isolated saves are unchanged. Diagnostic course picker used. Carry, throw, eat, course re-entry and wider variants remain open. See `native-wooden-crate-respawn-verified-2026-10-26.txt`.
+
+## 2026-10-26 - Native wooden crate and selected Yoshi interaction
+
+The original wooden crate194 now has a native profile, resource bindings, seven typed state pairs and original attachment constants. A selected authored Hazy Maze Cave crate receives Yoshi's real ground pound, visibly breaks and releases three coins; normal pickup advances the counter0 to3. Build, six focused tests and native-data audit pass; the4800-frame muted run exits0 with no audio errors and unchanged isolated saves. Entry used the diagnostic course picker. Carry, throw, eat, respawn, original castle entry and wider variants remain unverified. See `native-wooden-crate-pound-verified-2026-10-26.txt`.
+
 ## 2026-10-26 - Original intro sleep-bubble pop verified
 
 The previous Stage particle-renderer repair also restores the opening bubble pop. Two original-menu fresh-file muted replays show original effects254/255 at7603, the yellow burst and smaller bubbles, cleanup and normal Yoshi control. Build and six focused CTests pass; both runs exit0 with audio errors0/device output0 and pristine isolated saves. Added only a multiple-ID observation filter, plus verification and roadmap updates. Original Player/Lakitu code and effects are unchanged. See `native-intro-sleep-bubble-verified-2026-10-26.txt`. Next native-actor candidate is wooden crate194, whose profile/factory is absent from the current registry. Full port remains incomplete.
@@ -2272,3 +2288,4 @@ Status: VERIFIED for the original start/stop timer triggers, PC HUD time display
 Build SHA256 8D116FC5707A23B0C7DF19FCAF34F4075C748910CC22882492F06237A1E9D5ED. Eight focused CTests pass, including HUD formatting/visibility; process exit0, audio errors0, muted output0. Seed saves match runtime saves byte for byte. Runtime evidence and hashes: work/native-muted-audio-walk-slide-timer-hud-final-r1-20261025-20261021/timer-hud-acceptance.json. Screenshots frame-7400.bmp (00:14.83 during the slide) and frame-7800.bmp (00:20.66 stopped timer and timed Star).
 
 This verifies the timer HUD and timing surfaces only. A distinct visible finish-line marker/geometry has not been identified or verified. Full course/actor coverage, F installation and public build promotion remain open. Next: inspect the slide finish area for the authored visible finish marker and confirm collision/render condition without forcing a spawn. Luna Medium is suitable for that bounded trace; escalate only if this becomes a difficult native scene/asset reconstruction.
+

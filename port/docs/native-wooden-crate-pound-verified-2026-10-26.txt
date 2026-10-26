@@ -1,0 +1,56 @@
+Native wooden crate194 - Yoshi ground-pound and coin pickup - 2026-10-26
+Update 2026-10-26: same-session off-screen/distance respawn and repeat ground-pound with no duplicate coin payout are now verified; see native-wooden-crate-respawn-verified-2026-10-26.txt. Carry, throw, eat, course re-entry, original castle entry and wider variants remain open. The earlier single-break check below remains the evidence for the first break and coin pickup.
+
+The original daObjBlockS_c now has a native factory/profile. Fourteen state
+callbacks use seven typed enter/update pairs. Shared model/collision resources
+initialize when the catalog is ready; the attachment table retains all four
+original XYZ poses. Recovered scalar calls bind to the real Player/dActor and
+collision methods; Matrix4x3 translation fields retain the original offsets.
+Original crate source/header and Player.cpp are unchanged from published source.
+
+Native executable SHA256:
+0928fe2f0b766741e08449916d5cae096d0f0efe01f0ba1dcfe7382124237fbc
+Build,six focused CTests and extended native-data audit PASS. The latter checks
+the original profile,fourteen callbacks,resources,carry poses,throw constants
+and collision properties against the local ROM. Symbol-only build-support
+metadata grows5263->5269 names by six reviewed data references. Fresh private
+data generation matches the linked source SHA256:
+d2b55a9725ac65a582e08a96fa90c5fc4e2436e8508aff1eee28db60f8edbfcc
+4272 data regions,4426 references,zero unknown symbols. No generated data bytes
+are copied into the source metadata. A full new kit is not claimed here.
+
+The isolated replay uses the diagnostic course picker for course13, then the
+original mission panel's normal touch confirmation. Original castle-to-course
+entry is NOT verified. Crate unique22,param65535 is the authored placement at
+(-6109,2000,5621); no actor is injected. Normal stick/B/R input supplies the
+approach,running jump,ground pound and coin chase. No positions,states,rewards,
+mission flags or save bytes are forced.
+
+Final4800-frame muted replay:
+- running jump2327; original ground-pound callback and Kill2374;
+- original state0->6,one payout; native broken-state lifetime retained;
+- original effect14 renders24 updates,366 clipped triangles; screenshot2380
+  visibly shows wood fragments,dust and yellow stars;
+- three original coins126/127/128 spawn2375; actual pickup2407/2407/2525;
+- real course counter0->2->3; final Yoshi Wait and normal control;
+- exit0,audio errors0,zero nonzero device samples; isolated slot1/minigames save
+  files unchanged. Screenshot2600 visibly shows the three-coin counter.
+
+The neutral-jump pilot landed beside the crate and never delivered an attack.
+A running jump fixed that test approach. Its first coin-following pass collected
+two coins,then ignored the third after it rolled beyond a350-unit search radius.
+The final pilot captures the three released coin identities and follows them
+after they roll away. Only input-only QA changed; no gameplay rule was bypassed.
+Both running-jump runs break the crate; the final run collects all three coins.
+
+Checker: port/tools/check_native_crate_pound.py CASE_DIRECTORY
+Private case: work/native-crate-yoshi-pound-reward-follow-r3-20261026
+Private runner: work/run-native-crate-20261026.ps1 -Mode pound
+Acceptance: the case's crate-pound-acceptance.json. Screenshots,full executable,
+ROM,extracted/generated game data,traces and saves remain private.
+
+Limits: one Yoshi/course/parameter placement. Carry,throw,eat,fire,respawn,course
+re-entry,original castle entry and other variants remain unverified. No complete
+actor/campaign acceptance, F install,stable promotion,public export or release.
+The existing public kit remains the earlier verified baseline.
+

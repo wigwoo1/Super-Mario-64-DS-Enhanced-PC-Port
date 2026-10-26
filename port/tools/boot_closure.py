@@ -30,6 +30,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
+                 "daObjBlockS_c_classInit",
                  "da1up_c_classInit_ONEUPKINOKO",
                  "daObj1UpLogo_c_classInit",
                  "daObjTatefuda_c_classInit",
@@ -434,6 +435,10 @@ def main() -> int:
                 if path.name == 'daObjBlockL_c.cpp':
                     import block_host
                     transformed=block_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'daObjBlockS_c.cpp':
+                    import crate_host
+                    transformed=crate_host.transform(transformed)
                     rewrites+=1
                 if path.name == 'da1up_c.cpp':
                     import oneup_host

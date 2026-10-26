@@ -117,6 +117,12 @@ def main():
         'broader gameplay remain open. Star/coin/health/life counters now use original art and scale with '
         'the minimap; selected English/Yoshi coin/damage/scaling/map-off checks pass. Other character/language '
         'coverage remains incomplete. Native audio remains opt-in/diagnostic. '
+        'A selected authored Hazy Maze Cave wooden crate receives Yoshi ground-pound, '
+        'renders original debris and releases three coins that are collected. Entry used '
+        'the diagnostic picker; same-session respawn/repeat pound yields no duplicate payout. '
+        'Yoshi capture/swallow creates the original cuboid egg carrying three coins. '
+        'A nearby-wall egg flight/burst and three-coin pickup are verified. '
+        'Long-distance egg targeting, crate carry/throw/course re-entry remain unverified. '
         'Five original castle signposts spawn; Yoshi\'s selected original sign read, two '
         'ground pounds, dialogue close and normal control restoration pass muted runtime checks. '
         'Black sign text receives a light parchment dialogue card while white Lakitu text keeps '
@@ -142,3 +148,5 @@ pause
 
 if __name__ == '__main__':
     main()
+
+

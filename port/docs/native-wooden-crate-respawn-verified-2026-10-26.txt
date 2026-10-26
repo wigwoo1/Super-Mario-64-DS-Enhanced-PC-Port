@@ -1,0 +1,34 @@
+Native wooden crate194 - same-session respawn and repeat ground pound - 2026-10-26
+Status: VERIFIED for one authored Hazy Maze Cave crate and one Yoshi session.
+
+Current executable SHA256: bfcc88b164394f90002f80ba46636c032313ac83cfedab2fd7e1b697329e7017
+The build, six focused CTests and native-data audit pass. An independent decode
+of the local ROM confirms the original rule: an already-broken crate respawns
+only after it is off-screen and beyond 2,000 units, and its idle-entry callback
+does not clear the one-time three-coin payout flag.
+
+A muted 10,000-frame replay used the diagnostic picker for Hazy Maze Cave,
+then normal movement and Yoshi ground-pound input. The same authored crate
+UID22 broke at tick2374, respawned at tick3900 while Yoshi was 2,001.32 units
+away with the original respawn bit set, and broke again at tick4590. The
+original three released coins were collected before leaving; after the second
+break the course coin counter stayed at3 and no new coin actors appeared.
+Yoshi returned to normal control. The process exited0 with no audio errors or
+device output, and isolated save files were byte-identical to their seeds.
+
+A first walking route was obstructed by an authored sign; a route planned
+around all three nearby signs then completed both directions using normal
+walking. This corrected the QA route, not game rules. No actor/player position,
+state, collision, reward or save was forced. Reusable acceptance is in
+port/tools/check_native_crate_pound.py; private run is
+work/native-crate-yoshi-respawn-sign-route-r2-20261026. Screenshots at ticks
+4500 (respawned crate, three coins) and4800 (after repeat break) were shown.
+The independently checked original rule evidence is in
+work/crate-respawn-original-rule-acceptance-20261026.json.
+
+Scope remains limited to this authored crate, character, course and same-session
+loop. Carrying, throwing, eating, course re-entry, original castle entry and
+other placements/variants remain unverified. This is not full actor or campaign
+acceptance. The full executable, ROM-derived data, saves, traces, screenshots
+and test directories remain private; no F: installation or public release was
+made. The public source/kit baseline is unchanged.

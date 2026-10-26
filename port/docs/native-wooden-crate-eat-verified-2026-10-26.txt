@@ -1,0 +1,51 @@
+UPDATE 2026-10-26: egg flight into a nearby wall, the one-time three-coin burst and ordinary pickup are now verified; see native-wooden-crate-spit-verified-2026-10-26.txt. The original capture/egg-creation check below remains valid.
+
+Native wooden crate194 - Yoshi capture and egg creation - 2026-10-26
+Status: VERIFIED for one authored Hazy Maze Cave crate, using Yoshi.
+
+Executable SHA256:
+6a0bee65412594941b0bf4f33e67cb7eec41caaaf10d85ad8cf10c10aaff004d
+Native build, six input/collision/scene/particle CTests and the native-data
+audit pass. Original crate source/header, Player.cpp and egg source are unchanged
+from the public baseline. This milestone only extends optional observation and
+normal-input QA; the existing native actor integration already supports eating.
+
+The isolated 4,500-frame muted replay enters course13 through the diagnostic
+course picker and confirms the original mission panel normally. It finds the
+authored crate UID22, approaches with the stick and presses attack at tick2329.
+No actor is injected and no position, state, collision, reward or save is forced.
+
+Observed behavior:
+- Original tongue contact captures this crate at tick2334: state0 -> state5,
+  with Yoshi's actual mouth reference equal to that crate.
+- The crate stays in his mouth through the normal hold interval; Yoshi then
+  enters St_Swallow_Main. The original OnTurnIntoEgg callback runs once2550.
+- The same crate enters state6, marks its one-time payout paid and registers
+  three coins on the egg payload (player egg byte12 before final variant bits).
+- Egg UID126 is created2551, param224, state0. Its original param bits6..9 carry
+  exactly three coins. Variant2 is the original cuboid crate egg; its square
+  white/green model is visible in screenshot2700.
+- No loose coins spawn and course coin credit remains0, as expected before the
+  egg releases its reward. The egg persists, Yoshi's mouth clears, and his
+  Wait state has normal control through the end of the replay.
+- Exit0, audio errors0, zero submitted nonzero samples. Isolated minigames.sav
+  and slot1.sav are byte-identical to the seed files.
+
+Reproducible QA: work/run-native-crate-20261026.ps1 -Mode eat
+Acceptance checker: port/tools/check_native_crate_eat.py CASE_DIRECTORY
+Private case: work/native-crate-yoshi-eat-scout-r1-20261026
+Private result: that case's crate-eat-acceptance.json
+Screenshots2350 and2700 were inspected and shown in the chat. Tests are muted.
+
+The opt-in crate trace now observes mouth identity, hold timer and player egg
+byte, and the host adapter observes the existing try-eat callback. Those paths
+remain disabled in ordinary play. Normal pound/reset pilots are preserved.
+No new closure/data symbols are needed; symbol-only metadata remains5269 names.
+
+Limits: this is capture and creation of the three-coin egg for one placement,
+not acceptance of egg firing/reward release, spitting, carrying, throwing,
+course re-entry, original castle-to-course entry or every crate variant.
+No full actor/campaign acceptance, F: installation, stable promotion, public
+export or release is claimed. The existing public kit remains unchanged.
+Executable, ROM-derived data, saves, screenshots, traces and tested folders
+remain private. Full native-port goal remains active and incomplete.
