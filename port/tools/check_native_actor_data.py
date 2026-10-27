@@ -35,6 +35,15 @@ def main():
         base = int(re.search(r'\.text\s+start:0x([\da-f]+)', text)[1], 16)
         return base, (ROOT / f'extracted/overlays/overlay_{number:04d}.bin').read_bytes()
 
+    # The original common-model BSS cache occupies 0x0209cefc..0x0209d3ac:
+    # 100 twelve-byte entries. A legacy 64-entry host buffer placed its count
+    # inside that span, so registering more models corrupted adjacent state.
+    common_cache=named('data_0209cefc')
+    common_count=named('data_0209cef8')
+    if common_cache<=common_count<common_cache+(0x0209d3ac-0x0209cefc):
+        raise ValueError('Native common-model cache is smaller than the original 100-entry BSS span')
+    print('PASS: original 100-entry common-model cache span does not overlap its native counter')
+
     from sound_host import STAGE_SOUND_START,STAGE_SOUND_END,STAGE_SOUND_LABELS
     sound_base=named(STAGE_SOUND_LABELS[0])
     for i,name in enumerate(STAGE_SOUND_LABELS):
@@ -102,6 +111,7 @@ def main():
             ('g_profile_HATENA_SWITCH','daObjHatenaSwitch_c_classInit',2,0x02108e38),
             ('pc_castle_light_profile','daObjC1Hikari_c_classInit',10,0x02112b84),
             ('pc_ambient_sound_profile','daSetSE_c_classInit',2,0x0210b47c),
+            ('pc_healing_heart_profile','daObjHeart_c_classInit',2,0x02109c50),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
@@ -119,6 +129,13 @@ def main():
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
 
     base2,rom2=overlay(2)
+    for label in ('data_ov002_0210e104','data_ov002_0210e0fc'):
+        named(label)
+        owners=[line for line in args.map.read_text().splitlines()
+                if re.search(r'\s_'+label+r'\s',line)]
+        if len(owners)!=1 or not owners[0].rstrip().endswith('daObjHeart_c.cpp.obj'):
+            raise ValueError('Healing-heart resources must belong to the native actor: '+label)
+    print('PASS: original HEART profile/native factory and both canonical native resource handles')
     switch_records=records(ROOT)
     for label in ('data_ov002_0210d8b4','data_ov002_0210d774'):
         row=next(item for item in switch_records if item['name']==label)

@@ -66,6 +66,8 @@ extern "C" unsigned short data_0209b274;
 extern "C" dFader_c *data_0209f5bc;
 extern "C" signed char data_02092110;
 extern "C" signed char data_0209f2f8;
+// Native model-cache storage belongs to the HAL, not a shared game header.
+extern "C" int data_0209cef8[1];
 extern "C" void *data_0209f394[];
 extern "C" unsigned char data_0209caa0[];
 extern "C" unsigned char data_0209d4c8[];
@@ -191,6 +193,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/warp_probe.h"
 #include "hal/warp_replay.h"
 #include "hal/koopa_replay.h"
+#include "hal/healing_heart_replay.h"
 #include "hal/lift_replay.h"
 #include "hal/signpost_replay.h"
 #include "hal/crate_replay.h"
@@ -916,6 +919,70 @@ static bool replay_lava_bridge_lifecycle() {
         return controls();
     }
     if(phase==3 && replay_course_route_complete){phase=4;event("done");}
+    return false;
+}
+
+// Input-only heart course cycle. Original menus, stage transitions, actors,
+// damage and healing remain responsible for every observed gameplay change.
+static bool replay_healing_heart_cycle() {
+    const char *mode=std::getenv("SM64DS_PC_TEST_HEART");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *route=std::getenv("SM64DS_PC_TEST_HEART_RETURN_ROUTE");
+    if(!mode || std::strcmp(mode,"cycle") || !automation || std::strcmp(automation,"1") || !route || !*route)return false;
+    enum {FIRST,EXIT,CASTLE,RETURN_ROUTE,SECOND,FINISHED};
+    static int phase=FIRST,visit=1;
+    static unsigned heartId=0;
+    static uint64_t contactAt=0;
+    const auto tick=ntr::rt_frame();
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    auto *heart=data_0209f2f8==6?static_cast<daObjHeart_c *>(dActor_c::FindWithActorID(297,nullptr)):nullptr;
+    auto ready=[&](){return p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;};
+    auto event=[&](const char *name){std::fprintf(stderr,
+        "[native heart cycle] event=%s visit=%d tick=%llu uid=%u level=%d health=%d\n",
+        name,visit,static_cast<unsigned long long>(tick),heart?unsigned(heart->uniqueID):heartId,
+        int(data_0209f2f8),p?p->GetHealth():-1);};
+    uint16_t buttons=0;
+    auto controls=[&](){ntr::input_test_controls(true,buttons,0,0);return true;};
+    if(phase==EXIT) {
+        if(data_0209f2f8==2 && p && p->aliveState==1) {
+            phase=CASTLE;replay_course_route_waypoint=0;replay_course_route_complete=false;
+            event("castle-return");
+        } else {
+            if(!data_0209f2c4) {if(ready() && tick%45<3)buttons=8;}
+            else if(data_0209f248==11 && tick%45<3)buttons=4;
+            else if(data_0209f248==3 && tick%45<3)buttons=data_0209f2e0==3?1:0x80;
+            return controls();
+        }
+    }
+    if(phase==CASTLE) {
+        unsigned selected=0,selectionPhase=0,selectionMode=0,confirmed=0,selectionReady=0;
+        if(pc_star_select_status(&selected,&selectionPhase,&selectionMode,&confirmed,&selectionReady))
+            return false; // Existing ordinary Mission2 menu pilot handles this.
+        if(data_0209f2f8==6 && ready()) {
+            visit=2;phase=RETURN_ROUTE;contactAt=0;
+            event("course-reentry");
+        } else {
+            if(data_0209f2f8==2 && ready()) {replay_course_route(route);return true;}
+            if(data_0209d660 && tick%45<3)buttons=1;
+            return controls();
+        }
+    }
+    if(phase==RETURN_ROUTE) {
+        if(data_0209f2f8!=6 || !ready())return controls();
+        if(!replay_course_route_complete) {replay_course_route(route);return true;}
+        phase=SECOND;heartId=heart?heart->uniqueID:0;event("return-route-complete");
+    }
+    if(phase==FINISHED)return controls();
+    if((phase==FIRST || phase==SECOND) && heart && heart->aliveState==1 && ready()) {
+        if(!heartId){heartId=heart->uniqueID;event("initial-heart");}
+        if(heart->mWasTouched && p->GetHealth()==8) {
+            if(!contactAt){contactAt=tick;event("healed-contact");}
+            if(tick>=contactAt+360) {
+                if(phase==FIRST) {phase=EXIT;event("exit-request");return controls();}
+                phase=FINISHED;event("repeat-healing-complete");return controls();
+            }
+        }
+    }
     return false;
 }
 
@@ -2255,7 +2322,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -2393,6 +2460,16 @@ static bool trace_script_progress(uint64_t frame)
     }
     // Optional bounded state sampling for reproducible gameplay checks. It
     // observes actual actors after the frame; normal play never opens a file.
+    if(const char *path=std::getenv("SM64DS_PC_MODEL_CACHE_TRACE")) {
+        static FILE *file=std::fopen(path,"w");
+        static int previousCount=-1,previousLevel=-999;
+        const int count=data_0209cef8[0],level=int(data_0209f2f8);
+        if(file && (count!=previousCount || level!=previousLevel)) {
+            if(previousCount==-1)std::fputs("tick,level,count\n",file);
+            std::fprintf(file,"%llu,%d,%d\n",static_cast<unsigned long long>(ntr::rt_frame()),level,count);
+            std::fflush(file);previousCount=count;previousLevel=level;
+        }
+    }
     const char *state_path = std::getenv("SM64DS_PC_STATE_CAPTURE");
     if (state_path && state_path[0]) {
         static FILE *state_file = nullptr;

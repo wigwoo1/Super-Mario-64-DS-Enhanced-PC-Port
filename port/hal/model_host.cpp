@@ -124,7 +124,11 @@ int data_020a4b98[4];
 int data_02099f24[4];
 
 // ---- common model data array (BSS on the DS) ------------------------------
-int data_0209cefc[3 * 64];  /* 64 records x 0xc */
+// Original BSS spans 0209cefc..0209d3ac: 100 records of twelve bytes.
+// The former gate-sized 64-record buffer overwrote its neighboring counter
+// once a full native course registered more than 64 models.
+int data_0209cefc[3 * 100];
+static_assert(sizeof(data_0209cefc)==0x0209d3ac-0x0209cefc,"original common-model cache capacity");
 int data_0209cef8[1];       /* record count */
 int data_0208e738[1] = { 1 };   /* nonzero: upload textures on registration */
 int _ZTV9ModelBase[8];       /* ModelBase vtable storage; never dispatched */

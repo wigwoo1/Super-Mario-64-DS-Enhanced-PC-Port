@@ -1,0 +1,39 @@
+Latest ambient-build Battlefield question-block reentry - VERIFIED 2026-10-27
+
+Executable SHA256:
+FD70BD353848ED170A3B183D3B020A262B780AAA917D760B0E1DB03E8483F350
+This is the current canonical executable including native ambient emitters and
+the original sound-distance startup initialization. No gameplay repair was
+needed for this regression; original actors, input pilot and rewards are unchanged.
+
+Build and checks
+The native build succeeds with no pending compilation. All eight focused
+replay/clock/input/session/stage/collision CTests and the full native actor-data
+audit pass. The existing strict question-block reentry checker passes unchanged.
+
+One fresh muted 16000-frame run starts through original title/File A/castle/
+painting menus, using an isolated activation-enabled Yoshi prerequisite save.
+Yoshi ordinarily jumps into authored block135 at(294,250,6400), which pops6673.
+Power Flower308 is actually collected6810, running Yoshi's original fire setup.
+Original pause/Exit Course returns to castle7467. The painting route reenters
+Battlefield8874; the same placement has fresh block375. An ordinary jump pops
+it10450; new flower549 is actually collected10603 and again starts fire setup.
+The block resets after cooldown. Final16000 is Wait with normal control;
+story Star total1/mask2 and all isolated slot/minigame saves stay unchanged.
+The process exits0, audio errors0 and submitted nonzero device samples0.
+The pilot provides normal movement/buttons/menu inputs only.
+
+Private evidence, excluded from publication
+work/native-muted-audio-walk-question-block-reentry-latest-ambient-build-r1-20261027-20261026-20261021/
+  question-block-reentry-acceptance.json
+work/build-question-reentry-ambient-current-20261027.log
+work/question-reentry-ambient-current-native-audit-20261027.txt
+work/question-reentry-ambient-current-acceptance-20261027.log
+Screens6900 first pickup tutorial,10500 second reward release,12000 restored
+block were inspected and shown. No personal saves were used or modified.
+
+Scope: one Battlefield content5 block with Yoshi and its Power Flower reward.
+The prepared activation is not earned progression. Other block variants, fire
+combat and full campaign remain open. No production behavior change, stable
+installation promotion or new binary is claimed by this regression. Luna
+Medium remains suitable for bounded established replay tests; goal ACTIVE.

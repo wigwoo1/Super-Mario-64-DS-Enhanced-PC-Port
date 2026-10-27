@@ -1,0 +1,63 @@
+Native recovery-heart297 integration - VERIFIED selected Battlefield case - 2026-10-27
+
+Current executable SHA256 41b489984537385784db4141e3442293f5a6c9010de173b3093280a83ec2c8f4.
+The native actor registry lacked HEART297, although its recovered eight-function
+source exists. The native build now compiles that original class and registers
+its factory with the original descriptor priorities, flags and ranges. The host
+adapter defers model1136/animation1137 startup until native resources exist;
+size0x174, model0xd4, cylinder0x138 and timer0x170 assertions pass. Original
+actor/header/Player sources are unchanged. Healing amount, contact latch,
+cooldown, spinning and sound rules remain original. Optional observations and
+the damage/heart pilot are read-only or ordinary-input QA, never health edits.
+
+Build and gameplay
+Native build, eight focused CTests and full native actor-data audit pass,
+including original HEART descriptor/native factory/canonical resource owners.
+Symbol-only support remains5272 names, byte-identical to generated metadata;
+no new ROM-data recipe or object is introduced. Static registry coverage grows
+72->73 profiles and sixteen authored heart records acquire an entry. This does
+not establish all sixteen placements or all actors working at runtime.
+
+A fresh muted28000-frame original title/File A/castle/painting/Mission2 route
+uses separate prepared two-Star Mario prerequisites and the qualified mountain
+ascent. Real Goomba143 hits leave Mario at health2 at18632. Incidental coins
+bring him to5; original heart177 contact20005 immediately heals5->8 with
+amount1536 at horizontal speed123654. Forty-four later stationary calls use
+amount256, retain full-health clamping and occur180 rendered ticks apart.
+Fast spin32768,3890 visible samples/30 clipped triangles and original bank3
+sound97 calls are observed. Final28000 is living Wait with normal control;
+story2/mask6 and valid isolated saves remain unchanged. Exit0/errors0/device
+nonzero samples0. The strict checker rejects a full-health-only run as proof
+of restoration. Screens20000/21000 show5 health before and8 after.
+
+Earlier component r2/D197F7234BE63038C0ABC8ADEA87303472741D2598D846B1AAB8314BAE93FCD3
+passed23000 frames/22 calls/full-health clamp, but did not prove actual healing.
+R1 omitted the established input-pilot jump option and stalled below the bridge;
+only that diagnostic process was deliberately stopped. R2 restored the option;
+no production bridge or physics correction was needed. Final injury mode adds
+ordinary Goomba-contact input only and passes its first actual recovery attempt.
+
+Private F preview
+playtests/healing-heart-20261027/Play With Audio.cmd is a fresh separate preview
+with the exact accepted executable, its own prepared two-Star Mario saves and
+settings, audio enabled for play, and the original root ROM (not copied).
+It shares verified extracted assets with sibling ambient-audio-20261027; keep
+that sibling directory. The exact F launcher passes a muted3000-frame diagnostic
+Battlefield/Mission2 bootstrap and native heart resource load, clean exit and
+untouched manual fixture saves/settings. This F check is boot/resource coverage;
+actual healing is established by the same-hash original-menu run above.
+
+Private evidence (do not publish these directories/logs/images/assets/EXEs)
+work/native-muted-audio-walk-healing-heart-battlefield-injured-r3-20261027-20261021/
+  heart-restoration-acceptance.json
+work/check-healing-heart-20261027.py
+work/healing-heart-injury-native-audit-20261027.log
+work/healing-heart-f-preview-acceptance-20261027.json
+
+Limits/next
+Selected Mario/placement only. Heart cleanup/course reentry, other characters/
+placements, listening fidelity and full campaign remain open. Public2a1f7dc and
+the ambient ROM-free kit predate this actor; no heart source export/new kit is
+claimed. Full executables/assets/saves/screens stay private. Next bounded check:
+original course exit/reentry, fresh heart/resource identity and repeat healing.
+Luna Medium remains suitable; full goal ACTIVE, no model switch/pause needed.

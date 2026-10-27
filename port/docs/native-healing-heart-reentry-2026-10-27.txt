@@ -1,0 +1,69 @@
+Original heart course cycle and model-cache capacity repair - VERIFIED - 2026-10-27
+
+Current executable SHA256 ff181b0a6ab1453e54d8a0ae052f4ee05af211a982ff26b935ea4c1036180952.
+
+Problem and repair
+The first native heart course-cycle run crashed at20649 during original stage
+cleanup. The stack resolves to ExpandingHeapAllocator::Deallocate via Heap,
+Memory and CleanCommonModelDataArr, not a proven heart-destructor failure.
+The native HAL reserved64 twelve-byte common-model records. Original ARM9 BSS
+symbols bound the cache at0209cefc..0209d3ac:100 records. The small host buffer
+placed its neighboring count inside that original span, so full course model
+registration could overwrite adjacent storage. Native model_host.cpp now
+reserves the original100 records, with a compile-time span assertion. No frees
+are skipped, no invalid pointers ignored, and original cleanup remains intact.
+The full native audit rejects the old executable's overlapping counter and
+passes the fixed allocation. Read-only runtime cache telemetry confirms68
+records, a clear to0 on exit and a successful67-record rebuild on reentry.
+
+Verification
+Native build/eight focused replay/clock/input/session/stage/collision CTests,
+three existing model/heap/model-destruction tests and full native actor-data
+audit pass. Symbol-only metadata remains5272 names and matches generated data;
+no new ROM-derived data recipe/object is introduced. Original recovered actor,
+header and Player files remain unchanged. QA-only route, jump/detour and contact
+counters now reset for replacement heart/Koopa actor IDs after course reload.
+
+One fresh muted45000-frame run follows original title/File A/castle/painting/
+Mission2 with an isolated prepared two-Star Mario fixture. Ordinary Goomba143
+hits leave health2; coins bring5, then heart177 heals5->8 at20005. Original
+pause/Exit Course triggers heart cleanup20649; castle returns20652. Original
+painting/Mission2 reentry loads fresh heart428 at21889 and enters21994. Its
+timer/contact flags start0 and its native model/animation load. The qualified
+gate/mountain route repeats. New Goomba394 hits leave health2; coins bring5,
+then new heart428 heals5->8 at38005. Native spin, visibility and cooldown pass
+on both visits. Final45000 is living Wait with normal control. Story total2/
+mask6 and valid isolated slot/minigame saves remain unchanged; exit0, audio
+errors0 and submitted nonzero device samples0. The strict private checker
+requires both actual health increases, fresh identities, cleanup/reload and
+the exercised former-overflow range; a successful startup alone cannot pass.
+Screens20400 pause,22000 reentered course,38000 before/39000 after second
+healing were inspected and shown. First focused cache-capacity repair passed.
+
+Private playable preview
+F:/AI Games/Mario 64 DS/playtests/healing-heart-reentry-20261027/Play With Audio.cmd
+has the exact accepted executable and separate prepared two-Star Mario saves/
+settings. Main game, original ROM, personal progress and older builds are
+preserved. Audio is enabled for manual play. Keep sibling ambient-audio-20261027,
+which supplies shared verified extracted assets; the ROM is not copied.
+The actual F launcher passes a separate muted3000-frame diagnostic Battlefield
+bootstrap/resource check, including67 model-cache records, normal final control,
+unchanged fixture/settings and clean exit. Actual course-cycle behavior is
+proved by the identical-hash original-menu run above, not by the startup check.
+Use this newer preview for the verified exit fix; the earlier healing-heart
+preview used the undersized cache. All full executables/assets stay private.
+
+Evidence excluded from public packages
+work/native-muted-audio-walk-healing-heart-cycle-cache100-r2-20261027-20261021/
+  heart-cycle-acceptance.json, model-cache.csv, heart.csv, screenshots and logs
+work/check-healing-heart-cycle-20261027.py
+work/heart-reentry-f-preview-acceptance-20261027.json
+The failed r1 case/map/executable and negative audit remain diagnostic evidence.
+
+Scope/next
+Selected Battlefield heart/Mario course cycle only; other placements/characters,
+listening fidelity, all actors/full campaign and enhancements remain open.
+Current public source2a1f7dc/ambient kit predates the heart and capacity fix.
+Next review/export current source, refresh the ROM-free kit, freshly reconstruct
+and run it before publication. Preserve all private data exclusions. Luna Medium
+is suitable for that established workflow; full goal ACTIVE/no model switch.

@@ -134,6 +134,17 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
     if(!koopa || koopa->aliveState!=1)return false;
     static int previousState=-1;static bool pathLogged=false;
     static unsigned offers=0;static bool interactionDone=false,retreated=false;
+    static unsigned trackedKoopa=0,node=1,lastJumpNode=~0u,detourIndex=0,pickupLeg=0;
+    static uint64_t jumpUntil=0,nextJump=0,lastProgress=0;
+    static double bestDistance=1e100;
+    if(trackedKoopa!=koopa->uniqueID) {
+        trackedKoopa=koopa->uniqueID;
+        previousState=-1;pathLogged=false;offers=0;interactionDone=false;retreated=false;
+        node=1;lastJumpNode=~0u;detourIndex=0;pickupLeg=0;
+        jumpUntil=nextJump=lastProgress=0;bestDistance=1e100;
+        std::fprintf(stderr,"[native Koopa replay] event=instance tick=%llu uid=%u; reset input-pilot bookkeeping only\n",
+            static_cast<unsigned long long>(tick),trackedKoopa);
+    }
     auto interaction=[&](const char *name) {
         std::fprintf(stderr,"[native Koopa interaction] event=%s tick=%llu offers=%u state=%d step=%u cooldown=%u answer=%u character=%u racing=%u\n",
             name,static_cast<unsigned long long>(tick),offers,koopa->mState,unsigned(koopa->mStep),
@@ -191,8 +202,7 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
         else buttons=1;
     }
     else if(pilot && koopa->mState>=2) {
-        static unsigned node=1,lastJumpNode=~0u;
-        static Vector3 detour[2048];static unsigned detourCount=0,detourIndex=0;
+        static Vector3 detour[2048];static unsigned detourCount=0;
         static const int detourRadius=[](){
             const char *value=std::getenv("SM64DS_PC_TEST_KOOPA_DETOUR_RADIUS");
             return value?(std::max)(10,(std::min)(120,std::atoi(value))):70;
@@ -212,8 +222,6 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
                 std::fprintf(stderr,"[native Koopa walking detour] loaded=%u radius=%d\n",detourCount,detourRadius);
             }
         }
-        static uint64_t jumpUntil=0,nextJump=0,lastProgress=0;
-        static double bestDistance=1e100;
         if(data_0209d660) {if(tick%45<3)buttons=1;return controls();}
         if(player->mIsNoControl || player->mIsControlDisabled)return controls();
         Vector3 point={player->mPosX,player->mPosY,player->mPosZ};
@@ -305,7 +313,6 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
                 point={star->mPosX,star->mPosY,star->mPosZ};
                 // Leave the finish pole on foot before attempting the elevated
                 // reward. Jumping straight from the flag grabs its climb node.
-                static unsigned pickupLeg=0;
                 auto *flag=static_cast<daRFlag_c *>(dActor_c::FindWithActorID(205,nullptr));
                 if(flag && pickupLeg<2) {
                     point={pickupLeg==0?flag->mPosX:star->mPosX,

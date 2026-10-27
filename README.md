@@ -15,6 +15,15 @@ Audio listening accuracy and complete gameplay remain unverified.
 
 ## Current state
 
+- Native recovery hearts now render, spin and heal in a selected Battlefield
+  test. Original Exit Course, castle return and painting re-entry reload a
+  fresh heart, which again restores health after real enemy damage. Testing
+  exposed a native model-cache buffer sized for 64 entries instead of the
+  original 100; the original capacity is restored. A muted course cycle safely
+  registers 68 models, clears and reloads the cache, and preserves isolated
+  saves. Earlier development builds may crash during this course exit. Other
+  heart placements, characters and complete campaign coverage remain unverified;
+  see `port/docs/native-healing-heart-reentry-2026-10-27.txt`.
 - Native ambient emitters have selected castle playback, range, room reload
   and camera-underwater suppression/resumption checks. The original level8
   mission/collected-Star gate passes a three-case comparison with isolated

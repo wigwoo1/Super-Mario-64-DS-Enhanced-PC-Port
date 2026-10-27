@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "8f173174a100228a013059e357d479efe5fdf7f14e7d7894c3e62efd12d176c9",
-      "bytes": 86701
+      "sha256": "b34f1b75ac293cc9e4f42f363a63a3ba2bab14a0b90fd50aee6b310ed30c6423",
+      "bytes": 86865
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "ed8bfb2d1f17e9320384920c9941b0f9ac1474bd445c154ee3623054e691b8d0",
-      "bytes": 29144
+      "sha256": "acf6125b4dc3b578e6bbf31d6a6b0d93545574c12c26745499a067ead50f0f50",
+      "bytes": 30767
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6774,6 +6774,16 @@
       "bytes": 4235
     },
     {
+      "path": "port/docs/native-healing-heart-2026-10-27.txt",
+      "sha256": "fe7e732f9e998dc17795a1ae2e2aa5f50fdcce6bea63bf8e6e12f74f88c917d8",
+      "bytes": 4073
+    },
+    {
+      "path": "port/docs/native-healing-heart-reentry-2026-10-27.txt",
+      "sha256": "4ca3542f2433ae936da6c02f9ab0d2298bc029d1a6345f62805ecf345809a39f",
+      "bytes": 4502
+    },
+    {
       "path": "port/docs/native-hmc-crate-reentry-verified-2026-10-26.txt",
       "sha256": "6cc8c34302ecc4b30edc91045e88196d97725b599edaaf0f2e19c8dc1cefeb92",
       "bytes": 3200
@@ -6972,6 +6982,11 @@
       "path": "port/docs/native-peach-intro-2026-10-21.txt",
       "sha256": "7d42d31666b5f116ee3ec09d2c0f91a4bc8df4459991cedd84fd9272b5dd75c3",
       "bytes": 3266
+    },
+    {
+      "path": "port/docs/native-question-block-ambient-regression-2026-10-27.txt",
+      "sha256": "de9684355a33f1bd83a38fbd07db605ca1d85dbea3e9ba633196a2ae9a4db083",
+      "bytes": 2393
     },
     {
       "path": "port/docs/native-question-block-current-regression-2026-10-27.txt",
@@ -7285,8 +7300,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "c90a542a5b32fb3fd0de5e63f1c2e4ea6c3bd0579fdb5aba83947c469eafcbec",
-      "bytes": 15235
+      "sha256": "2426ed2060b53ac11e5c704728a75a3fe4ef07fe384722c0c94aaa5eaa6b0aff",
+      "bytes": 15913
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7440,8 +7455,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "ef65118e9db762e1186b28dd0338273c099298ba5f1f4ed1c4c99548f6cab339",
-      "bytes": 43244
+      "sha256": "745bfe7ed908c45eb6b49a90140ce8863bd2b6aaffa43b24840d64da8867e50e",
+      "bytes": 43556
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7594,6 +7609,11 @@
       "bytes": 3208
     },
     {
+      "path": "port/hal/healing_heart_replay.h",
+      "sha256": "d18ff10111c09eab5ec7976993fd8e5997a440b3d4c8ac78bc1ecbbf09fb3d2d",
+      "bytes": 5600
+    },
+    {
       "path": "port/hal/heap_globals.cpp",
       "sha256": "63daccff6fb528d5fe7fa04d98ddf4c8fcd3ecffc788ade709e94eaca64c1079",
       "bytes": 8735
@@ -7620,8 +7640,8 @@
     },
     {
       "path": "port/hal/koopa_replay.h",
-      "sha256": "e89b149febf75108343bdaf85c4c617a2332b00d9d085e9b128cca57f244d60f",
-      "bytes": 21367
+      "sha256": "45877d32237051fdda9a29388f9d854563ad822a6a636c5497cd91b872036cce",
+      "bytes": 21820
     },
     {
       "path": "port/hal/level_overlay.cpp",
@@ -7655,8 +7675,8 @@
     },
     {
       "path": "port/hal/model_host.cpp",
-      "sha256": "b7f68caeb643ff0726e9f227e9518340b2986bd1ba89322d9570327a006911c0",
-      "bytes": 9639
+      "sha256": "ec0423117ddbd7e742a4b3664b446c6d952007cb6760374d722918e71c85b4ac",
+      "bytes": 9924
     },
     {
       "path": "port/hal/native_save.cpp",
@@ -7885,8 +7905,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "aabdef9a1f9bdce5044d966e66b6e3fdd01ef52f5053f349963260d412bebf13",
-      "bytes": 176830
+      "sha256": "b25262969ef75d0f0bf2c9db74099595d19e2fef04004fffcb84714ee9bc0a2e",
+      "bytes": 180993
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8845,8 +8865,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "6e00db570d9c86517b11a2a545f691004a43789ae01c2d1eb40efea5739b3ebd",
-      "bytes": 46296
+      "sha256": "c5b7230e8a30143266a55292461ac82090df9d16de98b609da234e6042f4d1d3",
+      "bytes": 46543
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8985,8 +9005,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "5f4107f36068746484be6840db89820f74f6e90a32fa74276ba751df56473645",
-      "bytes": 35315
+      "sha256": "4b6c45228e3164d2384148aa4c815dcf6877d7a27334610abe3aadf7f37765b7",
+      "bytes": 36467
     },
     {
       "path": "port/tools/check_native_crate_carry.py",
@@ -9174,6 +9194,11 @@
       "bytes": 3091
     },
     {
+      "path": "port/tools/healing_heart_host.py",
+      "sha256": "9c08bb17120c776aa994847b319aa1a464a57547c528c97a1b91774dfa7404e7",
+      "bytes": 4009
+    },
+    {
       "path": "port/tools/host_frontier.py",
       "sha256": "5b1f8d26e73171a54391004af7531f5d3f7b351df52085cf2a4e986779260966",
       "bytes": 7095
@@ -9265,8 +9290,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "e8c5bdd38aa83587a164910b5868d815892f3f3eabadd96b27c3d46ea6785bd3",
-      "bytes": 11563
+      "sha256": "1e05c5d3e3f5bea4a7fe870ab21d03afe6fa3a04a960597b9d034f767dfc0da3",
+      "bytes": 12118
     },
     {
       "path": "port/tools/native_kit_data.py",
