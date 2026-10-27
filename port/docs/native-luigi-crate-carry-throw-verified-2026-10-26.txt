@@ -1,0 +1,21 @@
+Luigi carries and throws the original wooden crate - 2026-10-26
+Status: VERIFIED for Luigi carrying, throwing and breaking one authored Hazy
+Maze Cave crate. No gameplay code changed.
+
+The current native build ran muted for 3,000 frames and exited0. The replay
+uses ordinary attack and movement inputs, a private synthetic 60-Star/key save
+with only the character byte changed to Luigi, and the diagnostic course picker.
+Native traces confirm Luigi id1/model1, original grab collision, crate state
+0->1 carried->2 thrown->6 broken, ownership clearing, and the original throw
+speed40 horizontal/20 vertical. The wall impact produces the original break
+and three coin actors. Isolated saves remain byte-identical; audio reports
+zero submitted samples/errors. Evidence: private work/native-crate-luigi-
+carry-throw-r1-20261026/luigi-carry-throw-acceptance.json.
+
+This checks only one Luigi/crate placement. In the extra reward-following route,
+Luigi collected two coins, then fell into the lower cave pit; the third coin
+expired with original timer1. That is a failed test route, not an identified
+gameplay defect, and is not counted as full three-coin acceptance. Normal
+control after this optional route also remains unverified. Existing Mario
+three-coin acceptance is separate. Original crate, coin and Player source
+files remain byte-identical to the reviewed public baseline. All tests muted.

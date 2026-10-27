@@ -1,0 +1,41 @@
+Mario crate carry, throw and complete coin pickup - 2026-10-26
+Status: VERIFIED for one authored Hazy Maze Cave crate with Mario.
+
+The native build and eight focused CTests pass (seven clock/input/session/scene/
+collision checks plus smoke_replay_path). The muted 3,000-frame replay exits0,
+audio errors0/nonzero submitted samples0, with unchanged isolated saves.
+Strict checker port/tools/check_native_crate_carry.py passes on private case
+work/native-crate-mario-carry-sign-descent-finish-r3-20261026.
+EXE SHA256 d7f0deffb6dc1cd0af36aef05a19726690b0403278dc904ff100513379f5e8ab.
+
+Original grab1609 -> carried walk93.46 units -> throw1721 with original40/20
+horizontal/vertical speeds and ownership released -> wall break1733 -> original
+debris14 and three new coins1734. Actual collection:127 at1848,126 at1870,
+128 at2056. Course counter0->3; each collected coin resets its original timer0.
+A normal jump/climb input leaves the original ledge-hang state; ledge-grab2120
+and final3000 Wait/control enabled. The original crate respawns at2025 with
+its paid flag preserved after the original off-screen/distance condition;
+there is no second Kill, coin group or reward credit in this run.
+
+The earlier missing third coin was a QA routing failure, not a gameplay fix.
+New read-only fields prove original coin128 countdown210->1 and expiry2152
+in the observation run. Live collision identifies signpost184/uid20 as the
+obstacle. Original sign mesh extents and stage-floor/ceiling review support
+an input-only detour around it followed by an open descent to the lower floor.
+The successful run collects the coin before expiry. No lifetime extension,
+collision removal, actor relocation, forced state or awarded credit was used.
+Only opt-in crate replay, read-only tracing and strict evidence checks changed.
+Original daObjBlockS_c.cpp, daCoin_c.cpp and Player.cpp match public baseline.
+No new native-data symbols were required.
+
+Limits: synthetic Mario prerequisite save and diagnostic initial course entry;
+one authored placement, not all characters/placements or campaign acceptance.
+The camera occludes Mario behind foreground terrain during the lower-floor
+pickup/climb captures; this is not accepted as camera/rendering coverage and
+needs a separate check. Carrying and debris captures visibly show the action.
+Earlier failed cases remain diagnostic; their verdicts were not rewritten.
+
+No F: install, public source export, kit refresh, release or stable promotion.
+All full executables, ROM-derived assets/data/geometry, routes, saves, logs and
+screenshots remain private. Goal remains unfinished. The difficult route issue
+is resolved; Luna Medium is suitable for the next bounded crate variant check.

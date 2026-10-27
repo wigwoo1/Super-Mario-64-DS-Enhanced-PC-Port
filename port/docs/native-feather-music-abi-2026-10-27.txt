@@ -1,0 +1,80 @@
+Mario Feather pickup, refresh, and Battlefield re-entry - 2026-10-27
+Status: VERIFIED for the selected content5 Battlefield block.
+The full campaign, other characters' block rewards, and flight controls are
+outside this acceptance scope.
+
+Correction to the previous diagnostic handoff
+Actor191 (0xbf) is the generic player, and Player param1=0 is Mario.
+The recovered Feather code already permits Mario and calls InitWingFeathers.
+The preceding claim that it rejects Mario or is Yoshi-only was incorrect.
+No change to the Feather's retail eligibility or reward behavior is required.
+The recovered Feather/Player sources and headers match the reviewed public
+source byte-for-byte. The prior experimental character-eligibility changes
+remain reverted.
+
+Crash cause and repair
+Four recovered player music helpers declare EndMusic(unsigned char) and make
+six one-argument calls, while the actual linked function is
+Sound::EndMusic(unsigned int, unsigned int). Its second argument is unused by
+the retail implementation. Under the native x86 optimizer, EndMusic reuses
+that argument's stack slot to tail-call the background music restart. With
+only one argument supplied, this writes over a caller's saved register.
+In the saved failure, the Feather pointer in EBX became58, the background
+music track being restored, then Feather::Behavior faulted immediately after
+returning from InitWingFeathers. The exact saved executable/map and its
+disassembly confirm the fault is in Feather::Behavior, not GPU retirement.
+
+The generated host Player source now declares the complete void-returning
+two-argument function and passes zero in its unused second slot at all six
+sites. player_music_host.py makes inventory-checked substitutions. Disassembly
+of the repaired executable confirms the explicit second push and eight-byte
+caller cleanup. No sound sequence, actor eligibility, reward, or physics rule
+is changed. CMake tracks both new host adapter modules for regeneration.
+
+Read-only opt-in Feather tracing records the actual collider owner and the
+original InitWingFeathers result (wing flag and power-up timer). The QA pilot
+now observes Mario's original wing state as well as Yoshi's original fire flag.
+It still uses ordinary stick/button input, original menus/course transitions,
+native block contact, and natural item collection. No replay actor/reward
+writes or teleport are used. Test save prerequisites/character are synthetic
+and isolated; earning the original activation switch is not claimed here.
+
+Build and acceptance
+Release executable SHA256:
+689B8C59B329DC3413A418277AC5A5F83284438F6382502F3819187CDA302D5B
+Build logs: work/build-feather-music-abi-20261027-r1.log and
+work/build-feather-music-abi-20261027-final.log. Compile/link and all7 focused
+clock/input/session/stage/collision CTests PASS; final configure is clean with
+no additional build work. Generated-source inventory checks PASS.
+
+Course-cycle case (16,000 frames):
+work/native-muted-audio-walk-question-block-mario-native-music-abi-r1-20261027-20261021
+Block129 bounces/pops from a normal jump; Feather302 pickup6670 sets Mario's
+wing flag1 and timer1800. Original pause/Exit Course returns to castle7109.
+Original painting/course flow re-enters Battlefield8454. Fresh block368 at the
+same authored position/content bounces/pops; fresh Feather542 pickup10127
+again sets wing flag1/timer1800. Original block restores after its cooldown,
+the power later expires normally, and final16000 is normal Wait/control.
+
+Same-course refresh case (10,000 frames):
+work/native-muted-audio-walk-question-block-mario-native-music-refresh-r1-20261027-20261021
+Ordinary jumps6800 and7800 hit the same authored block across its cooldown.
+Feather302 pickup7014 activates wings. Feather303 pickup8014 occurs while
+Mario already has wings and the old timer is still positive; the original
+pickup restores it to1800. Native audio trace at game tick5209 restores
+background track58 then starts Wing Cap51, exercising the exact previously
+corrupting music transition. This run reaches10000 in normal Wait/control.
+
+Both runs exit0 with no exception and native audio errors0. Engine rendering
+remains enabled but device output is muted with zero submitted nonzero samples.
+Both isolated slot/minigame saves remain byte-identical to their fixture.
+Power Star total stays1 and story star mask2. Private checker
+work/check-feather-lifecycle-20261027.py verifies these invariants and writes
+feather-acceptance.json in each case. Screens shown include castle8000,
+re-entered wing-cap Mario10500, and same-course refreshed wing-cap Mario8100.
+Logs, saves, full executables, captures, and assets remain private.
+
+No F install, public export, release, or build kit was made. Future kits need
+the reviewed host adapters and fresh-folder reconstruction/runtime acceptance.
+Luna Medium is suitable for the next bounded character/reward check. The full
+goal remains active; this milestone does not establish full-game acceptance.

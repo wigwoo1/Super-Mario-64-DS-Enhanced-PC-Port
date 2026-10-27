@@ -18,12 +18,12 @@ inline void event(const char *name, const daObjBlockS_c *crate) {
     if(!path || !*path || !crate)return;
     if(!std::strcmp(name,"behavior") && ntr::rt_frame()%5 && !crate->mdCcAcPos_c1.hitFlags)return;
     static FILE *file=nullptr;
-    if(!file){file=std::fopen(path,"w");if(file)std::fputs("event,tick,uid,param,state,alive,x,y,z,flags,holder,eater,coins_paid,break_timer,hit,other,player_x,player_y,player_z,player_uid,player_param,player_mouth_is_crate,player_mouth_timer,player_egg_params\n",file);}
+    if(!file){file=std::fopen(path,"w");if(file)std::fputs("event,tick,uid,param,state,alive,x,y,z,flags,holder,eater,coins_paid,break_timer,hit,other,player_x,player_y,player_z,player_uid,player_param,player_mouth_is_crate,player_mouth_timer,player_egg_params,prev_holder,player_held_is_crate,player_state_step,horz_speed,vert_speed,heading\n",file);}
     if(!file)return;
     std::uintptr_t eater=0;
     std::memcpy(&eater,reinterpret_cast<const unsigned char *>(crate)+0xd0,sizeof(eater));
     const auto *player=static_cast<const Player *>(dActor_c::FindWithActorID(191,nullptr));
-    std::fprintf(file,"%s,%llu,%u,%u,%d,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u,%u,%u,%u\n",
+    std::fprintf(file,"%s,%llu,%u,%u,%d,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%d,%d,%d\n",
         name,static_cast<unsigned long long>(ntr::rt_frame()),unsigned(crate->uniqueID),
         unsigned(crate->param1),int(crate->mState),unsigned(crate->aliveState),
         crate->mPosX,crate->mPosY,crate->mPosZ,unsigned(crate->mFlags),
@@ -33,7 +33,10 @@ inline void event(const char *name, const daObjBlockS_c *crate) {
         player?player->mPosX:0,player?player->mPosY:0,player?player->mPosZ:0,
         player?unsigned(player->uniqueID):0,player?unsigned(player->param1):0,
         player && player->mObjInMouth==reinterpret_cast<std::intptr_t>(crate),
-        player?unsigned(player->mMouthHoldTimer):0,player?unsigned(player->mEggParams):0);
+        player?unsigned(player->mMouthHoldTimer):0,player?unsigned(player->mEggParams):0,
+        unsigned(reinterpret_cast<std::uintptr_t>(crate->mPrevHolder)),
+        player && player->mHeldObj==reinterpret_cast<std::intptr_t>(crate),
+        player?unsigned(player->mStateStep):0,crate->mHorzSpeed,crate->mVertSpeed,int(crate->mAngleY));
     std::fflush(file);
 }
 }

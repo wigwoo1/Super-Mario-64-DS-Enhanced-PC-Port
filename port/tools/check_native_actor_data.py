@@ -87,6 +87,10 @@ def main():
             ('pc_koopa_race_profile','daRNk_c_classInit',62,0x0211db78),
             ('pc_koopa_flag_profile','daRFlag_c_classInit',62,0x0211dc30),
             ('pc_item_block_profile','daObjHatenaBlock_c_classInit_ITEM_BLOCK',102,0x0214e404),
+            ('pc_question_block_profile','daObjHatenaBlock_c_classInit_HATENA_BLOCK',102,0x0214e3e8),
+            ('g_profile_POWER_UP_ITEM','daObjPowerUpItem_c_classInit',2,0x021097a0),
+            ('pc_feather_profile','daFeather_c_classInit',2,0x02108884),
+            ('g_profile_HATENA_SWITCH','daObjHatenaSwitch_c_classInit',2,0x02108e38),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
@@ -104,6 +108,13 @@ def main():
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
 
     base2,rom2=overlay(2)
+    switch_records=records(ROOT)
+    for label in ('data_ov002_0210d8b4','data_ov002_0210d774'):
+        row=next(item for item in switch_records if item['name']==label)
+        original=source_bytes(ROOT,row)
+        if pe_bytes(args.exe,named(label),len(original))!=original:
+            raise ValueError('Question switch collision properties differ from original data: '+label)
+    print('PASS: original question switch profile/native factory and both collision-property blocks')
     sign_targets = tuple(named(f'pc_sign_dispatch_{i}') for i in range(10))
     if struct.unpack('<10I', pe_bytes(args.exe, named('data_ov002_0210e084'), 40)) != sign_targets:
         raise ValueError('Signpost state dispatch does not use the ten typed native handlers')
@@ -172,6 +183,14 @@ def main():
         if actual!=named('pc_item_'+constant):
             raise ValueError('Item-block callback is not its native typed adapter: '+constant)
     print('PASS: item-block profile and all42 original callback identities bind to native typed adapters')
+
+    flower_table=pe_bytes(args.exe,named('data_ov002_021097bc'),36)
+    for row in range(3):
+        actual=struct.unpack_from('<2I',flower_table,row*12)
+        expected=tuple(named('pc_flower_dispatch_'+str(row*2+i)) for i in range(2))
+        if actual!=expected:
+            raise ValueError('Power Flower state table does not use its six typed native handlers')
+    print('PASS: original question-block/Power Flower profiles and six typed flower handlers')
 
     base62,rom62=overlay(62)
     koopa_states=((0x0211db48,0x0211a9c4),(0x0211db30,0x0211a740),

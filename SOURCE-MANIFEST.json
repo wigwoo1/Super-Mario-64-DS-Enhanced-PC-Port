@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "af73786578f5ae2b71dda396c9a250e4c7994e76922ecf232b4cf2bf90173604",
-      "bytes": 453798
+      "sha256": "89bd4bc8ae647bbc32ef98c5f392de51687fd1b05cee4e69c29e7b3f2223b656",
+      "bytes": 455946
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "6297e94eaf9ab4bc6d70341088699c8f2ef79f0ee13963a85f272564c6c7f4c8",
-      "bytes": 251128
+      "sha256": "c535af1b62257c37000cbff3a64adfe7d43e719cdd57e7921233b730897e1a9a",
+      "bytes": 251226
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "cd8d80f5c1cce5fd2a5468c9e4bd7e5d6c430509792cddf09776dfc6ac851abf",
-      "bytes": 85739
+      "sha256": "7d7be564c5068261e1c4b5d5c60b10a8f994983a9815dd6ccfbe2ef382970893",
+      "bytes": 86379
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "78799be5f2d73cc8726b790f40941dce6f7a2d8277a629e390e8f6d63a06c28e",
-      "bytes": 19437
+      "sha256": "a24fc06c9814e5350de4f0d12b461cd2171be655c934f256b17d3aaaa02f2399",
+      "bytes": 24407
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6714,6 +6714,11 @@
       "bytes": 4895
     },
     {
+      "path": "port/docs/native-feather-music-abi-2026-10-27.txt",
+      "sha256": "75ddf6704c88442e055f43aa608709eb386cd272e70d9ef1d85afa2efe826ab8",
+      "bytes": 4965
+    },
+    {
       "path": "port/docs/native-file-menu-development-2026-10-15.txt",
       "sha256": "bb53c55582dccf2b3c58bea34d8fbf7477c51007a1954a3e8c7514f477b82e7e",
       "bytes": 4715
@@ -6737,6 +6742,16 @@
       "path": "port/docs/native-goomba-checkpoint-2026-10-16.txt",
       "sha256": "e8ad3435f4a07b24ff4871b47e62ee547cd2a24a3627e03ff220fc12604b61ea",
       "bytes": 4235
+    },
+    {
+      "path": "port/docs/native-hmc-crate-reentry-verified-2026-10-26.txt",
+      "sha256": "6cc8c34302ecc4b30edc91045e88196d97725b599edaaf0f2e19c8dc1cefeb92",
+      "bytes": 3200
+    },
+    {
+      "path": "port/docs/native-hmc-original-entrance-verified-2026-10-26.txt",
+      "sha256": "bce7a54a947539de1b7eae6f342160e711002d15a97e80ff0469b680ea222a2e",
+      "bytes": 3077
     },
     {
       "path": "port/docs/native-internal-resolution-2026-10-21.txt",
@@ -6804,6 +6819,31 @@
       "bytes": 2304
     },
     {
+      "path": "port/docs/native-luigi-crate-carry-throw-verified-2026-10-26.txt",
+      "sha256": "dadc0a0fe2ddd2349b80078dbf1fbc4a303f27c9c1fb9d46acd40cd958866657",
+      "bytes": 1395
+    },
+    {
+      "path": "port/docs/native-luigi-question-block-2026-10-27.txt",
+      "sha256": "54769a76d051647798fd1d3f3959b80c87f14645df55b54e9cefb255e1ee32c3",
+      "bytes": 3255
+    },
+    {
+      "path": "port/docs/native-mario-crate-carry-diagnostic-2026-10-26.txt",
+      "sha256": "9fda2f1ae661d18f630577f08c95f0b2ba61496145c100f1ab04b610060bd82e",
+      "bytes": 4059
+    },
+    {
+      "path": "port/docs/native-mario-crate-carry-verified-2026-10-26.txt",
+      "sha256": "3c36b4e45122b4859a74359492d18afad5f1bf4a1f12d5dd0c7f545675baf8f7",
+      "bytes": 2707
+    },
+    {
+      "path": "port/docs/native-mario-crate-interception-diagnostic-2026-10-26.txt",
+      "sha256": "434b126a2e8c9b12f9361e4dc7d27583a8978b833cfd92b86d3c612a4747c899",
+      "bytes": 4406
+    },
+    {
       "path": "port/docs/native-menu-artwork-handoff-2026-10-16.txt",
       "sha256": "8fbe502126fba6196e4a5df4d0da242a3ac1ff7e9bd0c6fcf6322d87128c5ac5",
       "bytes": 38985
@@ -6835,8 +6875,8 @@
     },
     {
       "path": "port/docs/native-menu-stage-audio-followup-2026-10-22.txt",
-      "sha256": "8755c6c0d287a047026b46f70c9363e443ea60fcfeff0b47e6a91cbbea8c9a72",
-      "bytes": 4538
+      "sha256": "06964300268df66e767f57b9f38cfeee15005226512c694617f2448a9a5a8468",
+      "bytes": 4882
     },
     {
       "path": "port/docs/native-menu-star-fix-2026-10-15.txt",
@@ -6904,6 +6944,21 @@
       "bytes": 3266
     },
     {
+      "path": "port/docs/native-question-block-integration-2026-10-26.txt",
+      "sha256": "7c25aa1219ea5bff9fdd8777195e1764061869e3eaec6cdefec8b01d78041a28",
+      "bytes": 8633
+    },
+    {
+      "path": "port/docs/native-question-block-reentry-regression-2026-10-27.txt",
+      "sha256": "29da0cbe8a4049360a2e2e3823d4f7b5f6c0df2fe1b0ea34c0be08749440bade",
+      "bytes": 2766
+    },
+    {
+      "path": "port/docs/native-question-switch-2026-10-27.txt",
+      "sha256": "733015eff29669d56bb922d82645940098b9581d0eff66cb93e353a3f81d0ca9",
+      "bytes": 5669
+    },
+    {
       "path": "port/docs/native-rabbit-controller-checkpoint-2026-10-17.txt",
       "sha256": "246c603001d530903b4650750d042a4f169ba28b8481317a1632c13b66584e15",
       "bytes": 4362
@@ -6917,6 +6972,11 @@
       "path": "port/docs/native-recroom-controller-2026-10-20.txt",
       "sha256": "01f0267d8ce55418d8d193d255a3d053488fa3b505ff957f9f94d5a3ba482640",
       "bytes": 2588
+    },
+    {
+      "path": "port/docs/native-resolution-lower-presets-verified-2026-10-26.txt",
+      "sha256": "26f1d442bc64705bd2e7e983860807404909549a767153650d4b40613c17a0e7",
+      "bytes": 1188
     },
     {
       "path": "port/docs/native-save-checkpoint-2026-10-15.txt",
@@ -7084,6 +7144,16 @@
       "bytes": 3714
     },
     {
+      "path": "port/docs/native-wario-crate-carry-throw-verified-2026-10-26.txt",
+      "sha256": "75ecd9474c83bc1c9b1af1a3d7fb1a4cb70b367805560d691690d5f5894d64d8",
+      "bytes": 1005
+    },
+    {
+      "path": "port/docs/native-wario-question-block-2026-10-27.txt",
+      "sha256": "e5ed79854cece53b2dcec785082d845360c4e3f0890622f915bee66bf17c09ca",
+      "bytes": 3496
+    },
+    {
       "path": "port/docs/native-warp-trigger-handoff-2026-10-22.txt",
       "sha256": "f4acbb3430901498348acfd031ff36266525fbb35c00ba30acec363509b15b1f",
       "bytes": 4084
@@ -7140,13 +7210,13 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "218249c71fc80af7fa40c1d8fb24020bd6afed7b8d2ad14b525bb900b9ba1c8b",
-      "bytes": 292014
+      "sha256": "7ef620d0e4a4c96e2bea50b6970ccc514d249274c6845c2ac84a5227cc341ef6",
+      "bytes": 299807
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
-      "sha256": "8307962b6445657f8ed5e4ca1e982f5ca99f36362afdbd3aef2a84ade1b57f1a",
-      "bytes": 4778
+      "sha256": "5aa21f423ecbdb4d667fe1ae703cf21644d6ab59579bd96a5a16be1bcf013b7e",
+      "bytes": 4924
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
@@ -7180,8 +7250,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "c0012e65d146bc8eb7c1bfdb158a865fe2f16daa71ab91ead8a7dc711f046efa",
-      "bytes": 13210
+      "sha256": "0112b3b748daffc8232c8a9ece0f988e88930a27b9e7425af2a0b746f241cf63",
+      "bytes": 14139
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7335,8 +7405,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "8db36e125799c98937e68053a58cf0b55a8835784362465de8bc2a6d0ddc30ab",
-      "bytes": 41841
+      "sha256": "0c54785a80de87d0ae5b3c061c95322bcda0c9e287205ad07e21822940e9be9c",
+      "bytes": 42647
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7385,13 +7455,13 @@
     },
     {
       "path": "port/hal/crate_probe.h",
-      "sha256": "c89baf5f1b1f50a734a71ed4bb5317292f7080c329167affba3e31f83308d2c1",
-      "bytes": 2201
+      "sha256": "917998474e4d491932376398726155d0a0957201228ae968e31e3957f24434f5",
+      "bytes": 2551
     },
     {
       "path": "port/hal/crate_replay.h",
-      "sha256": "5f32263ff71b9907c989f5d7682e783db9e3a6c737aa499dbb67eacd34ab444f",
-      "bytes": 9644
+      "sha256": "1ba2d02bae1b6f6c75e74e63cdb5b512906e689cc4d541de632309ec01e4a302",
+      "bytes": 15757
     },
     {
       "path": "port/hal/cstd_div.c",
@@ -7515,8 +7585,8 @@
     },
     {
       "path": "port/hal/koopa_replay.h",
-      "sha256": "b975b9d43ad90e63a0afb0632b341736a261f9f216dc00e33fbed406f9c6486c",
-      "bytes": 21012
+      "sha256": "e89b149febf75108343bdaf85c4c617a2332b00d9d085e9b128cca57f244d60f",
+      "bytes": 21367
     },
     {
       "path": "port/hal/level_overlay.cpp",
@@ -7665,8 +7735,8 @@
     },
     {
       "path": "port/hal/player_state_callbacks.cpp",
-      "sha256": "495e20e86f15905a491c9f04c46c0a953758e1f8c239e2780ad1432daf88279d",
-      "bytes": 5976
+      "sha256": "f3d6f20a7915dc0b1c7eab8fe9d26f5fe1c0573f586d2db4040cbbd0b5d75ffd",
+      "bytes": 6742
     },
     {
       "path": "port/hal/player_state_methods.inc",
@@ -7780,8 +7850,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "868062f03dcf0a7578a8d4fb40250e3328fbeead5f3a89985d1acd703f4f471f",
-      "bytes": 156210
+      "sha256": "d242f9db565edafbb46042c7b0f3c743aa1ad9ac09cd56e8c882751d67083f1c",
+      "bytes": 168121
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8735,8 +8805,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "70475b1e42616c7a11e78a030c342addb4ee30632ce666bfff071e930ba4949b",
-      "bytes": 44088
+      "sha256": "1966c304b3af1af1211787c881dc933a288ab6f3ab99f971386fb62d3bd7d98d",
+      "bytes": 45805
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8875,8 +8945,13 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "02da0a5e058165e076a92ac8c6fd4b2a3045e96671642043e721c3846851002c",
-      "bytes": 33229
+      "sha256": "077cfc4eb37fc1906f8fa091901f04dd0a5ce9a172992cd7e0e977dab1c9f304",
+      "bytes": 34521
+    },
+    {
+      "path": "port/tools/check_native_crate_carry.py",
+      "sha256": "edc784a964fd911dff3c52a9c01f12c679fea0501724c2b876833ceb4c62cdcc",
+      "bytes": 7009
     },
     {
       "path": "port/tools/check_native_crate_eat.py",
@@ -8887,6 +8962,11 @@
       "path": "port/tools/check_native_crate_pound.py",
       "sha256": "73ec80bd22f4e58d2332510b8f66c4095f971fea36d2647de9ae134370989901",
       "bytes": 7110
+    },
+    {
+      "path": "port/tools/check_native_crate_reentry.py",
+      "sha256": "7aa44d202dfb450d8d9b69e0c29f920586dd88de5be4c24602b515b2d5361cb3",
+      "bytes": 6940
     },
     {
       "path": "port/tools/check_native_crate_spit.py",
@@ -9034,6 +9114,11 @@
       "bytes": 1766
     },
     {
+      "path": "port/tools/feather_host.py",
+      "sha256": "9bd9712071fca025e0b1084a893641bd7180d173c2170ffe2bbabcdbab44077b",
+      "bytes": 1739
+    },
+    {
       "path": "port/tools/floor_switch_host.py",
       "sha256": "f0ca8ed5a3827455128e338d7829ef80505b7381e9712ff11fbcdaa3b310c066",
       "bytes": 5299
@@ -9042,6 +9127,11 @@
       "path": "port/tools/goomba_host.py",
       "sha256": "fc337acf729016f53a3c4182eb61553d63371bc7ffb6c4fd15d1c26cb9c8bd62",
       "bytes": 6512
+    },
+    {
+      "path": "port/tools/hatena_switch_host.py",
+      "sha256": "d5dab013451d9e8fea4ded2106582c7bf2847c653854f7324700d91da5d1a17f",
+      "bytes": 3091
     },
     {
       "path": "port/tools/host_frontier.py",
@@ -9065,8 +9155,8 @@
     },
     {
       "path": "port/tools/item_block_host.py",
-      "sha256": "5627dc4d700f48cdbd2888638c575abd7e413de7d432a71bba64b0a3ccdb9a13",
-      "bytes": 6258
+      "sha256": "0d5353ed54a98cc33b0b75b225a9e950b190460a8a5eff81e1bc1f656747b3c4",
+      "bytes": 9310
     },
     {
       "path": "port/tools/jump_input_host.py",
@@ -9130,8 +9220,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "0e2632312b181933f379066fca34bd59490cda845dca2fbb816562d6c264d507",
-      "bytes": 10026
+      "sha256": "d3321aaa0e1baccada13340d46a2f529787d6b919fc33d50cbc990d951dcf3ee",
+      "bytes": 10879
     },
     {
       "path": "port/tools/native_kit_data.py",
@@ -9189,9 +9279,19 @@
       "bytes": 3596
     },
     {
+      "path": "port/tools/player_music_host.py",
+      "sha256": "eb7b2aabd83c81b6475fbca45845cfcd1338027f3f2ee8d110729553dc47c210",
+      "bytes": 835
+    },
+    {
       "path": "port/tools/player_state_methods.py",
       "sha256": "e39eb028b09ad50392c04bab25c11f4178f863f9d24dd844caf2e659b02ac6a5",
       "bytes": 2583
+    },
+    {
+      "path": "port/tools/power_flower_host.py",
+      "sha256": "51a7490a7b7f5be6a7e3a4aeb9ad9f657381edbe1bf6998c6adfd9d163192072",
+      "bytes": 4036
     },
     {
       "path": "port/tools/rabbit_host.py",

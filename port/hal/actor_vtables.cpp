@@ -320,6 +320,17 @@ static PcNativeActorProfile pc_oneup_logo_profile = {
     (void *)&daObj1UpLogo_c_classInit,331,333,0x4800000,0,0xa000,0,0
 };
 extern "C" void *daObjHatenaBlock_c_classInit_ITEM_BLOCK();
+extern "C" void *daObjHatenaBlock_c_classInit_HATENA_BLOCK();
+extern "C" unsigned char g_profile_POWER_UP_ITEM[];
+extern "C" unsigned char g_profile_HATENA_SWITCH[];
+extern "C" void *daFeather_c_classInit();
+static PcNativeActorProfile pc_feather_profile = {
+    (void *)&daFeather_c_classInit,345,345,2,0x60000,0x200000,0x1000000,0x1000000
+};
+// Original ov102 HATENA_BLOCK descriptor, with the native constructor.
+static PcNativeActorProfile pc_question_block_profile = {
+    (void *)&daObjHatenaBlock_c_classInit_HATENA_BLOCK,20,38,2,0x60000,0x100000,0x1000000,0x1000000
+};
 // Original ov102 ITEM_BLOCK descriptor; only its constructor is native.
 static PcNativeActorProfile pc_item_block_profile = {
     (void *)&daObjHatenaBlock_c_classInit_ITEM_BLOCK,21,39,2,0x60000,0x100000,0x1000000,0x1000000
@@ -538,6 +549,10 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[17] = &pc_big_block_profile;
     data_020a4bb8_storage[19] = &pc_switch_block_profile;
     data_020a4bb8_storage[21] = &pc_item_block_profile;
+    data_020a4bb8_storage[20] = &pc_question_block_profile;
+    data_020a4bb8_storage[26] = g_profile_HATENA_SWITCH;
+    data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;
+    data_020a4bb8_storage[345] = &pc_feather_profile;
     data_020a4bb8_storage[276] = &pc_oneup_profile;
     data_020a4bb8_storage[184] = &pc_signpost_profile;
     data_020a4bb8_storage[194] = &pc_crate_profile;

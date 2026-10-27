@@ -1,0 +1,85 @@
+Native question-block activation switch - 2026-10-27
+Status: VERIFIED for original switch press, save, fresh reload and earned reward.
+Original castle access to Rainbow Tower and full campaign remain unverified.
+
+The recovered Question Switch26 (HATENA_SWITCH) had no native registry entry or
+linked factory. The port now registers its original descriptor/native factory,
+includes its source in the native closure, and lazily constructs its four
+original model/animation/collision handles. Both collision-property blocks are
+reconstructed locally from the user's ROM. Canonical save-data linkage makes
+the original activation flag visible to other actors. The actor's eligibility,
+press countdown, animation, mesh swap, dialogue, particles and save behavior are
+preserved. Recovered switch source/header match the reviewed source exactly.
+The native base-layout boundary and eight-byte resource handles are asserted.
+
+Build/link and7 focused clock/input/session/stage/collision CTests PASS.
+The full native actor-data audit additionally verifies the switch descriptor,
+native factory and complete bytes of both original collision-property blocks.
+Build logs: private work/build-hatena-switch-20261027-r2.log and
+work/build-hatena-switch-pilot-20261027-r2.log.
+Final audit: work/hatena-switch-final-native-audit-20261027.txt.
+Executable SHA256:
+18D7B150AFCB1FAACF99D7260E652B92D663EF94022E8CA03A57535D82DFF662
+
+The opt-in QA pilot only sends ordinary buttons/stick input. It dismisses the
+original welcome message, lets Mario fly over the authored switch, holds the
+mapped ground-pound input across simulation polls, and advances the original
+dialogue/save choice. It never writes actor position, press state, animation,
+save flags, collision state or rewards. The initial isolated Mario seed has
+the activation bit CLEAR. Initial Tower entry uses the diagnostic course picker;
+earning the castle entrance prerequisites is outside this milestone.
+
+Accepted private evidence (all on the same executable):
+1. work/native-muted-audio-walk-hatena-switch-press-r2-20261027-20261021
+   6000 frames. Actual St_GroundPound_Main and native floor contact with
+   switch26/UID7 are recorded. The original actor sets activation by2125,
+   switches to its depressed mesh, advances the press animation and displays
+   original activation message387, saving661 and save-success662. Dialogue
+   completes2450; final Mario is in normal Wait/control on the pressed switch.
+   The saved activation bit is now ON with a valid checksum. The only changed
+   save-body byte is that bit; the other changes are its four checksum bytes.
+   Minigame data is unchanged. Screenshot2600 shows the depressed switch.
+2. work/native-muted-audio-walk-hatena-switch-reload-r1-20261027-20261021
+   3200 frames, fresh process using the actually earned save. The authored
+   switch initializes depressed with its animation finished and no activation
+   conversation. Both save files remain byte-identical to the earned save.
+   This is persisted state verification, not a second physical press check.
+3. work/native-muted-audio-walk-question-block-mario-earned-switch-r1-20261027-20261021
+   9000 frames, another fresh process using the actually earned save. The
+   original title/File A/castle/painting route reaches Battlefield. A normal
+   jump bounces/pops the now-active question block, and natural Feather302
+   pickup7014 sets Mario wings1/timer1800. Final state is normal Wait/control;
+   both saves remain unchanged and Star total1/story mask2 stay unchanged.
+   Screenshot7200 shows the original wing-cap tutorial following the reward.
+
+All three accepted processes exit0 without an exception or native audio error.
+Audio engine rendering is enabled but device output is muted with zero
+submitted nonzero samples. Tests never modify user saves. Private checker
+work/check-hatena-switch-20261027.py verifies contact, activation, original
+dialogue/save success, the exact allowed save change, fresh-process depressed
+state and an actual Battlefield reward from that earned save. Its report is
+hatena-switch-acceptance.json in the accepted press case.
+
+Earlier idle menu probes and press-r1 are diagnostic only. Empty routes disabled
+the test-controller gate; the original mission screen also required its normal
+confirmation sequence. The first physical approach requested ground pound for
+too short an input pulse; it flew past without pressing. The accepted pilot
+uses the existing live action mapping and an eight-tick hold. These are QA
+input repairs; no game physics, hit eligibility or switch rules were changed.
+
+Build-support metadata was reviewed and refreshed with ONLY two new symbol
+aliases for the collision-property blocks (5269->5271 names, no removals).
+A separate private reconstruction from the reviewed symbol-only metadata
+reproduces the linked ROM-data source byte-for-byte with zero unknown symbols.
+See work/hatena-switch-support-reconstruction-20261027/acceptance.json.
+No ROM bytes, generated data objects, saves, captures, audio or full executable
+were exported. A full ROM-free build-kit reconstruction/runtime check is still
+required before publishing a new kit. No public export/release or F install
+was made by this milestone.
+
+Next bounded delivery task: refresh the ROM-free build kit from reviewed
+current source, reconstruct it in a fresh folder and run muted acceptance.
+Luna Medium is suitable for that established workflow. Original castle entry
+to Rainbow Tower, repeat stepping on an already activated switch, other
+characters and complete campaign acceptance remain open. The full goal stays
+active; this verification does not establish full-game playability.

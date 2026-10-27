@@ -35,6 +35,10 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObj1UpLogo_c_classInit",
                  "daObjTatefuda_c_classInit",
                  "daObjHatenaBlock_c_classInit_ITEM_BLOCK",
+                 "daObjHatenaBlock_c_classInit_HATENA_BLOCK",
+                 "daObjPowerUpItem_c_classInit",
+                 "daFeather_c_classInit",
+                 "daObjHatenaSwitch_c_classInit",
                  "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
                  "daObjC0_Switch_c_classInit", "daObjC0Water_c_classInit",
@@ -456,6 +460,29 @@ def main() -> int:
                     import item_block_host
                     transformed=item_block_host.transform(transformed)
                     rewrites+=1
+                if path.name == 'dBgActor_c.cpp':
+                    import item_block_host
+                    transformed=item_block_host.trace_ceiling(transformed)
+                    rewrites+=1
+                if path.name == 'daObjPowerUpItem_c.cpp':
+                    import power_flower_host
+                    transformed=power_flower_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'daFeather_c.cpp':
+                    import feather_host
+                    transformed=feather_host.transform(transformed)
+                    original='extern SharedFilePtr data_ov002_0210da58;'
+                    assert transformed.count(original)==1
+                    transformed=transformed.replace(original,'extern "C" SharedFilePtr data_ov002_0210da58;')
+                    transformed='#include <cstddef>\n'+transformed+'''
+static_assert(sizeof(daFeather_c)==0x388,"native Feather layout");
+static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
+'''
+                    rewrites+=1
+                if path.name == 'd_a_obj_hatena_switch.cpp':
+                    import hatena_switch_host
+                    transformed=hatena_switch_host.transform(transformed)
+                    rewrites+=1
                 if path.name in ('daObjSwitch_c.cpp', 'd_a_obj_switch_hanswitch.c',
                                  'd_a_obj_switch_star_switch.c', 'func_ov002_020baa2c.c'):
                     import floor_switch_host
@@ -579,6 +606,10 @@ def main() -> int:
                     transformed = tree_host.transform_walljump(transformed)
                     rewrites += 1
                 if path.name == 'Player.cpp':
+                    import player_music_host
+                    transformed=player_music_host.transform(transformed)
+                    import item_block_host
+                    transformed=item_block_host.trace_player_collision(transformed)
                     import tree_host
                     transformed = tree_host.transform_player(transformed)
                     import jump_input_host

@@ -95,6 +95,14 @@ def transform(text):
     signature='int daObjHatenaBlock_c::Behavior()\n{'
     assert text.count(signature)==1
     text=text.replace(signature,signature+trace,1)
+    signature='int daObjHatenaBlock_c::OnHitFromUnderneath(dActor_c &other)\n{'
+    assert text.count(signature)==1
+    text=text.replace(signature,signature+'''
+    if(std::getenv("SM64DS_PC_POWER_FLOWER_TRACE"))
+        std::fprintf(stderr,"[native item underside] tick=%llu uid=%u attacker=%u state=%d underwater=%u\\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),unsigned(uniqueID),unsigned(other.param1),
+            mState,unsigned(ClosestPlayer()->mIsUnderwater));
+''',1)
     text+='''
 static_assert(sizeof(daObjHatenaBlock_c)==0x3f8,"native item-block layout");
 static_assert(offsetof(daObjHatenaBlock_c,mModelAnim)==0x320,"native item-block animation");
@@ -107,3 +115,46 @@ static_assert(sizeof(HatenaBlockAnimFileHandle)==8,"native shared animation hand
 static_assert(sizeof(HatenaBlockClsnFileHandle)==8,"native shared collision handle");
 '''
     return '#include <cstddef>\n#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n'+text
+
+
+def trace_ceiling(text):
+    signature='int func_ov002_020eeca8(void *c, int arg)\n{'
+    assert text.count(signature)==1
+    text=text.replace(signature,signature+'''
+    if(((dActor_c *)arg)->actorID==191)pc_trace_jump_input((void *)arg,"ceiling-entry");
+    if(std::getenv("SM64DS_PC_POWER_FLOWER_TRACE")) {
+        const bool hit=func_02035638(c)!=0;
+        const int owner=hit?_ZNK5dBgPi9GetClsnIDEv((void *)func_0203567c((int)c)):-1;
+        const auto *mover=(dActor_c *)arg;
+        const auto *target=owner!=-1?dActor_c::FindWithID(owner):nullptr;
+        std::fprintf(stderr,"[native ceiling dispatch] tick=%llu mover=%u offset=%d hit=%d owner=%d kind=%d\\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),unsigned(mover->actorID),
+            int((char *)c-(char *)mover),int(hit),owner,target?int(target->actorID):-1);
+    }
+''',1)
+    return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\nextern "C" void pc_trace_jump_input(const void *,const char *);\n'+text
+
+
+def trace_player_collision(text):
+    # The short head ray is separate from the actor's sphere ceiling result.
+    # Retail invokes slot 28 with r0/r1; an x86 raw function pointer instead
+    # passes both arguments on the stack and loses the native method's ECX.
+    # Preserve the original owner lookup and eligibility, and let C++ dispatch
+    # the same virtual method using the host ABI.
+    raw_hit = '(*(void (**)(void *, char *))(*(int *)a + 0x70))(a, self);'
+    assert text.count(raw_hit)==1, 'Player short head-ray callback changed'
+    text=text.replace(raw_hit, '''{
+                    if(std::getenv("SM64DS_PC_POWER_FLOWER_TRACE"))
+                        std::fprintf(stderr,"[native head dispatch] tick=%llu hit=1 owner=%u kind=%u\\n",
+                            static_cast<unsigned long long>(ntr::rt_frame()),
+                            unsigned(((dActor_c *)a)->uniqueID),unsigned(((dActor_c *)a)->actorID));
+                    ((dActor_c *)a)->OnHitFromUnderneath(*(dActor_c *)self);
+                }''',1)
+    for anchor,label in (
+        ('func_020383e4(c + 0x380);','collision-query'),
+        ('((Player *)(c))->func_ov002_020c1234();','collision-return'),
+        ('((Player *)(c))->func_ov002_020c61ac();','collision-post-state'),
+    ):
+        assert text.count(anchor)==1, label
+        text=text.replace(anchor,anchor+'\n    pc_trace_jump_input(c,"'+label+'");',1)
+    return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\nextern "C" void pc_trace_jump_input(const void *,const char *);\n'+text

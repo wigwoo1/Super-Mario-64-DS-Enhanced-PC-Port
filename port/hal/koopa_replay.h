@@ -112,10 +112,17 @@ static bool pc_replay_koopa(Player *player,bool routeComplete) {
         // for existing Koopa/scenery replays that do not specify a target.
         const unsigned target=std::getenv("SM64DS_PC_TEST_MISSION")
             ? static_cast<unsigned>(pc_test_mission()-1) : 1u;
-        if(ready && !confirm && selectionMode==0 && tick%30<3) {
-            if(phase==0)buttons=1;
-            else if(selection!=target)buttons=selection>target?0x20:0x10;
-            else buttons=1;
+        if(ready && !confirm && tick%30<3) {
+            if(selectionMode==0) {
+                if(phase==0)buttons=1;
+                else if(selection!=target)buttons=selection>target?0x20:0x10;
+                else buttons=1;
+            } else if(selectionMode==2 && selection==target) {
+                // With other characters unlocked, Yoshi's first confirm
+                // opens the original character choice. Confirm Yoshi with
+                // a second ordinary button edge instead of stalling there.
+                buttons=1;
+            }
         }
         return controls();
     }

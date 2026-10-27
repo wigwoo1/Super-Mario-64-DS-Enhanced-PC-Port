@@ -1,0 +1,53 @@
+Luigi Power Flower, Battlefield course cycle, and vanish expiry - 2026-10-27
+Status: VERIFIED for the selected authored content5 Battlefield block.
+
+The existing original reward logic passes this check without a gameplay
+change. The PC-only flower trace now observes the real InitVanishLuigi result,
+including the vanish flag and power-up timer. The existing input-only course
+cycle pilot recognizes Luigi's original vanish state and observes its eventual
+expiry. Both features are opt-in QA; neither grants powers or writes actor,
+collision, reward, character, or course state from the replay.
+
+Build: compile/link and all7 focused clock/input/session/stage/collision CTests
+PASS (private work/build-question-block-luigi-20261027-r1.log).
+Executable SHA256:
+6C610147D786B4FFF149EE3265C42F12C07C01E7737604AFCACBC9242373B7E1
+The preceding verified player music ABI repair is retained. Recovered Player
+and Power Flower source and headers are unchanged by this QA milestone.
+
+Runtime case (private):
+work/native-muted-audio-walk-question-block-luigi-reentry-r1-20261027-20261021
+Original title/File A/castle/painting input route reaches block129 at the
+authored position(1204224,1024000,26214400), content5. A normal jump calls the
+original underside handler as Luigi. The block bounces/pops and naturally
+spawns Power Flower302. Collider pickup6730 calls original InitVanishLuigi,
+sets mIsVanish=1 and arms the original600-tick timer.
+
+The original pause/Exit Course path returns to the castle7107. Original
+painting/course flow re-enters Battlefield8514. The same authored block is
+fresh UID368; another ordinary jump bounces/pops it. New Power Flower542 is
+naturally collected10243; Luigi again starts from vanish0 and receives
+vanish1/timer600. The native effect expires11444 with both vanish flag and
+timer cleared. The block restores after its normal cooldown and the run ends
+at16000 in normal Wait/control. Screens10500 and12000 show the dithered
+vanish appearance and subsequent normal Luigi with the block restored.
+
+The run exits0 with no exception, native audio errors0, and device output
+muted (zero submitted nonzero samples). The engine still renders audio. Both
+isolated save files are byte-identical to the seed; Power Star total remains1
+and story star mask2. No Feather is spawned for Luigi. Private checker
+work/check-luigi-power-flower-20261027.py verifies native pickups, distinct
+block/item IDs, original course transitions, expiry, late actor reset, final
+control, mute/clean exit and save invariants; its report is
+luigi-power-flower-acceptance.json in the runtime case.
+
+The isolated seed changes the selected character to Luigi while retaining the
+previous synthetic activation-switch prerequisite. Unlocking Luigi, earning
+the switch, passing a vanish barrier, other block placements and the full
+campaign are not established by this check. No user save is modified.
+
+No F install, public export, release, or build kit was made. Runtime captures,
+saves, audio, full executables and ROM-derived data remain private. Future
+kits require reviewed export and fresh reconstruction/runtime acceptance.
+Next bounded check: Wario's Power Flower/metal reward and course re-entry.
+Luna Medium remains suitable; the full goal stays active.

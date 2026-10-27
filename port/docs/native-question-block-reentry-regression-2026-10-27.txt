@@ -1,0 +1,47 @@
+Battlefield question-block course-cycle regression - 2026-10-27 - VERIFIED
+
+Current native executable SHA256:
+18D7B150AFCB1FAACF99D7260E652B92D663EF94022E8CA03A57535D82DFF662
+This check includes the later Player music-call and native Question Switch
+integration. No gameplay source or recovered actor/header was changed.
+
+Build and checks
+Existing native project configures/builds successfully (incremental no work).
+All7 focused clock/input/session/stage/collision CTests pass. Full native
+actor/data audit passes, including Question Switch, block and flower bindings.
+One new16000-frame muted runtime exits0 with no exception/audio errors and
+zero submitted nonzero device samples. Private acceptance checker passes.
+
+Actual original-menu lifecycle
+Original title/File A/castle/painting route uses an isolated Yoshi prerequisite
+save with activation enabled. Block129 at(294,250,6400) receives an ordinary
+jump/head hit and pops6673; genuine flower302 pickup6810 starts original
+Yoshi fire initialization. Original pause/Exit Course reaches castle7467.
+The normal painting/course flow re-enters Battlefield8874. Same authored
+placement now has fresh block368, hit by another ordinary jump, popping10450.
+Fresh flower542 pickup10603 again starts original Yoshi fire initialization.
+Block restores after its cooldown; final16000 is Wait with normal control.
+The pilot only provides ordinary stick/button/menu input, never actor/reward
+or save writes. Both original pickups are checked from native observations.
+
+Slot and minigame saves remain byte-identical to the isolated seed. Story
+Star total1/mask2 remains unchanged; these are flower rewards, not Stars.
+Screenshots inspected:6900 first pickup tutorial,8000 castle return,10500
+second reward,12000 restored block. All captures remain private.
+
+Private evidence
+work/native-muted-audio-walk-question-block-reentry-latest-yoshi-r8-20261027-20261026-20261021/
+  question-block-reentry-acceptance.json
+work/check-question-block-reentry-20261027.py
+The checker requires both actual pickups, fresh block/reward IDs at the same
+placement, original castle/course transition order, reset after pickup,
+unchanged valid fixture saves, final control, clean exit and muted output.
+
+Scope
+Selected Battlefield content5 block and Yoshi flower re-entry only. All block
+variants, fire combat and full campaign acceptance are not established here.
+No F install, public commit, new kit or release made by this regression task.
+Latest verified source/ROM-free kit refresh remains pending; review exact
+source/metadata and fresh reconstruction/runtime before publishing any kit.
+Luna Medium is suitable for that established packaging workflow or another
+bounded runtime regression. Full goal remains ACTIVE; no model switch/pause.

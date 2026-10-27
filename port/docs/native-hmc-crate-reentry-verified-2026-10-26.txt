@@ -1,0 +1,51 @@
+Hazy Maze Cave wooden crate reset across original course re-entry - 2026-10-26
+Status: VERIFIED for one authored crate with Yoshi.
+
+Executable SHA256:
+8296f6dd0c3de2a7aba52289d0c24354ccf356ae3e18d5cc95240e329c940386
+The native build and seven focused clock/input/scene/collision CTests pass.
+The 19,000-frame muted lifecycle run passes
+port/tools/check_native_crate_reentry.py CASE_DIRECTORY.
+
+First course entry uses the diagnostic picker and original Mission1/character
+selector with an isolated synthetic 60-Star/basement-key Yoshi fixture. This
+does not represent earned prerequisites. All runtime movement, jumps, ground
+pounds, menu selections and course entry use ordinary input. The initial
+authored crate UID22 receives Yoshi's real ground-pound/Kill at1695, enters
+original broken state6 and releases three coins126/127/128 at1696. Actual
+pickups1728/1728/1846 advance the course counter0->2->3.
+
+The replay requests the original pause menu at2456 and selects Exit Course.
+It returns to the castle lobby2804, walks the established key/interior-door
+route, jumps the authored ledges and falls through the real HMC pool. The
+original mission and Yoshi confirmations run again. Course re-entry12394
+creates a fresh authored crate UID237 at the same original parameter and
+position. Its initial state is idle0 with coins_paid0. Yoshi ground-pounds
+it12615; it enters broken6 with coins_paid1 and releases three new coins
+341/342/343 at12616. Actual pickups12648/12648/12766 again advance the reset
+course counter0->2->3. Both breaks create original debris14 with nonzero
+rendered triangles. The lifecycle ends13376 and the run continues to19000
+with Yoshi in normal Wait and control enabled. Exit0, mixer errors0, audio
+device samples0; both isolated saves and the fixture hashes are unchanged.
+
+Only QA code changed: pound-reentry mode records completion and yields to
+the existing input-only Exit Course helper; after castle return it discards
+the previous crate identity before acquiring the new authored instance.
+The new checker verifies the two original callbacks, fresh idle/unpaid state,
+distinct actor/reward identities, actual collection counter increases, rendered
+debris, original exit/re-entry, normal control and preserved test saves. No
+gameplay actor, position, velocity, collision, reward or runtime save field is
+forced. Production crate rules, Player code and original actor sources remain
+unchanged. No new native data symbols or support metadata were required.
+
+Private evidence: work/native-hmc-crate-reentry-r1-20261026, including
+crate-reentry-acceptance.json. Frames2400/13000/15000 show the first/second
+three-coin results and normal control. Raw routes, KCL planning, generated
+data, full executable, save fixtures, traces and screenshots stay private.
+
+Limits: one HMC crate and Yoshi with synthetic unlocks. Initial entry uses
+the diagnostic picker; the return uses real castle doors and the pool.
+Earned key progression, all other placements, carry/throw and a full campaign
+remain unverified. No new F: install, public export, kit or release is made
+by this milestone. The public79b1 kit remains the older verified baseline.
+The full PC-port goal remains active.

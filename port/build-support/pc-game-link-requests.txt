@@ -3188,16 +3188,22 @@ unresolved external symbol "struct VariantWords data_ov091_02134bd0" (?data_ov09
 unresolved external symbol "struct VariantWords data_ov091_02134bb8" (?data_ov091_02134bb8@@3UVariantWords@@A) referenced in function "public: virtual int __thiscall daObjRotateUpdownLift_c::Behavior(void)" (?Behavior@daObjRotateUpdownLift_c@@UAEHXZ)
 unresolved external symbol "struct VariantWords data_ov091_02134ba0" (?data_ov091_02134ba0@@3UVariantWords@@A) referenced in function "public: virtual int __thiscall daObjRotateUpdownLift_c::Behavior(void)" (?Behavior@daObjRotateUpdownLift_c@@UAEHXZ)
 unresolved external symbol _data_ov095_02136f58 referenced in function "public: virtual void __thiscall daObjSeesaw_c::OnGroundPounded(struct dActor_c &)" (?OnGroundPounded@daObjSeesaw_c@@UAEXAAUdActor_c@@@Z)
-unresolved external symbol "unsigned char * data_ov002_020ff040" (?data_ov002_020ff040@@3PAEA)
-unresolved external symbol "unsigned char * data_ov002_020ff050" (?data_ov002_020ff050@@3PAEA)
-unresolved external symbol _data_ov002_020ff0d0
-unresolved external symbol _data_ov002_020ff0d4
-unresolved external symbol _data_ov002_020ff0d8
-unresolved external symbol _data_ov002_020ff0dc
-unresolved external symbol _data_ov002_0210d714
+unresolved external symbol "signed char data_0209f2f4" (?data_0209f2f4@@3CA) referenced in function "public: virtual int __thiscall da1up_c::Behavior(void)" (?Behavior@da1up_c@@UAEHXZ)
+unresolved external symbol "unsigned char * data_ov002_020ff040" (?data_ov002_020ff040@@3PAEA) referenced in function "public: virtual int __thiscall da1up_c::InitResources(void)" (?InitResources@da1up_c@@UAEHXZ)
+unresolved external symbol "unsigned char * data_ov002_020ff050" (?data_ov002_020ff050@@3PAEA) referenced in function "public: virtual int __thiscall da1up_c::InitResources(void)" (?InitResources@da1up_c@@UAEHXZ)
+unresolved external symbol __ZN6Player14IsFrontSlidingEv referenced in function _AttachToHolder
+unresolved external symbol __ZN6Player17LostGrabbedObjectEv referenced in function _AttachToHolder
+unresolved external symbol __ZN8dActor_c19DisappearPoofDustAtERK7Vector3 referenced in function "public: virtual int __thiscall daObjTatefuda_c::Behavior(void)" (?Behavior@daObjTatefuda_c@@UAEHXZ)
+unresolved external symbol _data_ov002_020ff0d4 referenced in function _AttachToHolder
+unresolved external symbol _data_ov002_020ff0d8 referenced in function _AttachToHolder
+unresolved external symbol _data_ov002_020ff0dc referenced in function _AttachToHolder
+unresolved external symbol _data_ov002_020ff0d0 referenced in function _AttachToHolder
+unresolved external symbol _data_ov002_0210d714 referenced in function "public: virtual int __thiscall daObjTatefuda_c::InitResources(void)" (?InitResources@daObjTatefuda_c@@UAEHXZ)
 unresolved external symbol _data_ov002_0210d934
-unresolved external symbol _data_ov098_0213bf60
-unresolved external symbol _data_ov098_0213bf64
-unresolved external symbol _data_ov098_0213bf68
-unresolved external symbol _data_ov098_0213c4e0
-unresolved external symbol _data_ov098_0213c4f0
+unresolved external symbol _data_ov098_0213bf60 referenced in function "public: void __thiscall daObjBlockS_c::func_ov098_02139850(void)" (?func_ov098_02139850@daObjBlockS_c@@QAEXXZ)
+unresolved external symbol _data_ov098_0213bf64 referenced in function "public: void __thiscall daObjBlockS_c::func_ov098_02139850(void)" (?func_ov098_02139850@daObjBlockS_c@@QAEXXZ)
+unresolved external symbol _data_ov098_0213bf68 referenced in function "public: void __thiscall daObjBlockS_c::func_ov098_02139850(void)" (?func_ov098_02139850@daObjBlockS_c@@QAEXXZ)
+unresolved external symbol _data_ov098_0213c4e0 referenced in function "void __cdecl pc_crate_dispatch_4(struct daObjBlockS_c *)" (?pc_crate_dispatch_4@@YAXPAUdaObjBlockS_c@@@Z)
+unresolved external symbol _data_ov098_0213c4f0 referenced in function "void __cdecl pc_crate_dispatch_4(struct daObjBlockS_c *)" (?pc_crate_dispatch_4@@YAXPAUdaObjBlockS_c@@@Z)
+unresolved external symbol _data_ov002_0210d8b4 referenced in function "public: virtual int __thiscall daObjHatenaSwitch_c::InitResources(void)" (?InitResources@daObjHatenaSwitch_c@@UAEHXZ)
+unresolved external symbol _data_ov002_0210d774 referenced in function "public: virtual int __thiscall daObjHatenaSwitch_c::InitResources(void)" (?InitResources@daObjHatenaSwitch_c@@UAEHXZ)

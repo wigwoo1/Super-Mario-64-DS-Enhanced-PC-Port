@@ -1,0 +1,8 @@
+# Wario crate carry and throw check — 2026-10-26
+
+Wario (character ID 2) completes the same original Hazy Maze Cave crate sequence used for the Luigi check. In a muted 3,000-frame run, crate UID 22 enters the carried state at tick 2340 and remains held for 16 trace samples. It is released into the original throw state at tick 2484 with horizontal speed 40 and vertical speed 10 (fixed-point values 327680 and 81920), then enters the wall-break state at tick 2540. The process exits normally and the isolated slot and minigame saves are unchanged.
+
+Evidence: `work/native-crate-wario-carry-throw-r2-20261026/wario-carry-throw-acceptance.json`. Screenshots: `frame-2440.bmp` while carrying, `frame-2490.bmp` after release, and `frame-2540.bmp` at the break.
+
+The run uses a private synthetic 60-Star/key save with Wario selected and the diagnostic course-entry picker. It verifies this crate interaction with Wario; it does not establish full-course or campaign completion. No gameplay source changed.
+

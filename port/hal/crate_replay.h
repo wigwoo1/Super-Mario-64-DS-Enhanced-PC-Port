@@ -1,17 +1,27 @@
 #pragma once
 #include "daObjBlockS_c.h"
 #include "daYegg_c.h"
+#include "hal/replay_path.h"
 #include <vector>
+
+// QA lifecycle bookkeeping only. A scene change must discard the old
+// authored actor identity before looking for the newly spawned crate.
+static unsigned pc_crate_reentry_epoch=0;
+static unsigned pc_crate_completed_rounds=0;
 
 // Opt-in acceptance pilot: observe an authored crate and supply ordinary
 // jump/R/stick input. Never change actor state, position, rewards or saves.
 static bool pc_replay_crate_pound(Player *p) {
     const char *mode=std::getenv("SM64DS_PC_TEST_CRATE");
     const bool repeat=mode && !std::strcmp(mode,"pound-reset");
+    const bool reentry=mode && !std::strcmp(mode,"pound-reentry");
+    const bool carryThrow=mode && !std::strcmp(mode,"carry-throw");
+    const bool pickupAfterTwo=carryThrow && std::getenv("SM64DS_PC_TEST_CRATE_PICKUP_AFTER_TWO") &&
+        !std::strcmp(std::getenv("SM64DS_PC_TEST_CRATE_PICKUP_AFTER_TWO"),"1");
     const bool spit=mode && !std::strcmp(mode,"eat-spit");
     const bool eat=(mode && !std::strcmp(mode,"eat")) || spit;
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    if(!mode || (!eat && !repeat && std::strcmp(mode,"pound")) || !automation || std::strcmp(automation,"1") ||
+    if(!mode || (!eat && !repeat && !reentry && !carryThrow && std::strcmp(mode,"pound")) || !automation || std::strcmp(automation,"1") ||
        !p || p->aliveState!=1)return false;
     static unsigned target=0;
     static unsigned originalCoinMax=0,rewards[3]={},rewardCount=0;
@@ -20,9 +30,10 @@ static bool pc_replay_crate_pound(Player *p) {
     static std::vector<Point> resetRoute;
     static bool parsed=false,respawnObserved=false;
     static int travelWaypoint=0;
-    if(repeat && !parsed) {
+    static bool pickupRouteStarted=false;
+    if((repeat || carryThrow) && !parsed) {
         parsed=true;
-        const char *segment=std::getenv("SM64DS_PC_TEST_CRATE_RESET_ROUTE");
+        const char *segment=std::getenv(carryThrow?"SM64DS_PC_TEST_CRATE_PICKUP_ROUTE":"SM64DS_PC_TEST_CRATE_RESET_ROUTE");
         while(segment && *segment && resetRoute.size()<1024) {
             Point point;int consumed=0;
             if(std::sscanf(segment,"%d:%d:%d:%d%n",&point.x,&point.y,&point.z,&point.radius,&consumed)!=4 ||
@@ -38,6 +49,15 @@ static bool pc_replay_crate_pound(Player *p) {
     if(repeat && resetRoute.empty())return false;
     static int phase=0;
     static uint64_t began=0,brokenAt=0;
+    static int approachX=0,approachZ=0;
+    static int lastFlightX=0,lastFlightZ=0;
+    static unsigned observedEpoch=0;
+    if(reentry && observedEpoch!=pc_crate_reentry_epoch) {
+        observedEpoch=pc_crate_reentry_epoch;
+        target=originalCoinMax=rewardCount=0;
+        phase=0;began=brokenAt=0;round=pc_crate_completed_rounds+1;
+    }
+    if(reentry && (data_0209f2f8!=13 || phase==9))return false;
     daObjBlockS_c *crate=nullptr;
     for(auto *a=dActor_c::FindWithActorID(194,nullptr);a;a=dActor_c::FindWithActorID(194,a)) {
         if(a->aliveState!=1)continue;
@@ -69,6 +89,24 @@ static bool pc_replay_crate_pound(Player *p) {
         sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
     };
     auto walkRoute=[&](bool reverse) {
+        // Reuse the tested projected-path follower so full-speed movement
+        // cannot orbit a small floor marker after overshooting it.
+        if(carryThrow) {
+            std::vector<replay_path::Point> points;
+            for(const auto &point:resetRoute)points.push_back({double(point.x),double(point.z),double(point.radius)});
+            const auto aim=replay_path::follow(points.data(),points.size(),static_cast<unsigned>(travelWaypoint),
+                p->mPosX/4096.0,p->mPosZ/4096.0,100,100);
+            if(travelWaypoint!=static_cast<int>(aim.waypoint) || tick%30==0)
+                std::fprintf(stderr,"[native crate pickup route] tick=%llu waypoint=%d->%u aim=%.1f,%.1f\n",
+                    static_cast<unsigned long long>(tick),travelWaypoint,unsigned(aim.waypoint),aim.x,aim.z);
+            travelWaypoint=static_cast<int>(aim.waypoint);
+            if(!aim.complete) {
+                const double angle=std::atan2(aim.x*4096.0-p->mPosX,aim.z*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const double magnitude=pickupAfterTwo && p->mIsAirborne?12000:32767;
+                sx=static_cast<int16_t>(std::sin(angle)*magnitude);sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+            }
+            return aim.complete;
+        }
         if(travelWaypoint<0 || travelWaypoint>=static_cast<int>(resetRoute.size()))return true;
         const auto &point=resetRoute[travelWaypoint];
         const double distance=std::hypot(point.x*4096.0-p->mPosX,point.z*4096.0-p->mPosZ);
@@ -80,8 +118,52 @@ static bool pc_replay_crate_pound(Player *p) {
     };
     if(!target){
         target=crate->uniqueID;phase=1;began=tick;event("acquired");
+        if(carryThrow){phase=10;approachX=p->mPosX;approachZ=p->mPosZ;}
         for(auto *a=dActor_c::FindWithActorID(288,nullptr);a;a=dActor_c::FindWithActorID(288,a))
             if(a->uniqueID>originalCoinMax)originalCoinMax=a->uniqueID;
+    }
+    if(carryThrow && phase!=4 && phase!=5) {
+        if(crate->mState==daObjBlockS_c::STATE_THROWN) {
+            lastFlightX=crate->mPosX;lastFlightZ=crate->mPosZ;
+        }
+        if(crate->mState==daObjBlockS_c::STATE_BROKEN) {
+            phase=4;brokenAt=tick;event("throw-broken");
+        } else {
+            if(phase==10) {
+                steer(crate->mPosX,crate->mPosZ);
+                const auto distance=std::hypot(double(crate->mPosX)-p->mPosX,double(crate->mPosZ)-p->mPosZ);
+                if(distance<140*4096.0 && !std::strcmp(state,"St_Walk_Main")) {
+                    phase=11;began=tick;buttons=1;event("press-grab-attack");
+                }
+            } else if(phase==11) {
+                if(tick-began<8)buttons=1;
+                steer(crate->mPosX,crate->mPosZ);
+                if(crate->mState==daObjBlockS_c::STATE_CARRIED && crate->mHoldingPlayer==p) {
+                    phase=12;began=tick;sx=sy=0;event("carried");
+                } else if(tick-began>180) {phase=19;sx=sy=0;event("grab-timeout");}
+            } else if(phase==12) {
+                if(!std::strcmp(state,"St_HoldLight_Main") && p->mStateStep>=1) {
+                    steer(approachX,approachZ);
+                    if(tick-began>=60 && std::hypot(double(approachX)-p->mPosX,double(approachZ)-p->mPosZ)<25*4096.0) {
+                        phase=13;began=tick;sx=sy=0;event("carry-walk-finished");
+                    }
+                }
+            } else if(phase==13) {
+                steer(crate->mHomePosX,crate->mHomePosZ);
+                const double angle=std::atan2(double(crate->mHomePosX)-p->mPosX,double(crate->mHomePosZ)-p->mPosZ)*65536.0/6.283185307179586;
+                const int delta=static_cast<int16_t>(static_cast<int>(angle)-p->mAngleY);
+                if(tick-began>=10 && std::abs(delta)<0x1000 && !std::strcmp(state,"St_HoldLight_Main")) {
+                    phase=14;began=tick;buttons=1;sx=sy=0;event("press-throw-attack");
+                }
+            } else if(phase==14) {
+                if(tick-began<8)buttons=1;
+                if(crate->mState==daObjBlockS_c::STATE_THROWN) {phase=15;began=tick;event("crate-in-flight");}
+                else if(tick-began>180){phase=19;event("throw-timeout");}
+            } else if(phase==15 && crate->mState==daObjBlockS_c::STATE_IDLE) {
+                phase=19;event("throw-landed");
+            }
+            return controls();
+        }
     }
     if(eat) {
         if(phase==1) {
@@ -140,11 +222,27 @@ static bool pc_replay_crate_pound(Player *p) {
         if(rewardCount<3 && tick-brokenAt<10) {
             for(auto *a=dActor_c::FindWithActorID(288,nullptr);a;a=dActor_c::FindWithActorID(288,a)) {
                 if(a->aliveState!=1 || a->uniqueID<=originalCoinMax ||
-                   std::hypot(double(a->mPosX)-crate->mHomePosX,double(a->mPosZ)-crate->mHomePosZ)>200*4096.0)continue;
+                   std::hypot(double(a->mPosX)-(carryThrow?lastFlightX:crate->mHomePosX),
+                              double(a->mPosZ)-(carryThrow?lastFlightZ:crate->mHomePosZ))>200*4096.0)continue;
                 bool known=false;
                 for(unsigned i=0;i<rewardCount;++i)if(rewards[i]==a->uniqueID)known=true;
                 if(!known && rewardCount<3)rewards[rewardCount++]=a->uniqueID;
             }
+        }
+        unsigned liveRewards=0;
+        for(unsigned i=0;i<rewardCount;++i) {
+            auto *reward=dActor_c::FindWithID(rewards[i]);
+            if(reward && reward->aliveState==1)++liveRewards;
+        }
+        if(carryThrow && rewardCount==3 && liveRewards==0) {
+            phase=5;sx=sy=0;event("reward-actors-ended");return controls();
+        }
+        if(pickupAfterTwo && !pickupRouteStarted && rewardCount==3 && liveRewards==1) {
+            pickupRouteStarted=true;event("pickup-after-two-start");
+        }
+        if(carryThrow && (!pickupAfterTwo || pickupRouteStarted) && travelWaypoint<static_cast<int>(resetRoute.size())) {
+            if(!walkRoute(false))return controls();
+            event("pickup-route-finished");
         }
         dActor_c *coin=nullptr;double nearest=1e30;
         for(auto *a=dActor_c::FindWithActorID(288,nullptr);a;a=dActor_c::FindWithActorID(288,a)) {
@@ -164,6 +262,10 @@ static bool pc_replay_crate_pound(Player *p) {
         }
         if(tick-brokenAt>600){phase=5;sx=sy=0;event("collection-window-ended");}
     }
+    if(reentry && phase==5) {
+        ++pc_crate_completed_rounds;phase=9;event("course-round-complete");
+        return false;
+    }
     if(repeat && round==1 && phase==5) {
         phase=6;travelWaypoint=0;event("walk-away");
     }
@@ -182,6 +284,10 @@ static bool pc_replay_crate_pound(Player *p) {
            std::abs(crate->mPosY-p->mPosY)<200*4096) {
             round=2;phase=1;rewardCount=0;began=tick;event("second-approach");
         } else walkRoute(true);
+    }
+    if(carryThrow && phase==5 && !std::strcmp(state,"St_LedgeHang_Main") && tick%45<3) {
+        buttons=2; // Original ledge jump/climb input after the lower-floor pickup.
+        if(tick%45==0)event("ledge-exit-jump");
     }
     return controls();
 }

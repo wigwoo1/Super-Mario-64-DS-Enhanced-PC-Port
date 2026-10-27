@@ -1,0 +1,135 @@
+Native question block hit detection and Yoshi reward - 2026-10-26
+Status: VERIFIED for the selected Battlefield question block and Yoshi Power Flower.
+The full game, other rewards and the activation switch remain incomplete.
+
+Repeat reward / course re-entry verification — 2026-10-27
+The current build also completes a muted original-input Battlefield lifecycle
+test in private case
+work/native-muted-audio-walk-question-block-reentry-cycle-r7-20261026-20261021.
+The normal castle-to-course route reaches question block UID129 at
+(1204224,1024000,26214400), content5. Yoshi's head ray calls the original
+typed underside handler; the block bounces and pops; Power Flower UID302 is
+naturally collected at tick6810 and invokes original InitFireYoshi with the
+0x1000 Fire Yoshi state flag.
+
+The replay opens the game's pause screen, uses the original Exit Course path,
+returns to the castle at tick7467, and re-enters Battlefield at tick8874.
+The same authored block position/content is recreated as UID368. A second
+ordinary jump pops it at tick10450; Power Flower UID542 is naturally collected
+at tick10603 and again invokes original InitFireYoshi. The replay ends in
+Battlefield in normal Wait/control. The save fixture's Power Star total stays
+at its seeded value of1 and its story star mask stays2; this block reward adds
+no Star credit. Both course visits use the original stage transitions. No
+actor, collision, reward, or save state is written by the replay.
+
+Build log: work/build-question-block-reentry-20261026-r7.log. Build and all
+7 focused CTests pass. The 16,000-frame runtime exits0 without an unhandled
+exception. Audio engine renders but device output is muted (0 submitted nonzero
+samples); test save data is isolated. Screens: frame6800 (first flower),
+frame8000 (castle visit), frame10500 (second block reward), and frame12000
+(restored block after re-entry), all in the private case above. This verifies
+the requested repeated Yoshi Fire Flower block reward and course actor reset;
+it does not verify Star/coin/1-Up block contents, other characters, activation
+switch18, or full-game acceptance. The replay hook remains opt-in test code.
+No F install, public export, kit, or release was made.
+
+Root cause and repair
+The original Player has two head-contact paths. The short head ray in
+func_ov002_020cef84 stops upward motion and sets Player collision bit8 before
+its larger sphere ever records a ceiling hit. The centered diagnostic showed
+sphere flags0x20 and Player flags0x08 at6806; therefore the sphere ceiling
+helper correctly reported no hit. The short ray had found the correct block,
+but its recovered raw slot28 call used a free-function signature. On native
+x86 that passes the object on the stack instead of the ECX register expected
+by the C++ method. The host Player transform now calls the same virtual method
+through dActor_c::OnHitFromUnderneath with the original owner and attacker.
+No contact, character, water, distance or reward eligibility guard is removed.
+No forced hit, altered physics, direct pilot reward call or pose edit is used.
+
+The prior integration connected native profiles20/306/345, eight lazy shared
+block resources,42 typed block callbacks and six typed Power Flower handlers.
+This milestone preserves that integration. Recovered Player/block/flower
+sources and headers match the reviewed public baseline byte-for-byte; only
+the generated host copy receives the ABI adaptation. Opt-in read-only traces
+expose the short ray, sphere and collision phases for future investigations.
+
+Build and verification
+Release executable SHA256:
+B64B6539A5F3C03112335445768579B211C8CE64D5C7A46804DDD19BA04BABC5
+Build log: private work/build-question-block-native-head-20261026.log.
+All7 selected clock/input/session/stage/collision CTests PASS.
+Full native actor/data audit PASS, including original profiles and flower
+callback identities. Six-file recovered-source comparison PASS in private
+work/question-block-native-head-source-20261026.json.
+
+Two final8500-frame original title/File A/castle/painting/Battlefield replays
+use the same executable and isolated one-Star Yoshi fixtures. The fixtures
+change only the synthetic original red-switch prerequisite flag (off/on).
+Locked case: three authored blocks remain idle with collision disabled; a
+normal jump passes through the animated locked block without a reward.
+Active case: ordinary stick pulses settle Yoshi1.815units from the selected
+block center. Normal jump6800; short-ray owner129/actor20 and real underside
+callback6806; sampled bounce6810 and pop6830. Exactly one native Power Flower
+UID302 is observed. Natural touch pickup6974 calls original InitFireYoshi
+and sets the genuine0x1000 player power flag. Original next update consumes
+that flag to start the power; it is not a persistent saved item.
+The first successful pickup replay stopped at the original tutorial. The final
+pilot dismisses it with normal A-button pulses rather than bypassing it.
+Ordinary actor updates resume and the block returns to idle before8000;
+late idle observation8490 and final8500 show normal Wait/control. One reward
+only. Both final processes exit0, native audio errors0, output device samples0,
+and isolated saves unchanged. Audio engine runs but every test is muted.
+
+Private final evidence
+work/native-muted-audio-walk-question-block-locked-native-head-r1-20261026-20261021/
+work/native-muted-audio-walk-question-block-active-native-head-dismiss-r2-20261026-20261021/
+The active folder contains question-block-acceptance.json. Private checker:
+work/check-question-block-20261026.py. It requires matching build hashes,
+original-menu route, locked behavior, actual contact/bounce/pop, one genuine
+flower pickup and power flag, tutorial dismissal, late actor updates/reset,
+normal final state, muted clean exit and unchanged fixture saves.
+Screens shown: setup6800, impact6820, released flower6960, restored block8000.
+Earlier active-phase-sol-r1 and active-native-head-r1 cases are diagnostics,
+not final tutorial/cooldown acceptance. Do not restore an older partial build.
+
+Remaining scope / next model
+Luna Medium is appropriate for a focused course re-entry and repeat pickup
+check. Earning switch18, other block placements, Mario/Luigi/Wario rewards,
+Feather behavior and fire combat remain unverified. This is not full campaign
+acceptance or a stable-build promotion. No F install, public export, kit or
+release was made. Public79b1 and its prior verified ZIP remain older baselines.
+Future kits require exact reviewed source/closure metadata and fresh-folder
+reconstruction/runtime acceptance. Full EXEs, ROM-derived data/assets, saves,
+raw routes, logs, screenshots and audio must stay private. All handles terminal.
+
+Mario Feather follow-up - 2026-10-27 - VERIFIED
+See native-feather-music-abi-2026-10-27.txt for the corrected diagnosis, complete
+PC music-call repair, original Mario pickup, course re-entry, and active-wing
+refresh acceptance. The prior assertion that Feather rejects Mario was wrong:
+actor191 is any player and character0 is Mario. Original recovered source is
+unchanged. Both muted runtime regressions and seven focused CTests pass.
+
+Luigi follow-up - 2026-10-27 - VERIFIED
+See native-luigi-question-block-2026-10-27.txt. Original Luigi Power Flower
+pickup, course exit/re-entry, repeat pickup and natural vanish expiry pass a
+muted16,000-frame run with unchanged isolated saves and7 focused CTests.
+No gameplay change is required; only opt-in observations/pilot coverage grew.
+
+Wario follow-up - 2026-10-27 - VERIFIED
+See native-wario-question-block-2026-10-27.txt. Original Wario Power Flower
+pickup, course exit/re-entry, repeat pickup and natural metal expiry pass a
+muted16,000-frame run with unchanged isolated saves and7 focused CTests.
+No gameplay change required; native activation Switch26 remains unconnected.
+
+Activation switch follow-up - 2026-10-27 - VERIFIED
+Native Question Switch26 now permits earning the activation bit through an
+actual press and the original save prompt. Fresh reload retains the pressed
+state; the earned save enables a real Battlefield Feather pickup. Read
+native-question-switch-2026-10-27.txt for exact scope/diagnostic entry limits.
+
+Latest Yoshi course-cycle regression - 2026-10-27 - VERIFIED
+See native-question-block-reentry-regression-2026-10-27.txt. The current build
+including native Question Switch and Player music-call repair passes another
+16000-frame original-menu Yoshi exit/re-entry/repeat flower pickup. Both
+actual pickups, authored placement reset, normal control and unchanged
+isolated saves verified. No gameplay repair required; full campaign open.

@@ -13,6 +13,7 @@
 #include "daBombking_c.h"
 #include "daBmb_c.h"
 #include "daYegg_c.h"
+#include "daCoin_c.h"
 #include "daStar_c.h"
 #include "daStarBase_c.h"
 #include "daObjMarioCap_c.h"
@@ -34,6 +35,8 @@
 #include "Event.h"
 #include "daObjC0_Switch_c.h"
 #include "daObjC0Water_c.h"
+#include "daObjHatenaBlock_c.h"
+#include "daObjHatenaSwitch_c.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
 #include "hal/replay_path.h"
@@ -486,6 +489,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        const char *fine=std::getenv("SM64DS_PC_TEST_ROUTE_FINE_SETTLE");
+        const bool fine_settle=precise && radius<=10 && fine && !std::strcmp(fine,"1");
         if(slide_route && !std::strcmp(slide_route,"1") &&
            !std::strcmp(state,"St_ButtSlide_Main") && !has_y && !jump) {
             // A single QA route may begin in the castle and continue into
@@ -573,7 +578,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
             if(std::sscanf(target,"%d:%d%c",&block_level,&block_actor,&extra)!=2 ||
                block_level<0 || block_level>=52 ||
                (block_actor!=15 && block_actor!=16 && block_actor!=17 && block_actor!=19 &&
-                block_actor!=21 && block_actor!=46))
+                block_actor!=20 && block_actor!=21 && block_actor!=46))
                 block_level=-1;
         }
         if(block_replay && !std::strcmp(block_replay,"1") && level==block_level) {
@@ -692,6 +697,18 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const bool horizontal_reached=horizontal<=radius*4096.0;
         const bool height_reached=!has_y ||
             (!player->mIsAirborne && std::abs(dy)<=vertical_tolerance);
+        if(fine_settle && horizontal<400*4096.0 && !player->mIsAirborne) {
+            // Brief ordinary stick pulses, each followed by a full natural
+            // stop. Low analog input alone retains substantial DS inertia.
+            static uint64_t fine_pulse_until=0;
+            const bool stopped=player->mHorzSpeed==0 && !std::strcmp(state,"St_Wait_Main");
+            if((horizontal_reached && height_reached && !stopped) ||
+               (!horizontal_reached && (std::abs(player->mHorzSpeed)>=0x1000 ||
+                 (tick>=fine_pulse_until && !stopped)))) {
+                ntr::input_test_controls(true,0,0,0);return true;
+            }
+            if(!horizontal_reached && stopped)fine_pulse_until=tick+6;
+        }
         // Optional QA route mode 3: ordinary running crouch/jump inputs for
         // a wide gap. Never change player position, velocity or actor state.
         if(jump==3) {
@@ -782,8 +799,13 @@ static bool replay_course_route(const char *route_override=nullptr) {
         } else {
             const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
             double magnitude=precise?horizontal/(180*4096.0)*22000:22000.0;
+            // Optional input-only QA approach for narrow overhead targets.
+            // Slow down before the final marker so ordinary inertia cannot
+            // leave the character grazing a corner after the route finishes.
+            if(fine_settle && horizontal<120*4096.0)magnitude=8500;
             // Keep low-speed travel above the controller's radial deadzone.
-            if(magnitude<12000)magnitude=12000;
+            const double minimum=fine_settle?8500:12000;
+            if(magnitude<minimum)magnitude=minimum;
             if(magnitude>22000)magnitude=22000;
             if(jump==3)magnitude=32767;
             sx=static_cast<int16_t>(std::sin(angle)*magnitude);
@@ -818,6 +840,8 @@ static bool replay_lava_bridge_lifecycle() {
     if(phase==1) {
         if((data_0209f2f8==2 || data_0209f2f8==4) && ready) {
             phase=2;event("castle-return");
+            const char *crate_mode=std::getenv("SM64DS_PC_TEST_CRATE");
+            if(crate_mode && !std::strcmp(crate_mode,"pound-reentry"))++pc_crate_reentry_epoch;
             replay_course_route_waypoint=0;replay_course_route_complete=false;
         }
         else {
@@ -890,6 +914,179 @@ static bool replay_lava_bridge_lifecycle() {
     }
     if(phase==3 && replay_course_route_complete){phase=4;event("done");}
     return false;
+}
+
+// End-to-end Battlefield question-block reward re-entry QA. The player,
+// block, course transition, menu, and flower all use ordinary game logic.
+static bool replay_question_block_reentry() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_QUESTION_BLOCK_REENTRY");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1"))return false;
+    enum {INITIAL_ROUTE,FIRST_HIT,EXIT,CASTLE,RETURN_ROUTE,SECOND_HIT,FINISHED};
+    static int phase=INITIAL_ROUTE,visits=0;
+    static unsigned block_uid=0;
+    static uint64_t jump_until=0,next_jump=0,last_event=0;
+    static unsigned reward_flags_baseline=0;
+    static bool reward_wings_baseline=false;
+    static bool reward_vanish_baseline=false,vanish_expiry_observed=false;
+    static bool reward_metal_baseline=false,metal_expiry_observed=false;
+    const auto tick=ntr::rt_frame();
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto controls=[&](){ntr::input_test_controls(true,buttons,sx,sy);return true;};
+    auto ready=[&](){return p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;};
+    auto event=[&](const char *name,unsigned uid=0){std::fprintf(stderr,
+        "[native question reentry] event=%s visit=%d tick=%llu block=%u level=%d\n",
+        name,visits,static_cast<unsigned long long>(tick),uid,int(data_0209f2f8));};
+    if(phase==INITIAL_ROUTE) {
+        if(data_0209f2f8==6 && replay_course_route_complete && ready()) {
+            ++visits;phase=FIRST_HIT;next_jump=tick;event("initial-course-ready");
+        } else return false;
+    }
+    if(phase==EXIT) {
+        if(data_0209f2f8==2 && p && p->aliveState==1) {
+            phase=CASTLE;replay_course_route_waypoint=0;replay_course_route_complete=false;
+            event("castle-return");
+        }
+        else {
+            if(!data_0209f2c4) {if(ready() && tick%45<3){buttons=8;event("pause-request");}}
+            // State 11 is the full-screen pause map; IsButtonInputValid only
+            // accepts Start/Select while pause is active, so B is ignored.
+            else if(data_0209f248==11 && tick%45<3)buttons=4;
+            else if(data_0209f248==3 && tick%45<3)buttons=data_0209f2e0==3?1:0x80;
+            return controls();
+        }
+    }
+    if(phase==CASTLE) {
+        unsigned selected=0,selectionPhase=0,selectionMode=0,confirmed=0,selectionReady=0;
+        if(pc_star_select_status(&selected,&selectionPhase,&selectionMode,&confirmed,&selectionReady)) {
+            if(selectionReady && !confirmed && selectionMode==0 && tick%20<3)
+                buttons=selected==0 && selectionPhase==2?1:0x20;
+            return controls();
+        }
+        if(data_0209f2f8==6 && ready()) {
+            ++visits;
+            phase=RETURN_ROUTE;replay_course_route_waypoint=0;replay_course_route_complete=false;
+            next_jump=tick;event("course-reentry");return controls();
+        }
+        if(!p || p->aliveState!=1)return controls();
+        if(data_0209d660){if(tick%45<3)buttons=1;return controls();}
+        if(!ready())return controls();
+        static const char *route=
+            "2:-1000:1400:60,2:-2100:600:50,2:-2300:500:40,2:-2750:50:40,"
+            "2:-2800:-700:50,2:-3400:-700:50,2:-3700:-450:40,2:-5200:-450:40:1,"
+            "6:-6200:6400:100,6:-4100:0:6700:40:0,6:-3200:0:6700:40:0,6:294:0:6400:5:0";
+        replay_course_route(route);
+        return true;
+    }
+    if(phase==RETURN_ROUTE) {
+        static const char *route=
+            "6:-6200:6400:100,6:-4100:0:6700:40:0,6:-3200:0:6700:40:0,6:294:0:6400:5:0";
+        if(data_0209f2f8!=6)return controls();
+        replay_course_route(route);
+        if(replay_course_route_complete && ready()) {
+            phase=SECOND_HIT;block_uid=0;next_jump=tick;event("return-route-complete");
+        }
+        return true;
+    }
+    if(phase==FINISHED) {
+        if(p && p->aliveState==1 && p->param1==1 && !p->mIsVanish &&
+           !p->mPowerupTimer && !vanish_expiry_observed) {
+            vanish_expiry_observed=true;event("vanish-expired");
+        }
+        if(p && p->aliveState==1 && p->param1==2 && !p->mIsMetal &&
+           !p->mPowerupTimer && !metal_expiry_observed) {
+            metal_expiry_observed=true;event("metal-expired");
+        }
+        return controls();
+    }
+    if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
+    const auto *state=pc_player_state_name(p);
+    if(data_0209d660) {if(tick%45<3)buttons=1;return controls();}
+    daObjHatenaBlock_c *block=nullptr;double nearest=1e100;
+    for(auto *a=dActor_c::FindWithActorID(20,nullptr);a;a=dActor_c::FindWithActorID(20,a)) {
+        auto *candidate=static_cast<daObjHatenaBlock_c *>(a);
+        if(a->aliveState!=1 || (block_uid && a->uniqueID!=block_uid))continue;
+        const double d=std::hypot(double(a->mPosX)-p->mPosX,double(a->mPosZ)-p->mPosZ);
+        if(d<nearest){nearest=d;block=candidate;}
+    }
+    if(!block || nearest>100*4096.0 || !ready())return controls();
+    if(!block_uid){block_uid=block->uniqueID;reward_flags_baseline=p->mStateFlags;
+        reward_wings_baseline=p->mHasWings!=0;reward_vanish_baseline=p->mIsVanish!=0;
+        reward_metal_baseline=p->mIsMetal!=0;
+        event("selected-block",block_uid);}
+    if(block->mState!=0 && block->mState!=2) {
+        return controls();
+    }
+    if(block->mState==0 && !p->mIsAirborne &&
+       (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main")) && tick>=next_jump) {
+        jump_until=tick+12;next_jump=tick+90;event("jump",block_uid);
+    }
+    if(block->mState==0 && tick<jump_until)buttons=2;
+    if(block->mState==2 && !last_event) {
+        last_event=tick;event("popped",block_uid);
+    }
+    // Observe the character's original reward state. Never grant a power-up
+    // from the replay: only ordinary block contact and item pickup may do so.
+    const bool reward_active=p->param1==0 ? (p->mHasWings && !reward_wings_baseline) :
+        p->param1==1 ? (p->mIsVanish && !reward_vanish_baseline) :
+        p->param1==2 ? (p->mIsMetal && !reward_metal_baseline) :
+        (p->param1==3 && (p->mStateFlags&0x1000u) && !(reward_flags_baseline&0x1000u));
+    if(block->mState==2 && reward_active && last_event) {
+        event("reward-active",block_uid);
+        if(visits==1) {phase=EXIT;block_uid=0;last_event=0;event("exit-request");}
+        else {phase=FINISHED;event("repeat-reward-complete");}
+    }
+    return controls();
+}
+
+static uint16_t chomp_replay_button(unsigned action);
+// Input-only approach to the authored question switch. No switch/save writes.
+static bool replay_hatena_switch_controls() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_HATENA_SWITCH");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1"))return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(data_0209f2f8!=31 || !p || p->aliveState!=1)return false;
+    auto *sw=static_cast<daObjHatenaSwitch_c *>(dActor_c::FindWithActorID(26,nullptr));
+    if(!sw || sw->aliveState!=1)return false;
+    const auto tick=ntr::rt_frame();
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    const bool saved=(reinterpret_cast<const SaveData *>(data_0209caa0)->flags1&0x80000000u)!=0;
+    const char *state=pc_player_state_name(p);
+    static bool dropped=false,completed=false;
+    static uint64_t jump_until=0,next_jump=0,pound_until=0;
+    if(data_0209d660) {
+        if(tick%30<3)buttons=1;
+    } else if(saved) {
+        if(!sw->mTalking && !completed) {
+            completed=true;
+            std::fprintf(stderr,"[native question switch replay] event=complete tick=%llu saved=1\n",
+                static_cast<unsigned long long>(tick));
+        }
+    } else if(!p->mIsNoControl && !p->mIsControlDisabled) {
+        const double dx=double(sw->mPosX)-p->mPosX,dz=double(sw->mPosZ)-p->mPosZ;
+        const double distance=std::hypot(dx,dz);
+        if(!std::strcmp(state,"St_Fly_Main")) {
+            if(!dropped && distance<120*4096.0) {
+                dropped=true;pound_until=tick+8;buttons=chomp_replay_button(0x400);
+                std::fprintf(stderr,"[native question switch replay] event=ground-pound tick=%llu x=%d y=%d z=%d\n",
+                    static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+            }
+            if(tick<pound_until)buttons=chomp_replay_button(0x400);
+        } else if(std::strcmp(state,"St_GroundPound_Main")) {
+            if(distance>35*4096.0) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*22000);
+                sy=static_cast<int16_t>(-std::cos(angle)*22000);
+            }
+            if(!p->mIsAirborne && distance<400*4096.0 && tick>=next_jump) {
+                jump_until=tick+12;next_jump=tick+100;
+            }
+            if(tick<jump_until)buttons=2;
+        }
+    }
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
 
 // Input-only rabbit capture replay. The original route handles the opening
@@ -1923,7 +2120,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -1963,7 +2160,7 @@ static bool trace_script_progress(uint64_t frame)
         static uint64_t previous=~uint64_t(0);
         const auto tick=ntr::rt_frame();
         if(file && tick>=1500 && previous!=tick) {
-            if(previous==~uint64_t(0))std::fputs("tick,id,kind,alive,param,x,y,z,flags,state,death,hit,other,target,payout_index,payout_bits,payload,course_coins,silver_stars,active_star_index,active_star_id,last_hit,tracked_star,player_anim_index,player_anim_file_id,star_id,star_kind,star_home_state,star_talk_step,star_sequence_timer,story_course,save_star_mask,power_star_total,message_active,message_answer,player_noctrl_kind\n",file);
+            if(previous==~uint64_t(0))std::fputs("tick,id,kind,alive,param,x,y,z,flags,state,death,hit,other,target,payout_index,payout_bits,payload,course_coins,silver_stars,active_star_index,active_star_id,last_hit,tracked_star,player_anim_index,player_anim_file_id,star_id,star_kind,star_home_state,star_talk_step,star_sequence_timer,story_course,save_star_mask,power_star_total,message_active,message_answer,player_noctrl_kind,coin_behavior,coin_timer,coin_no_collision,coin_flags,coin_horz_speed,coin_vert_speed,coin_grounded,coin_floor_y,coin_floor_triangle,coin_floor_slot,coin_wall_triangle,coin_wall_slot\n",file);
             previous=tick;
             // Observe the exact VS sequence used by the original conditional
             // Goomba/marker workers. Story mission selection is a separate value.
@@ -2015,11 +2212,21 @@ static bool trace_script_progress(uint64_t frame)
                     a->mPosX,a->mPosY,a->mPosZ,a->mFlags,state,death,hit,other,target,index,bits,payload,(int)data_0209f358[0],(int)data_0209f310[0],
                     static_cast<unsigned>(data_0209f208),active_star,last_hit,tracked_star,anim_index,anim_file_id);
                 const int course=observed_story_course();
-                std::fprintf(file,",%d,%d,%d,%d,%d,%d,%u,%u,%u,%u,%u\n",
+                std::fprintf(file,",%d,%d,%d,%d,%d,%d,%u,%u,%u,%u,%u",
                     star_id,star_kind,star_home,star_talk,star_timer,course,
                     course>=0 && course<30 ? data_0209caa0[0x14+course] : 0u,
                     observed_power_star_total(),data_0209d660,data_0209d684,
                     observed_player ? observed_player->mNoCtrlKind : 255u);
+                const auto *coin=(a->actorID>=288 && a->actorID<=290)?static_cast<const daCoin_c *>(a):nullptr;
+                const bool grounded=coin && coin->mWithMeshClsn.IsOnGround();
+                const auto *floor=grounded?static_cast<const dBgPi *>(coin->mWithMeshClsn.GetFloorResult()):nullptr;
+                const auto *wall=coin && coin->mWithMeshClsn.IsOnWall()?static_cast<const dBgPi *>(coin->mWithMeshClsn.GetWallResult()):nullptr;
+                std::fprintf(file,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+                    coin?coin->mBehaviorType:-1,coin?int(coin->mDisappearTimer):-1,
+                    coin?int(coin->mNoClsnTimer):-1,coin?int(coin->mCoinFlags):-1,
+                    coin?coin->mHorzSpeed:0,coin?coin->mVertSpeed:0,int(grounded),coin?coin->mFloorPosY:0,
+                    floor && floor->colliderIdx<24?int(floor->triangleID):-1,floor?int(floor->colliderIdx):-1,
+                    wall && wall->colliderIdx<24?int(wall->triangleID):-1,wall?int(wall->colliderIdx):-1);
             }
             std::fflush(file);
         }

@@ -1,3 +1,9 @@
+Correction 2026-10-26: the Battlefield flower warp is no longer open. Its
+original two-way destination/fade/cooldown behavior and course re-entry passed
+a muted isolated replay; see `native-warp-trigger-handoff-2026-10-22.txt`.
+Only other course/mountain warp points remain untested. The historical status
+line below predates that acceptance.
+
 Original menu and stage sound follow-up, 2026-10-22
 
 Status: PARTIALLY VERIFIED. Missing native event plumbing and stage-bank layout

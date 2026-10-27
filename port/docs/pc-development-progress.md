@@ -1,3 +1,40 @@
+## 2026-10-27: Native question-block and activation-switch acceptance
+
+The selected Battlefield block now dispatches its original underside hit using
+the PC calling convention. Yoshi, Mario, Luigi and Wario have isolated original
+course exit/re-entry and repeat power-up checks; Mario's active-wing refresh
+also passes after supplying the complete native music-call signature. The
+original activation switch supports physical ground-pound, original save
+dialogue, CRC-valid saved activation, fresh reload and an earned-save block
+reward. Its initial Tower entry is diagnostic; original castle access and
+broader contents/placements remain open. The latest Yoshi regression on the
+switch-integrated build passes16,000 muted frames with both actual pickups,
+block reset, normal final control and unchanged isolated saves. Build, seven
+focused tests and native actor/data audit pass. See the October27 character,
+question-switch and question-block re-entry reports for hashes and exact scope.
+Earlier failed underside investigations below are historical, superseded by
+these accepted checks. Full campaign and other roadmap work remain incomplete.
+
+## 2026-10-26: Lower internal resolution presets visually verified
+
+Native DS (256x192), 360p (640x360), and 480p (854x480) each render the original castle scene at the requested D3D11 internal size while the settings retain a 1280x720 window preference. All three muted 4,000-frame runs return Yoshi to normal control with isolated saves unchanged; smoke_video, smoke_video_window and smoke_minimap_hud pass. Screenshots and exact hashes are recorded in native-resolution-lower-presets-verified-2026-10-26.txt. No gameplay/render code changed.
+
+## 2026-10-26: Wario carries and throws the HMC crate
+
+Wario carries the original HMC crate for 16 trace samples, throws it at original speed 40/10, and breaks it on wall impact. Muted 3,000-frame run exits normally; isolated saves unchanged. This is a one-placement character interaction check using the diagnostic course-entry picker, not campaign acceptance. No gameplay source changed. See `native-wario-crate-carry-throw-verified-2026-10-26.txt`.
+
+## 2026-10-26: Luigi carries and throws the wooden crate
+
+Luigi id1 successfully uses the original crate grab, carried state, throw speed40/20, ownership release and wall break. The muted 3,000-frame run exits0 with unchanged isolated saves; no gameplay source changed. This verifies one Luigi/HMC placement. The optional pickup route collected two coins then fell into the lower pit before the third coin's normal expiry; full Luigi reward pickup is unverified. See `native-luigi-crate-carry-throw-verified-2026-10-26.txt`.
+
+## 2026-10-26: Mario crate carry, throw and all three coins verified
+
+A signpost-aware normal-input detour and open descent fix the test pilot's third-coin miss. Mario carries and throws the authored HMC crate, original wall impact renders debris, all three coins give actual credit before expiry, and an ordinary ledge climb restores normal control. Original crate distance respawn preserves its paid flag. Build, eight focused tests and muted 3,000-frame strict acceptance pass; isolated saves are unchanged. Only QA controls/traces/checker changed. Initial entry and unlocks are diagnostic; other variants/campaign and lower-floor camera occlusion remain open. See `native-mario-crate-carry-verified-2026-10-26.txt`.
+
+## 2026-10-26: HMC crate resets across original course re-entry
+
+One authored Yoshi crate passes ground-pound, three-coin collection, original Exit Course, castle basement/pool re-entry and another fresh three-coin reward. The muted 19,000-frame run exits normally with rendered debris, restored control and unchanged isolated saves. Initial entry uses the diagnostic picker and synthetic unlock prerequisites. Only opt-in replay bookkeeping and its evidence checker changed; gameplay rules remain original. See `native-hmc-crate-reentry-verified-2026-10-26.txt`. Carry/throw, other placements and campaign completion remain open.
+
 ## 2026-10-26 - Crate egg flight and coin payout verified
 
 The same crate egg was launched with normal attack input, hit a nearby wall and burst once. Exactly three coins appeared and were ordinarily collected; the course counter advanced0->3. Muted6500-frame run, build, six CTests and native-data audit pass, with normal Yoshi control and unchanged saves. Diagnostic picker used. Long-distance egg targeting, crate carrying and throwing, course re-entry and original course entry remain open. See native-wooden-crate-spit-verified-2026-10-26.txt.
@@ -2289,3 +2326,63 @@ Build SHA256 8D116FC5707A23B0C7DF19FCAF34F4075C748910CC22882492F06237A1E9D5ED. E
 
 This verifies the timer HUD and timing surfaces only. A distinct visible finish-line marker/geometry has not been identified or verified. Full course/actor coverage, F installation and public build promotion remain open. Next: inspect the slide finish area for the authored visible finish marker and confirm collision/render condition without forcing a spawn. Luna Medium is suitable for that bounded trace; escalate only if this becomes a difficult native scene/asset reconstruction.
 
+
+## 2026-10-26: Secret Slide finish stripe confirmed in current build
+
+Status: VERIFIED for visibility of the existing checkerboard finish stripe,
+top-center stopwatch, and timed Star at the slide exit. Replayed the current
+build (SHA256 D7F0DEFFB6DC1CD0AF36AEF05A19726690B0403278DC904FF100513379F5E8AB)
+for 8,000 frames through the original title/File A/course route with audio
+output muted. At frame 7,760, the black-and-white stripe spans the ramp exit;
+the stopwatch reads 00:20.63 and the timed Star is visible past the line. At
+frame 7,900, the Star remains visible in the goal room. The process exited 0,
+the runtime log reports output_muted=1 and nonzero_samples=0, and the isolated
+save seed remained unchanged. Screenshots and traces are in
+work/native-muted-audio-walk-slide-finish-marker-current-r1-20261021/.
+
+This corrects the 2026-10-25 note below: the separate stripe was not visible
+in that older capture, but it is present in the current build and is part of
+the rendered course geometry. No custom marker implementation was needed.
+The full Secret Slide course and timed-Star save/reload behavior remain open.
+
+
+## 2026-10-26: Reviewed ROM-free kit replayed from reconstructed build
+
+The latest reviewed public source remains commit 79b1f0b40030122150f15772b116cb5cba2400e9,
+tree d4b377ef553e591f64231d36a2ffbd6b54f356e1. Its allowlisted archive was
+already freshly reconstructed in a separate folder; this follow-up reran that
+reconstructed executable in a new isolated case, without changing the archive
+or source. The 6,500-frame muted Hazy Maze Cave diagnostic-picker route passed
+the strict crate-spit verifier: authored crate22 became egg126, burst against
+a nearby wall, and coins127-129 were collected (counter0->3; payout once).
+Normal control returned; process exit0, audio errors0, submitted output samples0,
+and isolated slot1/minigames save files match their seeds. EXE SHA256
+70c991da3e4cf3c1af5f9a9ae0ae7bee8979994351e060309924bb0f2fbcbedf. Runtime
+evidence and screenshot are private in
+work/native-crate-spit-kit-20261026-public-79b/native-crate-kit-resumed-r5-20261026/.
+
+This is a repeat check of one authored crate and nearby-wall egg burst, not new
+gameplay coverage. Other crate placements, long-range targeting, crate carrying
+and throwing from the reconstructed kit, full course completion, and campaign
+completion remain unverified. The archive remains a build kit rather than a
+ready-to-play executable; release publication for its newest archive is still
+blocked on GitHub credentials. No ROM-derived content or private test artifacts
+were copied into the archive.
+
+
+## 2026-10-26: Native question-block reward remains diagnostic
+
+Connected original question-block20, Power Flower306 and Feather345 native
+factories/resources. Power Flower now uses six typed native state handlers.
+Build, seven focused CTests and the native descriptor/callback audit pass.
+The original sources and headers remain unchanged. The authored Battlefield
+block renders its locked animated form or activated solid form according to
+isolated saved prerequisites. A centered ordinary Yoshi jump still produces no
+underside callback, bounce or reward; strict feature acceptance fails. The final
+muted8500-frame run exits0, returns normal control and preserves isolated saves.
+Current diagnostic EXE7245BE8C7EFE7CB3CA83A047837859C7B737E8CEC24182F11A524DBDC9D859B8.
+See native-question-block-integration-2026-10-26.txt for the exact blocker,
+read-only trace and original-eligibility/native-update-order investigation.
+Sol High recommended before further collision changes. No F install or kit
+promotion; the full goal remains incomplete. The previous sign-pound escalation
+was stale: that selected original behavior was already verified on2026-10-25.

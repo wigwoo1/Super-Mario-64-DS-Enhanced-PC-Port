@@ -7,6 +7,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstddef>
+
+static_assert(offsetof(dBgCh_Actr,mSphereClsn)==0x20,"native actor sphere offset");
+static_assert(offsetof(dBgCh_SphCrr,flags)==0x70,"native sphere flags offset");
 
 #define PC_PLAYER_STATE_METHOD(guest, method)
 #define PC_PLAYER_STATE_WORKER(guest, worker) extern "C" int worker(Player *self);
@@ -17,7 +21,9 @@
 extern "C" void func_ov002_020e1e70(char *self);
 extern "C" void func_ov002_020e200c(char *self);
 extern "C" void func_ov002_020e1c20(char *self);
+extern "C" void pc_trace_jump_input(const void *,const char *);
 extern "C" void pc_player_jump_callback(Player *self, const int *row) {
+    pc_trace_jump_input(self,"jump-worker");
     // These character-specific jump helpers are a separate table from State.
     // All four original descriptors have zero adjustment and direct targets.
     if (row[1] != 0) {
@@ -80,6 +86,11 @@ extern "C" void pc_trace_jump_input(const void *object,const char *where)
     std::fprintf(stderr,"[jump input] tick=%llu where=%s slot=%u held=%04x pressed=%04x state=%s flags=%04x crouch=%u phase=%u step=%u air=%u y=%d speed=%d\n",
         tick,where,slot,held,pressed,pc_player_state_name(p),*reinterpret_cast<const unsigned short *>(c+0x6ce),
         *reinterpret_cast<const unsigned short *>(c+0x6b0),unsigned(p->mStatePhase),unsigned(p->mStateStep),unsigned(p->mIsAirborne),p->mPosY,p->mHorzSpeed);
+    const auto &sphere=p->mMeshClsn.mSphereClsn;
+    std::fprintf(stderr,"[native player collision] tick=%llu where=%s state=%s sphere=%02x raw=%02x player=%02x base_owner=%d under_owner=%d floor_owner=%d y=%d vy=%d\n",
+        tick,where,pc_player_state_name(p),unsigned(sphere.flags),unsigned(c[0x380+0x90]),
+        unsigned(p->mClsnFlags),static_cast<const dBgPi &>(sphere).clsnID,sphere.mClsnResult3.clsnID,
+        sphere.mClsnResult1.clsnID,p->mPosY,p->mVertSpeed);
 }
 
 extern "C" void pc_trace_player_state_change(const Player *p,const Player::State *oldState,const Player::State *newState,const void *caller)

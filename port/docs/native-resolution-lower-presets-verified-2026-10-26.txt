@@ -1,0 +1,11 @@
+# Lower internal resolution presets verified — 2026-10-26
+
+Status: VERIFIED for Native DS, 360p and 480p internal rendering on the current D3D11 build.
+
+The same 4,000-frame muted original-menu/File A route reached the castle exterior and normal Yoshi control in all three runs. Logged GPU targets and captured framebuffer dimensions matched the selected preset: Native DS 256x192, 360p 640x360, and 480p 854x480. Each run retained window_width=1280 and window_height=720 in its isolated settings file. The dedicated window-independence, video-preset, and minimap-HUD CTests all pass.
+
+All runs exited 0, recorded zero nonzero output samples, and left their synthetic isolated save files byte-identical. No gameplay or renderer code changed; this milestone adds visual runtime acceptance for the presets. It does not claim physical monitor/window resizing from the screenshots, which are captures of the internal render target.
+
+Build SHA256: `D7F0DEFFB6DC1CD0AF36AEF05A19726690B0403278DC904FF100513379F5E8AB`
+
+Private evidence: `work/native-resolution-lower-presets-acceptance-20261026.json`. Captures are in the three `work/native-muted-audio-walk-resolution-*-r1-20261021/` folders.

@@ -1,0 +1,55 @@
+UPDATE2026-10-26: Selected Mario crate carry/throw/break and ALL THREE actual coin pickups VERIFIED. Signpost-aware input detour plus original open descent reaches coin128 before expiry; normal ledge jump/climb restores final Wait. Original distance respawn preserves paid flag; no second payout. Muted3000-frame run, strict checker and build/eight focused CTests pass; saves unchanged. Only QA/tracing/checker changed; original actor/coin/Player files unchanged. See native-mario-crate-carry-verified-2026-10-26.txt. Prior failed cases remain historical diagnostics. Diagnostic entry/synthetic prerequisites/one placement; foreground camera occlusion in lower-floor captures is NOT camera acceptance. Other variants and campaign remain open.
+
+Mario wooden crate carry/throw diagnostic - 2026-10-26
+Status: PARTIALLY VERIFIED. Full three-coin acceptance still FAILS.
+
+The current native build and seven focused clock/input/scene/collision CTests
+pass. Two muted input-only replays use the original Mission1 selector and one
+authored Hazy Maze Cave crate with a synthetic Mario prerequisite save. Both
+exit0 with audio errors0, zero nonzero device samples, unchanged isolated saves
+and normal final Wait/control. Initial course entry is diagnostic, not a claim
+of earned progression or original title/castle traversal.
+
+Both runs genuinely grab the crate at1609 through its original grab collision
+and Player::TryGrab, enter carried state1, and keep matching player/actor
+ownership. Mario walks while holding it; its model visibly follows his hands.
+Ordinary attack initiates the original throw. At1721 the original state2 enter
+sets horizontal speed40 and vertical speed20 units, clears the holder and
+records the previous holder; Mario's held-object reference is cleared. The
+crate visibly flies, hits the nearby wall, and its original Kill1733 enters
+broken6. Original debris14 renders and three coins spawn1734. No early coin
+credit, ground-pound callback, egg conversion or repeated Kill occurs.
+
+Changes are limited to an opt-in carry-throw replay, appended read-only probe
+fields and a strict evidence checker. Original crate/Player code, carried
+offsets, throwing speeds, physics, collision and reward rules are unchanged.
+No new native data symbols were needed.
+
+Attempt1's pickup pilot searched within200 units of the crate's home. A thrown
+crate resets to home after breaking, while the reward spawns at its impact
+position about239 units away, so this pilot found no coins. Attempt2 remembers
+the last real flight position and finds all three new coin identities. Mario
+collects coin127 at1848 and126 at1870; the course counter reaches2. Coin128
+bounces to a lower area. The direct chasing pilot remains in St_OnWall_Main
+around1900..2000; coin128 disappears2152 with course credit still2. It was not
+collected. The full checker correctly fails its final-three-coins assertion.
+Do not weaken that assertion or classify removal as collection.
+
+Two focused pickup attempts are exhausted. Do not repeat guessed steering.
+Next inspect the original terrain/contact evidence and plan a physically
+reachable route to the third coin before retrying. No native collision bug
+has been established. Do not move actors, remove walls, alter coin lifetimes
+or award the missing credit to make the test pass.
+
+Private cases:
+work/native-crate-mario-carry-throw-r1-20261026 (no collected coins)
+work/native-crate-mario-carry-throw-r2-20261026 (two collected coins)
+Strict checker: port/tools/check_native_crate_carry.py CASE_DIRECTORY.
+The final case's carry-throw-diagnostic.json records the exact EXE hash,
+component evidence and failing pickup. Screens1650/1725/1750 show carrying,
+flight and debris; screenshots/traces/saves/full executables remain private.
+
+Only one Mario placement has component coverage. Three-coin pickup acceptance,
+other characters/placements and wider campaign remain open. This is not a
+stable install or full crate-coverage acceptance. No F: install, public export,
+new kit or release was performed. Full PC-port goal remains active.

@@ -1,0 +1,48 @@
+Selected original castle basement -> Hazy Maze Cave entrance - 2026-10-26
+Status: VERIFIED for Yoshi with isolated synthetic prerequisites.
+
+Executable SHA256:
+fc689060dfaf3edaa19c4c7a327f6704a16b81440070024f76674742b8e05517
+The native build passes seven focused clock, input, scene graph and collision
+CTests. This task changes only the opt-in mission-selection QA pilot: when
+other characters are unlocked, Yoshi's first confirm opens the original
+character choice. A second ordinary confirm edge is needed to select Yoshi.
+The pilot previously stopped at that choice. Production controls, original
+actor code, player physics and scene transitions are unchanged.
+
+The final 14,000-frame muted run starts in the castle through the diagnostic
+picker. It uses a private synthetic 60-Star/basement-key fixture with Yoshi
+selected; it does not claim those prerequisites were earned. Ordinary stick,
+jump and button input traverses the real basement key door (level2 -> level4,
+first captured basement state4960), interior doors and the pool-room ledges.
+The original tilted CH_SCENE trigger requires walking into the pool opening,
+rather than stopping at its record's origin on the rim. The route then uses
+the original mission and character choices. Mission1 is confirmed for level13;
+the actual level4 -> level13 transition occurs10790. Yoshi reaches the authored
+crate approach11070 and ends14000 in St_Wait_Main with control enabled, near
+idle authored crate UID111. Its UID differs from diagnostic course-only runs
+because the castle actor lifecycle precedes it.
+
+Before/after evidence: the previous same-route run reached the original HMC
+selector but remained in character-choice mode2 with confirm0 through16000.
+The updated input pilot supplies the second confirm; the countdown reaches
+zero and the course loads. No runtime actor positions, states, collision,
+mission results or save fields are forced. Only the isolated prerequisite
+fixture was prepared before launch. The final process exits0, mixer errors0,
+device nonzero samples0. Both isolated save files remain byte-identical to
+their seeds, and the fixture source hashes match its recorded provenance.
+
+Private case: work/native-hmc-castle-entry-r6-20261026.
+Private checker: work/check-hmc-original-entry-20261026.py CASE_DIRECTORY.
+Acceptance: hmc-original-entry-acceptance.json in that case. Screens12000 and
+13900 show normal HMC play near the authored crate. Raw KCL planning, routes,
+saves, extracted data, logs and screenshots remain private.
+
+Limits: this run starts at a diagnostic castle spawn with synthetic unlocks.
+It does not verify original title/FileA startup in the same run, earned
+basement-key progression, breaking this crate on the new route, Exit Course,
+course re-entry or crate reset across re-entry. These remain explicit next
+checks. No full campaign or actor-coverage claim is made. The current public
+source/ROM-free kit remains the earlier79b1 revision; this QA change and its
+documentation have not been exported, published or installed on F:.
+The full PC-port goal remains active.

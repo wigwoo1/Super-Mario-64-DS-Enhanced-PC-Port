@@ -1,0 +1,57 @@
+Wario Power Flower, Battlefield course cycle, and metal expiry - 2026-10-27
+Status: VERIFIED for the selected authored content5 Battlefield block.
+
+The original Wario reward logic passes without a gameplay change. PC-only
+read-only flower tracing now observes the real InitMetalWario result and metal
+flag. The input-only course-cycle pilot recognizes Wario's original metal
+state and observes its natural expiry. Both hooks are opt-in QA and never
+grant powers, relocate actors, or write reward/collision/course state.
+
+Build/link and all7 focused clock/input/session/stage/collision CTests PASS:
+private work/build-question-block-wario-20261027-r1.log.
+Executable SHA256:
+C0CFEF98878C827012321AC263FF1B7263B900600BAC263F6089B0672786466F
+Recovered Player and Power Flower source/headers remain unchanged; the
+previous verified player music ABI repair is retained.
+
+Private runtime case:
+work/native-muted-audio-walk-question-block-wario-reentry-r1-20261027-20261021
+Original title/File A/castle/painting input route reaches content5 block129 at
+(1204224,1024000,26214400). A normal jump invokes the original underside
+handler as Wario. The block bounces/pops and releases native Power Flower302.
+Natural collider pickup6800 calls InitMetalWario, sets mIsMetal=1, selects the
+original metal model, and starts the600-tick power-up timer.
+
+Original pause/Exit Course returns to castle7197; the original painting flow
+re-enters Battlefield8634. The same authored block is now fresh UID368. A
+second normal jump bounces/pops it; new Power Flower542 pickup10411 again
+starts from metal0 and sets metal1/timer600. Original effect expires11612 with
+metal flag and timer cleared. The block restores after its cooldown; final
+16000 is normal Wait/control. Screenshot10500 shows the metal model;12000
+shows normal Wario and the restored question block.
+
+The16,000-frame run exits0 with no exception or native audio errors. Audio
+engine rendering is enabled but device output is muted with zero submitted
+nonzero samples. Isolated slot/minigame saves stay byte-identical; Power Star
+total stays1 and story star mask2. No Feather is spawned for Wario. Private
+work/check-wario-power-flower-20261027.py verifies real pickups, distinct new
+actors, original transitions, power expiry, cooldown reset, final control,
+mute/clean exit and save invariants. Its report is
+wario-power-flower-acceptance.json in the runtime case.
+
+The fixture supplies Wario and an existing synthetic activation prerequisite.
+Unlocking Wario, earning the question-block switch, metal-specific obstacles,
+water behavior, other placements and full campaign remain outside acceptance.
+No F install, public export, release, or build kit was made. Full executables,
+captures, saves, audio, ROM-derived data and assets remain private.
+
+Next confirmed gameplay omission
+Question Switch26 (HATENA_SWITCH) has recovered source/header/profile in
+src/game/actors/d_a_obj_hatena_switch.cpp, but no corresponding factory/profile
+in the current native port/link map. Its original press sequence writes the
+same saved activation bit currently supplied by isolated block fixtures.
+Connecting the original actor, resources, collision callback, particles,
+dialogue and save/re-entry behavior will permit earning that prerequisite.
+Sol Medium is recommended for that native integration. The full goal remains
+active. Latest ROM-free kit reconstruction and an F install are still separate
+pending delivery work; no stable/full-game acceptance is claimed.

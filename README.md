@@ -11,15 +11,27 @@ game assets, personal saves, or proprietary compiler is included here.
 
 ## Current state
 
+- Selected Battlefield question blocks have native underside-hit and reward
+  checks for Yoshi's fire, Mario's wings, Luigi's vanish and Wario's metal
+  abilities, including course exit/re-entry. Mario's active-wing refresh also
+  passes after fixing an incomplete native music-call signature. The original
+  question-block activation switch now presses, animates, saves and reloads;
+  its earned save enables a real Battlefield block reward. Initial switch
+  course entry used the diagnostic picker; original castle access and broader
+  block contents/placements remain unverified. These tests used isolated saves
+  and muted audio. See the October27 question-switch and character reports in
+  `port/docs/` for exact scope.
 - The Secret Slide's opaque black background replaces the incorrect green
   palette backdrop. Mario's original castle route through Peach's window,
   Star-box hit, Star pickup, Save & Continue, reload and repeat without duplicate
   credit have muted isolated checks. The timer now uses the game's colorful
   number sprites at the top center, and the original timer start/stop behavior
-  has a selected runtime check. Yoshi's original box hit, Star collection,
-  saving and repeat collection without duplicate credit also have isolated
-  checks. Full course completion remains unverified; a separate visible finish marker is not
-  implemented. Rear-plane, fog and all-course rendering still need coverage.
+  has a selected runtime check. The checkerboard finish stripe and timed Star
+  are visible in the current Secret Slide end replay. Yoshi's original box hit,
+  Star collection, saving and repeat collection without duplicate credit also
+  have isolated checks. Full course completion and timed-Star save/reload
+  remain unverified.
+  Rear-plane, fog and all-course rendering still need coverage.
 - The October24 checkpoint corrects the native OS clock units: the original
   stopwatch conversion now agrees with real elapsed time in a focused Windows
   test. Timer rendering is verified, while pause, high-score and timed-Star
@@ -50,10 +62,11 @@ game assets, personal saves, or proprietary compiler is included here.
   ground-pounds it, original debris renders and all three released coins are
   collected. A same-session distance/off-screen respawn and second Yoshi
   ground-pound also pass with no extra coins. Yoshi can capture this crate,
-  swallow it and create its original cuboid egg containing three coins.
-  Entry used the diagnostic course picker; a nearby-wall egg flight, burst,
-  and three-coin pickup are verified. Long-distance egg targeting, carrying,
-  throwing the crate, course re-entry and wider variants remain unverified.
+  swallow it and create its original cuboid egg containing three coins. Mario
+  collects all three coins from an ordinary throw. Luigi and Wario also carry,
+  throw and break the original HMC crate in muted isolated checks. Yoshi's HMC
+  crate resets after course re-entry. Long-distance egg targeting, other crate
+  placements and broader course coverage remain unverified.
 - Five original castle signposts spawn; Yoshi's selected sign read, dialogue
   closure and two ground pounds have muted runtime checks. Black sign text now
   appears on a light parchment card, while white Lakitu dialogue retains its
@@ -71,9 +84,10 @@ game assets, personal saves, or proprietary compiler is included here.
   minimap, and other PC settings. Render-distance presets have a verified native
   4K distant-Goomba body/shadow case and a 720p Bob-omb body/shadow and red-coin
   body case. Internal resolution can change independently of window size and
-  includes Native DS (256x192), 360p (640x360), and 480p (854x480). Native DS
-  and HD window independence have runtime checks; the new lower presets have a
-  focused build/cycle check but no separate visual acceptance run yet.
+  includes Native DS (256x192), 360p (640x360), and 480p (854x480). All three
+  lower presets now pass muted castle runtime captures at their requested
+  internal sizes; window preference remains fixed at 1280x720. Dedicated video,
+  window-independence and minimap-HUD CTests pass.
   Coin-shadow pixels and broader actor coverage remain incomplete. Game logic remains at
   the original scene rate; higher presentation targets repeat frames, and
   interpolation is future work.

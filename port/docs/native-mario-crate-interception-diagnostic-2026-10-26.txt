@@ -1,0 +1,60 @@
+UPDATE2026-10-26: Selected Mario crate carry/throw/break and ALL THREE actual coin pickups VERIFIED. Signpost-aware input detour plus original open descent reaches coin128 before expiry; normal ledge jump/climb restores final Wait. Original distance respawn preserves paid flag; no second payout. Muted3000-frame run, strict checker and build/eight focused CTests pass; saves unchanged. Only QA/tracing/checker changed; original actor/coin/Player files unchanged. See native-mario-crate-carry-verified-2026-10-26.txt. Prior failed cases remain historical diagnostics. Diagnostic entry/synthetic prerequisites/one placement; foreground camera occlusion in lower-floor captures is NOT camera acceptance. Other variants and campaign remain open.
+
+Mario thrown-crate coin interception investigation - 2026-10-26
+Status: PARTIALLY VERIFIED; three-coin acceptance remains FAILED.
+
+Follow-up to native-mario-crate-carry-diagnostic-2026-10-26.txt. Original
+crate/Player physics, carried offsets, velocities, collision and rewards are
+unchanged. Only the opt-in pickup pilot changed. Native build and seven focused
+clock/input/scene/collision tests pass; the existing smoke_replay_path test also
+passes. Both new muted runs exit0 with mixer errors0 and zero nonzero audio
+device samples. Test saves remain isolated and unchanged.
+
+Read-only original KCL planning finds a continuous walking route around the
+wall to the upper ledge and another route back. Runtime coin traces identify
+the third reward coin128 moving along that ledge before descending into a
+lower area. These are candidate routes, not automatic proof of timed pickup
+or all original player collision constraints.
+
+Focused attempt1 uses those floor points and ordinary full-stick input. Mario
+overshoots a small marker, turns back and repeats near it; only one coin is
+collected. This is a QA steering failure, not an established native collision
+bug. The next change reuses the already-tested replay_path::follow helper,
+with projection, forward aim and monotonic waypoint progress. It removes that
+marker orbit without writing any player state or position.
+
+Focused attempt2 passes the outbound corridor. Mario collects coin127 at1854
+and126 at1958 (counter2). The third coin is still not collected: at1910 it is
+about371 units away and93 units below Mario; at1920 it is about295 units away
+and251 units below him. At1930 it is already about442 units below. It disappears
+at2152 with the counter still2. The returning walking pilot also stops against
+original terrain before its final marker. Final player state is OnWall while
+the scripted input is still active; this is not normal Wait acceptance.
+
+Two focused planned walking attempts are exhausted. Do not run a third guessed
+walking approach or weaken check_native_crate_carry.py. Sol High is recommended
+to inspect the original jump/descent possibilities, update timing and live
+collision/contact evidence before another replay. No gameplay bug is proven,
+and original coin motion, lifetime, walls or credit must not be changed just
+to satisfy the test. Current goal remains active pending that investigation.
+
+Private cases:
+work/native-crate-mario-carry-intercept-r1-20261026
+work/native-crate-mario-carry-intercept-r2-20261026
+The final case's interception-diagnostic.json records the exact executable
+hash and component results. Original KCL-derived candidate paths, detailed
+trajectories, saves, full executables, screenshots and logs remain private.
+Screens1880/1930 show the upper corridor/ledge traversal. Initial entry uses
+the diagnostic course picker and a synthetic Mario prerequisite save.
+
+No F: install, public export, new ROM-free kit, release or stable promotion
+was performed. Full game and all requested PC-port features remain in scope.
+
+Read-only expiry follow-up: the original normal coin initializer sets timer210,
+and moving/resting handlers kill when its decrement reaches1. The original local
+ROM InitResources span also contains the MOV210. Coin128's first live/removal
+records are1734/2152:418 render ticks, matching209 native updates at two render
+ticks per update. This is consistent with ordinary original expiry. The old
+reward trace does not record the live coin timer/behavior/contact, so the exact
+kill branch is not proven. Add those observations before the next qualified
+replay; do not change lifetime or award credit. No new runtime test was launched.
