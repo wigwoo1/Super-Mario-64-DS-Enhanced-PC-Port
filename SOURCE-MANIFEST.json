@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "c535af1b62257c37000cbff3a64adfe7d43e719cdd57e7921233b730897e1a9a",
-      "bytes": 251226
+      "sha256": "09741a12a01203f34a1472773ed3da47565eb86ae8ee67bb30049e685aac9125",
+      "bytes": 251275
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "e162301f6e08d4d1513f6ce35b4b94f964b75a3d67b790456a8aec19b36f4858",
-      "bytes": 86537
+      "sha256": "8f173174a100228a013059e357d479efe5fdf7f14e7d7894c3e62efd12d176c9",
+      "bytes": 86701
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,13 +6460,28 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "b6d732fd60706aa6647c1b47c880c6a49168971d4e3a68568b6c6477f5d512cf",
-      "bytes": 26922
+      "sha256": "ed8bfb2d1f17e9320384920c9941b0f9ac1474bd445c154ee3623054e691b8d0",
+      "bytes": 29144
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
       "sha256": "ba594ce6ff8a0fcd7e18d2ea38aa305cc87aab136999d812404da0ffd8876f7d",
       "bytes": 7859
+    },
+    {
+      "path": "port/docs/native-ambient-emitter-2026-10-27.txt",
+      "sha256": "eca25f0929bbadc797d6b44bc9009976745cd8dafff5ea30df18daab3a13c6bd",
+      "bytes": 5168
+    },
+    {
+      "path": "port/docs/native-ambient-level8-and-range-2026-10-27.txt",
+      "sha256": "912b520f1813fad63b82beff7a46947a1d51d76bf2d056f5dd41bc767dd59113",
+      "bytes": 4781
+    },
+    {
+      "path": "port/docs/native-ambient-underwater-2026-10-27.txt",
+      "sha256": "7ffdc3136050120960518a6c0f82dcdf60b4107ba7c59be2cb0c7e9db060aa49",
+      "bytes": 3928
     },
     {
       "path": "port/docs/native-analog-range-checkpoint-2026-10-16.txt",
@@ -7270,8 +7285,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "2345a513c0313a8bd3736e26f557ae9bf0c7f13852847796f39a844c6ef346ce",
-      "bytes": 14465
+      "sha256": "c90a542a5b32fb3fd0de5e63f1c2e4ea6c3bd0579fdb5aba83947c469eafcbec",
+      "bytes": 15235
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7425,8 +7440,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "83515944407bec8486a50eef1ae5e10ac71d30ca45a3112b5e91488844dc2311",
-      "bytes": 42951
+      "sha256": "ef65118e9db762e1186b28dd0338273c099298ba5f1f4ed1c4c99548f6cab339",
+      "bytes": 43244
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7870,13 +7885,13 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "fd1888ad4b73a9e1fb39f6fc6cabd82e81a01b18e9b88e41374a64d03f70195e",
-      "bytes": 176204
+      "sha256": "aabdef9a1f9bdce5044d966e66b6e3fdd01ef52f5053f349963260d412bebf13",
+      "bytes": 176830
     },
     {
       "path": "port/ntr/audio.cpp",
-      "sha256": "efcaae312d684f17d7a10f56c2dc6aa03f0b5ea7d92b16644964f83cbbeca8ca",
-      "bytes": 13528
+      "sha256": "9568d80d8f1d94bb82e2cf4e9826bc19037d4be6923a550c583b5c0a030d6ce1",
+      "bytes": 14118
     },
     {
       "path": "port/ntr/bmd.cpp",
@@ -8794,6 +8809,11 @@
       "bytes": 1015
     },
     {
+      "path": "port/tools/ambient_sound_host.py",
+      "sha256": "497e11a76b6fc67ad3344b695eccb7c92d4b81c1a52d14a6db7d9f00fb8d5221",
+      "bytes": 3998
+    },
+    {
       "path": "port/tools/basement_data.py",
       "sha256": "57db8637663304c4160796b7bde3ee55c9469c48cd0b611796fa0a7aa15f3310",
       "bytes": 2118
@@ -8825,8 +8845,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "174cb67a61453262c672d9b04ba15e5438d2304123dbaa8554c7d91d99d4c6e3",
-      "bytes": 46054
+      "sha256": "6e00db570d9c86517b11a2a545f691004a43789ae01c2d1eb40efea5739b3ebd",
+      "bytes": 46296
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8965,8 +8985,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "04d5fe92ce99240e4b78b8d59b37537cf4c4f4f6c246ae1a0dd2c52a6c8f95e9",
-      "bytes": 34604
+      "sha256": "5f4107f36068746484be6840db89820f74f6e90a32fa74276ba751df56473645",
+      "bytes": 35315
     },
     {
       "path": "port/tools/check_native_crate_carry.py",
@@ -9245,8 +9265,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "e59fdd71118c2a4094b39df82a7949f06b7f0da3eff82e66d7bfd6a2dbac6e41",
-      "bytes": 11145
+      "sha256": "e8c5bdd38aa83587a164910b5868d815892f3f3eabadd96b27c3d46ea6785bd3",
+      "bytes": 11563
     },
     {
       "path": "port/tools/native_kit_data.py",
@@ -27065,8 +27085,8 @@
     },
     {
       "path": "tools/assemble_pc_build.py",
-      "sha256": "a668f8bb62bf92ada0cf6ad8a568b0b7c1f0012f0a1bcfec25d08ed3a67eb913",
-      "bytes": 5973
+      "sha256": "7abfb1d3d7e6dfb93e20eae7b45cd080a31f50fd316a68203bbdd5c8d143232f",
+      "bytes": 6210
     },
     {
       "path": "tools/asset_catalog.py",

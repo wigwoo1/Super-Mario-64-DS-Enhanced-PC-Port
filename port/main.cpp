@@ -56,6 +56,8 @@ static_assert(offsetof(Player,mIsControlDisabled)==0x6f6,"Player control telemet
 
 extern "C" void func_0201a054(void);
 extern "C" void func_020197b8(void);
+extern "C" void func_02048fd4(int);
+extern "C" volatile unsigned data_02099fa8,data_02099fac;
 extern "C" void _ZN4Heap18InitializeRootHeapEv(void);
 extern "C" void _ZN4Heap9SetNodeIDEj(void *heap, unsigned int id);
 extern "C" void *data_020a0e9c;
@@ -1114,7 +1116,8 @@ static bool replay_castle_light_talk_controls() {
         }
         // Original lobby front-door pair lies at z2150. Walk clear of the
         // exterior trigger before using the already-tested inbound approach.
-        const char *route="2:-1000:1400:60,2:-1000:2400:30,1:-75:600:60,1:-75:-1250:40,2:-1000:1400:60,2:-1000:-40:700:30:0";
+        const char *route=std::getenv("SM64DS_PC_TEST_LIGHT_BEAM_CYCLE_ROUTE");
+        if(!route || !*route)route="2:-1000:1400:60,2:-1000:2400:30,1:-75:600:60,1:-75:-1250:40,2:-1000:1400:60,2:-1000:-40:700:30:0";
         replay_course_route(route);
         if(!replay_course_route_complete) return true;
         auto *reloaded=static_cast<daObjC1Hikari_c *>(dActor_c::FindWithActorID(37,nullptr));
@@ -2933,6 +2936,13 @@ int main(int argc, char **argv)
     }
     trace("game window opened; starting frame runtime");
     ntr::audio_open();
+    // Native playback replaces the DS driver startup, but the game's original
+    // distance policy still needs its default preset. Later retail preset
+    // changes remain authoritative; do not reset these values per frame.
+    func_02048fd4(0);
+    if(std::getenv("SM64DS_PC_AUDIO_TRACE"))std::fprintf(stderr,
+        "[native sound range] initialized preset=0 near=%u far=%u\n",
+        unsigned(data_02099fa8),unsigned(data_02099fac));
 
     if(const char *test=std::getenv("SM64DS_PC_TEST_AUDIO_ABI"))if(!std::strcmp(test,"1")){
         int waiting=-1,finished=-1;

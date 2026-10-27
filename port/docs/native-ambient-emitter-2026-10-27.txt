@@ -1,0 +1,83 @@
+Native SET_SE ambient emitter - 2026-10-27
+Status: VERIFIED for the selected castle-ground playback/range/room cycle.
+UPDATE: camera-underwater suppression and resumption now pass a real lake
+swim; see native-ambient-underwater-2026-10-27.txt. Earlier underwater notes
+below are historical. Listening fidelity and spatial mixing remain open.
+
+Current native executable SHA256:
+DBED5B64F19F6340113EF6EA35C5FE968ACFBC7539F0574922B2AB64A882295C
+
+Integration
+The current static inventory found no native profile350/SET_SE, including
+five original placements outside the castle. Registered its original ov002
+descriptor at0210b47c and native factory daSetSE_c_classInit. The recovered
+six-function actor now enters the native source closure. Native object size
+0xd8 and handle offset0xd4 are asserted. A host adapter initializes the native
+voice handle to zero and uses Sound.h's actual PlayLong declaration. Recovered
+actor/header and existing Sound.cpp remain byte-identical to the task baseline.
+Original parameter masking, level8 Star gate, disabled/underwater conditions,
+camera-space position, sound selection and cleanup behavior are preserved.
+
+The native Sound fast path bypasses the original distance eligibility test.
+The host actor now calls original func_02048a1c before refreshing its voice.
+This preserves its exact sound-specific range rules and original integer
+distance calculation. It does not implement new attenuation or panning.
+Optional CSV and long-voice start/expiry observations are read-only.
+
+Build and data verification
+Native build, eight clock/input/session/stage/collision/path CTests and two
+rebuilt sound-decoder/mute-output CTests pass. Full native actor/data audit
+checks profile fields/factory and all eleven original sound-table entries.
+One new reviewed symbol-only alias, _data_ov002_0210b498, grows support from
+5271 to5272 names. All existing aliases are unchanged. The sound-ID bytes
+remain in generated local data, not public source. The seventeen reviewed
+ROM-derived data objects remain local; future kits must reconstruct them.
+
+Accepted muted runtime
+Original title/File A/exterior/castle/front-door round trip with a prepared
+14-Star Mario fixture, activation clear, uses ordinary input only. The QA
+route adds an outside approach on each visit; no actor/player/save writes.
+First emitters35-39 initialize1327; all five select their original sounds and
+obtain active native voices. Each reuses its handles across many updates.
+All five clean up3609; the original castle transition completes3612. Their
+remaining voices expire through the normal native keep-alive timeout.
+Original front-door exit returns outside4450; fresh emitters158-162 initialize
+4449. All five again obtain new voices and reuse their handles. They clean up
+7311 before the original castle transition7314; their voices expire as well.
+All79 captured out-of-range rejections match original integer distance and
+limits. Playback samples satisfy those limits and match archive3/bank32 and
+the actor's original sound IDs. No stale voice is reused across scene visits.
+Final12000 is normal castle Wait/control; original beam hints also complete
+on both lobby visits. Engine capture has18952688 nonzero mixed samples,
+audio errors0, actual submitted nonzero device samples0, exit0. Isolated
+slot/minigame saves stay byte-identical and CRC-valid; Star total14 unchanged.
+
+Private evidence
+work/native-muted-audio-walk-ambient-castle-cycle-r2-20261027-20261021/
+  ambient-cycle-acceptance.json
+  castle-light-cycle-acceptance.json
+work/check-ambient-castle-cycle-20261027.py
+work/run-ambient-castle-cycle-20261027.ps1
+work/ambient-emitter-baseline-20261027/
+Build log: work/build-ambient-emitter-20261027-r6.log.
+Actor/data audit: work/ambient-emitter-native-audit-20261027-r6.log.
+Audio tests: work/ambient-audio-tests-20261027.log.
+Screens2400/6500 show both exterior visits and were inspected/shown.
+The earlier r1 run passed basic lifecycle but its even-period capture missed
+the alternating-frame range events. It is not the full range acceptance run.
+
+How to check and remaining work
+Outside the castle, approach the water/ambient emitters, enter the castle,
+then return outside and approach again. Voices should resume without stacking
+or continuing indoors. This change is local; the current public1761cc8 kit
+predates it. No F game installation, export or new release in this milestone.
+The tested prepared save does not demonstrate earning campaign prerequisites.
+No underwater suppression event occurred in this route. Next use ordinary
+swimming/camera input to verify that rule and resumption after surfacing.
+Intro/disabled and level8 gates, other scenes/parameters, listening accuracy
+and true spatial attenuation/panning require further checks or implementation.
+Luna Medium is suitable for the bounded underwater follow-up; no model switch
+or goal pause recommended. Full game and enhancement roadmap remain open.
+Keep tested folders, ROM/assets/generated data/fullEXEs, fixtures, raw scene
+inventory, logs, screenshots and captured audio private. A future publication
+requires exact source/metadata review and fresh kit reconstruction/runtime.

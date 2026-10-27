@@ -1,0 +1,77 @@
+Ambient level8 unlock gate and native range startup - 2026-10-27
+Status: VERIFIED for the selected gate combinations and startup repair.
+
+Current native executable SHA256:
+FD70BD353848ED170A3B183D3B020A262B780AAA917D760B0E1DB03E8483F350
+
+Original gate
+SET_SE350's original InitResources rejects level8 when mission1 is active or
+IsStarCollectedInLevel(8,1) is false. Three fresh muted4000-frame tests use the
+diagnostic course picker followed by the original mission-selection scene:
+1. Star1 absent, mission2 confirmed: initialization1579, cleanup1581, no ready,
+   update or playback. The isolated save has13 Stars/course mask125.
+2. Star1 present, mission1 confirmed: initialization1701, cleanup1703, no ready,
+   update or playback. The isolated save has14 Stars/course mask127.
+3. Star1 present, mission2 confirmed: initialization/ready1671, original actor
+   remains active and supplies38 range-reject observations through the test.
+   The emitter is out of range from this shore position; nearby playback and
+   full level8 acceptance are not established by this gate test.
+
+All three use the same current executable, reach normal Wait/control, exit0,
+retain valid fixture saves byte-for-byte and report audio errors0/submitted
+nonzero device samples0. The fixtures differ only in the original Star1 bit
+and CRC. They are synthetic prerequisites, not earned campaign progression.
+Diagnostic entry does not prove castle access. Original actor/header and
+existing Sound.cpp remain unchanged relative to the integration baseline.
+
+Startup bug found and repaired
+The initial gate tests on DBED5B64... passed those conditions but prompted a
+range investigation. A read-only inspection of that isolated running game
+confirmed both native distance words were0 after level entry. Native playback
+does not run the DS driver's original initialization, leaving default-range
+emitters unable to pass distance eligibility even when approached.
+The original nine-pair range table is already present and matches all72 local
+ROM bytes. Native main now calls original func_02048fd4(0) once at startup.
+It restores the original near90/far550 preset without hardcoding table data or
+resetting later original preset changes. A read-only check of the fixed game
+after course entry confirms90/550; no game memory was written by inspection.
+The full native audit now checks all nine original pairs as well as the11
+ambient sound IDs. No symbol/data recipe growth: support remains5272 names.
+
+Verification after the repair
+Native build/eight focused CTests and full native actor/data audit pass.
+All three gate cases above were repeated on the repaired executable.
+A fresh6500-frame muted castle-lake dive also passes the strict previous
+underwater verifier: same five emitters, all four above-water voices stop,
+24 camera-submerged samples2945..3255, new handles after surfacing, return to
+shore3450, final Wait/control6500, valid isolated saves unchanged, exit0 and
+audio errors0/device samples0. Recovered Player source remains unchanged.
+Screens: initial locked case3200, fixed allowed case3200, fixed underwater3200.
+
+Private evidence
+work/ambient-level8-gate-acceptance-20261027-r2.json
+work/native-muted-audio-walk-ambient-level8-star0-mission2-r2-20261027-20261021/
+work/native-muted-audio-walk-ambient-level8-star1-mission1-r2-20261027-20261021/
+work/native-muted-audio-walk-ambient-level8-star1-mission2-r2-20261027-20261021/
+work/native-muted-audio-walk-ambient-underwater-range-startup-r2-20261027-20261021/
+  ambient-underwater-acceptance.json
+  runtime-range-inspection.json
+work/check-ambient-level8-gate-20261027.py
+work/read-ambient-runtime-range-20261027.ps1 (read-only isolated-process scope)
+work/ambient-range-main-before-fix-20261027.cpp
+Build/audit: work/build-ambient-range-startup-20261027.log and
+work/ambient-range-startup-native-audit-20261027.log.
+Earlier r1 cases/DBED range-read diagnostics are historical, not the repaired
+build. A timed-out observation did not restart a live test; completed cases
+were checked terminal before fresh diagnostic runs. Windows sandbox process
+visibility required a read-only elevated inspection, with no memory writes.
+
+Limits and delivery
+Music-ID-only/disabled gates, other scenes/parameters, nearby level8 emitter
+playback, listening fidelity, spatial mixing and full campaign remain open.
+No F install, public export/new kit/release here. Public1761cc8/light kit is
+the earlier baseline without ambient integration or this startup repair.
+Next Luna Medium: reviewed source/ROM-free kit refresh and fresh reconstruction
+with selected gate/underwater runtime checks, then F delivery. Keep all private
+fullEXEs, ROM/assets/generated data, saves, diagnostics/screens/audio excluded.
+Goal ACTIVE; no model switch or pause recommended.

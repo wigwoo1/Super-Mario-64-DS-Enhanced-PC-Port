@@ -171,7 +171,12 @@ void audio_stop_effect(unsigned group,unsigned id,int fade_game_ticks){
 bool audio_active(uint32_t key){if(!audio_ready())return false;std::lock_guard<std::mutex> lock(state->mutex);return state->engine.active(key);}
 uint32_t audio_long_effect(uint32_t key,unsigned group,unsigned id,int bank){
     if(!audio_ready())return 0;std::lock_guard<std::mutex> lock(state->mutex);
-    if(!state->engine.active(key)){key=state->engine.play_effect(group,id,bank);if(key)++state->starts;}
+    if(!state->engine.active(key)){
+        key=state->engine.play_effect(group,id,bank);if(key)++state->starts;
+        if(std::getenv("SM64DS_PC_AUDIO_LONG_TRACE"))std::fprintf(stderr,
+            "[native long audio] event=start tick=%llu archive=%u id=%u bank=%d key=%u error=%s\n",
+            static_cast<unsigned long long>(rt_frame()),group,id,bank,key,key?"":state->engine.error().c_str());
+    }
     if(key){state->long_refs[key]=state->game_ticks;state->music[key]=false;}
     return key;
 }
@@ -185,7 +190,12 @@ void audio_tick(){
         else ++it;
     }
     for(auto it=state->long_refs.begin();it!=state->long_refs.end();){
-        if(!state->engine.active(it->first) || state->game_ticks-it->second>2){state->engine.stop(it->first);state->music.erase(it->first);it=state->long_refs.erase(it);}
+        if(!state->engine.active(it->first) || state->game_ticks-it->second>2){
+            if(std::getenv("SM64DS_PC_AUDIO_LONG_TRACE"))std::fprintf(stderr,
+                "[native long audio] event=expired tick=%llu key=%u idle_ticks=%llu\n",
+                static_cast<unsigned long long>(rt_frame()),it->first,state->game_ticks-it->second);
+            state->engine.stop(it->first);state->music.erase(it->first);it=state->long_refs.erase(it);
+        }
         else ++it;
     }
 }

@@ -59,6 +59,15 @@ def main():
     if actual != tuple(named(target) for target in message_targets):
         raise ValueError('Message text formatters do not bind to native callback workers')
 
+    ambient_base,ambient_rom=overlay(2)
+    ambient_table=named('data_ov002_0210b498')
+    if pe_bytes(args.exe,ambient_table,44)!=ambient_rom[0x0210b498-ambient_base:0x0210b4c4-ambient_base]:
+        raise ValueError('Native ambient sound table must contain all eleven original IDs')
+    print('PASS: all eleven original ambient sound IDs share their native table')
+    if pe_bytes(args.exe,named('data_020821c0'),72)!=arm[0x020821c0-0x02004000:0x02082208-0x02004000]:
+        raise ValueError('Native sound distance presets differ from the original nine pairs')
+    print('PASS: all nine original sound distance presets retained')
+
     for name, factory, module, guest in (
             ('pc_exit_profile', 'daChScene_c_classInit', 2, 0x02108690),
             ('pc_picture_gate_profile', 'daPicGate_c_classInit', 80, 0x02128290),
@@ -92,6 +101,7 @@ def main():
             ('pc_feather_profile','daFeather_c_classInit',2,0x02108884),
             ('g_profile_HATENA_SWITCH','daObjHatenaSwitch_c_classInit',2,0x02108e38),
             ('pc_castle_light_profile','daObjC1Hikari_c_classInit',10,0x02112b84),
+            ('pc_ambient_sound_profile','daSetSE_c_classInit',2,0x0210b47c),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),

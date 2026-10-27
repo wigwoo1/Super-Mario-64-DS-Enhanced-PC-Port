@@ -9,8 +9,20 @@ The native game uses recovered game code and a Windows hardware layer. It
 requires your own **unmodified European Rev 0 cartridge dump**. No ROM, extracted
 game assets, personal saves, or proprietary compiler is included here.
 
+After assembling a native kit with your ROM, use `PlayWithAudio.cmd` to enable
+the experimental native audio, or `Play.cmd` for the existing launch behavior.
+Audio listening accuracy and complete gameplay remain unverified.
+
 ## Current state
 
+- Native ambient emitters have selected castle playback, range, room reload
+  and camera-underwater suppression/resumption checks. The original level8
+  mission/collected-Star gate passes a three-case comparison with isolated
+  prerequisites. Native sound-distance defaults are initialized through the
+  original preset function. Nearby level8 playback, other gates, listening
+  accuracy and spatial mixing remain unverified; see the October27 ambient
+  reports in `port/docs/`. These are muted component checks, not full campaign
+  acceptance.
 - Selected Battlefield question blocks have native underside-hit and reward
   checks for Yoshi's fire, Mario's wings, Luigi's vanish and Wario's metal
   abilities, including course exit/re-entry. Mario's active-wing refresh also

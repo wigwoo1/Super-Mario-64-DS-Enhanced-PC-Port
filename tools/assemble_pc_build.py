@@ -106,7 +106,8 @@ def main():
     run(['link', '/nologo', '@' + str(response), '/out:' + str(build / 'sm64ds_pc.exe'),
          '/subsystem:console', '/OPT:REF', '/version:0.0', '/MAP:' + str(build / 'sm64ds_pc.map')])
     (ROOT / 'Play.cmd').write_text('@echo off\nsetlocal\ncd /d "%~dp0"\nset "SM64DS_ASSET_ROOT=%~dp0"\n"%~dp0build\\port\\sm64ds_pc.exe" "' + str(rom) + '"\n')
-    print('Native game assembled locally. Double-click Play.cmd. This is an unfinished development preview.')
+    (ROOT / 'PlayWithAudio.cmd').write_text('@echo off\nsetlocal\ncd /d "%~dp0"\nset "SM64DS_ASSET_ROOT=%~dp0"\nset "SM64DS_PC_NATIVE_AUDIO=1"\n"%~dp0build\\port\\sm64ds_pc.exe" "' + str(rom) + '"\n')
+    print('Native game assembled locally. Use Play.cmd, or PlayWithAudio.cmd for experimental audio. This is an unfinished development preview.')
 
 
 if __name__ == '__main__':

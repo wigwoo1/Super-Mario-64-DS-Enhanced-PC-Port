@@ -1,0 +1,67 @@
+Castle ambience: camera-underwater suppression/resumption - 2026-10-27
+Status: VERIFIED for one original lake swim and return to shore.
+UPDATE: this swim also passes on FD70BD35 after sound-range startup repair;
+the level8 gate now has separate comparison evidence. See
+native-ambient-level8-and-range-2026-10-27.txt. Earlier gate-pending notes
+below describe this original DBED checkpoint.
+
+No native gameplay fix was needed. The existing original SET_SE condition
+already stops refreshing above-water sounds while the camera is submerged.
+Only private test launching, a verifier and this report were added. The
+existing input-only swim pilot supplies ordinary D-pad/stroke controls.
+Player/actor/camera/sound state and save files are never forced by the pilot.
+
+Build
+Current native executable SHA256 remains:
+DBED5B64F19F6340113EF6EA35C5FE968ACFBC7539F0574922B2AB64A882295C
+Incremental native build confirms no work needed. The prior eight focused
+and two audio CTests/full native actor-data audit cover this same unchanged
+binary. No source closure, symbol metadata or data reconstruction change.
+
+Runtime acceptance
+A fresh6500-frame muted test follows original title/File A into undrained
+castle grounds with an isolated prepared14-Star Mario save. Static original
+collision geometry supports the approach, but actual ordinary swimming,
+depth waypoint completion, surfacing and return to grass are verified from
+native state/input observations, not inferred from that geometry.
+
+The same five authored emitters remain loaded; no scene change or respawn.
+All four above-water emitters have active voices shortly before submersion.
+Their old voices stop. Twenty-four suppression samples across those four
+actors span2945..3255 with camera-underwater true and all old handles inactive.
+Music is not0x32/0x33/0x34, so this specifically tests the camera predicate.
+No above-water refresh occurs during that sampled interval. After the camera
+surfaces, all four effects restart3261 with new archive3/bank32 handles and
+appear active in the next observations3265. No stale voice is reused.
+Mario completes the original shore approach3450, then remains in normal
+Wait/control through6500. No drowning/death occurs. All valid isolated
+slot/minigame saves remain byte-identical; Star total14 is unchanged.
+Exit0, native audio errors0 and submitted nonzero device samples0.
+Screens3200 (camera submerged) and3500 (back on grass) inspected/shown.
+
+Private evidence
+work/native-muted-audio-walk-ambient-underwater-r1-20261027-20261021/
+  ambient-underwater-acceptance.json
+work/check-ambient-underwater-20261027.py
+work/run-ambient-underwater-20261027.ps1
+work/castle-lake-floor-20261027.json (private ROM-derived floor samples)
+work/ambient-underwater-acceptance-20261027.log
+The verifier requires original route/input/swimming, same actor identity,
+positive pre/post playback, real submersion, voice expiry, new handles,
+return to shore/control, unchanged valid saves and muted clean exit.
+
+How to check
+Swim into the castle lake and dive until the camera is underwater. Above-water
+ambience should stop, then resume when the camera surfaces. This update is
+still local; public1761cc8/F light kit predates ambient actor integration.
+
+Limits and next task
+One prepared Mario/undrained lake swim, not earned campaign progression.
+The music-ID-only suppression branch, disabled/intro and level8 Star gates,
+other scenes/parameters, listening fidelity and spatial attenuation/panning
+remain open. Next bounded candidate: original level8 mission/collected-Star
+gate using clearly labeled isolated prerequisites and original actor logic.
+Luna Medium remains suitable; no model switch or goal pause recommended.
+No F installation, export, new kit or release here. Future publication needs
+exact source review and fresh reconstruction/runtime. Private fullEXEs,
+ROM/assets/generated data, saves, geometry, screenshots/logs/audio stay local.

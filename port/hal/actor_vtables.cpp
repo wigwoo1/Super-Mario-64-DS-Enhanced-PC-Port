@@ -303,6 +303,11 @@ struct PcNativeActorProfile {
 extern "C" void *da1up_c_classInit_ONEUPKINOKO();
 extern "C" void *daObjTatefuda_c_classInit();
 extern "C" void *daObjC1Hikari_c_classInit();
+extern "C" void *daSetSE_c_classInit();
+// Original ov002 SET_SE descriptor at0210b47c, native constructor.
+static PcNativeActorProfile pc_ambient_sound_profile = {
+    (void *)&daSetSE_c_classInit,350,350,0x64800000,0,0x1000,0,0
+};
 // Original ov010 C1_HIKARI descriptor at02112b84, native constructor.
 static PcNativeActorProfile pc_castle_light_profile = {
     (void *)&daObjC1Hikari_c_classInit,37,324,3,0,0x7d0000,0xfa0000,0
@@ -557,6 +562,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[20] = &pc_question_block_profile;
     data_020a4bb8_storage[26] = g_profile_HATENA_SWITCH;
     data_020a4bb8_storage[37] = &pc_castle_light_profile;
+    data_020a4bb8_storage[350] = &pc_ambient_sound_profile;
     data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;
     data_020a4bb8_storage[345] = &pc_feather_profile;
     data_020a4bb8_storage[276] = &pc_oneup_profile;
