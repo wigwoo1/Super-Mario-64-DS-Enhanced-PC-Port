@@ -1,6 +1,12 @@
 Native question-block activation switch - 2026-10-27
 Status: VERIFIED for original switch press, save, fresh reload and earned reward.
-Original castle access to Rainbow Tower and full campaign remain unverified.
+UPDATE2026-10-27: Original title/File A/castle/marked-floor inspection entry
+now passes with an isolated14-Star Mario fixture;13-Star negative control
+correctly stays in the castle. Real tower switch ground-pound/save also passes.
+See native-castle-tower-entry-2026-10-27.txt. Light-beam37 model, hint and room
+reload now pass; see native-castle-light-reload-2026-10-27.txt. Earned Star/Mario
+progression, other characters and full campaign remain open.
+The diagnostic-entry limitations below describe the earlier switch-only work.
 
 The recovered Question Switch26 (HATENA_SWITCH) had no native registry entry or
 linked factory. The port now registers its original descriptor/native factory,

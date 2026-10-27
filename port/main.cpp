@@ -37,6 +37,7 @@
 #include "daObjC0Water_c.h"
 #include "daObjHatenaBlock_c.h"
 #include "daObjHatenaSwitch_c.h"
+#include "daObjC1Hikari_c.h"
 #include "dCamera_c.h"
 #include "hal/stage_graph_state.h"
 #include "hal/replay_path.h"
@@ -1089,6 +1090,137 @@ static bool replay_hatena_switch_controls() {
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
 
+// Input-only action-button conversation with the original castle light actor.
+static bool replay_castle_light_talk_controls() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_LIGHT_BEAM_TALK");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const bool cycle=enabled && !std::strcmp(enabled,"cycle");
+    if(!enabled || (!cycle && std::strcmp(enabled,"1")) || !automation || std::strcmp(automation,"1"))return false;
+    static bool finished=false,pressed=false,talking=false,travelling=false,exterior_seen=false;
+    static unsigned completed=0,first_uid=0;
+    static uint64_t began=0,press_until=0,travel_began=0;
+    if(finished)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    const auto tick=ntr::rt_frame();
+    if(travelling) {
+        if(!exterior_seen && data_0209f2f8==1 && p && p->aliveState==1) {
+            exterior_seen=true;
+            std::fprintf(stderr,"[native light talk replay] event=castle-exterior tick=%llu uid=%u\n",static_cast<unsigned long long>(tick),first_uid);
+        }
+        if(tick-travel_began>6000) {
+            finished=true;
+            std::fprintf(stderr,"[native light talk replay] event=reload-route-timeout tick=%llu\n",static_cast<unsigned long long>(tick));
+            ntr::input_test_controls(true,0,0,0);return true;
+        }
+        // Original lobby front-door pair lies at z2150. Walk clear of the
+        // exterior trigger before using the already-tested inbound approach.
+        const char *route="2:-1000:1400:60,2:-1000:2400:30,1:-75:600:60,1:-75:-1250:40,2:-1000:1400:60,2:-1000:-40:700:30:0";
+        replay_course_route(route);
+        if(!replay_course_route_complete) return true;
+        auto *reloaded=static_cast<daObjC1Hikari_c *>(dActor_c::FindWithActorID(37,nullptr));
+        if(!exterior_seen || data_0209f2f8!=2 || !reloaded || reloaded->aliveState!=1 || reloaded->uniqueID==first_uid) {
+            finished=true;
+            std::fprintf(stderr,"[native light talk replay] event=reload-identity-failed tick=%llu\n",static_cast<unsigned long long>(tick));
+        } else {
+            travelling=false;pressed=talking=false;began=press_until=0;
+            std::fprintf(stderr,"[native light talk replay] event=castle-reloaded tick=%llu uid=%u\n",static_cast<unsigned long long>(tick),unsigned(reloaded->uniqueID));
+        }
+        ntr::input_test_controls(true,0,0,0);return true;
+    }
+    if(data_0209f2f8!=2 || !replay_course_route_complete)return false;
+    auto *beam=static_cast<daObjC1Hikari_c *>(dActor_c::FindWithActorID(37,nullptr));
+    if(!p || p->aliveState!=1 || !beam || beam->aliveState!=1)return false;
+    const bool ready=!p->mIsNoControl && !p->mIsControlDisabled;
+    if(!began)began=tick;
+    if(beam->mTalkPlayer==p && !talking) {
+        talking=true;
+        std::fprintf(stderr,"[native light talk replay] event=talking tick=%llu uid=%u\n",static_cast<unsigned long long>(tick),unsigned(beam->uniqueID));
+    }
+    if(talking && !beam->mTalkPlayer && ready && !data_0209d660) {
+        ++completed;
+        std::fprintf(stderr,"[native light talk replay] event=complete tick=%llu visit=%u uid=%u\n",static_cast<unsigned long long>(tick),completed,unsigned(beam->uniqueID));
+        if(cycle && completed==1) {
+            first_uid=beam->uniqueID;travelling=true;travel_began=tick;
+            replay_course_route_waypoint=0;replay_course_route_complete=false;
+            ntr::input_test_controls(true,0,0,0);return true;
+        }
+        finished=true;
+        if(cycle)std::fprintf(stderr,"[native light talk replay] event=repeat-hint-complete tick=%llu\n",static_cast<unsigned long long>(tick));
+        return false;
+    }
+    uint16_t buttons=0;
+    if(tick-began>1200) {
+        finished=true;
+        std::fprintf(stderr,"[native light talk replay] event=timeout tick=%llu\n",static_cast<unsigned long long>(tick));
+    } else if(talking) {
+        if(data_0209d660 && tick%45<3)buttons=1;
+    } else if(ready && p->mSurfaceType==13 && !p->mHorzSpeed && !std::strcmp(pc_player_state_name(p),"St_Wait_Main")) {
+        if(!pressed) {
+            pressed=true;press_until=tick+8;
+            std::fprintf(stderr,"[native light talk replay] event=press-action tick=%llu uid=%u\n",static_cast<unsigned long long>(tick),unsigned(beam->uniqueID));
+        }
+        if(tick<press_until)buttons=1;
+    }
+    ntr::input_test_controls(true,buttons,0,0);return true;
+}
+
+// Input-only original castle-to-switch-tower entry QA. Observe original
+// eligibility and use the retail view-mode/D-pad controls, never LoadLevel.
+static bool replay_castle_tower_entry_controls() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_TOWER_ENTRY");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1"))return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p || p->aliveState!=1)return false;
+    const auto tick=ntr::rt_frame();
+    const auto *camera=reinterpret_cast<const unsigned char *>(data_0209f318);
+    short pitch=0;if(camera)std::memcpy(&pitch,camera+0x17e,sizeof(pitch));
+    const auto yaw=GetAngleToCamera(p->mPlayerNo);
+    static FILE *file=nullptr;
+    if(!file)if(const char *path=std::getenv("SM64DS_PC_TOWER_ENTRY_TRACE")) {
+        file=std::fopen(path,"w");
+        if(file)std::fputs("tick,level,stars,character,surface,x,y,z,state,view_mode,flags,head_pitch,camera_yaw,camera_pitch,route_complete\n",file);
+    }
+    const char *state=pc_player_state_name(p);
+    if(file && tick%5==0) {
+        std::fprintf(file,"%llu,%d,%u,%u,%d,%d,%d,%d,%s,%u,%u,%d,%d,%d,%u\n",
+            static_cast<unsigned long long>(tick),int(data_0209f2f8),observed_power_star_total(),
+            unsigned(p->param1),p->mSurfaceType,p->mPosX,p->mPosY,p->mPosZ,state,
+            unsigned(p->mUseFarCamera),unsigned(p->mStateFlags),int(p->unk_766),int(yaw),int(pitch),unsigned(replay_course_route_complete));
+        std::fflush(file);
+    }
+    static bool finished=false,timed_out=false;
+    static uint64_t began=0,next_view=0,view_until=0;
+    if(finished || timed_out)return false;
+    if(data_0209f2f8==31) {
+        finished=true;
+        std::fprintf(stderr,"[native tower entry] event=original-course-entered tick=%llu\n",static_cast<unsigned long long>(tick));
+        return false;
+    }
+    if(data_0209f2f8!=2 || !replay_course_route_complete)return false;
+    if(!began){began=tick;std::fprintf(stderr,"[native tower entry] event=marked-floor-approach-complete tick=%llu surface=%d\n",static_cast<unsigned long long>(tick),p->mSurfaceType);}
+    uint16_t buttons=0;
+    if(tick-began>1200) {
+        timed_out=true;
+        std::fprintf(stderr,"[native tower entry] event=timeout tick=%llu surface=%d state=%s\n",static_cast<unsigned long long>(tick),p->mSurfaceType,state);
+    } else if(!p->mIsNoControl && !p->mIsControlDisabled && !data_0209d660 && p->mSurfaceType==13) {
+        if(!std::strcmp(state,"St_CameraZoom_Main")) {
+            // Original inspection subtracts horizontal input from yaw and
+            // adds vertical input to pitch. Native D-pad Down has positive
+            // vertical input, raising the inspection look angle toward sky.
+            if(yaw>0x600)buttons|=0x10;
+            else if(yaw < -0x600)buttons|=0x20;
+            if(pitch<0x1b00)buttons|=0x80;
+        } else if(!p->mIsAirborne && !p->mHorzSpeed && !std::strcmp(state,"St_Wait_Main") && tick>=next_view) {
+            buttons=chomp_replay_button(0x8000);next_view=tick+90;view_until=tick+8;
+            std::fprintf(stderr,"[native tower entry] event=view-mode-input tick=%llu raw=%04x mode=%u\n",
+                static_cast<unsigned long long>(tick),unsigned(buttons),unsigned(p->mUseFarCamera));
+        }
+        if(std::strcmp(state,"St_CameraZoom_Main") && tick<view_until)buttons=chomp_replay_button(0x8000);
+    }
+    ntr::input_test_controls(true,buttons,0,0);return true;
+}
+
 // Input-only rabbit capture replay. The original route handles the opening
 // and locked-door guide first; this controller then follows the live rabbit.
 static bool rabbit_replay_waypoint(int px,int pz,int tx,int tz,double &dx,double &dz) {
@@ -2120,7 +2252,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

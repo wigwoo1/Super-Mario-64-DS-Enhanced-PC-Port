@@ -39,6 +39,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjPowerUpItem_c_classInit",
                  "daFeather_c_classInit",
                  "daObjHatenaSwitch_c_classInit",
+                 "daObjC1Hikari_c_classInit",
                  "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
                  "daObjC0_Switch_c_classInit", "daObjC0Water_c_classInit",
@@ -482,6 +483,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'd_a_obj_hatena_switch.cpp':
                     import hatena_switch_host
                     transformed=hatena_switch_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_c1_hikari.cpp':
+                    import light_beam_host
+                    transformed=light_beam_host.transform(transformed)
                     rewrites+=1
                 if path.name in ('daObjSwitch_c.cpp', 'd_a_obj_switch_hanswitch.c',
                                  'd_a_obj_switch_star_switch.c', 'func_ov002_020baa2c.c'):

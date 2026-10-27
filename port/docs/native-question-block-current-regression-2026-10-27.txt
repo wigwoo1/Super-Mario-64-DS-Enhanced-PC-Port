@@ -1,0 +1,36 @@
+Latest-build Battlefield question-block repeat reward - 2026-10-27 - VERIFIED
+
+The current native executable C72B5C64B75DB37980C486C7F6B477BAF1E141C0290834EA801AF7447A481546
+passes the existing strict question-block course-cycle acceptance checker.
+No gameplay, actor, input-pilot, or reward rule needed changing.
+
+Build and verification
+Incremental native build succeeds; all eight focused replay, clock, input,
+session, stage and collision tests pass. Full native actor-data audit passes.
+A fresh muted 16000-frame runtime starts through the original title/File A,
+castle and painting menus with a separate activation-enabled Yoshi save.
+This prepared prerequisite save does not demonstrate earning the unlock.
+
+Yoshi hits authored block130 at (294,250,6400), popping it at tick6673.
+Flower303 is picked up at6810 and original Yoshi fire initialization runs.
+Original pause/Exit Course returns to the castle7467; the normal painting
+route re-enters Battlefield8874. The same placement has new block370,
+which pops10450. New flower544 is picked up10603 and again runs original
+Yoshi fire initialization. The block returns to idle after its cooldown.
+Final16000 is Wait with normal control; original story Star count1/mask2
+and all isolated slot/minigame saves remain unchanged, with valid CRC.
+Exit0, audio errors0, submitted nonzero device samples0.
+
+Private evidence (never publish the tested directory)
+work/native-muted-audio-walk-question-block-reentry-current-light-build-r1-20261027-20261026-20261021/
+  question-block-reentry-acceptance.json
+Screens6900 (first pickup tutorial),10500 (second flower),12000 (reset block)
+were visually inspected and shown. Existing check-question-block-reentry-
+20261027.py passes without changes. The pilot supplies only normal inputs.
+
+Scope: selected Battlefield content5 block and Yoshi Power Flower lifecycle.
+Other placements, characters, fire combat and full campaign remain open.
+No new executable, F install, public export, kit or release was needed here.
+Next: reviewed ROM-free kit refresh including current light-beam integration,
+fresh reconstruction/runtime checks and F delivery. Luna Medium is suitable
+for that established workflow. The full project goal remains ACTIVE.

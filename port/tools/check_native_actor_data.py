@@ -91,6 +91,7 @@ def main():
             ('g_profile_POWER_UP_ITEM','daObjPowerUpItem_c_classInit',2,0x021097a0),
             ('pc_feather_profile','daFeather_c_classInit',2,0x02108884),
             ('g_profile_HATENA_SWITCH','daObjHatenaSwitch_c_classInit',2,0x02108e38),
+            ('pc_castle_light_profile','daObjC1Hikari_c_classInit',10,0x02112b84),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),

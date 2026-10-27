@@ -1,0 +1,85 @@
+UPDATE2026-10-27: Castle light-beam37 is now natively registered and verified
+for model, original hint402/control restoration,13-Star rejection and hiding
+on fresh reload of the actually earned activation save. Original tower and
+switch/save flow also passes on the integrated build. Read
+native-castle-light-beam-2026-10-27.txt. Missing-actor notes below are historical;
+same-process room reload/repeat hint also passes as documented in
+native-castle-light-reload-2026-10-27.txt. Full campaign remains open.
+
+Original castle-to-question-switch tower entry - 2026-10-27 - VERIFIED
+
+Scope: original title/File A/castle entry, marked lobby floor, original
+inspection camera,14-Star entry threshold, real switch press and save.
+Isolated synthetic Star/character prerequisites; not earned campaign progress.
+
+Current executable SHA256:
+B573BC9BF5677EB33C35F2DC326C78277CD1D41FB1D50DE476D1CBA78AC32E59
+Build and8 focused clock/input/session/stage/collision/replay-path CTests PASS.
+Full native actor/profile/data audit PASS. Original Player.cpp matches the
+reviewed public source; no gameplay/camera/warp/save rule was changed.
+
+Original mechanism
+Player::St_CameraZoom_Main invokes original func_ov002_020cac60. It requires
+surface type13, NumStars>=14, player look pitch<=0x1c00 and camera horizontal
+angle within[-0x1000,+0x1000], then performs the original LoadLevel(31,...).
+The marked lobby carpet is original CLPS13 at height-40. Private geometry
+inspection identified it; no custom warp trigger was added.
+
+Only optional QA changed: main.cpp contains an automation-gated input-only
+pilot and read-only condition trace. It walks the original route, cycles the
+real view action using the live control map, and supplies retail D-pad pan
+inputs. It never calls LoadLevel/ChangeState/SaveCurrentFile or writes player,
+actor, reward or save state. Native inspection has positive vertical input
+on D-pad Down; that raises the original look angle toward the ceiling.
+The first pilot used Up and looked down. This was a QA axis error; original
+game controls were not inverted or modified to make the test pass.
+
+Accepted14-Star case (6000frames)
+Original marked-floor approach completes2888; real view-mode input2946.
+Original qualifying view is observed3015 and original tower transition3082.
+Normal tower entry/flying follows, then actual ground-pound input3550,
+original switch floor contact, activation3655 and original save/dialogue
+completion3980. Final6000 normal Wait/control on depressed switch.
+Save changes only activation bit0x80000000 and CRC; CRC valid, Star total14
+and all other slot/minigame data unchanged. Original messages387/661/662
+and real GroundPound state/floor-owner26 contact are verified.
+
+Accepted13-Star negative case (6000frames)
+Same original route/floor/view qualifies for1585 sampled ticks, but no tower
+transition or switch appears. Final castle Wait/control, all fixture saves
+unchanged. This verifies the original threshold remains effective.
+Both accepted runs use the same EXE, exit0, audio errors0 and output muted
+with zero nonzero device samples. Actual audio engine remains enabled.
+
+Private evidence
+work/native-muted-audio-walk-castle-tower-original-entry-r3-20261027-20261021/
+  castle-tower-entry-acceptance.json
+work/native-muted-audio-walk-castle-tower-original-entry-13star-denial-r1-20261027-20261021/
+work/check-castle-tower-entry-20261027.py
+work/run-castle-tower-entry-20261027.ps1
+work/castle-tower-entry-geometry-20261027.json
+Screenshot4000 shows the accepted tower press. Negative screenshot3500 shows
+Mario looking at the lobby ceiling with13 Stars and no transition. Earlier
+r1 is a failed QA vertical-input diagnostic; r2 enters/saves successfully but
+omits the optional floor-contact capture, so r3 is the full acceptance case.
+
+How to check
+With Mario and at least14 Stars, stand on the sun carpet in the castle lobby,
+use View Mode (Y in the default controller mapping) to enter inspection and
+look toward the ceiling. The original transition takes you to the tower.
+
+Remaining work
+Castle light-beam37/C1_HIKARI is not registered in the native actor factory.
+Its decorative model and instructional dialogue therefore remain missing.
+The recovered8-function actor/header, one model handle1453 and cylinder
+already exist; integrate through established native actor/resource patterns
+and verify visible14-Star/locked/activated behavior. Luna Medium is suitable
+to start this bounded integration; escalate if callback/layout repair becomes
+difficult rather than guessing. Other characters, already-active repeat
+contact, earned Mario/Star progression and full campaign remain unverified.
+
+No F game install, source publication or kit refresh in this task. Public
+e999b04 and its verified question-switch kit remain unchanged. New changes
+are opt-in QA and documentation, pending normal reviewed daily publication.
+Keep fixtures, original geometry, fullEXEs, ROM/assets/generated data,
+screenshots, logs and audio private. Full goal remains ACTIVE; no pause.

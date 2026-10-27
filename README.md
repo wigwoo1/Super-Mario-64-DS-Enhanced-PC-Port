@@ -16,9 +16,13 @@ game assets, personal saves, or proprietary compiler is included here.
   abilities, including course exit/re-entry. Mario's active-wing refresh also
   passes after fixing an incomplete native music-call signature. The original
   question-block activation switch now presses, animates, saves and reloads;
-  its earned save enables a real Battlefield block reward. Initial switch
-  course entry used the diagnostic picker; original castle access and broader
-  block contents/placements remain unverified. These tests used isolated saves
+  its earned save enables a real Battlefield block reward. Original castle
+  inspection entry now passes with a prepared 14-Star Mario save, while a
+  13-Star save correctly stays in the castle. The original lobby light-beam
+  model and action-button hint now have native checks; it is hidden below
+  14 Stars or on reloading an activated save. One original front-door round trip
+  reloads the beam and repeats its hint successfully. Earned prerequisite
+  progression and broader block contents/placements remain unverified. These tests used isolated saves
   and muted audio. See the October27 question-switch and character reports in
   `port/docs/` for exact scope.
 - The Secret Slide's opaque black background replaces the incorrect green

@@ -1,0 +1,60 @@
+Castle light-beam room reload and repeat hint - 2026-10-27 - VERIFIED
+
+Current native EXE SHA256:
+C72B5C64B75DB37980C486C7F6B477BAF1E141C0290834EA801AF7447A481546
+Build and8 focused clock/input/session/stage/collision/path CTests PASS.
+Native actor/profile/data audit PASS. No gameplay repair was needed.
+
+What changed
+Extended the optional input-only light-talk pilot with a cycle mode. After
+the first original hint it walks the actual lobby front-door pair, clears the
+outside trigger, re-enters through the original exterior approach, and talks
+to the freshly loaded beam. Only QA counters/route bookkeeping are reset.
+No player/actor/reward/save fields or game scene state are written. The
+one-shot pilot remains available. Original actor/header/Player source matches
+reviewed public bytes; no new symbols, resource/visibility or physics changes.
+
+Accepted10000-frame same-process muted run
+Original title/File A/exterior entry reaches lobby2670. Light98 readies2669,
+renders6387 clipped triangles and completes original hint402 at3218. Original
+front doors exit to exterior3504; light98 cleanup runs3501. After walking
+clear and returning, original doors re-enter lobby3990. New light214 readies
+3989 with a valid model handle and renders79209 clipped triangles across the
+remaining observations. Return to the carpet completes4207; ordinary action
+4266 starts the second talk4268. Original hint402 repeats and completes4524.
+Both original secret-jingle phases reach25. Final10000 is normal castle
+Wait/control with the second beam still active. Screens3100 (first hint) and
+4500 (reloaded beam after second hint) inspected and shown.
+
+Only original levels1/2 are visited:1->2->1->2. No tower entry or switch press
+occurs. Original14-Star Mario/activation-clear prerequisite fixture is isolated.
+Slot/minigame saves stay byte-identical; valid CRC and activation bit remain
+unchanged. Process exits0, native audio errors0, output muted with zero nonzero
+submitted device samples. Listening fidelity is not established.
+
+Private evidence
+work/native-muted-audio-walk-castle-light-beam-cycle-r1-20261027-20261021/
+  castle-light-cycle-acceptance.json
+work/check-castle-light-cycle-20261027.py
+work/run-castle-light-cycle-20261027.ps1
+Build log: work/build-castle-light-cycle-20261027-r1.log.
+The checker requires exact transition order, fresh actor identity, cleanup
+before new initialization, real rendering and original dialogue on both
+visits, normal final control and unchanged saves/muted clean exit.
+The first planned round-trip succeeds; no guessed alternative route needed.
+
+How to check
+With14 Stars and the switch inactive, speak to the beam on the sun carpet.
+Walk out through the castle front doors, move clear, re-enter and speak again.
+The beam and hint should work on both visits.
+
+Limits and delivery
+One prepared Mario/front-door round trip; other characters, prolonged repeated
+reloads, earned progression and full campaign remain open. Full goal ACTIVE.
+Luna Medium is suitable for the next reviewed ROM-free kit refresh, fresh
+reconstruction/runtime and F delivery. No model switch or pause recommended.
+Current public e999b04/verified release/F kit predates the native light actor.
+No source export/commit, new kit/release or F game install in this task.
+Future publication must review new actor/previous Tower QA/current cycle/docs,
+reconstruct exact source and run before releasing. Keep fullEXEs/ROM assets/
+generated data, saves, raw routes, logs, screenshots and audio private.

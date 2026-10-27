@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "7d7be564c5068261e1c4b5d5c60b10a8f994983a9815dd6ccfbe2ef382970893",
-      "bytes": 86379
+      "sha256": "e162301f6e08d4d1513f6ce35b4b94f964b75a3d67b790456a8aec19b36f4858",
+      "bytes": 86537
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "a24fc06c9814e5350de4f0d12b461cd2171be655c934f256b17d3aaaa02f2399",
-      "bytes": 24407
+      "sha256": "b6d732fd60706aa6647c1b47c880c6a49168971d4e3a68568b6c6477f5d512cf",
+      "bytes": 26922
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6614,9 +6614,24 @@
       "bytes": 1996
     },
     {
+      "path": "port/docs/native-castle-light-beam-2026-10-27.txt",
+      "sha256": "b51092949aa241ca7f448da08facf888ca51649d878ca09b774015e8cdeb6711",
+      "bytes": 5390
+    },
+    {
+      "path": "port/docs/native-castle-light-reload-2026-10-27.txt",
+      "sha256": "07e1ecabdcf87c51f26a2a75561441df4d98d19acd97582cd51109c5afde9ff7",
+      "bytes": 3507
+    },
+    {
       "path": "port/docs/native-castle-secret-slide-report-2026-10-24.txt",
       "sha256": "05fe1d739d93cf3dff19cb28a2440d100076edd180762aa5519d605544817c46",
       "bytes": 3092
+    },
+    {
+      "path": "port/docs/native-castle-tower-entry-2026-10-27.txt",
+      "sha256": "61ae94f5e5c2559be65835f427ab705f9ab98a6850c898a8e48ba41e195311fe",
+      "bytes": 5013
     },
     {
       "path": "port/docs/native-chain-chomp-camera-star-2026-10-20.txt",
@@ -6944,6 +6959,11 @@
       "bytes": 3266
     },
     {
+      "path": "port/docs/native-question-block-current-regression-2026-10-27.txt",
+      "sha256": "f8cfd0866d8c9ce71961cb3567357239a309cf49135d8b013146bee1cbcfd920",
+      "bytes": 2229
+    },
+    {
       "path": "port/docs/native-question-block-integration-2026-10-26.txt",
       "sha256": "7c25aa1219ea5bff9fdd8777195e1764061869e3eaec6cdefec8b01d78041a28",
       "bytes": 8633
@@ -6955,8 +6975,8 @@
     },
     {
       "path": "port/docs/native-question-switch-2026-10-27.txt",
-      "sha256": "733015eff29669d56bb922d82645940098b9581d0eff66cb93e353a3f81d0ca9",
-      "bytes": 5669
+      "sha256": "306457d08f93f1a68f08f71b171b2d48d269744a5396ada83712e21444c975a9",
+      "bytes": 6124
     },
     {
       "path": "port/docs/native-rabbit-controller-checkpoint-2026-10-17.txt",
@@ -7250,8 +7270,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "0112b3b748daffc8232c8a9ece0f988e88930a27b9e7425af2a0b746f241cf63",
-      "bytes": 14139
+      "sha256": "2345a513c0313a8bd3736e26f557ae9bf0c7f13852847796f39a844c6ef346ce",
+      "bytes": 14465
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7405,8 +7425,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "0c54785a80de87d0ae5b3c061c95322bcda0c9e287205ad07e21822940e9be9c",
-      "bytes": 42647
+      "sha256": "83515944407bec8486a50eef1ae5e10ac71d30ca45a3112b5e91488844dc2311",
+      "bytes": 42951
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7850,8 +7870,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "d242f9db565edafbb46042c7b0f3c743aa1ad9ac09cd56e8c882751d67083f1c",
-      "bytes": 168121
+      "sha256": "fd1888ad4b73a9e1fb39f6fc6cabd82e81a01b18e9b88e41374a64d03f70195e",
+      "bytes": 176204
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8805,8 +8825,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "1966c304b3af1af1211787c881dc933a288ab6f3ab99f971386fb62d3bd7d98d",
-      "bytes": 45805
+      "sha256": "174cb67a61453262c672d9b04ba15e5438d2304123dbaa8554c7d91d99d4c6e3",
+      "bytes": 46054
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -8945,8 +8965,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "077cfc4eb37fc1906f8fa091901f04dd0a5ce9a172992cd7e0e977dab1c9f304",
-      "bytes": 34521
+      "sha256": "04d5fe92ce99240e4b78b8d59b37537cf4c4f4f6c246ae1a0dd2c52a6c8f95e9",
+      "bytes": 34604
     },
     {
       "path": "port/tools/check_native_crate_carry.py",
@@ -9189,6 +9209,11 @@
       "bytes": 1146
     },
     {
+      "path": "port/tools/light_beam_host.py",
+      "sha256": "92f98b618ed565d9ea5a238d4cd5de83cb30b4011931804faf19fd3c63dc8bd4",
+      "bytes": 3661
+    },
+    {
       "path": "port/tools/link_data.py",
       "sha256": "a3ce8d287164c83216328c634d33dfef430fa13653d6d15b43f97fee9958d524",
       "bytes": 28205
@@ -9220,8 +9245,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "d3321aaa0e1baccada13340d46a2f529787d6b919fc33d50cbc990d951dcf3ee",
-      "bytes": 10879
+      "sha256": "e59fdd71118c2a4094b39df82a7949f06b7f0da3eff82e66d7bfd6a2dbac6e41",
+      "bytes": 11145
     },
     {
       "path": "port/tools/native_kit_data.py",

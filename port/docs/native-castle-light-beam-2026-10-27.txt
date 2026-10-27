@@ -1,0 +1,90 @@
+UPDATE2026-10-27: Same-process front-door exit/re-entry, native resource reload
+and a second original hint now pass. Original light98 cleans up; new214 loads
+and renders, hint402 completes twice, control returns and the activation-clear
+save stays unchanged. Read native-castle-light-reload-2026-10-27.txt. Remaining
+room-reload notes below describe the earlier integration-only milestone.
+
+Native castle light-beam37 / C1_HIKARI - 2026-10-27 - VERIFIED
+
+Current executable SHA256:
+B073E898A65787D5C2ABB3F842D18D790A33EA7D27EA3C49CC2970D7351A8F87
+
+Integration
+Registered the original ov010 profile at02112b84 with its native constructor:
+actor37, execution324, flags3 and original ranges. Added the recovered actor
+factory to the boot closure. A host-only adapter defers the8-byte shared
+model handle1453 initialization until native file services are ready. Original
+actor source/header and Player.cpp are byte-identical to reviewed public
+source. Original14-Star/activation guards, cylinder, talk and cleanup code
+are retained. Native size0x16c/model0xd4/cylinder0x124/talk0x164 assertions pass.
+The actor has no custom state table; it uses its native virtual methods.
+
+Source changes: actor_vtables.cpp, boot_closure.py, light_beam_host.py, CMake
+dependencies, native profile audit; optional normal-input talk pilot/main.cpp.
+Read-only actor/resource/talk/render probes are opt-in. The pilot supplies
+ordinary action/advance buttons, never StartTalk/ShowMessage/LoadLevel/save
+calls or state/reward writes. StartTalk(false) requires an action-button edge;
+standing in the beam alone does not request the original hint.
+
+Build and exact verification
+Native compile/link and8 focused clock/input/session/stage/collision/path
+CTests PASS. Native actor/data audit verifies the original profile bytes and
+native factory, alongside existing callback/data invariants. Build-support
+symbol metadata still5271 names, exactly equal to the generated map; no new
+data aliases or ROM-data reconstruction recipe were required.
+
+Accepted same-hash runtime cases (all muted)
+1. Prepared14-Star Mario, activation clear; original title/File A/castle route.
+   Light98 initializes2669 with loaded model, renders6874 clipped triangles
+   across observations. Action2946 starts original conversation2948; original
+   small-secret sound engine phase reaches25, message402 opens3069 and the
+   conversation completes3218 with control restored. Original inspection
+   entry reaches tower3360. Real ground pound3850 activates switch and
+   original save dialogue completes4280. Final10000 normal Wait/control.
+   Slot changes only the intended activation bit+valid CRC;14 Stars and all
+   other save/minigame data remain unchanged. Source cleanup callback occurs
+   when leaving the castle for the tower.
+2. Prepared13-Star Mario, activation clear; original route,4200frames.
+   Actor initialization emits stars-reject, then cleanup. No ready/behavior/
+   render or hint402; final castle Wait/control. Fixture saves unchanged.
+3. Actually earned14-Star activated save from case1, original route,
+   fresh4200frames. Actor emits activated-reject, then cleanup; no ready/
+   behavior/render/hint. Final castle Wait/control; earned saves unchanged.
+
+All3 accepted cases exit0, native audio errors0 and zero nonzero submitted
+device samples. Audio engine remains enabled, output muted. Listening
+fidelity is not established. Initial active-r1 only observed the model and
+tower/save flow; it supplied View Mode instead of the action needed for the
+hint. It is not the final conversation acceptance case. No gameplay repair
+or speculative input-direction change was needed during this integration.
+
+Private evidence
+work/native-muted-audio-walk-castle-light-beam-talk-tower-r1-20261027-20261021/
+  castle-light-beam-acceptance.json
+work/native-muted-audio-walk-castle-light-beam-13star-hidden-r1-20261027-20261021/
+work/native-muted-audio-walk-castle-light-beam-activated-hidden-r1-20261027-20261021/
+work/check-castle-light-beam-20261027.py
+work/run-castle-light-beam-20261027.ps1
+Build logs: work/build-castle-light-beam-20261027-r1.log / r2.log.
+Baseline: work/light-beam-baseline-20261027.
+Screens2800/3200 show the original bright sun carpet and translucent beam;
+hidden-case2800/3500 show its absence. Captures remain private.
+
+How to check
+With at least14 Stars and the switch inactive, enter the castle lobby.
+The sun carpet has a visible light beam. Stand on it and press an action
+button for the original hint. View Mode/looking up still enters the tower.
+On a fresh load below14 Stars or after saving switch activation, it is hidden.
+
+Limits and next work
+Prepared Star/character prerequisites; this does not prove earned progression,
+other characters or full campaign completion. Same-process room exit/re-entry,
+resource reload and repeat hint before activation remain a useful bounded
+follow-up, suitable for Luna Medium. Full goal remains ACTIVE; no pause.
+
+No F game install, public export/commit/new kit/release in this task. Public
+source e999b04 and its verified question-switch kit are the earlier baseline.
+Future kit must include the new actor code and perform exact reviewed fresh
+reconstruction/runtime; unchanged data-symbol support does not waive this.
+Never upload tested directories, ROM/assets/generated data objects/fullEXEs,
+raw routes/geometry, saves, private logs/screenshots or audio.
