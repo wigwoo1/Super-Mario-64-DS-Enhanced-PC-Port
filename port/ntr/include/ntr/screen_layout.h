@@ -15,4 +15,8 @@ bool screen_touch(const ScreenRect &, int x, int y, uint16_t &ds_x, uint16_t &ds
 void screen_compose(const Framebuffer &top, const Framebuffer &bottom,
                     const DualScreenLayout &, unsigned width, unsigned height,
                     std::vector<uint32_t> &output);
+// Original mission selector: one4:3 canvas with the lower controls inset.
+DualScreenLayout star_select_layout(unsigned width,unsigned height);
+bool star_select_touch(const ScreenRect &canvas,int x,int y,uint16_t &,uint16_t &);
+void star_select_overlay(const Framebuffer &controls,Framebuffer &canvas);
 }

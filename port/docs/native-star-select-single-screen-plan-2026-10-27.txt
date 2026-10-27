@@ -1,0 +1,31 @@
+Single-screen course/Star selection - requested 2026-10-27
+Status: IMPLEMENTED; selected Mario/Battlefield navigation, pointer and course-reentry tests VERIFIED.
+See native-star-select-single-screen-verified-2026-10-27.txt for scope and remaining runtime coverage.
+
+Replace the stacked two-screen presentation for original course entry/Star
+selection with one composed display matching the user's mockup. Retain the
+original Star models/numbers, mission text, score/coin icon and game styling.
+Place the selectable character face, its indicators and TOUCH ME prompt below
+the score, within the same white scene. Place course name below the face;
+lives bottom-left and total Stars bottom-right. No separate lower-screen box,
+black gutter, seam or divider. Preserve original mission/character unlock
+conditions and selection behavior; never substitute a static image or picker.
+
+Implementation/acceptance
+1. Use the existing scene-aware native compositor. Preserve presentations
+   outside the active Star selector, including minigame screen layouts.
+2. Reflow into one responsive canvas. Verify16:9 and4:3, low/high internal
+   resolutions, window resizing and text fit; preserve the chosen window size
+   when internal resolution changes.
+3. Re-map mouse/touch coordinates through the composed character/indicator
+   region to the original lower-screen controls. Keep controller navigation,
+   confirm/back, mission and character selection functional.
+4. Muted original title/File A/castle/painting entry and real course re-entry,
+   screenshots; verify at least two missions and applicable character choices.
+   Confirm the displayed mission/character is the one that actually enters.
+5. Isolate QA saves, preserve original gameplay rules, assets and personal saves.
+   Keep raw captures/assets/private data local; report unverified cases.
+
+The user supplied a visual mockup in chat: the face and lower-screen controls
+blend into the top presentation. Complete current native arrow-sign collision
+and reentry acceptance first so their results remain attributable.

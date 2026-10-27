@@ -62,6 +62,7 @@ bool g_dialogue_card_dark_text = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
 bool g_minigame_active = false;
+bool g_star_select_active = false;
 int g_focus_left=-1,g_focus_top=0,g_focus_right=0,g_focus_bottom=0;
 std::vector<uint32_t> g_output;
 bool g_gpu = false;
@@ -485,6 +486,7 @@ void video_close() {
 #endif
     g_open = false;
     g_minigame_active = false;
+    g_star_select_active = false;
     video_set_cutscene_letter(false);
     g_output.clear();
 }
@@ -717,10 +719,14 @@ bool video_minimap_editor_active() {return g_editor_active;}
 bool video_bottom_objects_visible() { return !g_hide_pause_objects; }
 bool video_pause_screen() { return g_pause_screen; }
 void video_set_minigame_active(bool active) {
+    g_star_select_active=false;
     g_minigame_active=active;
     if(active) { g_pause_screen=false;g_hide_pause_objects=false;g_minimap_gameplay=false; }
     const char *trace=std::getenv("SM64DS_PC_TRACE");
     if(trace && trace[0]=='1') { std::fprintf(stderr,"[video] minigame active=%d tick=%llu\n",active,static_cast<unsigned long long>(rt_frame()));std::fflush(stderr); }
+}
+void video_set_star_select_active(bool active) {
+    video_set_minigame_active(active);g_star_select_active=active;
 }
 bool video_dual_screen_active() { return g_minigame_active && !g_pause_screen; }
 
@@ -883,26 +889,56 @@ bool video_present_frame() {
     }
 
     POINT cursor{};
-    const bool have_cursor = GetCursorPos(&cursor) && ScreenToClient(g_window, &cursor);
+    bool have_cursor = GetCursorPos(&cursor) && ScreenToClient(g_window, &cursor);
     RECT touch_area{};
     GetClientRect(g_window, &touch_area);
     const int touch_w = std::max(1L, touch_area.right - touch_area.left);
     const int touch_h = std::max(1L, touch_area.bottom - touch_area.top);
     const bool dual=video_dual_screen_active();
-    const auto screens=screen_layout(g_settings.minigame_layout,g_settings.width,g_settings.height);
+    const auto screens=g_star_select_active?star_select_layout(g_settings.width,g_settings.height):
+        screen_layout(g_settings.minigame_layout,g_settings.width,g_settings.height);
     const auto output_area=dual?screen_fit(g_settings.width,g_settings.height,{0,0,touch_w,touch_h}):ScreenRect{0,0,touch_w,touch_h};
+    bool pointer_down=(GetAsyncKeyState(VK_LBUTTON)&0x8000)!=0;
+    // Isolated QA supplies displayed canvas positions to the same client-space
+    // inverse mapping as a mouse; no DS touch registers or scene fields forced.
+    if(g_star_select_active)if(const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY"))
+        if(!std::strcmp(automation,"1"))if(const char *segment=std::getenv("SM64DS_PC_TEST_STAR_SELECT_POINTER")) {
+            pointer_down=false;have_cursor=true;
+            while(segment&&*segment){
+                unsigned long long first=0,last=0;int x=0,y=0,count=0;
+                if(std::sscanf(segment,"%llu:%llu:%d:%d%n",&first,&last,&x,&y,&count)==4&&count>0&&
+                   (!segment[count]||segment[count]==',')&&rt_frame()>=first&&rt_frame()<last&&
+                   x>=0&&x<256&&y>=0&&y<192){
+                    const int ix=screens.top.x+screens.top.width*x/256;
+                    const int iy=screens.top.y+screens.top.height*y/192;
+                    cursor.x=output_area.x+int(int64_t(ix)*output_area.width/g_settings.width);
+                    cursor.y=output_area.y+int(int64_t(iy)*output_area.height/g_settings.height);
+                    pointer_down=true;break;
+                }
+                const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
+            }
+        }
     // POWCNT1 bit15 routes engine A to the physical top screen; minigame
     // pause interfaces can swap it onto the touch screen.
-    const bool engine_a_on_top=(io_read(0x04000304,2)&0x8000)!=0;
+    const bool engine_a_on_top=g_star_select_active || (io_read(0x04000304,2)&0x8000)!=0;
     uint16_t touch_x=0,touch_y=0;
     const ScreenRect touch_rect=dual?screens.bottom:ScreenRect{0,0,int(g_settings.width),int(g_settings.height)};
     const bool touch_inside=output_area.width>0 && output_area.height>0 &&
         cursor.x>=output_area.x && cursor.y>=output_area.y &&
         cursor.x<output_area.x+output_area.width && cursor.y<output_area.y+output_area.height &&
-        screen_touch(touch_rect,int(int64_t(cursor.x-output_area.x)*g_settings.width/output_area.width),
-                     int(int64_t(cursor.y-output_area.y)*g_settings.height/output_area.height),touch_x,touch_y);
+        (g_star_select_active?
+            star_select_touch(screens.top,int(int64_t(cursor.x-output_area.x)*g_settings.width/output_area.width),
+                int(int64_t(cursor.y-output_area.y)*g_settings.height/output_area.height),touch_x,touch_y):
+            screen_touch(touch_rect,int(int64_t(cursor.x-output_area.x)*g_settings.width/output_area.width),
+                int(int64_t(cursor.y-output_area.y)*g_settings.height/output_area.height),touch_x,touch_y));
     if(!(GetAsyncKeyState(VK_LBUTTON)&0x8000))g_editor_suppress_pointer=false;
-    input_set_touch(!g_menu_open && !g_editor_suppress_pointer && have_cursor && touch_inside && (GetAsyncKeyState(VK_LBUTTON)&0x8000),touch_x,touch_y);
+    input_set_touch(!g_menu_open && !g_editor_suppress_pointer && have_cursor && touch_inside && pointer_down,touch_x,touch_y);
+    if(g_star_select_active)input_test_pointer(!g_menu_open && have_cursor && touch_inside && pointer_down,touch_x,touch_y);
+    if(g_star_select_active)if(const char *path=std::getenv("SM64DS_PC_STAR_SELECT_POINTER_TRACE")) {
+        static FILE *file=nullptr;
+        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,client_x,client_y,inside,down,ds_x,ds_y\n",file);}
+        if(file&&pointer_down){std::fprintf(file,"%llu,%ld,%ld,%u,%u,%u,%u\n",static_cast<unsigned long long>(rt_frame()),cursor.x,cursor.y,unsigned(touch_inside),unsigned(pointer_down),unsigned(touch_x),unsigned(touch_y));std::fflush(file);}
+    }
 
     if(g_editor_active) {
         input_set_touch(false,0,0);
@@ -977,6 +1013,10 @@ bool video_present_frame() {
         else {draw_focus(g_top);draw_focus(g_foreground);foreground_mask|=1;}
     }
 
+    if(g_star_select_active) {
+        star_select_overlay(g_bottom,g_foreground);foreground_mask|=1;
+        if(!g_gpu)star_select_overlay(g_bottom,g_top);
+    }
     RECT client{};
     GetClientRect(g_window, &client);
     const int width = std::max(1L, client.right - client.left);

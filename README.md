@@ -15,6 +15,19 @@ Audio listening accuracy and complete gameplay remain unverified.
 
 ## Current state
 
+- The original course/Star selector now uses one composed screen, with its
+  character face and controls below the score. Selected Mario tests verify
+  controller-style Mission 1 navigation in 4:3, inverse-mapped face-click
+  confirmation for Mission 2 in 16:9, and original course re-entry. Eleven
+  focused tests pass. Physical controller hardware, other character strips,
+  alternate renderer runtime and arbitrary window resizing remain unverified;
+  see `port/docs/native-star-select-single-screen-verified-2026-10-27.txt`.
+- Both native arrow-sign types now render and block Mario in selected
+  Battlefield tests. Original Exit Course/castle/painting re-entry destroys
+  five old signs and loads five fresh instances at matching placements;
+  repeat player collision and live mesh queries pass for each direction.
+  Other courses, characters and destruction attacks remain unverified;
+  see `port/docs/native-arrow-signs-verified-2026-10-27.txt`.
 - Native recovery hearts now render, spin and heal in a selected Battlefield
   test. Original Exit Course, castle return and painting re-entry reload a
   fresh heart, which again restores health after real enemy damage. Testing

@@ -2,6 +2,28 @@
 #include <algorithm>
 
 namespace ntr {
+namespace {constexpr ScreenRect star_controls{76,90,104,78};}
+DualScreenLayout star_select_layout(unsigned width,unsigned height) {
+    return {screen_fit(4,3,{0,0,int(width),int(height)}),{}};
+}
+bool star_select_touch(const ScreenRect &canvas,int x,int y,uint16_t &ds_x,uint16_t &ds_y) {
+    uint16_t cx=0,cy=0;
+    if(!screen_touch(canvas,x,y,cx,cy)){ds_x=ds_y=0;return false;}
+    return screen_touch(star_controls,cx,cy,ds_x,ds_y);
+}
+void star_select_overlay(const Framebuffer &controls,Framebuffer &canvas) {
+    // Cover only the decorative course medal/number; keep score, mission,
+    // course name and corner counters in their original upper-screen places.
+    const auto backdrop=controls.px[0][0]|0xff000000u;
+    for(int y=94;y<154;++y)for(int x=64;x<192;++x)canvas.px[y][x]=backdrop;
+    for(int y=0;y<star_controls.height;++y)for(int x=0;x<star_controls.width;++x){
+        const auto pixel=controls.px[y*SCREEN_H/star_controls.height][x*SCREEN_W/star_controls.width];
+        // The original lower-screen backdrop is white. Keying it preserves
+        // the course name beneath the inset without introducing a panel seam.
+        if(!(pixel>>24)||(pixel&0xffffffu)==(backdrop&0xffffffu))continue;
+        canvas.px[star_controls.y+y][star_controls.x+x]=pixel;
+    }
+}
 ScreenRect screen_fit(unsigned source_width,unsigned source_height,const ScreenRect &slot) {
     if(slot.width<=0 || slot.height<=0 || !source_width || !source_height) return {};
     int w=slot.width,h=int(int64_t(w)*source_height/source_width);

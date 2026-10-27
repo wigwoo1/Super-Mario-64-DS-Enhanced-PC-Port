@@ -414,7 +414,7 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
             ? float(SCREEN_W)*s.height/(float(SCREEN_H)*s.width) : 1.0f;
         overlay_state(true);quad(base_image,false,-aspect,1,aspect,-1);
     }
-    if(screens){
+    if(screens && (engine_a_on_top?screens->bottom:screens->top).width>0 && (engine_a_on_top?screens->bottom:screens->top).height>0){
         if(!sub)return false;
         viewport(engine_a_on_top?screens->bottom:screens->top);
         for(unsigned y=0;y<SCREEN_H;++y)for(unsigned x=0;x<SCREEN_W;++x)opaque.px[y][x]=sub->px[y][x]|0xff000000u;

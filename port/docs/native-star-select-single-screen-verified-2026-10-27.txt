@@ -1,0 +1,60 @@
+Single-screen original Star selector - selected Mario tests VERIFIED 2026-10-27
+
+Native executable SHA256:
+82ebeed8cb8d390961d8bab3f11acd34faaee3269a37a0624c9f0b3749ff1f19
+
+The original scene now presents one fitted4:3 canvas rather than stacked DS
+screens. Original3D Stars/numbers, mission text, score, course title and corner
+life/Star counters remain. The live lower-screen character face/indicators/
+TOUCH ME are composed between score and course name, replacing the decorative
+course medal. Original white backdrop is keyed, including matching fade color,
+so there is no second-screen box/gutter/divider. Uses original game assets.
+
+Scene-scoped activation clears on original cleanup, ordinary minigame activation
+and video close. Existing minigame layouts/settings remain separate. D3D11 and
+OpenGL paths skip the unused zero-area sub-view; software reference uses the
+same overlay/composition helper. Actual runtime verification here is D3D11.
+Mouse/touch maps the displayed inset back to original256x192 controls through
+client/output/canvas coordinates. Controller navigation and game rules remain
+the existing original paths. No saved mission/character/state values forced.
+
+Build/checks
+Eleven focused replay/clock/input/screen-layout/minigame-layout/stage-layout/
+collision tests pass. Unit coverage includes4:3/16:9/4K/portrait geometry,
+letterbox and inset hit rejection, inverse touch mapping and keeping the original
+Stars/course title while replacing the medal. Full native actor/data audit passes
+with both arrow profiles/resources/callbacks and original Star-selector profile.
+
+Muted original-title/FileA/castle/painting tests, isolated prepared two-Star Mario:
+- Controller-style ordinary navigation selects and enters Mission1 at960x720.
+- At1280x720, A enables the selector, left chooses Mission2; a composed face
+  pointer at canvas128,125 maps to native128,83 at4200..4205. The original
+  scene starts confirmation4201 and confirms Mission2 at4217. Mario enters
+  Battlefield with normal control. No confirm-button pulse after the click.
+- Exact private F launcher10000-frame test enters the original selector twice
+  via Exit Course/castle/painting reentry, with the single canvas inspected on
+  both visits. Real arrow collision/fresh-five resource cleanup/reload regression
+  passes unchanged. Final Wait/control, valid isolated saves unchanged, exit0,
+  audio errors0/device nonzero samples0. Manual F saves/settings unchanged.
+
+An initial input schedule used a decimal-looking value in a hexadecimal mask
+and prematurely confirmed Mission3; corrected to20. A second unattended pointer
+test was correctly blocked by the automation guard. A one-poll synthetic pointer
+queue now accepts only the production inverse-mapped result with explicit isolated
+Star-pointer automation enabled; real desktop input remains excluded from tests.
+The final pointer and controller cases pass on identical current executable.
+
+Private evidence
+work/native-muted-audio-walk-star-select-single-controller-mission1-4x3-r2-20261027-20261021/star-select-single-acceptance.json
+work/native-muted-audio-walk-star-select-single-pointer-mission2-r3-20261027-20261021/star-select-single-acceptance.json
+work/native-muted-audio-walk-arrow-sign-left-contact-single-screen-f-preview-r1-20261027-20261021/arrow-contact-acceptance.json
+work/star-select-single-f-preview-acceptance-20261027.json
+Screens pointer4190 and F3830/6800 inspected/shown. Raw images/logs/saves/audio,
+full executables and ROM-derived extracted/generated data remain private.
+
+Limits: prepared prerequisites, Mario/Missions1&2/Battlefield/D3D11. Physical
+controller/Bluetooth hardware, other character strips/courses, additional native
+renderer runs and arbitrary manual window resizing remain unverified. Geometric
+unit checks do not establish all these runtime cases. No stable install/full-game
+claim. Public7461347/heart-cache release predates arrows and this UI; next kit
+requires reviewed export, fresh reconstruction and muted runtime acceptance.

@@ -3207,3 +3207,5 @@ unresolved external symbol _data_ov098_0213c4e0 referenced in function "void __c
 unresolved external symbol _data_ov098_0213c4f0 referenced in function "void __cdecl pc_crate_dispatch_4(struct daObjBlockS_c *)" (?pc_crate_dispatch_4@@YAXPAUdaObjBlockS_c@@@Z)
 unresolved external symbol _data_ov002_0210d8b4 referenced in function "public: virtual int __thiscall daObjHatenaSwitch_c::InitResources(void)" (?InitResources@daObjHatenaSwitch_c@@UAEHXZ)
 unresolved external symbol _data_ov002_0210d774 referenced in function "public: virtual int __thiscall daObjHatenaSwitch_c::InitResources(void)" (?InitResources@daObjHatenaSwitch_c@@UAEHXZ)
+unresolved external symbol _data_ov002_0210d734
+unresolved external symbol _data_ov002_0210d914

@@ -37,6 +37,9 @@ bool input_take_camera_mode();
 // Set the mouse stylus position in bottom-screen coordinates. The host also
 // updates the DS touch-sample latch consumed by the original touch callback.
 void input_set_touch(bool pressed, uint16_t x, uint16_t y);
+// One-poll synthetic pointer result from the production window-coordinate path.
+// Restricted to explicit isolated Star-selector automation.
+void input_test_pointer(bool pressed,uint16_t x,uint16_t y);
 
 // Emulated, active-low 12-button KEYINPUT register value.
 uint16_t input_keyinput();

@@ -642,7 +642,7 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
             ? float(SCREEN_W)*s.height/(float(SCREEN_H)*s.width) : 1.0f;
         if(!quad(base_texture.view.Get(),nearest_clamp.Get(),-aspect,1,aspect,-1)) return false;
     }
-    if(screens) {
+    if(screens && (engine_a_on_top?screens->bottom:screens->top).width>0 && (engine_a_on_top?screens->bottom:screens->top).height>0) {
         const auto &r=engine_a_on_top?screens->bottom:screens->top;
         D3D11_VIEWPORT sub_view{float(r.x),float(r.y),float(r.width),float(r.height),0,1};
         context->RSSetViewports(1,&sub_view);

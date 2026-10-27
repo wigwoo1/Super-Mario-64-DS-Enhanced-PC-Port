@@ -42,6 +42,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjC1Hikari_c_classInit",
                  "daSetSE_c_classInit",
                  "daObjHeart_c_classInit",
+                 "daObjYajirusi_c_classInit_YAJIRUSI_L", "daObjYajirusi_c_classInit_YAJIRUSI_R",
                  "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
                  "daObjC0_Switch_c_classInit", "daObjC0Water_c_classInit",
@@ -497,6 +498,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daObjHeart_c.cpp':
                     import healing_heart_host
                     transformed=healing_heart_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'daObjYajirusi_c.cpp':
+                    import arrow_sign_host
+                    transformed=arrow_sign_host.transform(root,transformed)
                     rewrites+=1
                 if path.name in ('daObjSwitch_c.cpp', 'd_a_obj_switch_hanswitch.c',
                                  'd_a_obj_switch_star_switch.c', 'func_ov002_020baa2c.c'):

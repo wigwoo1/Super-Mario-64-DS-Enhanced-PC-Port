@@ -1,0 +1,32 @@
+Current heart/cache build question-block course reentry - VERIFIED 2026-10-27
+
+Executable SHA256:
+ff181b0a6ab1453e54d8a0ae052f4ee05af211a982ff26b935ea4c1036180952
+Includes native recovery hearts and the original 100-record common-model cache.
+No production code or input-pilot changes were needed for this regression.
+
+Build and checks
+Current native build succeeds; eight focused replay/clock/input/session/stage/
+collision CTests and full native actor-data audit pass. The existing strict
+question-block reentry checker passes unchanged.
+
+Fresh muted 16000-frame test follows ORIGINAL title/File A/castle/painting menus
+with an isolated activation-enabled Yoshi prerequisite save. The same authored
+Battlefield content5 block at (294,250,6400) is hit by ordinary jump input on
+both visits. Block identities 135 and 376 differ after reload.
+Power Flowers 309 and 551 are actually collected at
+6810 and 10603, each invoking original Yoshi fire setup.
+Original pause/Exit Course returns to castle at 7467;
+painting reentry completes at 8874. The block resets
+after cooldown. Final16000 is normal Wait/control, story total1/mask2; valid
+isolated slot/minigame saves remain byte-identical. Exit0/audio errors0/device
+nonzero samples0. Pilot supplies ordinary movement/buttons/menus only.
+
+Screens6900 first flower tutorial,10500 repeat reward release,12000 restored
+question block inspected and shown. Private raw case, logs, screenshots and
+generated assets remain local. Scope: one authored block, Yoshi/Power Flower;
+prepared activation is not earned progression. Other variants, fire combat and
+the entire campaign remain unverified. No gameplay fix was necessary; no stable
+installation promotion. Public source7461347 and heart-cache verified release
+already contain the tested unchanged game code; this documentation is newer.
+Luna Medium remains suitable for bounded established replay tests. Goal ACTIVE.

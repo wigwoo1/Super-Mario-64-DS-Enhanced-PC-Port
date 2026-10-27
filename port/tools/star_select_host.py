@@ -32,7 +32,7 @@ static_assert(sizeof(dScStarSel_c)==0x13c, "star selection scene size");
 static_assert(offsetof(dScStarSel_c, models)==0x64, "star selection model offset");
 extern "C" void *dScStarSel_c_classInit() {
     auto *scene = new dScStarSel_c;
-    if(scene) ntr::video_set_minigame_active(true);
+    if(scene) ntr::video_set_star_select_active(true);
     return scene;
 }
 """
@@ -59,7 +59,7 @@ extern "C" void *dScStarSel_c_classInit() {
         text='#include "ntr/video.h"\nextern "C" void pc_star_select_forget();\n'+text
         anchor='s32 dScStarSel_c::CleanupResources() {'
         assert text.count(anchor)==1
-        text=text.replace(anchor,anchor+'\n    pc_star_select_forget();\n    ntr::video_set_minigame_active(false);')
+        text=text.replace(anchor,anchor+'\n    pc_star_select_forget();\n    ntr::video_set_star_select_active(false);')
     if 's32 dScStarSel_c::Behavior()' in text:
         text='#include <cstdio>\n#include <cstdlib>\n'+text
         anchor='data_0209f1f0 = FB(this, 0x115) + 1;'

@@ -1,0 +1,58 @@
+Native left/right arrow signs - selected Battlefield collision/reentry VERIFIED
+2026-10-27. Incomplete game; other courses/characters/attacks remain unverified.
+
+Verified native executable SHA256
+351c665ca9dcacd2fb9b809d078511ec33834aafbbdbe7d140b6fd67e854372c
+
+Implementation
+Registered original YAJIRUSI_L299 and YAJIRUSI_R300 profiles/factories, original
+priorities/flags/draw and collision ranges. Recovered actor/header unchanged.
+Host-only transform constructs a compiler-owned dBgActor_c subclass, delegating
+original resource/behavior/render/attack/Kill methods through the pinned flat
+view. Complete native inheritance handles base callbacks, shadow/model/collider
+destruction and actor-heap deletion. Assertions pin size0x380, shadow0x320,
+matrix0x348 and variant0x37c, avoiding MSVC tail-padding drift. Historical
+manual smoke vtable remains separate and unused by these game actors.
+
+Four deferred eight-byte resource records preserve original model1175/1177 and
+KCL1176/1178, twelve-byte model/KCL/CLPS rows and original material blocks.
+SharedFilePtr's method-only declaration is not used as allocation storage.
+Extended audit verifies both original profiles/factories, resource strides,
+original CLPS bytes and eight native callbacks including deleting destructor.
+Eight focused native CTests pass.
+
+Gameplay acceptance
+Two muted original title/File A/castle/painting/Mission2 tests use isolated
+prepared two-Star Mario prerequisites. Ordinary inputs walk Mario into the
+selected left or right sign. Native player wall results identify the exact
+sign actor/uniqueID, not merely a scripted proximity event. Production downward
+queries also hit each selected sign's live registered mesh. Render observations
+show visible triangles. Original Exit Course/castle/painting reentry destroys
+all five old Battlefield arrows and creates five fresh instances at identical
+placements. Mario collides with the fresh selected sign again; no old collision
+owners remain. Normal final Wait/control, unchanged valid isolated saves, clean
+exit, audio errors0/device nonzero samples0 on both tests.
+
+Left10000 frames: signs205/452, first wall samples5250/8220;74/357 player wall
+samples,22 ground-mesh hits each,387/1171 visible samples. Right18000 frames:
+signs206/455, first wall samples8105/13955;79/810 player wall samples,25 ground
+hits each,281/2106 visible samples. No player/actor transforms, collider
+activation, rewards or saved progression are forced by the pilot.
+
+Support and limits
+Reviewed symbol-only metadata5272->5274 adds exactly two original CLPS labels.
+Fresh private regeneration matches linked generated data. No ROM-derived
+generated files are checked into source. Full executables/assets/saves/logs/
+screens/audio remain private. Modulo10 sampling missed odd updates; corrected
+to modulo5 and both final tests repeated. Initial opaque-handle allocation and
+omitted private mission-selection helper were corrected before acceptance.
+Original Bob-omb/Mega attack rules are retained; destruction attacks, other
+characters/courses, earned prerequisites and full campaign remain unverified.
+
+Private evidence
+work/native-muted-audio-walk-arrow-sign-left-contact-r4-20261027-20261021/
+work/native-muted-audio-walk-arrow-sign-right-contact-r4-20261027-20261021/
+  arrow-contact-acceptance.json and contact/arrow/geometry/render observations.
+Screens left8500/right14000 inspected/shown. Build r6, full audit and reviewed
+symbol-support evidence remain under work/arrow-* and build-arrow-*.
+New single-screen Star selection is tracked separately, not claimed here.

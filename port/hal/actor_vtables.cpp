@@ -305,6 +305,13 @@ extern "C" void *daObjTatefuda_c_classInit();
 extern "C" void *daObjC1Hikari_c_classInit();
 extern "C" void *daSetSE_c_classInit();
 extern "C" void *daObjHeart_c_classInit();
+extern "C" void *daObjYajirusi_c_classInit_YAJIRUSI_L(),*daObjYajirusi_c_classInit_YAJIRUSI_R();
+static PcNativeActorProfile pc_arrow_left_profile = {
+    (void *)&daObjYajirusi_c_classInit_YAJIRUSI_L,299,188,2,0xc0000,0xe0000,0x1000000,0x1000000
+};
+static PcNativeActorProfile pc_arrow_right_profile = {
+    (void *)&daObjYajirusi_c_classInit_YAJIRUSI_R,300,189,2,0xc0000,0xe0000,0x1000000,0x1000000
+};
 // Original ov002 HEART descriptor at02109c50, native constructor.
 static PcNativeActorProfile pc_healing_heart_profile = {
     (void *)&daObjHeart_c_classInit,297,170,3,0x60000,0x60000,0x1000000,0x1000000
@@ -569,6 +576,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[37] = &pc_castle_light_profile;
     data_020a4bb8_storage[350] = &pc_ambient_sound_profile;
     data_020a4bb8_storage[297] = &pc_healing_heart_profile;
+    data_020a4bb8_storage[299] = &pc_arrow_left_profile;
+    data_020a4bb8_storage[300] = &pc_arrow_right_profile;
     data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;
     data_020a4bb8_storage[345] = &pc_feather_profile;
     data_020a4bb8_storage[276] = &pc_oneup_profile;

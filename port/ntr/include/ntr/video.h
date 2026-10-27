@@ -78,6 +78,7 @@ bool video_pause_screen();
 void video_set_minimap_editor(bool enabled, unsigned selected_axis=0);
 bool video_minimap_editor_active();
 void video_set_minigame_active(bool active);
+void video_set_star_select_active(bool active);
 bool video_dual_screen_active();
 // Controller focus on the original touch menu; negative left hides it.
 void video_set_menu_focus(int left,int top,int right,int bottom);

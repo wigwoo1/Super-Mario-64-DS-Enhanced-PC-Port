@@ -112,6 +112,8 @@ def main():
             ('pc_castle_light_profile','daObjC1Hikari_c_classInit',10,0x02112b84),
             ('pc_ambient_sound_profile','daSetSE_c_classInit',2,0x0210b47c),
             ('pc_healing_heart_profile','daObjHeart_c_classInit',2,0x02109c50),
+            ('pc_arrow_left_profile','daObjYajirusi_c_classInit_YAJIRUSI_L',98,0x0213c398),
+            ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
@@ -136,6 +138,31 @@ def main():
         if len(owners)!=1 or not owners[0].rstrip().endswith('daObjHeart_c.cpp.obj'):
             raise ValueError('Healing-heart resources must belong to the native actor: '+label)
     print('PASS: original HEART profile/native factory and both canonical native resource handles')
+    models=named('pc_arrow_models');collisions=named('pc_arrow_collisions')
+    expected_resources=(models,collisions,named('data_ov002_0210d914'),
+                        models+8,collisions+8,named('data_ov002_0210d734'))
+    if struct.unpack('<6I',pe_bytes(args.exe,named('pc_arrow_resources'),24))!=expected_resources:
+        raise ValueError('Arrow resources have wrong eight-byte handle or twelve-byte row strides')
+    if max(models,collisions)<min(models,collisions)+16:
+        raise ValueError('Arrow model/collision handle arrays overlap')
+    arrow_rows=records(ROOT)
+    for label in ('data_ov002_0210d914','data_ov002_0210d734'):
+        row=next(r for r in arrow_rows if r['name']==label)
+        original=source_bytes(ROOT,row)
+        if pe_bytes(args.exe,named(label),len(original))!=original:
+            raise ValueError('Arrow collision-material bytes differ from original: '+label)
+    def arrow_method(prefix):
+        candidates={address for name,address in symbols.items() if name.startswith(prefix)}
+        if len(candidates)!=1:raise ValueError('Missing/ambiguous native arrow callback: '+prefix)
+        return candidates.pop()
+    arrow_vtable=struct.unpack('<31I',pe_bytes(args.exe,arrow_method('??_7PcNativeArrowSign@@'),124))
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),
+                        (21,'OnAttacked1'),(26,'OnHitByMegaChar'),(30,'Kill')):
+        if arrow_vtable[slot]!=arrow_method('?'+method+'@PcNativeArrowSign@@'):
+            raise ValueError('Incorrect compiler-owned arrow callback slot: '+method)
+    if arrow_vtable[16]!=arrow_method('??_GPcNativeArrowSign@@'):
+        raise ValueError('Arrow cleanup does not use its native deleting destructor')
+    print('PASS: both original arrow profiles/factories; four eight-byte handles, resource row stride, original CLPS bytes and eight native virtual callbacks')
     switch_records=records(ROOT)
     for label in ('data_ov002_0210d8b4','data_ov002_0210d774'):
         row=next(item for item in switch_records if item['name']==label)

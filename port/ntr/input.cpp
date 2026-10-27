@@ -32,6 +32,8 @@ bool g_menu_navigation = true;
 bool g_camera_zoom_pending = false;
 bool g_camera_mode_pending = false;
 bool g_test_controls=false;uint16_t g_test_buttons=0;int16_t g_test_x=0,g_test_y=0;
+bool g_test_pointer_pending=false,g_test_pointer_down=false;
+uint16_t g_test_pointer_x=0,g_test_pointer_y=0;
 
 uint16_t scripted_buttons(unsigned long long poll, const char *schedule, unsigned limit=0x0fff) {
     uint16_t result = 0;
@@ -135,6 +137,10 @@ void input_poll() {
         g_touch_x = g_touch_y = 0;
         write_touch_latch(false, 0, 0);
         g_state.buttons=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_PAD_BUTTONS"),0xffff);
+        if(g_test_pointer_pending){
+            input_set_touch(g_test_pointer_down,g_test_pointer_x,g_test_pointer_y);
+            g_test_pointer_pending=false;
+        }
 
     }
     // Replay taps use the same hardware latch as mouse input. Restrict this
@@ -343,6 +349,13 @@ bool input_take_camera_mode() {
     return pending;
 }
 
+void input_test_pointer(bool pressed,uint16_t x,uint16_t y) {
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *schedule=std::getenv("SM64DS_PC_TEST_STAR_SELECT_POINTER");
+    if(!automation||std::strcmp(automation,"1")||!schedule||!*schedule)return;
+    g_test_pointer_pending=true;g_test_pointer_down=pressed;
+    g_test_pointer_x=x;g_test_pointer_y=y;
+}
 void input_set_touch(bool pressed, uint16_t x, uint16_t y) {
     g_touch = pressed;
     g_touch_x = std::min<uint16_t>(x, 255);

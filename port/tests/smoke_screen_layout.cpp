@@ -52,6 +52,26 @@ int main() {
         std::fputs(invalid,f);std::fclose(f);CHECK(video_load_settings("screen-layout-smoke.ini"));
         CHECK(video_get_settings().minigame_layout==MinigameLayout::TopBottom);
     }
+    // Mission selection occupies one canvas; its inset maps back to the
+    // original touch controls, including resized/letterboxed windows.
+    for(auto dims:{ScreenRect{0,0,256,192},ScreenRect{0,0,1280,720},ScreenRect{0,0,3840,2160},ScreenRect{0,0,777,999}}){
+        const auto s=star_select_layout(dims.width,dims.height);
+        CHECK(s.bottom.width==0 && s.bottom.height==0);
+        CHECK(s.top.width>0 && s.top.height>0 && std::abs(s.top.width*3-s.top.height*4)<=3);
+        uint16_t tx=0,ty=0;
+        CHECK(star_select_touch(s.top,s.top.x+s.top.width*128/256,s.top.y+s.top.height*129/192,tx,ty));
+        CHECK(std::abs(int(tx)-128)<=4 && std::abs(int(ty)-96)<=4);
+        CHECK(!star_select_touch(s.top,s.top.x+s.top.width/2,s.top.y+s.top.height*50/192,tx,ty));
+        CHECK(!star_select_touch(s.top,s.top.x-1,s.top.y,tx,ty));
+    }
+    for(auto &row:bottom.px)for(auto &pixel:row)pixel=0xffffffffu;
+    for(auto &row:top.px)for(auto &pixel:row)pixel=0xff112233u;
+    bottom.px[96][128]=0xffff00ffu;
+    star_select_overlay(bottom,top);
+    CHECK(top.px[129][128]==0xffff00ffu); // retained character pixel
+    CHECK(top.px[124][128]==0xffffffffu); // decorative medal removed
+    CHECK(top.px[160][200]==0xff112233u); // course title retained
+    CHECK(top.px[32][128]==0xff112233u);  // native Star geometry retained
     std::remove("screen-layout-smoke.ini");
     std::puts("Screen layout: geometry, touch bounds, composition, scene state, settings persistence checked");
     return failures?1:0;
