@@ -1,0 +1,75 @@
+Native falling-block linked row: two-way crossing QA, 2026-10-27
+
+The selected seven-tile row in Luigi's ghost-house maze (level46, actor66,
+UID59-65, rest x2350..2950, z0) can be crossed by Yoshi and Mario in both directions.
+The original actor sources, headers, collision and group reset rules are unchanged.
+
+The earlier approach failures omitted the established 600-unit QA jump trigger.
+Restoring it reproduces the original doorway approach exactly. No door gameplay
+repair was required. An immediate repeated-long-jump return was diagnostic: it
+overshot the bank, fell and respawned, so it is explicitly excluded from acceptance.
+
+port/hal/fall_block_replay.h now provides a separate input-only crossing pilot:
+- Requires AUTOMATION_ONLY=1, TEST_FALL_BLOCK_CROSSING=1 and level46.
+- Lets the normal waypoint route cross outward and stop on the central platform.
+- Observes all seven original tiles at state0/ready1 before returning.
+- Uses ordinary stick movement to run back across the row, then stops on the bank.
+- Stops the pilot on a deep fall instead of accepting a later respawn.
+The main replay dispatcher calls it; it is inactive in ordinary play.
+There are no actor/player position, velocity, state or collision writes.
+
+Native build and seven focused clock/input/session/scene/collision tests pass.
+Verified executable SHA256:
+52e0a01e93b4f08a31ea61620f6f907fd3df7f8c2d8f14cb92891d9a80c92d69
+
+Accepted 5600-frame muted case:
+native-muted-audio-walk-fall-block-two-way-reset-solmed-r3-20261027-20261021.
+Outward target3200 reached2384. Central platform and original full-row reset
+observed3324. Return bank reached3549. Real grounded return contacts were recorded
+for every UID59-65 (2,1,2,1,2,1,2 samples respectively), with matching ground/player
+heights. Continuous movement, no death/respawn or control-disabling sequence during
+the crossings, and final grounded Wait on the original bank. All actors initialized
+once. Device output nonzero samples0, audio errors0, exit0; both isolated save files
+match the actual Yoshi seed. Screenshots reviewed during the test.
+
+Private work runner and checker preserve the complete diagnostic entry, seed,
+600-unit approach and actor-state/contact requirements for reproducibility.
+The user saves and stable installation are untouched; this is a QA-only change.
+
+Scope: prepared one-Star saves and diagnostic course picker. Earned campaign
+entry, complete course unload/reentry, other placements, Luigi/Wario and spinning-floor
+lifecycle remain unverified. Full-game completion is not claimed.
+
+A second fresh4000-frame run through the reusable wrapper reproduced the same
+reset3324, return3549 and all seven contact counts. The strict checker passes
+both runs; final proof screenshots2300,3500,3700 show outward travel, return
+on the row, and the safe original bank.
+
+Mario comparison, same native executable:
+The initial comparison retained Yoshi's crouch-jump request immediately after
+a settled stop at the bank. Mario entered SideFlip, fell short on the row and
+respawned. Removing all waypoint settling stalled the earlier doorway approach.
+Neither diagnostic establishes a bridge collision defect. The row is continuous;
+Mario now runs outward with ordinary stick input, preserving the established
+600-unit jump trigger and settling for the maze approach. The native actor,
+player movement and crossing observer needed no changes.
+
+Accepted4000-frame case:
+native-muted-audio-walk-falling-bridge-mario-running-solmed-r3-20261027-20261021.
+Mario character0, prepared one-Star isolated prerequisite save. Outward target3200
+reached2318; original full-row reset observed3280; safe return bank reached3491.
+Real grounded contacts for every UID59-65 in BOTH directions:
+outward3,1,1,2,1,2,1; return1,2,1,2,2,2,1. All contact heights match their moving
+floor. No death/respawn/control-disabled sequence during the crossing, every tile
+initializes once, final grounded Wait on the original bank. Both isolated saves
+match their actual seed, device output0/audio errors0/exit0. Build up to date;
+seven focused CTests pass. No game source, binary, actor/data closure, installation
+or public release change. The private wrapper now offers the verified Mario route.
+The checker validates the PC save header/CRC before reading the original payload's
+character byte, and can require all seven outward contacts as well as return ones.
+
+A fresh4000-frame saved-wrapper Mario proof reproduces the same reset3280,
+return3491 and every-tile contacts in both directions:
+native-muted-audio-walk-falling-bridge-mario-wrapper-proof-20261027-20261021.
+Both Mario cases pass the stricter checker, and the previous Yoshi proof still
+passes its original scoped checks after the character-container parser correction.

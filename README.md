@@ -19,8 +19,12 @@ Audio listening accuracy and complete gameplay remain unverified.
   Mario checks in Luigi's ghost-house maze. The block receives real player
   contact, shakes, drops and disables collision; normal ledge input restores
   Mario to the bank. The spinning floor renders, rotates and supports him.
-  Group respawn, repeat contact, course re-entry, Big Boo's Haunt interaction
-  and broader character/placement coverage remain unverified;
+  Yoshi and Mario each cross the selected seven-tile row in both directions
+  with grounded contact on every tile. The group resets after outward crossing;
+  both characters reach the opposite bank and return safely. This is a prepared
+  diagnostic course replay, not earned campaign entry. Course unload/re-entry,
+  Big Boo's Haunt interaction and broader character/placement coverage remain
+  unverified;
   see `port/docs/native-falling-block-and-spinning-floor-2026-10-27.txt`.
 - The original course/Star selector now uses one composed screen, with its
   character face and controls below the score. Selected Mario tests verify

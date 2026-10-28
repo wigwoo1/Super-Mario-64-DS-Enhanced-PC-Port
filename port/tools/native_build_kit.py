@@ -107,6 +107,12 @@ def main():
         'Mission2 Mario reaches the original switch, opens both shortcut gates and '
         'walks through. Original Exit Course/painting re-entry resets the switch and '
         'gates; Mario presses and passes through again. Broader variants remain unverified. '
+        'The native seven-tile falling-block row in level46 has selected muted, ' +
+        'two-way crossings for Yoshi and Mario. All seven tiles receive grounded ' +
+        'contact, reset after outward crossing, and both characters return safely. ' +
+        'Prepared diagnostic saves/course picker only; earned campaign entry, course ' +
+        'unload/re-entry, other characters/placements and spinning-floor lifecycle ' +
+        'remain unverified. ' +
         'Selected original brick debris and the opening sleep-bubble pop render; '
         'Mario collects the brick coins and the original Yoshi restriction is preserved. '
         'Wider effects remain open. '

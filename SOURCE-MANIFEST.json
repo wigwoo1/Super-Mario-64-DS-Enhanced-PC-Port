@@ -6754,6 +6754,11 @@
       "bytes": 6703
     },
     {
+      "path": "port/docs/native-falling-bridge-crossing-2026-10-27.txt",
+      "sha256": "b4331e9219dc0d81e17bb4cd453e1ff17d7042f6a3316f62c077a792435bece6",
+      "bytes": 4757
+    },
+    {
       "path": "port/docs/native-feather-music-abi-2026-10-27.txt",
       "sha256": "75ddf6704c88442e055f43aa608709eb386cd272e70d9ef1d85afa2efe826ab8",
       "bytes": 4965
@@ -7325,8 +7330,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "0f4c75f48f881ec785a36f7dd772f2d01893918699ef9a9e5bbd595b29cd4d82",
-      "bytes": 17381
+      "sha256": "f9e62754fb35d554351cebec5e4befd21e1f39e846f0cbfb4916a678df26c4d4",
+      "bytes": 17648
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7610,8 +7615,8 @@
     },
     {
       "path": "port/hal/fall_block_replay.h",
-      "sha256": "de4ecf4154742650b6d69b3f7fb0315660e3bae9388997fff141c7dbff304a09",
-      "bytes": 5376
+      "sha256": "536acc67a594a6ac8826d6f779555876a02c06881b4bccec1039bca35dc562ee",
+      "bytes": 7491
     },
     {
       "path": "port/hal/float_bits.cpp",
@@ -7940,8 +7945,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "74f53ccf290ecb59381b54912ee534cdfcc537f9037a784dbd905ea97a1b274a",
-      "bytes": 181525
+      "sha256": "4b80d4976a7368f02ac32522fdace28cf96e934c474f01798a35678e097ebdbc",
+      "bytes": 181561
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9340,8 +9345,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "0dcf29fb9b6fc450d57ee392b206a97c699481356b64bdef3f815a2d3c79270c",
-      "bytes": 12680
+      "sha256": "20aeae9561667a0903de8c86f18375c229058d150c0f2f9332d5c754e9879ad4",
+      "bytes": 13144
     },
     {
       "path": "port/tools/native_kit_data.py",
