@@ -2386,3 +2386,48 @@ read-only trace and original-eligibility/native-update-order investigation.
 Sol High recommended before further collision changes. No F install or kit
 promotion; the full goal remains incomplete. The previous sign-pound escalation
 was stale: that selected original behavior was already verified on2026-10-25.
+
+
+## 2026-10-27: Falling block and spinning floor native play
+
+Connected original falling-block66 and spinning-floor159 profiles and native
+resources. Build/eight focused tests/full actor-data audit pass. A muted5000-frame
+diagnostic Luigi-maze/Mario run physically steps onto the block, observes original
+shake/fall/collider disable/hidden wait, and restores normal bank control with
+ordinary ledge input. The spinning floor renders and supplies native rider
+contacts at its original rotation speed. Exact copied F preview repeats this
+interaction in a3000-frame muted actual-launcher test with saves unchanged.
+Original actor/header sources unchanged; symbol-only support5280. See
+native-falling-block-and-spinning-floor-2026-10-27.txt for scope and evidence.
+Group rearm/respawn, repeat contact, full crossing/course reentry, BBH interaction,
+other characters and the full game remain open. Only159 is enabled from shared
+furniture;65/158/160 require independent integration. No public kit refresh or
+stable promotion in this milestone. Luna Medium is appropriate for bounded
+group-reset follow-up; native integration work can switch down now.
+
+## 2026-10-27: Falling-block group reset replay
+
+The original linked group reset was confirmed in a muted level46 run: after the
+selected tile fell, the seven linked tiles returned together to state0 with
+their ready flags set. A second stand on the same tile was not confirmed. Two
+ordinary-input QA paths were unsafe: one entered a neighboring door; one left
+the narrow bank and caused a fall/respawn. No gameplay actor logic was changed;
+an opt-in replay helper exists only for automation. Current build/eight focused
+tests pass. Use live floor/collision probes for the next safe route. Sol Medium
+is recommended because two distinct focused route attempts failed; the full
+goal remains open.
+
+
+## 2026-10-27: Same falling tile reset and repeat contact verified
+
+Fixed the automation pilot to walk through the original adjacent-room door,
+observe the same loaded seven-tile row reset, and return through the verified
+doorway route. A muted5000-frame Yoshi run gives the same actor66 tile two real
+stand/fall cycles, four second moving-floor contacts, restored collision, and
+normal bank recovery. No death/course respawn; both isolated saves unchanged.
+Build/eight focused tests pass. Original actor sources and reset rules unchanged.
+Level46 uses a ten-unit separation plus original offscreen condition; other
+levels use650. The failed lateral-retreat and camera-only QA paths were replaced.
+See native-falling-block-and-spinning-floor-2026-10-27.txt. Full bridge crossing,
+complete course unload/reentry and other placements/characters remain open.
+Luna Medium can handle the pending existing ROM-free kit refresh workflow.

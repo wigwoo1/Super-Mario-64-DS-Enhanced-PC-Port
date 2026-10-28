@@ -3209,3 +3209,9 @@ unresolved external symbol _data_ov002_0210d8b4 referenced in function "public: 
 unresolved external symbol _data_ov002_0210d774 referenced in function "public: virtual int __thiscall daObjHatenaSwitch_c::InitResources(void)" (?InitResources@daObjHatenaSwitch_c@@UAEHXZ)
 unresolved external symbol _data_ov002_0210d734
 unresolved external symbol _data_ov002_0210d914
+unresolved external symbol _data_ov063_0211eb10
+unresolved external symbol _data_ov063_0211ec98
+unresolved external symbol _data_ov063_0211ebf8
+unresolved external symbol _data_ov063_0211ec18
+unresolved external symbol _data_ov063_0211ec58
+unresolved external symbol _data_ov063_0211ec78

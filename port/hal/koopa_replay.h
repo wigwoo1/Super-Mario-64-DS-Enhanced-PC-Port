@@ -13,9 +13,13 @@ static void pc_probe_koopa_ground(Player *player) {
     const char *input=std::getenv("SM64DS_PC_KOOPA_GROUND_SAMPLES");
     const char *output=std::getenv("SM64DS_PC_KOOPA_GROUND_CAPTURE");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *probeLevel=std::getenv("SM64DS_PC_GROUND_PROBE_LEVEL");
+    int level=6;
+    if(probeLevel){char *end=nullptr;const long parsed=std::strtol(probeLevel,&end,10);
+        if(!end || *end || parsed<1 || parsed>51)return;level=static_cast<int>(parsed);}
     if(done || !input || !output || !automation || std::strcmp(automation,"1") ||
-       data_0209f2f8!=6 || !player || player->aliveState!=1 ||
-       !dActor_c::FindWithActorID(188,nullptr))return;
+       data_0209f2f8!=level || !player || player->aliveState!=1 ||
+       (!probeLevel && !dActor_c::FindWithActorID(188,nullptr)))return;
     // Moving colliders can be intentionally disabled while the real player
     // is distant. Qualify their surfaces only after an ordinary approach;
     // never enable them or move the player to satisfy a probe.

@@ -114,6 +114,8 @@ def main():
             ('pc_healing_heart_profile','daObjHeart_c_classInit',2,0x02109c50),
             ('pc_arrow_left_profile','daObjYajirusi_c_classInit_YAJIRUSI_L',98,0x0213c398),
             ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
+            ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
+            ('pc_merry_go_round_profile','daTrsTrap_c_classInit_MERRYGOROUND',63,0x0211ea48),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
@@ -163,6 +165,44 @@ def main():
     if arrow_vtable[16]!=arrow_method('??_GPcNativeArrowSign@@'):
         raise ValueError('Arrow cleanup does not use its native deleting destructor')
     print('PASS: both original arrow profiles/factories; four eight-byte handles, resource row stride, original CLPS bytes and eight native virtual callbacks')
+    fall_model=named('data_ov063_0211ef60');fall_collision=named('data_ov063_0211ef58')
+    if abs(fall_model-fall_collision)<8:
+        raise ValueError('Falling-block native file handles overlap')
+    if struct.unpack('<3I',pe_bytes(args.exe,named('data_ov063_0211eb10'),12))!=(
+            fall_model,fall_collision,named('data_ov063_0211ec98')):
+        raise ValueError('Falling-block descriptor still contains DS addresses or incorrect native resource identities')
+    fall_clps=next(row for row in records(ROOT) if row['name']=='data_ov063_0211ec98')
+    original=source_bytes(ROOT,fall_clps)
+    if pe_bytes(args.exe,named('data_ov063_0211ec98'),len(original))!=original:
+        raise ValueError('Falling-block collision properties differ from original')
+    fall_vtable=struct.unpack('<31I',pe_bytes(args.exe,arrow_method('??_7daObjTh_Fall_Block_c@@'),124))
+    for slot,method,owner in ((0,'InitResources','daObjTh_Fall_Block_c'),
+                              (3,'CleanupResources','daObjTh_Fall_Block_c'),
+                              (6,'Behavior','daObjFallBlock_c'),(9,'Render','daObjFallBlock_c'),
+                              (26,'OnHitByMegaChar','daObjFallBlock_c'),(30,'Kill','daObjFallBlock_c')):
+        if fall_vtable[slot]!=arrow_method('?'+method+'@'+owner+'@@'):
+            raise ValueError('Incorrect native falling-block virtual callback: '+method)
+    if fall_vtable[16]!=arrow_method('??_GdaObjTh_Fall_Block_c@@'):
+        raise ValueError('Falling block lacks its native deleting destructor')
+    print('PASS: original falling-block profile/factory, canonical eight-byte handles/native descriptor/CLPS and seven virtual callbacks')
+    for label,suffixes in (('data_ov063_0211e27c',('eeb0','eea8','eeb8','ee98')),
+                           ('data_ov063_0211e28c',('eea0','eed0','eec0','eec8')),
+                           ('data_ov063_0211e9e8',('ec58','ebf8','ec78','ec18'))):
+        if struct.unpack('<4I',pe_bytes(args.exe,named(label),16))!=tuple(named('data_ov063_0211'+s) for s in suffixes):
+            raise ValueError('Spinning-floor resource row contains incorrect native identities: '+label)
+    for suffix in ('ec58','ebf8','ec78','ec18'):
+        label='data_ov063_0211'+suffix
+        row=next(r for r in records(ROOT) if r['name']==label);original=source_bytes(ROOT,row)
+        if pe_bytes(args.exe,named(label),len(original))!=original:raise ValueError('Furniture CLPS differs from original: '+label)
+    merry_targets=tuple(arrow_method('?func_ov063_'+address+'@daTrsTrap_c@@') for address in ('0211cc18','0211cb54','0211c89c','0211c7b0'))
+    if struct.unpack('<4I',pe_bytes(args.exe,named('data_ov063_0211ef38'),16))!=merry_targets:
+        raise ValueError('Spinning-floor dispatch does not use four native member callbacks')
+    merry_vtable=struct.unpack('<28I',pe_bytes(args.exe,arrow_method('??_7daTrsTrap_c@@'),112))
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),(12,'OnPendingDestroy')):
+        if merry_vtable[slot]!=arrow_method('?'+method+'@daTrsTrap_c@@'):
+            raise ValueError('Spinning-floor native virtual callback mismatch: '+method)
+    if merry_vtable[16]!=arrow_method('??_GdaTrsTrap_c@@'):raise ValueError('Spinning floor lacks native deleting destructor')
+    print('PASS: original spinning-floor159 profile/factory, three canonical four-row resources/CLPS, four native state dispatches and six virtual callbacks')
     switch_records=records(ROOT)
     for label in ('data_ov002_0210d8b4','data_ov002_0210d774'):
         row=next(item for item in switch_records if item['name']==label)

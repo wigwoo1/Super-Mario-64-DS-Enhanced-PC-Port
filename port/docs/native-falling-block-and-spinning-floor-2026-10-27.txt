@@ -1,0 +1,100 @@
+Native falling block66 and spinning floor159 - selected play VERIFIED 2026-10-27
+
+The native registry now connects the original TH_DOWN_B falling-block factory
+and MERRYGOROUND spinning-floor factory. Matching game sources and headers are
+unchanged. Host adapters defer the original eight-byte resource handles until
+asset startup, replace DS resource pointers with canonical native addresses,
+and use the real native moving-mesh Transform method. Original profile flags,
+priorities, ranges, resource IDs, collision properties and behavior are retained.
+Only159 is enabled from its shared four-variant furniture class; staircase65,
+trapdoor160 and bookshelf158 require independent integration and acceptance.
+
+Native executable SHA256:
+ebf8bad43904b5fca54ee73e54c3f290aa3e7b8200d2d1643b5db5bf2615f9c4
+Native build, eight focused CTests, and expanded full actor/data audit PASS.
+Audit verifies both original descriptors/native factories; falling-block native
+resource row, CLPS bytes and seven virtual callbacks; spinning-floor native
+model/collision/CLPS rows, four member-state dispatches and six virtual callbacks.
+Compile assertions preserve0x34c/0x354 layouts and original member offsets.
+
+Final selected runtime: muted5000-frame diagnostic level46 (Luigi's ghost-house
+maze), prepared isolated one-Star Mario save and first selector index0. Original
+door from room0 to room1, ordinary movement and jump inputs; no actor/position/
+velocity/collider/reward/save writes by the pilot. MERRYGOROUND45 visibly renders,
+rotates at its original128 angle units/update and has six actual rider callback
+samples plus three moving-floor ground contacts during the approach.
+
+Selected falling-block59 at original2350,0,0 receives real stand callbacks from
+tick2271 and four sampled player floor contacts whose heights match exactly.
+Original state0->1 shakes, state2 drops and disables collision, and original Kill
+runs once at2321 below its sampled ground threshold (minimumY -822.324 units).
+State3 restores the home position while hiding the model/keeping collision off.
+This is the hidden waiting state, not verified full group rearm/respawn.
+
+Mario catches the original bank ledge. Input-only recovery presses normal jump
+at2322 and walks onto the bank; normal control is restored2396. Final5000 is
+grounded Wait with controls enabled, Star total1, unchanged valid isolated saves,
+clean exit0, audio errors0 and submitted nonzero device samples0. Screens show
+the rotating floor, bridge before contact, missing fallen tile, and bank recovery.
+
+Initial BBH diagnostic scouts create nine proper original blocks but do not
+reach their floor interaction: the first route hits the raised porch, the
+KCL-derived porch route enters the house then cuts across a separate pit.
+The maze's initial route hits signpost184 at0,0,300. Offline/static floor paths
+do not include all dynamic geometry/cylinders. Live read-only floor/line probes
+clarified the missing spinning-floor dependency; its original KCL spans1400
+units and now supplies the original moving surface. The first post-floor jump
+test never requests jump because it cannot reach the default320-unit threshold;
+an explicitly gated600-unit QA jump threshold reaches the doorway/bridge.
+No gameplay physics/rules changed. These diagnostic cases are not acceptance.
+
+Read-only trace/ordinary-input replay helpers are opt-in automation only.
+Symbol-only build support5274->5280 adds six reviewed names; no old binding is
+removed/rebound. Fresh private regeneration matches linked data SHA256:
+8ba2517f0894fb21c08f5eef36f36dc36429651e22c4878be0f477fb1e20a628
+4283 regions/4437 references/zero unknowns. Private static inventory now77 native
+profiles,1350 records/430 level-actor pairs without profiles. These are candidate
+counts, not runtime coverage or full-game acceptance.
+
+Open at the initial integration checkpoint: group rearm and repeat contact (see
+the verified follow-up below), full bridge crossing,
+course unload/reentry, BBH's actual interaction and earned castle entry, other
+placements/characters, prolonged spinning-floor rides, hardware controllers,
+listening fidelity and the full campaign. Full executables/assets/ROM/scene
+inventories/traces/screens/saves remain private. New ROM-free source/kit refresh
+requires normal reviewed export and fresh reconstruction/runtime; not done here.
+
+Private evidence: work/check-fall-merry-20261027.py and final-r4 case acceptance,
+fall-merry-final-native-audit-20261027.log, both symbol-support review JSON files,
+and private-actor-scene-inventory-20261027-after-fall-merry. Earlier route scouts
+are preserved with their exact hashes and limits. No stable-install promotion.
+
+2026-10-27 follow-up: SAME TILE RESET/RETRIGGER/RECOVERY VERIFIED
+
+Current native executable6e6e36b40c655deb18a4026f622230f6c5397e7cafad00d146e9a26349bf7947
+adds an automation-only repeat pilot; game actor logic stays unchanged. A muted
+5000-frame level46 run with a prepared one-Star Yoshi save steps onto UID59,
+observes its first fall/Kill2323, then walks through the original adjacent-room
+door. All seven loaded linked tiles reset to state0/ready1 at2435. The same UID59
+is initialized only once. Returning through the original doorway re-enables its
+collider, gives real stand2979/four matching moving-floor contacts, repeats the
+shake/fall/Kill3029, and recovers normal bank controls3102. Final5000 is grounded
+Wait, controls enabled, Star1/lives4; no death/course respawn. Both isolated save
+files are byte-identical to their actual seed. Device submission muted/zero
+nonzero samples, audio errors0, exit0. Build/eight focused tests pass.
+
+The original level46 readiness threshold is0xa000 (ten world units), plus the
+offscreen mFlags&8 condition. Other levels default to650 units. Camera L from
+the bank kept part of the tile visible; this was not a reset test. Waiting for
+collision enable from the adjacent room was also an invalid QA gate. The fixed
+pilot observes state0/ready1 there, then returns physically to restore collision.
+No actor state, player pose, physics, visibility or save writes satisfy the test.
+25 production ground probes also verify the safe bank floor at y0.
+
+Private strict proof: work/check-fall-block-repeat-20261027.py and
+native-muted-audio-walk-fall-block-recycle-door-r6-20261027-20261021/
+fall-block-repeat-acceptance.json. Screens2900/3000/3200 show restored bridge,
+second fall and bank recovery. F preview stays at its previous integration
+binary; there is no new gameplay behavior to install in this test-only change.
+Full row crossing, complete course unload/reentry and other placements/characters
+remain open. This does not prove full-game coverage or stable release readiness.
