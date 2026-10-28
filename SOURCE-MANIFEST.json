@@ -9065,8 +9065,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "fbb770ab4e0be380803d201a7a4e2a80273d347ad0aa9a51cce382248d7e8bf3",
-      "bytes": 42304
+      "sha256": "0717e60e4b37b0332f0c59926557fae19c5d70c6a4550ed0866b969e18fa01cd",
+      "bytes": 43253
     },
     {
       "path": "port/tools/check_native_crate_carry.py",

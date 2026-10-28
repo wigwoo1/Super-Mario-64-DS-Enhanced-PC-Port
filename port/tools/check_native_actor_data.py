@@ -23,6 +23,27 @@ def main():
         if match:
             symbols[match[1]] = int(match[2], 16)
 
+    # ROM-free kits rename prebuilt objects to stable numbered paths. Resolve
+    # those map owners back to their reviewed build inputs for source ownership
+    # checks; ordinary source-build maps keep their original object filenames.
+    object_origins = {}
+    kit_manifest = ROOT / '.native-kit/manifest.json'
+    if kit_manifest.is_file():
+        import json
+        metadata = json.loads(kit_manifest.read_text(encoding='utf-8'))
+        object_origins = {
+            pathlib.PurePosixPath(item['path']).name:
+                pathlib.PurePosixPath(item['origin_object']).name
+            for item in metadata.get('prebuilt', [])
+            if item.get('path', '').endswith('.obj')
+        }
+
+    def owner_is(line, expected_object):
+        owner = line.rsplit(maxsplit=1)[-1]
+        owner = object_origins.get(pathlib.PurePath(owner).name,
+                                   pathlib.PurePath(owner).name)
+        return owner.endswith(expected_object)
+
     def named(prefix):
         matches = {address for name, address in symbols.items()
                    if name == '_' + prefix or name.startswith('?' + prefix + '@@')}
@@ -58,7 +79,7 @@ def main():
     restore = named('func_0200d81c')
     owners = [line for line in args.map.read_text().splitlines()
               if re.search(r'\s_func_0200d81c\s', line)]
-    if len(owners) != 1 or not owners[0].rstrip().endswith('dCamera_c.cpp.obj'):
+    if len(owners) != 1 or not owner_is(owners[0], 'dCamera_c.cpp.obj'):
         raise ValueError('Dialogue camera restore is not owned by the original camera TU')
     if pe_bytes(args.exe, restore, 1) == b'\xc3':
         raise ValueError('Dialogue camera restore still links an empty placeholder')
@@ -138,7 +159,7 @@ def main():
         named(label)
         owners=[line for line in args.map.read_text().splitlines()
                 if re.search(r'\s_'+label+r'\s',line)]
-        if len(owners)!=1 or not owners[0].rstrip().endswith('daObjHeart_c.cpp.obj'):
+        if len(owners)!=1 or not owner_is(owners[0], 'daObjHeart_c.cpp.obj'):
             raise ValueError('Healing-heart resources must belong to the native actor: '+label)
     print('PASS: original HEART profile/native factory and both canonical native resource handles')
     models=named('pc_arrow_models');collisions=named('pc_arrow_collisions')
