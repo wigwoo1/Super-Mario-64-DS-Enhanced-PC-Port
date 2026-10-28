@@ -1,7 +1,7 @@
 """Native resource identities for the recovered spinning-floor class.
 
-MERRYGOROUND159 and TERESAPIT160 are registered. The other two factory variants keep
-their original implementation but require independent integration/acceptance.
+KAIDAN65, MERRYGOROUND159 and TERESAPIT160 are registered. BOOKSHELF158 keeps
+its original implementation but still requires its book-switch dependency.
 """
 import re
 import struct
@@ -18,6 +18,8 @@ def transform(root, text):
                               (0x211e28c,(0x211eea0,0x211eed0,0x211eec0,0x211eec8)),
                               (0x211e9e8,(0x211ec58,0x211ebf8,0x211ec78,0x211ec18))):
         assert struct.unpack_from('<4I',raw,address-base)==expected
+    assert struct.unpack_from('<IHHIiiii',raw,0x211ea10-base)==(
+        0x211d360,65,53,0,0x64000,0x64000,0x1000000,0xa00000)
     assert struct.unpack_from('<IHHIiiii',raw,0x211ea48-base)==(
         0x211d2e0,159,56,0,0x64000,0x64000,0x1000000,0xa00000)
     assert struct.unpack_from('<IHHIiiii',raw,0x211ea64-base)==(
@@ -33,14 +35,15 @@ static void pc_merry_init_files();
 static void pc_merry_observe(const char *event,daTrsTrap_c *self) {
     const char *path=std::getenv("SM64DS_PC_MERRY_TRACE");if(!path||!*path)return;
     static FILE *file=nullptr;
-    if(!file){file=std::fopen(path,"w");if(file)std::fputs("event,tick,uid,actor,x,y,z,index,state,timer,angle,speed,standing,visible,collider,model,alive,tilt,tilt_speed,area\n",file);}
-    if(file){std::fprintf(file,"%s,%llu,%u,%u,%d,%d,%d,%d,%u,%u,%d,%d,%u,%u,%d,%u,%u,%d,%d,%d\n",event,
+    if(!file){file=std::fopen(path,"w");if(file)std::fputs("event,tick,uid,actor,x,y,z,index,state,timer,angle,speed,standing,visible,collider,model,alive,tilt,tilt_speed,area,parent,step,rise,trigger,home_y\n",file);}
+    if(file){std::fprintf(file,"%s,%llu,%u,%u,%d,%d,%d,%d,%u,%u,%d,%d,%u,%u,%d,%u,%u,%d,%d,%d,%u,%u,%d,%u,%d\n",event,
         static_cast<unsigned long long>(ntr::rt_frame()),unsigned(self->uniqueID),unsigned(self->actorID),
         self->mPosX,self->mPosY,self->mPosZ,self->mIndex,unsigned(self->mState),unsigned(self->mStateTimer),
         int(self->mAngleY),int(self->mAngVelY),self->mStandingActor?unsigned(self->mStandingActor->uniqueID):0,
         unsigned(self->mVisible),int(self->mMovingMeshCollider.IsEnabled()),
         unsigned(reinterpret_cast<std::uintptr_t>(self->mModel.data.modelFile)),unsigned(self->aliveState),
-        int(self->mAngleX),int(self->mAngVelX),int(self->mAreaId));std::fflush(file);}
+        int(self->mAngleX),int(self->mAngVelX),int(self->mAreaId),unsigned(self->mParentUniqueID),
+        unsigned(self->mStepIndex),self->mRiseProgress,unsigned(self->mTriggered),self->mHomePosY);std::fflush(file);}
 }
 '''
     anchor='// @symbol _ZN11daTrsTrap_cD1Ev';assert text.count(anchor)==1

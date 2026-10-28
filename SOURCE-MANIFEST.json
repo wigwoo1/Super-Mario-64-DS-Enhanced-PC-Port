@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "e24b88190fc81336bf88bdcad0c49006c5c1dd451f75754a5a7bd4567942ed45",
-      "bytes": 33332
+      "sha256": "21c4643bb003c349e04b2d6cd25807038fb41ee58a9be6f962bd6ee4693b86c8",
+      "bytes": 34450
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6832,6 +6832,11 @@
       "path": "port/docs/native-item-block-integration-2026-10-24.txt",
       "sha256": "a7e2110b6d34172760ff12c755a0bdf14b2938e847784578e184571a98786489",
       "bytes": 6679
+    },
+    {
+      "path": "port/docs/native-kaidan65-integration-2026-10-28.txt",
+      "sha256": "88d6d84dabf99e42aee56e074a5739cde5808f15248a90a65ff638df2c6d7f43",
+      "bytes": 4630
     },
     {
       "path": "port/docs/native-koopa-integration-2026-10-23.txt",
@@ -7230,8 +7235,8 @@
     },
     {
       "path": "port/docs/native-trapdoor160-integration-2026-10-28.txt",
-      "sha256": "da7a5d0e257fc9c031ed0abef6e8644fadebafcad74f6a1c6f6905f23b240777",
-      "bytes": 1652
+      "sha256": "de7b3f0134d26feb417943a5dd9a31799833a31cd6b658e2bc913e1cb68b71ff",
+      "bytes": 1846
     },
     {
       "path": "port/docs/native-trees-2026-10-21.txt",
@@ -7345,8 +7350,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "9f36da46dccf89491f8f8614271f37c47ee9f104a6764c42ed19cdcd9e8e6858",
-      "bytes": 18099
+      "sha256": "6da4887a5d65e499575eff0c56ede63f343e3745a3746cc5788471617e216ccf",
+      "bytes": 18430
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7500,8 +7505,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "8cea6b251590ca49f87a5f60a3e327b6bde81538b6a6058df7fce7d15be4053d",
-      "bytes": 44842
+      "sha256": "3de0e08e96e08cfa5624006e55ca49b8f8aaed532e7c9ac453d37b55b778852a",
+      "bytes": 45081
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -9065,8 +9070,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "0717e60e4b37b0332f0c59926557fae19c5d70c6a4550ed0866b969e18fa01cd",
-      "bytes": 43253
+      "sha256": "683ffe56d549931b211dffe015e89aa8542d7bdad85998ff9e55368e1e461965",
+      "bytes": 43430
     },
     {
       "path": "port/tools/check_native_crate_carry.py",
@@ -9340,8 +9345,8 @@
     },
     {
       "path": "port/tools/merry_go_round_host.py",
-      "sha256": "22950a90309d630db5c8e2454eebf08616c58d3e99bbfb6be52dc5c72b1b0cf0",
-      "bytes": 5735
+      "sha256": "1340a8e38737abff9e0be409dd56540855e68a6880952315c73dc1e14eb61829",
+      "bytes": 6030
     },
     {
       "path": "port/tools/minigame_data.py",
@@ -9360,8 +9365,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "b4943a585037773d8a4596f63e5ae638e9d1e5cbd97b1215ce5b43710d751720",
-      "bytes": 13354
+      "sha256": "b1a626c79a677c09ef31572d322521999e81362545407503073b0b0dddf9699f",
+      "bytes": 13650
     },
     {
       "path": "port/tools/native_kit_data.py",

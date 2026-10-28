@@ -30,8 +30,12 @@ Audio listening accuracy and complete gameplay remain unverified.
   long-jump landing, tilts, settles naturally, and allows a safe jump back to
   solid ground in a muted Wario replay. This is an isolated diagnostic route;
   earned course entry and other variants/placements remain unverified.
-  Staircase65 and bookshelf158 are not registered;
-  see `port/docs/native-trapdoor160-integration-2026-10-28.txt`.
+  The recovered staircase65 factory creates all three original steps in
+  level12 missions 1 and 2. Muted tests verify all three render, child links,
+  first step contact and a jump onto the second step. The third step, boss
+  trigger and lifecycle remain open. Bookshelf158 remains unsupported and depends on switch213; see
+  `port/docs/native-kaidan65-integration-2026-10-28.txt` and
+  `port/docs/native-trapdoor160-integration-2026-10-28.txt`.
 - The original course/Star selector now uses one composed screen, with its
   character face and controls below the score. Selected Mario tests verify
   controller-style Mission 1 navigation in 4:3, inverse-mapped face-click

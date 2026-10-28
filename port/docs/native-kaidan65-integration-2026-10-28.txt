@@ -1,0 +1,71 @@
+UPDATE 2026-10-28 - FIRST AND SECOND STEP CONTACT VERIFIED
+Following hall entry, a muted normal-input route jumps onto the second step (actor
+65 UID56) and records 2315 grounded contact samples matching collision height.
+Final screenshot at tick7500 shows Mario standing on that step. Run exits0, original
+mission2 level12 is confirmed, audio device samples remain zero with no audio errors,
+and isolated saves are unchanged. Seven focused CTests pass on unchanged build.
+The third-step jump, full climb/dismount, actual boss-triggered rise, mission1 final
+child state, and course lifecycle remain open. The first climb attempt reached the
+first step but jumped too late; the second reaches and remains on step2. No gameplay
+code or binary changed in these checks.
+UPDATE 2026-10-28: Original-input ramp jump and hall door entry now verified.
+All three native staircase pieces render; both children have the correct parent,
+visibility and enabled collision after linking. Mario lands and remains grounded
+on the first step, with matching floor height (2805 contact samples). Muted
+6500-frame run exits cleanly, reports no audio errors, and preserves isolated
+saves. Seven focused CTests pass on the unchanged compiled build. This uses
+diagnostic course entry and a prepared mission prerequisite. Upper-step traversal,
+mission1 final child visibility, boss-triggered rising and lifecycle remain open.
+The older outside-hall blocker below is superseded by this evidence.
+Native KAIDAN staircase profile 65 - 2026-10-28
+
+Status: PARTIALLY VERIFIED. Authored native spawning is verified in Big Boo's
+Haunt (level12), missions 1 and 2. Rendering, player contact, final child links,
+the boss-triggered rise and course lifecycle remain unverified.
+
+Connected the already recovered `daTrsTrap_c_classInit_KAIDAN` factory to the
+native actor profile table at actor ID 65. The profile uses the original
+descriptor values: execute/draw priorities 65/53, flags 0, clip offset/radius
+0x64000, clip distance 0x01000000 and far distance 0x00a00000. The existing
+actor code selects the staircase mode from actor ID 65 and spawns its fellow
+steps through the normal actor spawn path. No original actor implementation
+or header was changed.
+
+The source build completed. Seven focused CTests passed: replay path, stage
+graph, actor, collision, model, model cleanup and heap. The full native actor
+data audit passed, including comparison of the KAIDAN factory and descriptor
+against the local ROM's overlay 63.
+
+A static inventory of the original level objects located the authored actor in
+level12, area1. Level46 is Luigi's maze and has no such placement. Both original
+mission selections now load three real staircase actors: master plus steps 1
+and 2. All three use the staircase resource row, a common loaded model and
+enabled native collision objects. Census records confirm that they become
+alive. Mission1's master starts hidden; mission2's master starts visible, with
+the original per-mission positions. The ready trace occurs synchronously inside
+each child Spawn before the master sets its parent ID and copies visibility;
+the final child links still require observation after that assignment.
+
+The mission2 check uses an isolated prepared first-mission-Star save to unlock
+the original selector's second mission. Star ID0 is the 100-coin Star; the
+prerequisite uses ID1. This is not earned campaign progression. Mission1 uses
+the same fixture and selects the first mission normally.
+
+Muted 7,000-frame mission2 and 3,000-frame mission1 runs pass the strict authored
+spawn checks. Both exit 0, submit zero nonzero device samples, report zero audio
+errors and preserve the isolated saves byte for byte. The source build, seven
+focused CTests and full native actor-data audit pass. Read-only trace columns
+now include staircase step, parent, rise, trigger and home height. No gameplay
+state is changed by this tracing.
+
+The player route remains outside the hall. A direct approach hit the courtyard
+wall; a path derived from the original collision mesh reached the right ramp
+but caught on its entrance lip. Stop speculative route changes here. Next use
+the measured lip collision to repair the input pilot, enter the hall, and verify
+real render submissions and player contact. Big Boo actor210 also remains
+unregistered, so its original death path cannot yet release the staircase.
+
+The test executable SHA256 is
+`727867EF75035357C36023448BF654A0E651C0866A6E9F58518366B5498680F6`.
+The muted gameplay capture is a private QA artifact; no ROM, extracted assets,
+save, screenshot, or generated game data is included in the source repository.

@@ -5,8 +5,11 @@ Status: VERIFIED for selected muted contact, tilt, settling and recovery tests.
 The native actor table registers the original TERESAPIT profile160 and its
 compiler-owned factory. The descriptor matches the original profile metadata;
 the existing recovered four-mode class and original resource rows are used.
-No original actor source or header was modified. Staircase65 and bookshelf158
-remain unregistered; the bookshelf also depends on switch actor213.
+No original actor source or header was modified. KAIDAN65 now passes authored
+three-step spawn and master-visibility checks in level12 missions1/2, with its
+descriptor checked against the ROM. Render/contact/rise remain open. See
+native-kaidan65-integration-2026-10-28.txt. BOOKSHELF158 remains unregistered
+and depends on switch actor213.
 
 The test route uses ordinary input only. It holds run while approaching and
 holds jump plus run while the retail player is actually in St_Crouch_Main. This

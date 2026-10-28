@@ -136,6 +136,7 @@ def main():
             ('pc_arrow_left_profile','daObjYajirusi_c_classInit_YAJIRUSI_L',98,0x0213c398),
             ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
             ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
+            ('pc_kaidan_profile','daTrsTrap_c_classInit_KAIDAN',63,0x0211ea10),
             ('pc_merry_go_round_profile','daTrsTrap_c_classInit_MERRYGOROUND',63,0x0211ea48),
             ('pc_teresapit_profile','daTrsTrap_c_classInit_TERESAPIT',63,0x0211ea64),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
@@ -153,6 +154,7 @@ def main():
             raise ValueError(f'{name}: factory does not point at the native constructor')
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
+    print('PASS: original KAIDAN65 native factory and full profile descriptor match overlay 63')
 
     base2,rom2=overlay(2)
     for label in ('data_ov002_0210e104','data_ov002_0210e0fc'):

@@ -114,7 +114,11 @@ def main():
         'picker only; earned campaign entry and other placements/courses remain ' +
         'unverified. Wario also completes a native profile160 trapdoor long-jump ' +
         'landing, tilt, natural settling and safe recovery. This is a diagnostic ' +
-        'level46 route; staircase65 and bookshelf158 remain unsupported. ' +
+        'level46 route. KAIDAN65 passes authored three-step spawn and master ' +
+        'visibility checks in level12 missions1/2; all three render, child links ' +
+        'are correct, and Mario lands on the second step in a muted test. ' +
+        'Third-step traversal, boss-triggered rise and lifecycle remain open. ' +
+        'Bookshelf158 remains unsupported. ' +
         'Selected original brick debris and the opening sleep-bubble pop render; '
         'Mario collects the brick coins and the original Yoshi restriction is preserved. '
         'Wider effects remain open. '
