@@ -1,6 +1,47 @@
 #pragma once
 #include "daObjFallBlock_c.h"
 
+// Input-only crossing QA. Observe the original linked-row reset before
+// returning across it; never accept a later respawn as a successful return.
+static bool pc_replay_fall_block_crossing() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_FALL_BLOCK_CROSSING");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!enabled||std::strcmp(enabled,"1")||!automation||std::strcmp(automation,"1")||
+       data_0209f2f8!=46)return false;
+    static unsigned phase=0;
+    if(!phase&&!replay_course_route_complete)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p||p->aliveState!=1)return false;
+    daObjFallBlock_c *row[7]={};
+    for(auto *a=dActor_c::FindWithActorID(66,nullptr);a;a=dActor_c::FindWithActorID(66,a)) {
+        auto *b=static_cast<daObjFallBlock_c *>(a);
+        if(b->mRestPos.z!=0)continue;
+        const int offset=b->mRestPos.x-2350*4096;
+        if(offset>=0&&offset<=600*4096&&offset%(100*4096)==0)
+            row[offset/(100*4096)]=b;
+    }
+    auto event=[&](const char *name){
+        std::fprintf(stderr,"[native falling-bridge crossing] event=%s tick=%llu phase=%u x=%d y=%d z=%d state=%s\n",
+            name,static_cast<unsigned long long>(ntr::rt_frame()),phase,p->mPosX,p->mPosY,p->mPosZ,pc_player_state_name(p));
+    };
+    if(!phase){phase=1;event("forward-bank-reached");}
+    bool reset=true;
+    for(auto *b:row)reset=reset&&b&&b->aliveState==1&&b->mState==0&&b->mReady;
+    if(phase==1&&reset&&!p->mIsAirborne&&!p->mIsNoControl&&!p->mIsControlDisabled) {
+        event("original-group-reset-observed");
+        phase=2;replay_course_route_waypoint=0;replay_course_route_complete=false;
+    }
+    if(phase==2) {
+        if(p->mPosY< -500*4096){phase=4;event("return-failed-fall");}
+        else if(!p->mIsNoControl&&!p->mIsControlDisabled) {
+            const bool driving=replay_course_route("46:3150:0:0:30:0,46:2150:0:0:40:0");
+            if(driving)return true;
+            if(replay_course_route_complete){phase=3;event("return-bank-reached");}
+        }
+    }
+    ntr::input_test_controls(true,0,0,0);return true;
+}
+
 // Opt-in ordinary-input recovery after the original fragile bridge gives way.
 // Actor state and player transforms are observed only.
 static bool pc_replay_fall_block_recovery() {
