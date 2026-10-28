@@ -8,7 +8,9 @@ static bool pc_replay_fall_block_crossing() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     if(!enabled||std::strcmp(enabled,"1")||!automation||std::strcmp(automation,"1")||
        data_0209f2f8!=46)return false;
-    static unsigned phase=0;
+    const char *cycle=std::getenv("SM64DS_PC_TEST_FALL_BLOCK_SCENE_CYCLE");
+    const bool scene_cycle=cycle&&!std::strcmp(cycle,"1");
+    static unsigned phase=0,visit=1,first_row_uid=0;
     if(!phase&&!replay_course_route_complete)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);
     if(!p||p->aliveState!=1)return false;
@@ -21,10 +23,42 @@ static bool pc_replay_fall_block_crossing() {
             row[offset/(100*4096)]=b;
     }
     auto event=[&](const char *name){
-        std::fprintf(stderr,"[native falling-bridge crossing] event=%s tick=%llu phase=%u x=%d y=%d z=%d state=%s\n",
-            name,static_cast<unsigned long long>(ntr::rt_frame()),phase,p->mPosX,p->mPosY,p->mPosZ,pc_player_state_name(p));
+        std::fprintf(stderr,"[native falling-bridge crossing] event=%s tick=%llu phase=%u x=%d y=%d z=%d state=%s visit=%u row_uid=%u\n",
+            name,static_cast<unsigned long long>(ntr::rt_frame()),phase,p->mPosX,p->mPosY,p->mPosZ,pc_player_state_name(p),
+            visit,row[0]?unsigned(row[0]->uniqueID):0);
     };
-    if(!phase){phase=1;event("forward-bank-reached");}
+    // The original wrong door reloads level46 at entrance2. Observe fresh
+    // actor identities before allowing a second crossing; never load a level
+    // or reset an actor from the test pilot itself.
+    if(scene_cycle&&phase==7) {
+        // Entrance2 is across the same gap from the fixed island. The initial
+        // diagnostic entrance drops directly onto that island, so its first
+        // walking waypoint cannot be reused until this ordinary jump lands.
+        if(!p->mIsNoControl&&!p->mIsControlDisabled) {
+            if(replay_course_route("46:0:0:1400:30:0,46:0:0:700:30:1,46:300:0:700:40:0"))return true;
+            if(replay_course_route_complete) {
+                event("original-entrance-island-reached");
+                phase=0;replay_course_route_waypoint=0;replay_course_route_complete=false;
+            }
+        }
+        ntr::input_test_controls(true,0,0,0);return true;
+    }
+    if(scene_cycle&&phase==5) {
+        if(row[0]&&row[0]->aliveState==1&&row[0]->uniqueID!=first_row_uid) {
+            visit=2;event("original-maze-scene-reloaded");
+            phase=7;replay_course_route_waypoint=0;replay_course_route_complete=false;
+        } else if(!p->mIsNoControl&&!p->mIsControlDisabled) {
+            // Align on the fixed central island before crossing the gap.
+            // A diagonal approach rides the spinning floor into the corridor
+            // wall. Live floor/line queries qualify the straight center path.
+            // The spinning floor can carry Wario around its center while he
+            // walks toward the fixed island. Use the normal route jump while
+            // leaving the floor so the reset-door path can reach solid ground.
+            if(replay_course_route("46:1500:0:-75:40:0,46:300:0:-75:35:1,46:300:0:700:40:0,46:0:0:700:25:0,46:0:0:1400:30:1,46:0:0:1950:30:0"))return true;
+        }
+        ntr::input_test_controls(true,0,0,0);return true;
+    }
+    if(!phase){phase=1;first_row_uid=row[0]?unsigned(row[0]->uniqueID):0;event("forward-bank-reached");}
     bool reset=true;
     for(auto *b:row)reset=reset&&b&&b->aliveState==1&&b->mState==0&&b->mReady;
     if(phase==1&&reset&&!p->mIsAirborne&&!p->mIsNoControl&&!p->mIsControlDisabled) {
@@ -38,6 +72,12 @@ static bool pc_replay_fall_block_crossing() {
             if(driving)return true;
             if(replay_course_route_complete){phase=3;event("return-bank-reached");}
         }
+    }
+    if(scene_cycle&&phase==3) {
+        if(visit==1) {
+            phase=5;replay_course_route_waypoint=0;replay_course_route_complete=false;
+            event("original-wrong-door-approach");
+        } else {phase=6;event("scene-cycle-complete");}
     }
     ntr::input_test_controls(true,0,0,0);return true;
 }

@@ -1,3 +1,6 @@
+CURRENT 2026-10-28: trapdoor160/TERESAPIT is natively registered with its original factory/profile/resources. Selected muted tests verify native contact, tilt, natural settling and safe recovery for Yoshi, Mario, Luigi and Wario. Read native-trapdoor160-integration-2026-10-28.txt. Testing used diagnostic level46 entry and prepared saves; earned course entry and other placements remain open. Staircase65 and bookshelf158 are unsupported. Full campaign/actor acceptance remains open.
+Historical updates follow in chronological order; newer dated entries supersede earlier status.
+
 UPDATE2026-10-27: Native falling-block66 and spinning-floor159 now pass selected diagnostic Luigi-maze/Mario contact/render/collapse/recovery. Four actual floor contacts, original shake/drop/collider disable/Kill/hidden wait, normal ledge jump and final grounded control; spinning-floor original128-unit rotation/rider callbacks verified. Muted5000-frame test/build/eight CTests/full native data audit pass; saves unchanged. Original sources/headers unchanged; symbol-only support5280. Read native-falling-block-and-spinning-floor-2026-10-27.txt. Full group rearm/respawn, repeat contact, bridge crossing/course unload-reentry, BBH interaction/earned entry/other characters remain open. Only159 is registered from shared furniture;65/158/160 unsupported. Static profiles77/1350 missing records/430 missing level-actor pairs are candidate counts, not full runtime acceptance.
 
 UPDATE2026-10-27: Native arrow signs299/300 now pass selected Mario collision and original Battlefield course reentry. Both directions show real player wall ownership, live mesh queries/render, old-five destruction and fresh-five reset. Native build8tests/full descriptor/resource/callback audit pass. Original actor/header unchanged; symbol-only support5274. Read native-arrow-signs-verified-2026-10-27.txt. Other courses/characters/destruction attacks/fullcampaign remain open. Static registered profiles75 does not prove complete actor coverage.
@@ -233,5 +236,14 @@ Full-route update: The previously documented complete stairwell route now passes
 
 Update 2026-10-25: Secret Slide special floor types15 and16 now start/stop the recovered Timer in a natural muted entry test, and the PC HUD displays elapsed time beside the minimap counters. Timed Star actor178/param66 spawns at the finish. The visible finish-line marker/geometry is still unverified; see native-secret-slide-timer-hud-2026-10-25.txt. Full actor coverage remains open.
 
+
+
+UPDATE2026-10-28: Current-build Battlefield original Mission1/Mission2 runtime
+actor censuses re-confirmed both lifts (actor29), the seesaw bridge (39), and
+two switch gates (40) in both missions. Koopa188 and finish flag205 appear only
+in Mission2. Two original-menu muted runs, eight focused CTests, unchanged
+isolated saves, exit0/audio errors0/device samples0. No spawn regression or code
+change. Read native-battlefield-actor-spawn-current-2026-10-28.txt. This selected
+comparison does not complete the user's full cross-course actor coverage audit.
 
 

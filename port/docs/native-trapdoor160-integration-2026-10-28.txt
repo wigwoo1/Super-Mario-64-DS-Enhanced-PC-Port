@@ -1,0 +1,28 @@
+Native tilting trapdoor160 - 2026-10-28
+
+Status: VERIFIED for selected muted contact, tilt, settling and recovery tests.
+
+The native actor table registers the original TERESAPIT profile160 and its
+compiler-owned factory. The descriptor matches the original profile metadata;
+the existing recovered four-mode class and original resource rows are used.
+No original actor source or header was modified. Staircase65 and bookshelf158
+remain unregistered; the bookshelf also depends on switch actor213.
+
+The test route uses ordinary input only. It holds run while approaching and
+holds jump plus run while the retail player is actually in St_Crouch_Main. This
+is needed because a one-frame button pulse can be missed by the input poll. The
+change is confined to opt-in test automation; gameplay physics, actor behavior,
+collision and saves are unchanged.
+
+A fresh muted Wario run entered the diagnostic maze and completed a real native
+long jump onto trapdoor UID83. The actor recorded 68 grounded contact samples
+and 34 standing samples; the trapdoor tilted and naturally settled. Wario then
+jumped to the safe bank and finished grounded with normal controls, without a
+death or reload. Both isolated save files stayed byte-identical. Device output
+was muted with zero submitted nonzero samples, zero audio errors and process
+exit code 0. The strict acceptance check passed; the native build and nine
+focused CTests passed.
+
+Selected contact, tilt and safe-recovery checks also exist for Yoshi, Mario and
+Luigi. All tests use diagnostic entry and prepared saves; they do not establish
+earned course entry, other actor placements, or complete game behavior.

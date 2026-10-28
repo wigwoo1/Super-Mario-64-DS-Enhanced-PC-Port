@@ -116,6 +116,7 @@ def main():
             ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
             ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
             ('pc_merry_go_round_profile','daTrsTrap_c_classInit_MERRYGOROUND',63,0x0211ea48),
+            ('pc_teresapit_profile','daTrsTrap_c_classInit_TERESAPIT',63,0x0211ea64),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
@@ -202,7 +203,7 @@ def main():
         if merry_vtable[slot]!=arrow_method('?'+method+'@daTrsTrap_c@@'):
             raise ValueError('Spinning-floor native virtual callback mismatch: '+method)
     if merry_vtable[16]!=arrow_method('??_GdaTrsTrap_c@@'):raise ValueError('Spinning floor lacks native deleting destructor')
-    print('PASS: original spinning-floor159 profile/factory, three canonical four-row resources/CLPS, four native state dispatches and six virtual callbacks')
+    print('PASS: original spinning-floor159 and trapdoor160 profiles/factories, three canonical four-row resources/CLPS, four native state dispatches and six virtual callbacks')
     switch_records=records(ROOT)
     for label in ('data_ov002_0210d8b4','data_ov002_0210d774'):
         row=next(item for item in switch_records if item['name']==label)

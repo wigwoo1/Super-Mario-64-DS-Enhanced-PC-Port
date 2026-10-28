@@ -307,6 +307,10 @@ extern "C" void *daSetSE_c_classInit();
 extern "C" void *daObjHeart_c_classInit();
 extern "C" void *daObjTh_Fall_Block_c_classInit();
 extern "C" void *daTrsTrap_c_classInit_MERRYGOROUND();
+extern "C" void *daTrsTrap_c_classInit_TERESAPIT();
+static PcNativeActorProfile pc_teresapit_profile = {
+    (void *)&daTrsTrap_c_classInit_TERESAPIT,160,57,0,0x64000,0x64000,0x1000000,0xa00000
+};
 static PcNativeActorProfile pc_merry_go_round_profile = {
     (void *)&daTrsTrap_c_classInit_MERRYGOROUND,159,56,0,0x64000,0x64000,0x1000000,0xa00000
 };
@@ -588,6 +592,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[300] = &pc_arrow_right_profile;
     data_020a4bb8_storage[66] = &pc_th_fall_block_profile;
     data_020a4bb8_storage[159] = &pc_merry_go_round_profile;
+    data_020a4bb8_storage[160] = &pc_teresapit_profile;
     data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;
     data_020a4bb8_storage[345] = &pc_feather_profile;
     data_020a4bb8_storage[276] = &pc_oneup_profile;

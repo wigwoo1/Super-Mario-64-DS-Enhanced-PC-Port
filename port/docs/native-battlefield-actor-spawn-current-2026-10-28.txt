@@ -1,0 +1,15 @@
+Battlefield actor spawn comparison - 2026-10-28
+
+Status: VERIFIED for the selected original Mission 1 and Mission 2 starts.
+
+Two isolated muted runs used the original title, save and course-selection flow,
+with Mario and the same one-Star diagnostic save. In both missions the live
+scene contained three actor-ID-29 records, including the authored lifts with
+parameters 2 and 7; one actor-ID-39 seesaw bridge; and two actor-ID-40 switch
+gates. The lifts moved between samples. Mission 2 also spawned actor 188 (Koopa
+the Quick) and actor 205 (the finish flag); Mission 1 correctly did not.
+
+Both processes exited successfully, native audio reported no errors or output
+samples, and isolated saves remained unchanged. This confirms the selected
+Battlefield objects and the mission filter. It does not establish complete
+object coverage in Battlefield or any other course. No gameplay code changed.

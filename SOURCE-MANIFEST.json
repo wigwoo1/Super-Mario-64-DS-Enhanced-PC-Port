@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "8da14fc8f2d9274978e77c5efd9f73cef4257a3694ad538f773b505ffe59147f",
-      "bytes": 32193
+      "sha256": "e24b88190fc81336bf88bdcad0c49006c5c1dd451f75754a5a7bd4567942ed45",
+      "bytes": 33332
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6527,6 +6527,11 @@
       "path": "port/docs/native-basement-drainage-2026-10-23.txt",
       "sha256": "79541ce875996ef49f37346bfef0b99f5dc28282faa3774b490a59f55f388067",
       "bytes": 2960
+    },
+    {
+      "path": "port/docs/native-battlefield-actor-spawn-current-2026-10-28.txt",
+      "sha256": "6304eb475c85a7fc4a6953e60e8ab987268b3d8d8471c82fd8240fbe30c1cd23",
+      "bytes": 897
     },
     {
       "path": "port/docs/native-battlefield-bridge-probe-2026-10-24.txt",
@@ -6755,8 +6760,13 @@
     },
     {
       "path": "port/docs/native-falling-bridge-crossing-2026-10-27.txt",
-      "sha256": "b4331e9219dc0d81e17bb4cd453e1ff17d7042f6a3316f62c077a792435bece6",
-      "bytes": 4757
+      "sha256": "030b2ea83c03577be1663414d7936e1b3563ad2c137591ecb880e10ccaf05948",
+      "bytes": 5392
+    },
+    {
+      "path": "port/docs/native-falling-maze-scene-cycle-2026-10-28.txt",
+      "sha256": "d076b64ecb6d590f6cf68a8f75bc5c27423de0baa8736feb24e0f9e4f3814bb0",
+      "bytes": 1032
     },
     {
       "path": "port/docs/native-feather-music-abi-2026-10-27.txt",
@@ -7219,6 +7229,11 @@
       "bytes": 2863
     },
     {
+      "path": "port/docs/native-trapdoor160-integration-2026-10-28.txt",
+      "sha256": "da7a5d0e257fc9c031ed0abef6e8644fadebafcad74f6a1c6f6905f23b240777",
+      "bytes": 1652
+    },
+    {
       "path": "port/docs/native-trees-2026-10-21.txt",
       "sha256": "6973649fdc69e444e2f5ab882fcb43222f47c6a5407a1d6295b4032bbcd35c06",
       "bytes": 3714
@@ -7330,8 +7345,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "f9e62754fb35d554351cebec5e4befd21e1f39e846f0cbfb4916a678df26c4d4",
-      "bytes": 17648
+      "sha256": "9f36da46dccf89491f8f8614271f37c47ee9f104a6764c42ed19cdcd9e8e6858",
+      "bytes": 18099
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7485,8 +7500,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "1f94df427e5e3ad28d38b2de0858c12361a4fd1d60327105d1d62e8b192044c0",
-      "bytes": 44589
+      "sha256": "8cea6b251590ca49f87a5f60a3e327b6bde81538b6a6058df7fce7d15be4053d",
+      "bytes": 44842
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7615,8 +7630,8 @@
     },
     {
       "path": "port/hal/fall_block_replay.h",
-      "sha256": "536acc67a594a6ac8826d6f779555876a02c06881b4bccec1039bca35dc562ee",
-      "bytes": 7491
+      "sha256": "f3fc0327e0ee2d539e02357ad7d05f61639e521ce820a66707a3758938d7ed9b",
+      "bytes": 9956
     },
     {
       "path": "port/hal/float_bits.cpp",
@@ -7945,8 +7960,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "4b80d4976a7368f02ac32522fdace28cf96e934c474f01798a35678e097ebdbc",
-      "bytes": 181561
+      "sha256": "525e61209de8118b4f81f3f1aab977a0c79f082f99f5c553f0e62a4e9f728d9c",
+      "bytes": 186330
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8910,8 +8925,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "da0f4b05132c1bab1f5bcd7ce05c94b5b19cdbdc9fd6c9689ad654f55ddd25e1",
-      "bytes": 47494
+      "sha256": "0b0ab459c7c175e93682476b967463cb440d2a03ba2fac5cc15b0d498b2f1be4",
+      "bytes": 47546
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9050,8 +9065,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "497c0a3eea06d46e16cd13a14ecede0f03cc5971acca4b8f362f6f565fe81061",
-      "bytes": 42199
+      "sha256": "fbb770ab4e0be380803d201a7a4e2a80273d347ad0aa9a51cce382248d7e8bf3",
+      "bytes": 42304
     },
     {
       "path": "port/tools/check_native_crate_carry.py",
@@ -9325,8 +9340,8 @@
     },
     {
       "path": "port/tools/merry_go_round_host.py",
-      "sha256": "510fdf048f4f53831bc289e9f5a2af9db6685c261f52350d014deb5102f965ed",
-      "bytes": 5499
+      "sha256": "22950a90309d630db5c8e2454eebf08616c58d3e99bbfb6be52dc5c72b1b0cf0",
+      "bytes": 5735
     },
     {
       "path": "port/tools/minigame_data.py",
@@ -9345,8 +9360,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "20aeae9561667a0903de8c86f18375c229058d150c0f2f9332d5c754e9879ad4",
-      "bytes": 13144
+      "sha256": "b4943a585037773d8a4596f63e5ae638e9d1e5cbd97b1215ce5b43710d751720",
+      "bytes": 13354
     },
     {
       "path": "port/tools/native_kit_data.py",

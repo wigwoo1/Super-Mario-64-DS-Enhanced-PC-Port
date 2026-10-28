@@ -1,0 +1,18 @@
+Falling-block maze scene lifecycle - 2026-10-28
+
+Status: VERIFIED for selected diagnostic runs with Yoshi, Mario, Luigi and Wario.
+
+Each character crossed all seven native falling tiles in both directions with
+recorded grounded contact. The original room reset door triggered a full scene
+reload; the old falling-block row and spinning floor were destroyed, and fresh
+actors with matching placements and usable collision were created. Each
+character then crossed the new row in both directions and returned to the near
+bank safely. Tests used isolated prepared saves and muted audio; the saves were
+unchanged and each runtime exited successfully without audio errors or device
+output.
+
+This proves the selected actor interaction and original reset-door lifecycle in
+the diagnostic Luigi's portrait maze route. It does not prove earned castle
+entry, Pause/Exit Course re-entry, other courses or placements, or the full
+campaign. The tests do not change actor state, player pose, physics, collision
+rules or save progression to pass.

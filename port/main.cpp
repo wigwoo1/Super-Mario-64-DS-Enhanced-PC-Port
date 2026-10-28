@@ -717,13 +717,37 @@ static bool replay_course_route(const char *route_override=nullptr) {
         }
         // Optional QA route mode 3: ordinary running crouch/jump inputs for
         // a wide gap. Never change player position, velocity or actor state.
+        static uint64_t route3_launch=0;
+        static bool route3_jump_command=false,route3_long_jump=false;
         if(jump==3) {
-            static uint64_t launch=0;
-            if(horizontal<1750*4096.0 && !player->mIsAirborne &&
-               !std::strcmp(state,"St_Walk_Main") && tick>=next_jump) {
-                launch=tick;next_jump=tick+100;
+            if(horizontal<1600*4096.0 && !player->mIsAirborne &&
+               !std::strcmp(state,"St_Walk_Main") && player->mHorzSpeed>0x18000 && tick>=next_jump) {
+                route3_launch=tick;next_jump=tick+100;
+                route3_jump_command=false;route3_long_jump=false;
+                std::fprintf(stderr,"[native trapdoor replay] runway tick=%llu speed=%d\n",
+                    static_cast<unsigned long long>(tick),player->mHorzSpeed);
             }
-            if(launch && tick-launch<18)buttons|=(tick-launch<6 ? 0x100:0x102);
+            // Retail crouch chooses LongJump only above 0xa000 speed.
+            // Keep R held while running, then hold B+R only during the real
+            // crouch state. The input poll can miss a single-frame press; the
+            // state-specific hold ensures retail crouch consumes it, while
+            // releasing outside crouch avoids turning another move into jump.
+            if(route3_launch && tick-route3_launch<18) {
+                if(!std::strcmp(state,"St_Walk_Main"))buttons|=0x100;
+                else if(!std::strcmp(state,"St_Crouch_Main")) {
+                    buttons|=0x102;
+                    if(!route3_jump_command) {
+                        route3_jump_command=true;
+                        std::fprintf(stderr,"[native trapdoor replay] long-jump-input tick=%llu speed=%d timer=%d\n",
+                            static_cast<unsigned long long>(tick),player->mHorzSpeed,player->mStateTimer);
+                    }
+                }
+            }
+            if(route3_jump_command && !route3_long_jump && !std::strcmp(state,"St_LongJump_Main")) {
+                route3_long_jump=true;
+                std::fprintf(stderr,"[native trapdoor replay] long-jump tick=%llu speed=%d\n",
+                    static_cast<unsigned long long>(tick),player->mHorzSpeed);
+            }
         }
         // Route mode 2 takes off with a neutral stick. Retail Wait prioritizes
         // entering Walk over the jump edge when both arrive together. Keep
@@ -795,7 +819,9 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // transient jump arcs. Only advance after the player has landed at
         // the requested height; otherwise an overhead stair edge can make
         // the route skip forward while the player falls back to the lower floor.
-        if(horizontal_reached && height_reached) {
+        const char *trapdoor_recovery=std::getenv("SM64DS_PC_TEST_TRAPDOOR_RECOVERY");
+        const bool trapdoor_mode=level==46 && jump==3 && trapdoor_recovery && !std::strcmp(trapdoor_recovery,"1");
+        if(horizontal_reached && height_reached && !trapdoor_mode) {
             if(has_y)
                 std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d,%d tick=%llu\n",
                     waypoint,level,x,y,z,static_cast<unsigned long long>(ntr::rt_frame()));
@@ -822,6 +848,55 @@ static bool replay_course_route(const char *route_override=nullptr) {
             if(jump==3)magnitude=32767;
             sx=static_cast<int16_t>(std::sin(angle)*magnitude);
             sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+        }
+        // Optional maze trapdoor QA: retail stick braking gives a real rider
+        // callback, then a running jump leaves the tilting floor for its bank.
+        if(trapdoor_mode) {
+            static uint64_t landed=0,recovery=0,jump_off=0;
+            static bool seen_airborne=false,recovered=false;
+            if(route3_launch && !std::strcmp(state,"St_LongJump_Main") && !recovery) {
+                seen_airborne=true;
+                if(player->mVertSpeed<0){sx=-sx;sy=-sy;}
+            }
+            if(seen_airborne && !player->mIsAirborne && !landed) {
+                landed=tick;
+                std::fprintf(stderr,"[native trapdoor replay] landed tick=%llu\n",static_cast<unsigned long long>(tick));
+            }
+            if(landed && !recovery) {
+                buttons=0;sx=sy=0;
+                // Land consumes a pressed edge, not a continuously held
+                // jump. Mario lands on the opposite side of this trapdoor;
+                // leave it before its growing tilt starts a butt slide.
+                if(player->mCharacter==0 && !std::strcmp(state,"St_Land_Main") &&
+                   tick>=landed+4 && player->mStateTimer==0) {
+                    recovery=tick;jump_off=tick;
+                    std::fprintf(stderr,"[native trapdoor replay] jump-off tick=%llu\n",static_cast<unsigned long long>(tick));
+                } else if(!std::strcmp(state,"St_Wait_Main") && tick>=landed+20) {
+                    recovery=tick;
+                    std::fprintf(stderr,"[native trapdoor replay] run-up tick=%llu\n",static_cast<unsigned long long>(tick));
+                }
+            }
+            if(recovery) {
+                if(!jump_off && !player->mIsAirborne && !std::strcmp(state,"St_Walk_Main") && player->mHorzSpeed>=0xa000) {
+                    jump_off=tick;
+                    std::fprintf(stderr,"[native trapdoor replay] jump-off tick=%llu\n",static_cast<unsigned long long>(tick));
+                }
+                buttons=jump_off && tick-jump_off<8?2:0;
+                const double bank_dx=3500*4096.0-player->mPosX;
+                const double bank_dz=-3900*4096.0-player->mPosZ;
+                const double distance=std::hypot(bank_dx,bank_dz);
+                {
+                    const double angle=std::atan2(bank_dx,bank_dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    const double magnitude=(std::min)(22000.0,distance/(180*4096.0)*22000.0);
+                    sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+                }
+                if(!recovered && jump_off && tick>jump_off+12 && !player->mIsAirborne && distance<100*4096.0) {
+                    recovered=true;
+                    std::fprintf(stderr,"[native trapdoor replay] safe-bank tick=%llu\n",static_cast<unsigned long long>(tick));
+                }
+                if(recovered){buttons=0;sx=sy=0;}
+            }
         }
     }
     ntr::input_test_controls(true,buttons,sx,sy);

@@ -73,3 +73,7 @@ return3491 and every-tile contacts in both directions:
 native-muted-audio-walk-falling-bridge-mario-wrapper-proof-20261027-20261021.
 Both Mario cases pass the stricter checker, and the previous Yoshi proof still
 passes its original scoped checks after the character-container parser correction.
+
+2026-10-28: Original maze reset-door full reload and Yoshi two-way recross now VERIFIED. See native-falling-maze-scene-cycle-2026-10-28.txt. Opt-in QA route only; no gameplay/closure change, no publication or kit refresh. Private runtime evidence remains excluded. Prior accepted kit remains unchanged.
+
+2026-10-28 CURRENT: Mario original reset/reload/two-way recross VERIFIED with interval1 contact recording. Old interval5 samples missed grounded tile203 ticks5496-5499. No gameplay changes; see native-falling-maze-scene-cycle-2026-10-28.txt CURRENT section. Private scripts/evidence stay excluded; no kit refresh/public mutation.

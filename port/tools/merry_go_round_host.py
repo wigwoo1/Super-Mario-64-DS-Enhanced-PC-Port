@@ -1,6 +1,6 @@
 """Native resource identities for the recovered spinning-floor class.
 
-Only MERRYGOROUND159 is registered. Its other three factory variants keep
+MERRYGOROUND159 and TERESAPIT160 are registered. The other two factory variants keep
 their original implementation but require independent integration/acceptance.
 """
 import re
@@ -20,6 +20,8 @@ def transform(root, text):
         assert struct.unpack_from('<4I',raw,address-base)==expected
     assert struct.unpack_from('<IHHIiiii',raw,0x211ea48-base)==(
         0x211d2e0,159,56,0,0x64000,0x64000,0x1000000,0xa00000)
+    assert struct.unpack_from('<IHHIiiii',raw,0x211ea64-base)==(
+        0x211d2a0,160,57,0,0x64000,0x64000,0x1000000,0xa00000)
     for kind in ('TrsTrapModelFilePtr','TrsTrapCollisionFilePtr'):
         pattern=rf'{kind}\(unsigned int (\w+)\) \{{ pc_sharedfile_handle_construct\(this, \1\); \}}'
         text,count=re.subn(pattern,lambda m:f'{kind}(unsigned int {m[1]}) {{words[0]={m[1]};words[1]=0;}}',text)
@@ -31,13 +33,14 @@ static void pc_merry_init_files();
 static void pc_merry_observe(const char *event,daTrsTrap_c *self) {
     const char *path=std::getenv("SM64DS_PC_MERRY_TRACE");if(!path||!*path)return;
     static FILE *file=nullptr;
-    if(!file){file=std::fopen(path,"w");if(file)std::fputs("event,tick,uid,actor,x,y,z,index,state,timer,angle,speed,standing,visible,collider,model,alive\n",file);}
-    if(file){std::fprintf(file,"%s,%llu,%u,%u,%d,%d,%d,%d,%u,%u,%d,%d,%u,%u,%d,%u,%u\n",event,
+    if(!file){file=std::fopen(path,"w");if(file)std::fputs("event,tick,uid,actor,x,y,z,index,state,timer,angle,speed,standing,visible,collider,model,alive,tilt,tilt_speed,area\n",file);}
+    if(file){std::fprintf(file,"%s,%llu,%u,%u,%d,%d,%d,%d,%u,%u,%d,%d,%u,%u,%d,%u,%u,%d,%d,%d\n",event,
         static_cast<unsigned long long>(ntr::rt_frame()),unsigned(self->uniqueID),unsigned(self->actorID),
         self->mPosX,self->mPosY,self->mPosZ,self->mIndex,unsigned(self->mState),unsigned(self->mStateTimer),
         int(self->mAngleY),int(self->mAngVelY),self->mStandingActor?unsigned(self->mStandingActor->uniqueID):0,
         unsigned(self->mVisible),int(self->mMovingMeshCollider.IsEnabled()),
-        unsigned(reinterpret_cast<std::uintptr_t>(self->mModel.data.modelFile)),unsigned(self->aliveState));std::fflush(file);}
+        unsigned(reinterpret_cast<std::uintptr_t>(self->mModel.data.modelFile)),unsigned(self->aliveState),
+        int(self->mAngleX),int(self->mAngVelX),int(self->mAreaId));std::fflush(file);}
 }
 '''
     anchor='// @symbol _ZN11daTrsTrap_cD1Ev';assert text.count(anchor)==1

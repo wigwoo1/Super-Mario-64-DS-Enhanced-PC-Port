@@ -19,13 +19,19 @@ Audio listening accuracy and complete gameplay remain unverified.
   Mario checks in Luigi's ghost-house maze. The block receives real player
   contact, shakes, drops and disables collision; normal ledge input restores
   Mario to the bank. The spinning floor renders, rotates and supports him.
-  Yoshi and Mario each cross the selected seven-tile row in both directions
-  with grounded contact on every tile. The group resets after outward crossing;
-  both characters reach the opposite bank and return safely. This is a prepared
-  diagnostic course replay, not earned campaign entry. Course unload/re-entry,
-  Big Boo's Haunt interaction and broader character/placement coverage remain
-  unverified;
+  Yoshi, Mario, Luigi and Wario each cross the selected seven-tile row in both
+  directions with grounded contact on every tile. The group resets after outward
+  crossing; each character returns safely. Each also passes the original room
+  reset door and a full scene reload, then crosses again on newly created tiles.
+  This uses prepared diagnostic saves, not earned campaign entry. Other courses
+  and placements remain unverified;
   see `port/docs/native-falling-block-and-spinning-floor-2026-10-27.txt`.
+- The original level46 tilting trapdoor (profile160) now receives a real native
+  long-jump landing, tilts, settles naturally, and allows a safe jump back to
+  solid ground in a muted Wario replay. This is an isolated diagnostic route;
+  earned course entry and other variants/placements remain unverified.
+  Staircase65 and bookshelf158 are not registered;
+  see `port/docs/native-trapdoor160-integration-2026-10-28.txt`.
 - The original course/Star selector now uses one composed screen, with its
   character face and controls below the score. Selected Mario tests verify
   controller-style Mission 1 navigation in 4:3, inverse-mapped face-click

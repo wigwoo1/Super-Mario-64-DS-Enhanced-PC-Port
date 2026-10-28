@@ -108,11 +108,13 @@ def main():
         'walks through. Original Exit Course/painting re-entry resets the switch and '
         'gates; Mario presses and passes through again. Broader variants remain unverified. '
         'The native seven-tile falling-block row in level46 has selected muted, ' +
-        'two-way crossings for Yoshi and Mario. All seven tiles receive grounded ' +
-        'contact, reset after outward crossing, and both characters return safely. ' +
-        'Prepared diagnostic saves/course picker only; earned campaign entry, course ' +
-        'unload/re-entry, other characters/placements and spinning-floor lifecycle ' +
-        'remain unverified. ' +
+        'two-way crossings and original reset-door scene reload checks for Yoshi, ' +
+        'Mario, Luigi and Wario. All seven tiles receive grounded contact and the ' +
+        'fresh row is crossed again after reload. Prepared diagnostic saves/course ' +
+        'picker only; earned campaign entry and other placements/courses remain ' +
+        'unverified. Wario also completes a native profile160 trapdoor long-jump ' +
+        'landing, tilt, natural settling and safe recovery. This is a diagnostic ' +
+        'level46 route; staircase65 and bookshelf158 remain unsupported. ' +
         'Selected original brick debris and the opening sleep-bubble pop render; '
         'Mario collects the brick coins and the original Yoshi restriction is preserved. '
         'Wider effects remain open. '
