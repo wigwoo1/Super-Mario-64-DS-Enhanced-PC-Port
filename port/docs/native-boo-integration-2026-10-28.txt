@@ -1,0 +1,126 @@
+UPDATE 2026-10-29: Continuous five-clear prerequisite VERIFIED
+All five original Mission1 Boos now defeated in one uninterrupted visit with
+five distinct collected blue-coin drops. Same boss counter reaches five and
+Big Boo activates (state1, visible, hp3). Final grounded Mario Wait/control,
+full health, exit0, muted device output and unchanged isolated saves verified
+by port/tools/check_native_boo_five_credit.py. Original first four encounters
+retain their exact death timestamps; only fifth-encounter test input enables
+punch pulses during waypoint settling. Original gameplay remains unchanged.
+EXE e4bb95e4c2f5cb9e0ec5758fdc2a16cdb99f090f35cbf792c565efe0ffbaaf68.
+The prerequisite replay deliberately ends just after activation. A longer
+exploratory replay left Mario idle and the active boss defeated him. Big Boo
+combat, Star, staircase rise and course lifecycle remain UNVERIFIED.
+This update supersedes historical five-clear limitations below. No release
+kit reconstruction or stable-install promotion is asserted by this test.
+Native Boo and Big Boo integration - 2026-10-28
+
+Status: PARTIALLY VERIFIED. All five ordinary first-mission Boo placements
+have now been defeated across separate native replays. Three were verified
+in one course lifetime with the main-hall counter reaching 3; the other two
+were verified together through the original rear entrance. A continuous
+five-clear run, active Big Boo fight, Star reward and staircase rise remain
+unverified.
+
+The native actor registry now uses the recovered factories for TERESA209,
+BOSS_TERESA210, ICON_TERESA211 and T_BASKET212. All descriptor priorities,
+flags and clipping distances are checked against the original overlay63.
+The recovered actor implementation and header are unchanged.
+
+The PC transformation defers seven resource handle constructors until the
+native resource system is ready. The original models/animations and state
+handlers are retained. Compile assertions check the 0x5e0 layout and variant
+offset. The full native-data audit checks all four profiles, seven resource
+owners and seven compiler-owned callbacks. Boo's carried blue/red coin model
+references now share the live engine handles; duplicate generated copies caused
+the first runtime test to crash during a small Boo's model setup.
+
+The King Boo mirror cutscene contains an overlay-address ambiguity in the
+recovered source. The PC transformation uses the existing overlay55 Luigi
+appearance helper and fade-state variable, rather than an unrelated overlay27
+ice-block method at the same DS address. This corrects the native link path;
+the King Boo cutscene itself has not been runtime accepted.
+
+Muted Mission1 tests use the original selector after diagnostic level12 entry
+and an isolated prepared Mario save. Five first-mission Boos, another ordinary
+Boo, and two original Big Boo variants initialize with genuine models and
+collision. The selected right-side-room Boo chases Mario and links to the
+main-hall boss. Ordinary attack input produces its original hit/death sequence;
+its blue coin is collected for five course coins. A nearby red coin adds two
+more coins. Mario returns through the original room door to the main hall;
+the same boss's prerequisite counter is then 1, with all three hit points and
+the original hidden waiting state. All three Mission1 staircase pieces are
+observed hidden and untriggered after their master links them.
+
+A second accepted Mission1 run continues from that hall into the north room
+through its original door. The distinct area5 Boo chases Mario and links to
+the same main-hall boss. Ordinary punch input defeats it; its separate blue
+coin adds exactly five coins (7 to 12). After returning through the same door,
+the same boss's live prerequisite counter is 2, with HP3 and the hidden waiting
+state preserved. The three Mission1 stairs remain hidden and untriggered.
+This 16,000-frame run exits0 with normal grounded Mario Wait/control, muted
+device output, zero audio errors and byte-identical isolated saves.
+check_native_boo_second_credit.py checks both distinct initial actors, chase
+links, hit/death sequences, spatially and temporally matched five-coin drops,
+the counter sequence 0/1/2, hall return and save preservation. It rejects the
+earlier Mission2 diagnostic before evaluating actor or reward results.
+The game executable is unchanged; only the input replay, its level-specific
+mission assertion, acceptance checker and documentation changed for this test.
+
+A third accepted Mission1 run defeats a different original area2 Boo, UID85 at
+(3000,50,400), after defeating the previously accepted area2 UID86 and area5
+UID98. Each of the three ghosts chases and links to the same hall Big Boo UID59,
+then completes its original hit/death sequence. Their separate blue coins are
+collected for exactly five course coins apiece. After the third room return,
+Big Boo's live prerequisite counter is 3; its HP remains 3 and it stays in its
+hidden waiting state. Mario reaches the main hall grounded with control enabled.
+The 36,000-frame run exits0, audio is muted with zero device samples/errors,
+and isolated save files are byte-identical. Private checker
+work/check_native_boo_third_credit_20261028.py records the accepted run at
+work/native-muted-audio-walk-native-boo-third-east-room2-luna-medium-r5-20261028-20261021.
+No game source or executable changed for this third-defeat milestone; the
+test-only route was extended with safe return waypoints.
+
+The next room-entry investigation corrected a replay error: targeting a plain
+door's center makes the replay turn back after the original door animation
+places Mario beyond that point, retriggering the opposite-side traversal.
+Targeting a point beyond the door fixes the main-hall-to-area6 route without
+changing native door behavior. The portrait-side approach does not establish
+access to the two remaining ghosts. Original overlay20 door records confirm
+a rear door connects outside area0 directly to area6. A walking route around
+the mansion, an ordinary jump onto its raised rear porch and a target beyond
+the rear doorway successfully enter the ghost room.
+
+The accepted rear-entry Mission1 run defeats original area6 UIDs102 and103
+(homes -1800,50,-800 and -1520,50,-1200), both linked to the same hall boss59.
+Hits6255/6455, deaths6295/6475 and separate blue-coin pickups6282/6550 prove
+two +5 payouts, for course total10. Final16000 is grounded Mario Wait with
+controls enabled; exit0, muted device output, audio errors0 and byte-identical
+isolated saves. check_native_boo_rear_entry.py checks the door approach/crossing,
+original actor identities, chase links, hit/death and reward matches, final
+control, executable hash and save preservation. The earlier three-clear run
+is a separate lifetime; this does not prove counter4/5 or boss activation.
+Native build reports no work, and seven focused CTests pass. Executable hash
+is unchanged. One mid-dialogue capture needs separate settled-text visual
+inspection; this encounter check does not claim complete dialogue graphics.
+
+The accepted 11,000-frame run exits0 with normal Mario Wait/control, no audio
+errors, zero nonzero device samples and byte-identical isolated saves. The
+portable check_native_boo_first_credit.py checks actual actor state, reward
+collection, the boss credit after room return, native render submissions and
+save preservation. Seven focused CTests and the full native actor-data audit
+pass. Two reviewed symbol-only build-support entries were added; fresh local
+data generation exactly matches the linked data source (zero unknown symbols).
+
+Earlier diagnostics: the first build exposed duplicate coin resource storage;
+the first room route crossed an authored opening into basement water. The
+accepted route follows the original collision mesh around that opening.
+
+Test executable SHA256:
+7bbbb5caf176bcd36e41050f034e768eee802ddf9f69c379337619756b6ee53b
+
+Limits: prepared QA save and diagnostic initial entry. One continuous set of
+all five prerequisite defeats, active boss combat, Star collection, staircase
+rise, course re-entry, cap variants, rooftop, merry-go-round and King Boo remain
+unverified. No stable-install promotion, new build-kit release or full-game
+completion is asserted.
+

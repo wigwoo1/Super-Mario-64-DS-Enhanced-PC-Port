@@ -15,6 +15,13 @@ Audio listening accuracy and complete gameplay remain unverified.
 
 ## Current state
 
+- Native Boo, Big Boo, bookshelf and book-switch factories load their original
+  resources. Selected muted tests verify the five-Boo prerequisite sequence,
+  Big Boo defeat and Star spawn, and a separate three-book puzzle opening.
+  These are diagnostic checks, not complete campaign acceptance. Original
+  castle-to-courtyard travel is verified with an isolated 20-Star fixture;
+  the entrance-Boo approach currently catches on obstacles, and cage entry,
+  full course re-entry and bookshelf reset remain unverified.
 - Native falling blocks and the original spinning floor now have selected
   Mario checks in Luigi's ghost-house maze. The block receives real player
   contact, shakes, drops and disables collision; normal ledge input restores
@@ -32,8 +39,8 @@ Audio listening accuracy and complete gameplay remain unverified.
   earned course entry and other variants/placements remain unverified.
   The recovered staircase65 factory creates all three original steps in
   level12 missions 1 and 2. Muted tests verify all three render, child links,
-  first step contact and a jump onto the second step. The third step, boss
-  trigger and lifecycle remain open. Bookshelf158 remains unsupported and depends on switch213; see
+  contact on all three steps and a jump onto the upper landing. Boss-triggered rise has separate selected runtime evidence. Full lifecycle
+  remains open. Bookshelf158 and switch213 are connected; see
   `port/docs/native-kaidan65-integration-2026-10-28.txt` and
   `port/docs/native-trapdoor160-integration-2026-10-28.txt`.
 - The original course/Star selector now uses one composed screen, with its

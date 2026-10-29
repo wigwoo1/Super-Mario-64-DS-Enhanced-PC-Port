@@ -1,3 +1,5 @@
+CURRENT 2026-10-28: Native Boo209/Big Boo210/icon211/basket212 factories and original resource startup are connected. Two distinct authored Mission1 Boo chases, ordinary attack defeats, separate five-coin pickups and main-hall boss prerequisite counter0/1/2 are verified after original room returns. All three Mission1 stairs stay hidden/untriggered. Build, seven focused CTests, full native actor-data audit and strict muted runtime checkers pass; isolated saves unchanged. Active Big Boo combat, three prerequisite Boos, Star reward and staircase rise remain open. Read native-boo-integration-2026-10-28.txt. All-three-step climb/upper landing in Mission2 is separately verified. Full campaign remains incomplete.
+
 UPDATE 2026-10-28: Original-input ramp jump and hall door entry now verified.
 All three native staircase pieces render; both children have the correct parent,
 visibility and enabled collision after linking. Mario lands and remains grounded

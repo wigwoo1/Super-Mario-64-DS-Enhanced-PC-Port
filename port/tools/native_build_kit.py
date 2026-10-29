@@ -116,9 +116,14 @@ def main():
         'landing, tilt, natural settling and safe recovery. This is a diagnostic ' +
         'level46 route. KAIDAN65 passes authored three-step spawn and master ' +
         'visibility checks in level12 missions1/2; all three render, child links ' +
-        'are correct, and Mario lands on the second step in a muted test. ' +
-        'Third-step traversal, boss-triggered rise and lifecycle remain open. ' +
-        'Bookshelf158 remains unsupported. ' +
+        'are correct, and Mario traverses all three steps and the upper landing in a muted test. ' +
+        'Boss-triggered rise and lifecycle remain open. ' +
+        'Bookshelf158 remains unsupported. Native Boo/Big Boo resources load; ' +
+        'three distinct ordinary Boo defeats, separate five-coin payouts and the main-hall boss counter ' +
+        'advancing to three are verified. A separate Mission1 replay verifies the original rear entrance, ' +
+        'the two additional area6 Boo defeats and their five-coin payouts. A continuous Mission1 run ' +
+        'now verifies all five defeats and collected payouts, the same boss counter reaching five, ' +
+        'and Big Boo activation with safe player control. Active Big Boo combat, Star reward and staircase rise remain open. ' +
         'Selected original brick debris and the opening sleep-bubble pop render; '
         'Mario collects the brick coins and the original Yoshi restriction is preserved. '
         'Wider effects remain open. '

@@ -8,6 +8,7 @@
 #include "dFader_c.h"
 #include "dActor_c.h"
 #include "Player.h"
+#include "daTrs_c.h"
 #include "dBgPi.h"
 #include "daKrb_c.h"
 #include "daBombking_c.h"
@@ -19,6 +20,8 @@
 #include "daObjMarioCap_c.h"
 #include "daC_Jugem_c.h"
 #include "daDoor_c.h"
+#include "daBook_c.h"
+#include "daTrsTrap_c.h"
 #include "daStarGate_c.h"
 #include "daMip_c.h"
 #include "daObj_Mip_Key_c.h"
@@ -356,7 +359,10 @@ static bool replay_star_save_controls() {
             unsigned(data_0209f2d4),unsigned(data_0209f2e0),observed_power_star_total());
     };
     if(!started) {
-        if(data_0209f2f8!=2 || !data_0209f20c)return false;
+        // The original course-clear screen is hosted on different level IDs
+        // depending on the course. The active clear flag identifies it; do
+        // not restrict the save replay to one course's level ID.
+        if(!data_0209f20c)return false;
         started=true;event("original-clear-screen");
     }
     uint16_t buttons=0;
@@ -415,6 +421,98 @@ static bool replay_pillar_controls() {
         }
     return false;
 }
+static uint16_t replay_route_window_buttons(unsigned waypoint,bool settling=false) {
+    uint16_t buttons=0;
+    for(const char *s=std::getenv("SM64DS_PC_TEST_ROUTE_BUTTON_WINDOWS");s && *s;) {
+        unsigned first=0,last=0,mask=0,period=0,hold=0,include_settle=0;int used=0;
+        if(std::sscanf(s,"%u:%u:%x:%u:%u:%u%n",&first,&last,&mask,&period,&hold,&include_settle,&used)!=6) {
+            used=0;include_settle=0;
+            std::sscanf(s,"%u:%u:%x:%u:%u%n",&first,&last,&mask,&period,&hold,&used);
+        }
+        if(
+           used>0 && (!s[used] || s[used]==',') && first<last && mask<=0xfff &&
+           include_settle<=1 && (!settling || include_settle) &&
+           period>0 && period<=600 && hold>0 && hold<period &&
+           waypoint>=first && waypoint<last && ntr::rt_frame()%period<hold)
+            buttons|=static_cast<uint16_t>(mask);
+        const char *next=std::strchr(s,',');s=next?next+1:nullptr;
+    }
+    return buttons;
+}
+static bool replay_big_boo_combat() {
+    if(!std::getenv("SM64DS_PC_TEST_BIG_BOO_COMBAT") || data_0209f2f8!=12 || replay_course_route_waypoint<530)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);if(!p || p->aliveState!=1)return false;
+    daTrs_c *boss=nullptr;
+    for(auto *a=dActor_c::FindWithActorID(210,nullptr);a;a=dActor_c::FindWithActorID(210,a)) {
+        auto *b=static_cast<daTrs_c *>(a);if(b->unk_5cf==14 && b->mTimer180>=5){boss=b;break;}
+    }
+    if(!boss)return false;
+    const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
+    static uint64_t next_jump=0,jump_until=0,next_attack=0,attack_until=0;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    const double dx=double(boss->mPosX)-p->mPosX,dz=double(boss->mPosZ)-p->mPosZ;
+    const double distance=std::hypot(dx,dz)/4096.0;
+    if(data_0209d660){if(tick%45<3)buttons=1;}
+    else if(!p->mIsNoControl && !p->mIsControlDisabled && boss->mDataIdx==0) {
+        // The original death handler waits for the player to approach before
+        // releasing the staircase. Walk there normally, then let the route
+        // resume once that handler destroys the boss.
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(distance>350){sx=static_cast<int16_t>(std::sin(angle)*18000);sy=static_cast<int16_t>(-std::cos(angle)*18000);}
+    }
+    else if(!p->mIsNoControl && !p->mIsControlDisabled && boss->mDataIdx>0) {
+        const bool recovering=boss->unk_5cc==3 || boss->unk_5cc==4;
+        double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        double magnitude=distance>180?18000:9000;
+        if(recovering && distance<600){angle+=3.141592653589793;magnitude=22000;}
+        else if(recovering)magnitude=0;
+        sx=static_cast<int16_t>(std::sin(angle)*magnitude);sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+        if(!recovering && !p->mIsAirborne && distance<450 && tick>=next_jump &&
+           (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+            jump_until=tick+8;next_jump=tick+90;
+        }
+        if(tick<jump_until)buttons|=2;
+        if(!recovering && p->mIsAirborne && distance<350 && tick>=next_attack) {
+            attack_until=tick+4;next_attack=tick+30;
+        }
+        if(tick<attack_until)buttons|=1;
+    }
+    if(tick%30==0 || buttons)std::fprintf(stderr,"[native Big Boo pilot] tick=%llu hp=%u boss_state=%u opacity=%u distance=%.1f player=%s air=%u buttons=%x\n",static_cast<unsigned long long>(tick),unsigned(boss->mDataIdx),unsigned(boss->unk_5cc),unsigned(boss->mOpacity),distance,state,unsigned(p->mIsAirborne),unsigned(buttons));
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
+// Opt-in QA driver: observes the original puzzle and submits normal pad input.
+static bool replay_book_puzzle() {
+    if(!std::getenv("SM64DS_PC_TEST_BOOK_PUZZLE") || !replay_course_route_complete || data_0209f2f8!=12)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);if(!p)return false;
+    static unsigned index=0,phase=0;
+    static uint64_t began=0,hit_tick=0;
+    const auto tick=ntr::rt_frame();if(!began)began=tick;
+    auto controls=[&](uint16_t b=0,int16_t x=0,int16_t y=0){ntr::input_test_controls(true,b,x,y);return true;};
+    if(index>=3 || tick-began>1800)return controls();
+    daBook_c *book=nullptr;
+    for(auto *a=dActor_c::FindWithActorID(213,nullptr);a;a=dActor_c::FindWithActorID(213,a))
+        if(a->aliveState==1 && a->param1==index)book=static_cast<daBook_c *>(a);
+    if(!book)return controls();
+    if(phase==1 && (book->mState==9 || book->mState==10)) {
+        phase=2;hit_tick=tick;
+        std::fprintf(stderr,"[book puzzle replay] hit index=%u tick=%llu state=%d\n",index,static_cast<unsigned long long>(tick),book->mState);
+    }
+    if(phase==2) {
+        if(tick-hit_tick>80 && !p->mIsAirborne){++index;phase=0;}
+        return controls();
+    }
+    double tx=book->mPosX,tz=(phase==0?-180:-20)*4096.0;
+    const double dx=tx-p->mPosX,dz=tz-p->mPosZ,dist=std::hypot(dx,dz);
+    if(phase==0 && dist<25*4096.0 && !p->mIsAirborne){phase=1;return controls();}
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    const double mag=dist<20*4096.0?0:12000;
+    uint16_t buttons=0;
+    if(phase==1) {
+        if(book->mPosY-p->mPosY>110*4096 && !p->mIsAirborne && tick%100<10)buttons|=2;
+        if(tick%40<8)buttons|=1;
+    }
+    return controls(buttons,static_cast<int16_t>(std::sin(angle)*mag),static_cast<int16_t>(-std::cos(angle)*mag));
+}
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -422,6 +520,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
         if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
     }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
+    if(!route_override && replay_big_boo_combat())return true;
     if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && pc_replay_crate_pound(static_cast<Player *>(data_0209f394[0])))return true;
     auto &waypoint=replay_course_route_waypoint;
@@ -483,7 +582,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
     // player beneath the box before takeoff and causes an underside collision.
     const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course);
     if(precise && ntr::rt_frame()<settle_until) {
-        ntr::input_test_controls(true,0,0,0);return true;
+        ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
     }
     uint16_t buttons=0;int16_t sx=0,sy=0;
     if(data_0209d660) {
@@ -899,6 +998,10 @@ static bool replay_course_route(const char *route_override=nullptr) {
             }
         }
     }
+    // Input-only QA windows follow route progress, so preceding travel and
+    // door animations cannot shift combat inputs onto a different encounter.
+    // Records are first:last:hex-mask:period:hold[:include-settle]; last is exclusive.
+    buttons|=replay_route_window_buttons(waypoint);
     ntr::input_test_controls(true,buttons,sx,sy);
     return true;
 }
@@ -2406,7 +2509,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
-        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
@@ -2794,6 +2897,32 @@ static bool trace_script_progress(uint64_t frame)
                     player?pc_player_state_name(player):"none");
                 std::fflush(file);
             }
+        }
+    }
+    // Read-only library approach diagnostics; never call door eligibility helpers
+    // here because those belong to the original actor's behavior dispatch.
+    if (const char *path = std::getenv("SM64DS_PC_MERRY_TRACE")) {
+        static FILE *file=nullptr;
+        static uint64_t previous=~uint64_t(0);
+        const auto tick=ntr::rt_frame();
+        if(data_0209f2f8==12 && tick!=previous && tick%5==0) {
+            previous=tick;
+            if(!file) {
+                std::string name=std::string(path)+".doors.csv";
+                file=std::fopen(name.c_str(),"w");
+                if(file)std::fputs("tick,waypoint,uid,area,x,y,z,relative_x,relative_y,relative_z,door_yaw,door_state,player_x,player_y,player_z,player_yaw,player_state,camera_angle,wall_x,wall_y,wall_z,ground_y\n",file);
+            }
+            auto *p=static_cast<Player *>(data_0209f394[0]);
+            if(file && p)for(auto *a=dActor_c::FindWithActorID(353,nullptr);a;a=dActor_c::FindWithActorID(353,a)) {
+                if(a->aliveState!=1 || std::abs(double(a->mPosX)-p->mPosX)>600*4096.0 || std::abs(double(a->mPosZ)-p->mPosZ)>600*4096.0)continue;
+                auto *d=static_cast<daDoor_c *>(a);
+                std::fprintf(file,"%llu,%u,%u,%u,%d,%d,%d,%d,%d,%d,%d,%p,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),replay_course_route_waypoint,a->uniqueID,unsigned(a->mAreaId),
+                    a->mPosX,a->mPosY,a->mPosZ,d->mScaleX,d->mScaleY,d->mScaleZ,d->mAngleY,d->mState,
+                    p->mPosX,p->mPosY,p->mPosZ,p->mAngleY,pc_player_state_name(p),GetAngleToCamera(0),
+                    p->mWallNormalX,p->mWallNormalY,p->mWallNormalZ,p->mGroundY);
+            }
+            if(file)std::fflush(file);
         }
     }
     // Optional read-only Lakitu/intro gate trace for first-file route work.

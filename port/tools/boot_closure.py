@@ -46,6 +46,11 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjTh_Fall_Block_c_classInit",
                  "daTrsTrap_c_classInit_MERRYGOROUND",
                  "daTrsTrap_c_classInit_TERESAPIT",
+                 "daTrsTrap_c_classInit_BOOKSHELF", "daBook_c_classInit_BOOK_SWITCH",
+                 "daBook_c_classInit_SHOOT_BOOK",
+                 "daTrs_c_classInit_TERESA", "daTrs_c_classInit_BOSS_TERESA",
+                 "daTrsIcon_c_classInit", "daTBasket_c_classInit",
+                 "func_ov055_02111264",
                  "_ZN11daTrsTrap_c13InitResourcesEv",
                  "daObjSwitch_c_classInit_HANSWITCH", "daObjSwitch_c_classInit_STAR_SWITCH",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
@@ -514,6 +519,14 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'd_a_trs_trap.cpp':
                     import merry_go_round_host
                     transformed=merry_go_round_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daBook_c.cpp':
+                    import book_host
+                    transformed=book_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daTrs_c.cpp':
+                    import boo_host
+                    transformed=boo_host.transform(root,transformed)
                     rewrites+=1
                 if path.name in ('daObjSwitch_c.cpp', 'd_a_obj_switch_hanswitch.c',
                                  'd_a_obj_switch_star_switch.c', 'func_ov002_020baa2c.c'):

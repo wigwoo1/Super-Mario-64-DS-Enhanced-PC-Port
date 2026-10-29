@@ -26,6 +26,7 @@ FILE_BACKED_AFTER_BSS = ((0x020994D4, 0x02099CE4),
 # ROM/BSS copies. Bind every recovered spelling to the live HAL object.
 HAL_OWNED_DATA = {
     "data_ov002_0210d9b8",  # shared coin model cache also used by mushroom triggers
+    "data_ov002_0210d9c8", "data_ov002_0210d9f8",  # Boo's carried blue/red coins use the live coin handles
     "g_profile_FL_LONDON", "data_ov022_02114580", "data_ov022_02114578",
     "g_profile_KINOPIO", "data_ov085_0212fe88", "data_ov085_02130480", "data_ov085_02130488", "data_ov085_02130490",
     "g_profile_SBIRD", "data_ov009_02113c20", "data_ov009_02113c28", "data_ov009_02113c48", "data_ov009_021138fc",

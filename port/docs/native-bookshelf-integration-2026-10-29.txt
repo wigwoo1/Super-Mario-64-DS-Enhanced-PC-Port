@@ -1,0 +1,23 @@
+CURRENT 2026-10-29 - NATIVE BOOKSHELF/BOOK-SWITCH SPAWN PARTIALLY VERIFIED
+Added native original profiles158 BOOKSHELF,213 BOOK_SWITCH,325 SHOOT_BOOK.
+Profiles use original ROM metadata (ov0630211ea2c,ov02002114898/021148b4).
+Existing recovered daTrsTrap class now spawns its three original daBook children;
+book_host.py defers four original file handles until native resource startup.
+Boot roots and CMake transform dependencies updated. Original src/include unchanged.
+Build473F1E33D38AAFC4F1ACA559CB514ECF2D01628D405694664770789D010FFE14 links.
+Muted3000-frame diagnostic mission1/Mario case
+native-muted-audio-walk-bookshelf-native-spawn-sol-r1-20261029-20261021 exits0,
+audioerrors0/submittednonzero0, slot1+minigames byte-identical to isolated seed.
+ShelfUID87 at original(-1950,800,200),area3,index2 has loaded model and enabled
+collider; exactly three live book switches88/89/90,params0/1/2 survive all censuses
+at1800/2400/2900. This verifies spawn/resource initialization only. Screenshot2900
+shows course courtyard; shelf is not visible in that capture. Rendering/contact,
+correct push order, wrong-answer projectile, opening, room unload/reentry remain
+UNVERIFIED. No F install/public export/kit refresh; build-support closure must be
+reviewed before the next ROM-free kit. Current test does not earn course entry.
+NEXT: continue Sol Medium: add read-only book parent/state/render traces; derive
+ordinary-input path to the area3 library, observe shelf and switch rendering,
+then test wrong order and correct three pushes/original opening. Preserve source
+actor rules. No runtime crash found in first load; no speculative route attempts.
+Full goal ACTIVE/incomplete. Previous bookshelf model-switch pause superseded.
+

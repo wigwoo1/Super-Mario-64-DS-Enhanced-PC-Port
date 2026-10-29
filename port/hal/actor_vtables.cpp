@@ -307,6 +307,33 @@ extern "C" void *daSetSE_c_classInit();
 extern "C" void *daObjHeart_c_classInit();
 extern "C" void *daObjTh_Fall_Block_c_classInit();
 extern "C" void *daTrsTrap_c_classInit_KAIDAN();
+extern "C" void *daTrs_c_classInit_TERESA();
+extern "C" void *daTrs_c_classInit_BOSS_TERESA();
+extern "C" void *daTrsIcon_c_classInit();
+extern "C" void *daTBasket_c_classInit();
+static PcNativeActorProfile pc_boo_profile = {
+    (void *)&daTrs_c_classInit_TERESA,209,49,6,0x64000,0x64000,0x1000000,0xa00000
+};
+static PcNativeActorProfile pc_big_boo_profile = {
+    (void *)&daTrs_c_classInit_BOSS_TERESA,210,50,6,0xc8000,0xc8000,0x1000000,0xa00000
+};
+static PcNativeActorProfile pc_boo_icon_profile = {
+    (void *)&daTrsIcon_c_classInit,211,51,0,0,0x1000,0,0
+};
+static PcNativeActorProfile pc_boo_basket_profile = {
+    (void *)&daTBasket_c_classInit,212,52,2,0x64000,0x64000,0x1000000,0xa00000
+};
+extern "C" void *daTrsTrap_c_classInit_BOOKSHELF();
+extern "C" void *daBook_c_classInit_BOOK_SWITCH(), *daBook_c_classInit_SHOOT_BOOK();
+static PcNativeActorProfile pc_bookshelf_profile = {
+    (void *)&daTrsTrap_c_classInit_BOOKSHELF,158,55,0,0x64000,0x64000,0x1000000,0xa00000
+};
+static PcNativeActorProfile pc_book_switch_profile = {
+    (void *)&daBook_c_classInit_BOOK_SWITCH,213,54,2,0x64000,0x64000,0x1000000,0x1000000
+};
+static PcNativeActorProfile pc_shoot_book_profile = {
+    (void *)&daBook_c_classInit_SHOOT_BOOK,325,327,2,0x64000,0x64000,0x1000000,0x1000000
+};
 extern "C" void *daTrsTrap_c_classInit_MERRYGOROUND();
 extern "C" void *daTrsTrap_c_classInit_TERESAPIT();
 static PcNativeActorProfile pc_kaidan_profile = {
@@ -596,6 +623,13 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[300] = &pc_arrow_right_profile;
     data_020a4bb8_storage[66] = &pc_th_fall_block_profile;
     data_020a4bb8_storage[65] = &pc_kaidan_profile;
+    data_020a4bb8_storage[209] = &pc_boo_profile;
+    data_020a4bb8_storage[210] = &pc_big_boo_profile;
+    data_020a4bb8_storage[211] = &pc_boo_icon_profile;
+    data_020a4bb8_storage[212] = &pc_boo_basket_profile;
+    data_020a4bb8_storage[158] = &pc_bookshelf_profile;
+    data_020a4bb8_storage[213] = &pc_book_switch_profile;
+    data_020a4bb8_storage[325] = &pc_shoot_book_profile;
     data_020a4bb8_storage[159] = &pc_merry_go_round_profile;
     data_020a4bb8_storage[160] = &pc_teresapit_profile;
     data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;

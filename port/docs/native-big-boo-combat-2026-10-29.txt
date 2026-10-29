@@ -1,0 +1,40 @@
+Native Big Boo combat - 2026-10-29
+
+VERIFIED: Original Mission 1's five Boos and blue-coin rewards, same Big Boo
+counter reaching five, three ordinary player attacks defeating him, and his
+original Star spawning and reaching its idle state. Mario survives in the same
+course. The muted run exits cleanly, reports zero audio errors and submits no
+audible samples. The isolated saves are unchanged.
+
+The opt-in SM64DS_PC_TEST_BIG_BOO_COMBAT pilot reads the boss's live position
+and recovery state. It steers, jumps and attacks through the existing normal
+input injection, retreating during damage recovery. It does not edit health,
+actor state, position, collision or save data. It runs only inside the automation
+route guard, in level 12 after waypoint 530. Normal player controls are unchanged.
+
+Observed boss health: 3 -> 2 at tick 39355 -> 1 at 40035 -> 0 at 40315.
+Original reward actor 115, Star ID 1, spawns at 40404 and becomes idle at 40576.
+The preceding five encounters retain their accepted hit and defeat timings.
+The portable check_native_big_boo_combat.py checker verifies this evidence.
+
+This combat acceptance does not establish Star collection or staircase
+traversal. The original death handler waits for the player to approach within
+600 units before releasing the staircase. A follow-up pilot walks toward that
+position and resumes the staircase jump route when the boss disappears. That
+follow-up verifies boss removal and all three staircase pieces rising: at tick
+42000 their actor heights are -400, -200 and 0, with model surfaces at 200, 400
+and 600. The first collection route incorrectly walked toward the first step
+at floor height and stopped against it. Its correction uses a jump to y200.
+The corrected route verifies climbing all three steps and reaching the upper
+landing (waypoints reached at 40848, 41022, 41100 and 41176). Mario finishes
+grounded and controllable at y800, alive with no course reload. The final
+waypoint incorrectly uses that same landing height and completes at 41198,
+leaving the Star untouched at y1024. Collection remains unverified. After two
+collection-route trials, stop here; the next bounded task is an ordinary final
+jump targeting the actual Star height, then checking collection and credit.
+Luna Medium is suitable for that follow-up. The source builds and seven
+focused CTests pass.
+
+The isolated diagnostic save already owns this course's Star ID 1. Any later
+collection check using that seed is repeat collection, not first-time campaign
+progression. No full-game completion or general boss-variant acceptance is claimed.

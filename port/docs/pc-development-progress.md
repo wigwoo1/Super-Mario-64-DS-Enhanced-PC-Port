@@ -2431,3 +2431,23 @@ levels use650. The failed lateral-retreat and camera-only QA paths were replaced
 See native-falling-block-and-spinning-floor-2026-10-27.txt. Full bridge crossing,
 complete course unload/reentry and other placements/characters remain open.
 Luna Medium can handle the pending existing ROM-free kit refresh workflow.
+
+CURRENT 2026-10-29 - LIBRARY DOOR CROSSED AFTER SHELF OPENING; COURSE RE-ENTRY RESET STILL UNVERIFIED
+Using the accepted reactive bookshelf route and ordinary player inputs, extended the last approach past the adjoining library door. Mission2 level12 was confirmed; route reaches target waypoint49 at tick5654. Read-only door trace shows the original daDoor actor transition state begin at tick5465 (player St_NoControl_Main); normal player control resumes by tick5800 on the other side of the door. This verifies passing through the doorway after the shelf opens. It does NOT prove the course was exited or re-entered, and does not prove whether the shelf puzzle resets on course re-entry. The native book switches remain loaded with completed states in this same course runtime.
+Case work/native-muted-audio-walk-bookshelf-door-cross-luna-r5-20261021; exit0/8000 frames, audio muted with 0 submitted nonzero samples and 0 errors. Isolated slot1/minigames save hashes unchanged. Screenshots frame6200/7400/8000; frame6200 shows Mario in the library area, later frames show him stalled against a bookcase wall, so the post-door route endpoint is diagnostic, not a passable route. Evidence in library-door-crossing-acceptance.json and merry.csv.doors.csv. No source edits or build changes this turn.
+NEXT Luna Medium: derive a safe ordinary-input route from the room after the doorway back to the original course exit; complete actual exit/re-entry using existing supported workflow, then observe shelf/book states and repeat puzzle if reset. Do not claim reset until a new course entry is logged and fresh actor state is observed. Preserve current save fixture and original game rules.
+
+CURRENT 2026-10-29 - LETHAL LAVA LAND BRIDGE ACTORS SPAWN AND RENDER IN CURRENT BUILD
+A muted, isolated current-build test selected Lethal Lava Land (stage14, mission7). During the live stage window, original lava bridge profile73 instances UID19 and UID20 were observed in the animation trace and rendered with nonzero geometry: 226 actor-render samples, 194 with submitted triangles, ticks2180-2460. The ordinary replay later returned to castle stage1, so crossing/interaction/reset remain unverified. A separate short capture at tick2200 shows the actual lava course and its bridges. Both tests exited0 with audio muted/zero device samples; isolated slot1 save hash is unchanged. Evidence: work/lava-bridge-actor-spawn-acceptance-20261029.json, case work/native-lava-bridge-current-build-spawn-luna-r2-muted-20261022 and screenshot work/native-lava-bridge-actor-audit-luna-r3-20261021/frame-2200.bmp. Current build hash 1F307D8E595C751E8EB2A132EE20C0129643DBA27C1982A5B5F16B8B7485C2F7; no source change or rebuild.
+NEXT Luna Medium: continue the cross-course actor-spawn audit with another course's documented bridge/gate/button/object placement. Use a verified entry route and census during the stage loading window; do not count a post-exit castle scene as the target course. Full port and actor coverage remain incomplete.
+
+PUBLICATION SCOPE CORRECTION 2026-10-29
+Recent door-only replay cases did not enable the BookPuzzle helper; they prove
+ordinary library doorway traversal, not opening/reset. The separately recorded
+reactive three-book opening test remains the evidence for opening. Original
+Pause Exit Course and castle rear-door entry to courtyard are verified with
+isolated fixtures. The two-Star library fixture cannot satisfy the original
+15-Star courtyard entrance requirement. A 20-Star fixture reaches the native
+entrance Boo; two approach routes hit courtyard obstacles and ended in death.
+Entrance Boo defeat, cage interaction and course re-entry/reset remain unverified.
+These failures are diagnostic; no stable-install promotion is made.

@@ -137,10 +137,17 @@ def main():
             ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
             ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
             ('pc_kaidan_profile','daTrsTrap_c_classInit_KAIDAN',63,0x0211ea10),
+            ('pc_boo_profile','daTrs_c_classInit_TERESA',63,0x0211e770),
+            ('pc_big_boo_profile','daTrs_c_classInit_BOSS_TERESA',63,0x0211e78c),
+            ('pc_boo_basket_profile','daTBasket_c_classInit',63,0x0211e7a8),
+            ('pc_boo_icon_profile','daTrsIcon_c_classInit',63,0x0211e7c4),
             ('pc_merry_go_round_profile','daTrsTrap_c_classInit_MERRYGOROUND',63,0x0211ea48),
             ('pc_teresapit_profile','daTrsTrap_c_classInit_TERESAPIT',63,0x0211ea64),
             ('pc_oneup_profile','da1up_c_classInit_ONEUPKINOKO',2,0x02108388),
             ('pc_oneup_logo_profile','daObj1UpLogo_c_classInit',2,0x0210b188),
+            ('pc_bookshelf_profile','daTrsTrap_c_classInit_BOOKSHELF',63,0x0211ea2c),
+            ('pc_book_switch_profile','daBook_c_classInit_BOOK_SWITCH',20,0x02114898),
+            ('pc_shoot_book_profile','daBook_c_classInit_SHOOT_BOOK',20,0x021148b4),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
             ('pc_crate_profile','daObjBlockS_c_classInit',98,0x0213c510),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
@@ -155,6 +162,26 @@ def main():
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
     print('PASS: original KAIDAN65 native factory and full profile descriptor match overlay 63')
+    for suffix in ('edc4','edcc','edd4','eddc','ede4','edec','edf4'):
+        label='data_ov063_0211'+suffix
+        named(label)
+        owners=[line for line in args.map.read_text().splitlines()
+                if re.search(r'\s[?_]'+label+r'(?:@@|\s)',line)]
+        if not owners or any(not owner_is(line,'daTrs_c.cpp.obj') for line in owners):
+            raise ValueError('Boo handle must belong to the native recovered actor: '+label)
+    def boo_method(prefix):
+        candidates={address for name,address in symbols.items() if name.startswith(prefix)}
+        if len(candidates)!=1:raise ValueError('Missing/ambiguous native Boo callback: '+prefix)
+        return candidates.pop()
+    boo_vtable=struct.unpack('<31I',pe_bytes(args.exe,boo_method('??_7daTrs_c@@'),124))
+    # MSVC has one deleting-destructor slot: ROM slots18/29 become17/28.
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),
+                        (9,'Render'),(17,'OnYoshiTryEat'),(28,'OnAimedAtWithEgg')):
+        if boo_vtable[slot]!=boo_method('?'+method+'@daTrs_c@@'):
+            raise ValueError('Boo callback does not use its compiler-owned native method: '+method)
+    if boo_vtable[16]!=boo_method('??_GdaTrs_c@@'):
+        raise ValueError('Boo deleting destructor is not native')
+    print('PASS: original Boo/Big Boo/icon/basket profiles, seven canonical resources and seven native callbacks')
 
     base2,rom2=overlay(2)
     for label in ('data_ov002_0210e104','data_ov002_0210e0fc'):
