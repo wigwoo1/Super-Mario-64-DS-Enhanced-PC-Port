@@ -1,0 +1,28 @@
+Small Mr. I course re-entry and blue-coin repeat check
+======================================================
+
+Verified on 2026-10-30 with native executable SHA256
+F236BECF895FCB7FE432DA44421DD94AC25E8E6C40B730A7CD290B78A3AB6709.
+
+The opt-in Mr. I QA pilot now releases test input when its tracked blue-coin
+actor is removed. This lets the existing native course-lifecycle pilot use the
+original exit menu, return to the castle, follow the courtyard route and enter
+the course again. No actor, player, reward, save or physics state is written by
+the pilot; the original game remains responsible for combat, coin pickup and
+scene transitions.
+
+Muted runtime evidence covers 26,000 frames. Small Mr. I actor UIDs 57 and 303
+were encountered on separate course visits. Each reached its native defeat
+state, spawned a distinct parameter-2 blue coin (UIDs 134 and 380), and the
+normal pickup changed the course coin counter from 0 to 5. The tracked coin
+actors moved from alive state 1 to removal state 2. The lifecycle trace records
+course exit, castle return, original courtyard transition, original course
+re-entry and normal control at the end. Five focused replay/input/state/history/
+stage tests passed. Audio output was muted with zero submitted samples and zero
+audio errors. Isolated QA saves remained byte-identical to their seed.
+
+The exact private acceptance evidence and screenshots are retained in the
+workspace test case; they are not part of a public build or release.
+
+This does not verify Big Mr. I or its Star reward. Full campaign completion and
+the broader requested PC-port features remain open.

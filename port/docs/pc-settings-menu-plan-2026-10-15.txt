@@ -472,7 +472,15 @@ after the original audio integration is accepted. Keep replacement files local
 unless their distribution is explicitly authorized. Test both modes, persistence,
 missing/corrupt files, switching tracks/modes, loops, jingles and scene changes.
 
-Surround output (requested 2026-10-20): PLANNED.
+Surround output (requested 2026-10-20): PLANNED. Reconfirmed 2026-10-30.
+Milestones: persistent Stereo / 5.1 / 7.1 selection under Audio; device speaker-mask
+negotiation and visible active-layout/fallback status; position-aware world SFX
+relative to the camera/listener; appropriate stereo presentation for original
+music (no discrete surround stems); channel-order, front/rear placement,
+headroom, reconnect and downmix tests. Verify on real multichannel hardware
+before claiming completion. Instrument tracks are not speaker channels.
+Keep automated gameplay tests muted; audible speaker checks are separate.
+
 Add 5.1 and 7.1 choices alongside the existing audio-mode choices in the
 native settings menu. Keep the current stereo mode available as the default
 and fallback when the selected Windows audio device does not expose enough

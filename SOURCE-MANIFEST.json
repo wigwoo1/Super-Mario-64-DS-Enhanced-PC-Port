@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "1081f9ea3a4968372409cfd0a17c4c492b5cd55e5cd2db835c66ff05eade75d3",
-      "bytes": 456655
+      "sha256": "33a4290b21d8ded84e536925f50c791740efea8bb95c1ebc0ac008c6b5d7e45f",
+      "bytes": 456704
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "4d0efa3e832926fd20f8474eb92d1f5bc874f621d06691ff9edb0e34f06ac058",
-      "bytes": 251966
+      "sha256": "2d4c7830fdd18c61bcc5d7b118f8d86bdf45c7a2d15d82e18541ae7044cf4576",
+      "bytes": 252015
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "640089a345fde7372e2d7395dc5b6adea3a4cee206ce1a52a99ca532ed11e99a",
-      "bytes": 87959
+      "sha256": "3fb95471526e9805516cb0cd1c4d9e8594bf47dd13d3781366ed36a257c33589",
+      "bytes": 88253
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6460,8 +6460,8 @@
     },
     {
       "path": "port/docs/native-actor-coverage-plan-2026-10-22.txt",
-      "sha256": "2bb16f70a560c019c922c76ff876dde5a4c81bbdfd79ed62703be393a76be200",
-      "bytes": 35167
+      "sha256": "0476cfd656b414fdad2e66c97589b6050ed237c711343f3abf396b1338679548",
+      "bytes": 35692
     },
     {
       "path": "port/docs/native-actor-registry-audit-2026-10-22.txt",
@@ -6839,6 +6839,11 @@
       "bytes": 4235
     },
     {
+      "path": "port/docs/native-haunted-caskets-2026-10-30.txt",
+      "sha256": "7be124650b39e5d8bc0d0de88601f4aee0c0bea07caebffc99ef78d77e59da86",
+      "bytes": 1747
+    },
+    {
       "path": "port/docs/native-haunted-elevator-return-2026-10-30.txt",
       "sha256": "eaf91ea990b03307819a52d282d29fb109a4ebf752f284bd268c19c21adb70a4",
       "bytes": 868
@@ -7019,6 +7024,11 @@
       "bytes": 1306
     },
     {
+      "path": "port/docs/native-mri-course-reentry-2026-10-30.txt",
+      "sha256": "4217dc8c797c49f98ef8c043de312bdf4973ea91874a7852fe0a83b1f137ff71",
+      "bytes": 1613
+    },
+    {
       "path": "port/docs/native-oneup-verified-2026-10-25.txt",
       "sha256": "f2da839a6aab9779d840986ea2040b41ab46e6d333416b8a32f4e8db5347d2f7",
       "bytes": 2521
@@ -7182,6 +7192,11 @@
       "path": "port/docs/native-shadow-masks-checkpoint-2026-10-15.txt",
       "sha256": "2017dbd983cde5bb737902355b524ae908788ac0ecffdd06500b613dd5342980",
       "bytes": 7294
+    },
+    {
+      "path": "port/docs/native-shared-udlift-variants-2026-10-30.txt",
+      "sha256": "eb07cc92c4f0350805a7fa77402896bc211c8b334ef75f15709924ed05e196ca",
+      "bytes": 3359
     },
     {
       "path": "port/docs/native-signpost-ground-pound-verified-2026-10-25.txt",
@@ -7365,8 +7380,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "880259102f5eb8484426410206955ad70acecf945c546deeaed6633be9547c4d",
-      "bytes": 38563
+      "sha256": "863bfd51ec2efa3283ef80ca35dc1ad27eb0846d9e150929f776a552e895406c",
+      "bytes": 39126
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -7550,8 +7565,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "817ca36975c71f3b5892c2fb991f5a11f563acc5ee3cf7952064bb43511deb9b",
-      "bytes": 47955
+      "sha256": "013e17e07ba2fd0ba6a09dd60145c48a342a6028b3234e3d419c8a088e09f140",
+      "bytes": 49319
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8010,8 +8025,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "8b8d36782861cc4d9bed4eb5fdef4f39a72e551203e3e5d7c2bb160049d25924",
-      "bytes": 210050
+      "sha256": "255f88ec6556a5202c965d2ce04994c9dbeefa59bbc3d56143f36deabcbaf074",
+      "bytes": 218321
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8985,8 +9000,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "86b2135a06dabffa71d8c692cc158117f88416ef6d7d020ac94ee0e7d106d67b",
-      "bytes": 48884
+      "sha256": "9e847fee7286ff77c294730223a7ca32840deca93728c3e6fb655c3057193e06",
+      "bytes": 49521
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9002,6 +9017,11 @@
       "path": "port/tools/cannon_host.py",
       "sha256": "5138d4ea93548eb5dbd085fd583890cdc34d2408b3471d632167d80ac5d6061e",
       "bytes": 4000
+    },
+    {
+      "path": "port/tools/casket_host.py",
+      "sha256": "0760107f54881159fc50616c28d936858aebe8b19952db5169bfc1f20b75c97d",
+      "bytes": 2771
     },
     {
       "path": "port/tools/check_bombking_native_data.py",
@@ -9125,8 +9145,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "281750bb743f078e522fb97dcc3fdb352f813d99027dc426d05b96f27b5137b1",
-      "bytes": 51195
+      "sha256": "d83b06c0d54e8ce4fc1efbeb34dffd9a3ca76722b0e49089c1c2ccd0a96f7aa0",
+      "bytes": 53836
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9449,6 +9469,11 @@
       "bytes": 2805
     },
     {
+      "path": "port/tools/mri_host.py",
+      "sha256": "b9c5bff2fd93af6758476f83d01d8356c104a97fbf5a4381c3b1cd80af34a04a",
+      "bytes": 4481
+    },
+    {
       "path": "port/tools/native_build_kit.py",
       "sha256": "50fffac0406b4e214b9d7560b712242a40c53cab454b73b5b85ffd8e8b4c664f",
       "bytes": 15386
@@ -9660,8 +9685,8 @@
     },
     {
       "path": "port/tools/udlift_host.py",
-      "sha256": "f1aaa34ba8aac6fd8798475661e08c2de91190b389a8432e9a6826535bc8b18a",
-      "bytes": 5184
+      "sha256": "7e20a7846fb04ea73a0861593b43a2b1ad342c75d4dea64b8ae48600856fa4db",
+      "bytes": 5772
     },
     {
       "path": "port/tools/warp_host.py",

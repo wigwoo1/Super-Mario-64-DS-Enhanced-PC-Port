@@ -258,3 +258,5 @@ change. Read native-battlefield-actor-spawn-current-2026-10-28.txt. This selecte
 comparison does not complete the user's full cross-course actor coverage audit.
 
 
+
+UPDATE2026-10-30: HMC UDLIFT33 and Rainbow Ride RC_RIFT02 131 profiles are now registered alongside BBH32. All three original descriptors/factories and the shared actor's matching resource rows are statically audited. HMC actor33 instances and HMC initializer were observed in a muted level13 run. Actual nearby rendering, rider support, movement and re-entry remain unverified; Rainbow Ride runtime selection stayed in St_LevelEnter_Main with no actor131 init observation. See native-shared-udlift-variants-2026-10-30.txt.

@@ -328,8 +328,21 @@ extern "C" void *daBook_c_classInit_BOOK_SWITCH(), *daBook_c_classInit_SHOOT_BOO
 extern "C" void *daBook_c_classInit_KILLER_BOOK(), *daBookGen_c_classInit();
 extern "C" void *daChair_c_classInit(), *daPiano_c_classInit();
 extern "C" void *daUdlift_c_classInit_UDLIFT_TERESA();
+extern "C" void *daUdlift_c_classInit_UDLIFT(), *daUdlift_c_classInit_RC_RIFT02();
+extern "C" void *daObjCasket_c_classInit();
+extern "C" void *daEykn_c_classInit_EYEKUN(), *daEykn_c_classInit_EYEKUN_BOSS(), *daEyBm_c_classInit();
+static PcNativeActorProfile pc_mri_profile={(void *)&daEykn_c_classInit_EYEKUN,262,120,0x10000003,0,0x5f000,0x1000000,0xbb8000};
+static PcNativeActorProfile pc_big_mri_profile={(void *)&daEykn_c_classInit_EYEKUN_BOSS,263,121,0x10000003,0,0xbe000,0x1000000,0xbb8000};
+static PcNativeActorProfile pc_mri_beam_profile={(void *)&daEyBm_c_classInit,264,122,2,0,0x19000,0x1000000,0x1000000};
+static PcNativeActorProfile pc_casket_profile = {(void *)&daObjCasket_c_classInit,64,159,0x2000002,0x100000,0x300000,0x1000000,0};
 static PcNativeActorProfile pc_haunt_lift_profile = {
     (void *)&daUdlift_c_classInit_UDLIFT_TERESA,32,300,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
+};
+static PcNativeActorProfile pc_hmc_lift_profile = {
+    (void *)&daUdlift_c_classInit_UDLIFT,33,301,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
+};
+static PcNativeActorProfile pc_rainbow_lift_profile = {
+    (void *)&daUdlift_c_classInit_RC_RIFT02,131,261,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
 };
 static PcNativeActorProfile pc_haunted_chair_profile = {
     (void *)&daChair_c_classInit,326,326,2,0x64000,0x64000,0x1000000,0x1000000
@@ -653,6 +666,12 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[326] = &pc_haunted_chair_profile;
     data_020a4bb8_storage[249] = &pc_mad_piano_profile;
     data_020a4bb8_storage[32] = &pc_haunt_lift_profile;
+    data_020a4bb8_storage[33] = &pc_hmc_lift_profile;
+    data_020a4bb8_storage[131] = &pc_rainbow_lift_profile;
+    data_020a4bb8_storage[64] = &pc_casket_profile;
+    data_020a4bb8_storage[262] = &pc_mri_profile;
+    data_020a4bb8_storage[263] = &pc_big_mri_profile;
+    data_020a4bb8_storage[264] = &pc_mri_beam_profile;
     data_020a4bb8_storage[159] = &pc_merry_go_round_profile;
     data_020a4bb8_storage[160] = &pc_teresapit_profile;
     data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;

@@ -1,0 +1,29 @@
+Native haunted caskets: initial integration verified, 2026-10-30
+
+Actor 64 uses the recovered WAIT/STANDUP behavior, model and moving collision.
+Host adaptation provides deferred resource initialization, native callback rows,
+profile registration and optional read-only test traces. Original actor physics
+are unchanged. Allocation, field offsets and callback row sizes are asserted.
+
+Release build and native-data audit pass. Five focused tests passed alongside
+runtime testing; the scene-clock wall-time check failed under concurrent load
+and passed when rerun alone. This is not an uninterrupted six-test batch pass.
+
+Three separate muted 7,500-frame runs verify all three moving caskets, including an
+opposite-facing placement. Each rises, returns flat and collides with Mario.
+Observed wall contacts: 152, 215 and 147 respectively. All six placements spawn;
+the three stationary variants remain flat. All runs finish with normal
+control, no hurt/death states, unchanged isolated saves and zero audio errors.
+
+Remaining acceptance: standing on the caskets and
+course exit/re-entry. Initial course entry is diagnostic. No stable install
+promotion, F: installation or public release of this integration yet.
+
+
+Course lifecycle now VERIFIED: 18,000 muted frames, original Exit Course menu,
+castle return at tick 5144 and original courtyard re-entry at tick 9364.
+All six caskets receive fresh identities. The tested moving casket starts flat,
+stands fully and returns flat again. Stationary variants remain flat. Final
+normal control, isolated saves unchanged, zero audio errors. Courtyard combat
+cost two health points; this is not a damage-free run. Standing on caskets
+remains untested. No F installation or public publication this milestone.

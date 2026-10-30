@@ -10,6 +10,14 @@ def transform(root, text):
     cfg=(root/'config/arm9/overlays/ov095/delinks.txt').read_text()
     base=int(re.search(r'\.text\s+start:0x([\da-f]+)',cfg)[1],16)
     raw=(root/'extracted/overlays/overlay_0095.bin').read_bytes()
+    # The same class has three retail profiles. Keep their factories, actor
+    # IDs, categories and allocation/range fields tied to the local overlay.
+    for address,expected in (
+            (0x021375cc,(0x021367fc,32,300,0x01000002,0,0x001f4000,0x00af0000,0x004b0000)),
+            (0x021375e8,(0x021367cc,33,301,0x01000002,0,0x001f4000,0x00af0000,0x004b0000)),
+            (0x02137604,(0x0213679c,131,261,0x01000002,0,0x001f4000,0x00af0000,0x004b0000))):
+        actual=struct.unpack_from('<IHHIiiii',raw,address-base)
+        assert actual==expected,(hex(address),actual,expected)
     for address,expected in (
             (0x02136f68,(0x02137898,0x021378a8,0x021378c0)),
             (0x02136f74,(0x021378b0,0x021378b8,0x021378a0)),

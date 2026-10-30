@@ -151,6 +151,12 @@ def main():
             ('pc_killer_book_profile','daBook_c_classInit_KILLER_BOOK',20,0x02114860),
             ('pc_book_generator_profile','daBookGen_c_classInit',20,0x0211487c),
             ('pc_haunt_lift_profile','daUdlift_c_classInit_UDLIFT_TERESA',95,0x021375cc),
+            ('pc_hmc_lift_profile','daUdlift_c_classInit_UDLIFT',95,0x021375e8),
+            ('pc_rainbow_lift_profile','daUdlift_c_classInit_RC_RIFT02',95,0x02137604),
+            ('pc_casket_profile','daObjCasket_c_classInit',71,0x02122eb0),
+            ('pc_mri_profile','daEykn_c_classInit_EYEKUN',71,0x02122cf0),
+            ('pc_big_mri_profile','daEykn_c_classInit_EYEKUN_BOSS',71,0x02122d0c),
+            ('pc_mri_beam_profile','daEyBm_c_classInit',71,0x02122dc4),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
             ('pc_crate_profile','daObjBlockS_c_classInit',98,0x0213c510),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
@@ -222,6 +228,34 @@ def main():
         if table[16]!=arrow_method('??_G'+cls+'@@'):
             raise ValueError('Book deleting destructor is not native: '+cls)
     print('PASS: all four original haunted-book profiles/factories and compiler-owned book/generator callbacks')
+    eye_table=struct.unpack('<6I',pe_bytes(args.exe,named('pc_mri_02123088'),24))
+    for i,state in enumerate(('Wait','Attack','Die')):
+        expected=tuple(arrow_method('?St_'+state+'_'+method+'@daEykn_c@@') for method in ('Init','Main'))
+        if eye_table[i*2:i*2+2]!=expected:
+            raise ValueError('Mr. I state callbacks are not native')
+    for cls in ('daEykn_c','daEyBm_c'):
+        table=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7'+cls+'@@'),68))
+        for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),(12,'OnPendingDestroy')):
+            if table[slot]!=arrow_method('?'+method+'@'+cls+'@@'):
+                raise ValueError('Mr. I native virtual mismatch: '+cls+'::'+method)
+        if table[16]!=arrow_method('??_G'+cls+'@@'):
+            raise ValueError('Mr. I destructor mismatch: '+cls)
+    print('PASS: native Mr. I and projectile profiles, state callbacks and virtual methods')
+    casket_table=struct.unpack('<6I',pe_bytes(args.exe,named('data_ov071_02122ecc'),24))
+    for offset,init,main in ((0,'St_Wait_Init','St_Wait_Main'),(3,'St_StandUp_Init','St_StandUp_Main')):
+        if casket_table[offset:offset+2]!=(arrow_method('?'+init+'@daObjCasket_c@@'),arrow_method('?'+main+'@daObjCasket_c@@')):
+            raise ValueError('Casket callback table is not native')
+    casket_vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7daObjCasket_c@@'),68))
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render')):
+        if casket_vtable[slot]!=arrow_method('?'+method+'@daObjCasket_c@@'):
+            raise ValueError('Casket virtual callback mismatch')
+    if casket_vtable[16]!=arrow_method('??_GdaObjCasket_c@@'):
+        raise ValueError('Casket destructor mismatch')
+    row=next(x for x in records(ROOT) if x['name']=='data_ov063_0211ebd8')
+    original=source_bytes(ROOT,row)
+    if pe_bytes(args.exe,named('data_ov063_0211ebd8'),len(original))!=original:
+        raise ValueError('Casket collision materials differ from ROM')
+    print('PASS: original casket profile, native states/virtuals and collision materials')
     lift_models=tuple(named('data_ov095_'+s) for s in ('02137898','021378a8','021378c0'))
     lift_collisions=tuple(named('data_ov095_'+s) for s in ('021378b0','021378b8','021378a0'))
     lift_clps=('data_ov063_0211ec38','data_ov021_02113aa0','data_ov036_02112aa8')

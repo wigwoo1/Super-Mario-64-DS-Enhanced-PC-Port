@@ -1,0 +1,52 @@
+Shared haunted-house up/down lift variants - 2026-10-30
+
+Added native profile registrations for the original HMC UDLIFT actor 33 and
+Rainbow Ride RC_RIFT02 actor 131 alongside Big Boo's Haunt actor 32. Each
+profile uses its recovered native factory and the actor/category/flags/range
+fields read from local overlay 95. The recovered actor already chooses its
+matching model, collision file and CLPS row by actor ID; profile registration
+makes those original paths reachable. The host-side overlay audit now checks
+all three retail descriptors, and the native actor audit compares all three
+registered profiles against their source descriptors.
+
+Build and verification: Release target builds; the native actor-data audit and
+six focused smoke tests pass. A muted HMC Mission 1 runtime confirms four live
+actor-33 instances across areas 1, 4 and 5 and records the original HMC variant
+initialization. It exits 0, reports zero audio errors and zero submitted audio
+samples, and leaves the isolated slot and minigame saves unchanged. Screenshot
+frame 3000 is retained in the private work case
+native-muted-audio-walk-native-hmc-lift-profile-astra-r2-20261030-20261021.
+
+Limits: this HMC probe did not approach a lift closely enough to verify model
+rendering, rider collision or movement. The Rainbow Ride Mission 1 probe
+confirmed level 22 but remained in St_LevelEnter_Main and did not observe an
+actor-131 initialization; it is not runtime acceptance. No lift ride, re-entry,
+F: installation, kit refresh or public release is claimed.
+
+Follow-up route diagnostic (2026-10-30, Luna Medium): a muted 10,000-frame
+normal-input attempt from the selected HMC start toward the registered lift
+ended at the starting wall in St_OnWall_Main. The actor trace records its
+initialization but no boarding or movement, and there are no lift ground-contact
+samples. A coarse walkable-floor graph also found the lift outside the start's
+reachable component; that graph omits door/area transitions and jumping, so it
+does not prove the route is impossible. The variant remains unverified. Next
+inspect the authored HMC room/area transition path before another ride test;
+private coordinates and traces are kept in work files.
+
+Sol follow-up (2026-10-30): the revised static route includes gap transitions
+and successfully navigates around the spawn wall through the corridor to the
+first chasm. Two muted normal-input attempts preserve that working prefix:
+the first reaches the edge but enters LedgeHang during settling; the second
+takes off from solid ground in Jump state but lands short and then falls.
+Neither reaches the lift. Next investigate the running long-jump input and
+landing timing using the existing opt-in QA route mode; preserve original
+physics and the verified corridor prefix. The native target and three focused
+input/clock/route smoke checks pass. The lift itself remains unverified.
+
+Astra follow-up: first HMC chasm approach now verified with original running
+long-jump input, landing and safe neutral stop. The test needed sufficient
+runway and a finish target on the landing bank to avoid turning back and
+jumping again. Muted7500frame run exits0, audio errors0, isolated saves
+unchanged. No gameplay code changed. Lift approach beyond the doorway and
+the lift ride remain unverified. Private evidence: native-hmc-first-gap-
+acceptance-20261030.json.

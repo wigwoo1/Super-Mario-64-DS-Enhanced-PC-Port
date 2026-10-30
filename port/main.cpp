@@ -24,6 +24,7 @@
 #include "daPiano_c.h"
 #include "daChair_c.h"
 #include "daUdlift_c.h"
+#include "daEykn_c.h"
 #include "daTrsTrap_c.h"
 #include "daStarGate_c.h"
 #include "daMip_c.h"
@@ -608,6 +609,123 @@ static bool replay_book_puzzle() {
 }
 // Opt-in input-only lift QA. Observe native stops/rider rearming; never move
 // actors or force a lift state to make the round trip pass.
+// Opt-in input-only orbit: native enemy behavior decides defeat and rewards.
+static bool replay_big_mri_approach() {
+    if(!std::getenv("SM64DS_PC_TEST_BIG_MRI_APPROACH") || !std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !replay_course_route_complete)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p || data_0209f2f8!=12)return false;
+    static unsigned phase=0;static uint64_t began=0,kick=0;
+    const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
+    if(data_0209d660) {if(phase==0)began=0;ntr::input_test_controls(true,tick%45<3?1:0,0,0);return true;}
+    static bool flower_ready=false;
+    static uint64_t flower_jump=0,flower_next=0;
+    if(p->param1==1 && !flower_ready) {
+        if(p->mIsVanish) {flower_ready=true;std::fprintf(stderr,"[big mri approach] flower acquired tick=%llu\n",static_cast<unsigned long long>(tick));}
+        else {
+            if(!p->mIsAirborne && tick>=flower_next && (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {flower_jump=tick+20;flower_next=tick+100;}
+            ntr::input_test_controls(true,tick<flower_jump?2:0,0,0);return true;
+        }
+    }
+    if(!began)began=tick;
+    // Luigi's native air-wall handler rebounds instead of entering Mario's
+    // wall slide. Use his ordinary crouch/backflip input to reach the ledge.
+    if(phase==0 && p->param1==1) {
+        if(p->mIsAirborne) {phase=1;kick=tick;}
+        else {
+            uint16_t held=0x100; // Physical DS R; the game maps it to crouch.
+            if(!std::strcmp(state,"St_Crouch_Main"))held|=2;
+            ntr::input_test_controls(true,held,0,0);return true;
+        }
+    }
+    if(phase==0 && !std::strcmp(state,"St_WallSlide_Main")){phase=1;kick=tick;}
+    if(phase==1 && !p->mIsAirborne && p->mPosY>1600*4096){phase=2;}
+    if(phase==2 && p->mAreaId==4 && p->mPosY>1600*4096){phase=3;}
+    if(phase==3 && p->mPosX < 20*4096){phase=4;}
+    if(phase==4 && p->mPosZ < -200*4096){phase=5;}
+    if(phase==5 && p->mPosX > 1000*4096){phase=6;}
+    double tx=3600,tz=250;
+    uint16_t buttons=2048;
+    if(phase==0 && tick-began>=6 && tick-began<14)buttons|=2;
+    if(phase==1){tx=2500;tz=350;if(tick-kick<40)buttons|=2;}
+    if(phase==2){tx=1900;tz=475;}
+    if(phase==3){tx=-100;tz=475;}
+    if(phase==4){tx=-100;tz=-300;}
+    if(phase==5){tx=1300;tz=-350;}
+    if(phase==6) {
+        auto *eye=static_cast<daEykn_c *>(dActor_c::FindWithActorID(263,nullptr));
+        if(eye && eye->mStateID!=2 && eye->aliveState==1) {
+            const double angle=std::atan2(double(p->mPosX-eye->mPosX),double(p->mPosZ-eye->mPosZ))+0.45;
+            tx=eye->mPosX/4096.0+300*std::sin(angle);
+            tz=eye->mPosZ/4096.0+300*std::cos(angle);
+        } else {phase=7;std::fprintf(stderr,"[big mri combat] death observed tick=%llu\n",static_cast<unsigned long long>(tick));}
+    }
+    if(phase==7) {
+        int16_t sx=0,sy=0;uint16_t held=0;
+        static uint64_t jump_end=0,next_jump=0;
+        for(auto *a=dActor_c::FindWithActorID(178,nullptr);a;a=dActor_c::FindWithActorID(178,a)) {
+            auto *star=static_cast<daStar_c *>(a);
+            if(a->aliveState!=1 || (a->param1&15)!=6 || a->mAreaId!=4 || star->mState!=4)continue;
+            const double dx=double(a->mPosX)-p->mPosX,dz=double(a->mPosZ)-p->mPosZ;
+            const double distance=std::hypot(dx,dz)/4096.0;
+            if(distance>25) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*18000);sy=static_cast<int16_t>(-std::cos(angle)*18000);
+            }
+            if(distance<220 && !p->mIsAirborne && tick>=next_jump && !p->mIsNoControl) {jump_end=tick+40;next_jump=tick+100;}
+            if(tick<jump_end)held|=2;
+            if(tick%30==0)std::fprintf(stderr,"[big mri pickup] tick=%llu star=%u distance=%.1f state=%s\n",static_cast<unsigned long long>(tick),a->uniqueID,distance,state);
+            break;
+        }
+        ntr::input_test_controls(true,held,sx,sy);return true;
+    }
+    int16_t sx=0,sy=0;
+    if(phase<7 && tick-began<5000){
+        const double a=std::atan2(tx*4096-p->mPosX,tz*4096-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(a)*32767);sy=static_cast<int16_t>(-std::cos(a)*32767);
+    }else buttons=0;
+    if(tick%30==0 || (buttons&2))std::fprintf(stderr,"[big mri approach] tick=%llu phase=%u area=%d player=%s pos=%d,%d,%d air=%d buttons=%x\n",static_cast<unsigned long long>(tick),phase,int(p->mAreaId),state,p->mPosX,p->mPosY,p->mPosZ,int(p->mIsAirborne),unsigned(buttons));
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
+static bool replay_mri_circle() {
+    if(!std::getenv("SM64DS_PC_TEST_MRI_CIRCLE") || !std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !replay_course_route_complete)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p || data_0209f2f8!=12)return false;
+    static uint64_t began=0;static bool dying=false,wasReentered=false,firstRewardRemoved=false,reentryRewardRemoved=false;static int rewardX=0,rewardZ=0;static unsigned rewardID=0;
+    if(replay_lava_bridge_reentered && !wasReentered){began=0;dying=false;rewardX=rewardZ=0;rewardID=0;wasReentered=true;std::fprintf(stderr,"[mri orbit] reset after course reentry\n");}
+    if((wasReentered && reentryRewardRemoved) || (!wasReentered && firstRewardRemoved))return false;
+    auto tick=ntr::rt_frame();
+    if(!began){began=tick;std::fprintf(stderr,"[mri orbit] start tick=%llu\n",static_cast<unsigned long long>(tick));}
+    auto *eye=static_cast<daEykn_c *>(dActor_c::FindWithActorID(262,nullptr));
+    while(eye && (eye->mAreaId!=p->mAreaId || eye->aliveState!=1))eye=static_cast<daEykn_c *>(dActor_c::FindWithActorID(262,eye));
+    if(eye && eye->mStateID==2 && !dying){dying=true;rewardX=eye->mPosX;rewardZ=eye->mPosZ;std::fprintf(stderr,"[mri orbit] dying tick=%llu circle=%d\n",static_cast<unsigned long long>(tick),eye->mCircleAngle);}
+    double dx=0,dz=0;
+    if(eye && !dying && tick-began<1800){
+        const double angle=std::atan2(double(p->mPosX-eye->mPosX),double(p->mPosZ-eye->mPosZ))+0.55;
+        dx=eye->mPosX+160*4096.0*std::sin(angle)-p->mPosX;
+        dz=eye->mPosZ+160*4096.0*std::cos(angle)-p->mPosZ;
+    }else if(!eye && dying){
+        if(rewardID && !dActor_c::FindWithID(rewardID)){
+            auto &finished=wasReentered?reentryRewardRemoved:firstRewardRemoved;
+            finished=true;
+            std::fprintf(stderr,"[mri orbit] reward-removed tick=%llu visit=%u uid=%u\n",static_cast<unsigned long long>(tick),wasReentered?2u:1u,rewardID);
+            std::fflush(stderr);
+            return false;
+        }
+        auto *coin=dActor_c::FindWithActorID(290,nullptr);
+        // Coins can change to the shared area (-1) after initialization.
+        // Retain the selected reward identity rather than rejecting that move.
+        while(coin && (coin->aliveState!=1 || (coin->mAreaId>=0 && coin->mAreaId!=p->mAreaId) || (coin->param1&255)!=2 ||
+              std::hypot(double(coin->mPosX-rewardX),double(coin->mPosZ-rewardZ))>400*4096.0 ||
+              (rewardID && coin->uniqueID!=rewardID)))coin=dActor_c::FindWithActorID(290,coin);
+        if(coin && !rewardID){rewardID=coin->uniqueID;std::fprintf(stderr,"[mri orbit] reward tick=%llu uid=%u\n",static_cast<unsigned long long>(tick),rewardID);}
+        if(coin){dx=coin->mPosX-p->mPosX;dz=coin->mPosZ-p->mPosZ;}
+    }
+    int16_t sx=0,sy=0;
+    if(std::hypot(dx,dz)>20*4096.0){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*32767);sy=static_cast<int16_t>(-std::cos(a)*32767);}
+    if(dying && tick%10==0){auto *r=rewardID?dActor_c::FindWithID(rewardID):nullptr;std::fprintf(stderr,"[mri pickup probe] tick=%llu eye=%u area=%d reward=%u alive=%d area=%d param=%u dx=%.0f dz=%.0f stick=%d,%d\n",static_cast<unsigned long long>(tick),eye?unsigned(eye->uniqueID):0,int(p->mAreaId),rewardID,r?int(r->aliveState):-1,r?int(r->mAreaId):-1,r?unsigned(r->param1):0,dx,dz,int(sx),int(sy));}
+    ntr::input_test_controls(true,sx||sy?2048:0,sx,sy);return true;
+}
+
 static bool replay_udlift_return() {
     static unsigned first_uid=0,visit=1;
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -2761,6 +2879,8 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
+        if(!replay_big_mri_approach())
+        if(!replay_mri_circle())
         if(!replay_furniture_encounter())
         if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
