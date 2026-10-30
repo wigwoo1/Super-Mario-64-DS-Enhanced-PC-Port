@@ -254,6 +254,27 @@ def main():
             raise ValueError('Spinning-floor native virtual callback mismatch: '+method)
     if merry_vtable[16]!=arrow_method('??_GdaTrsTrap_c@@'):raise ValueError('Spinning floor lacks native deleting destructor')
     print('PASS: original spinning-floor159 and trapdoor160 profiles/factories, three canonical four-row resources/CLPS, four native state dispatches and six virtual callbacks')
+    for cls,profile,factory,ov,address in (
+            ('daChair_c','pc_haunted_chair_profile','daChair_c_classInit',20,0x021149f0),
+            ('daPiano_c','pc_mad_piano_profile','daPiano_c_classInit',63,0x0211ed10)):
+        base,image=overlay(ov)
+        native=pe_bytes(args.exe,named(profile),28)
+        if native[4:]!=image[address-base+4:address-base+28] or struct.unpack_from('<I',native)[0]!=named(factory):
+            raise ValueError('Haunted furniture profile/factory mismatch: '+cls)
+        vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7'+cls+'@@'),68))
+        for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render')):
+            if vtable[slot]!=arrow_method('?'+method+'@'+cls+'@@'):
+                raise ValueError('Haunted furniture native callback mismatch: '+cls+'::'+method)
+        if vtable[16]!=arrow_method('??_G'+cls+'@@'):
+            raise ValueError('Haunted furniture deleting destructor mismatch: '+cls)
+    piano_targets=tuple(arrow_method('?func_ov063_'+address+'@daPiano_c@@') for address in ('0211dd78','0211dbb8','0211dba4','0211d8cc'))
+    if struct.unpack('<4I',pe_bytes(args.exe,named('data_ov063_0211efbc'),16))!=piano_targets:
+        raise ValueError('Piano states must contain native member callbacks')
+    row=next(r for r in records(ROOT) if r['name']=='data_ov063_0211ecb8')
+    original=source_bytes(ROOT,row)
+    if pe_bytes(args.exe,named('data_ov063_0211ecb8'),len(original))!=original:
+        raise ValueError('Piano collision properties differ from original')
+    print('PASS: original haunted chair/piano profiles, native factories/virtuals/state callbacks and original piano collision properties')
     switch_records=records(ROOT)
     for label in ('data_ov002_0210d8b4','data_ov002_0210d774'):
         row=next(item for item in switch_records if item['name']==label)

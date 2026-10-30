@@ -21,6 +21,8 @@
 #include "daC_Jugem_c.h"
 #include "daDoor_c.h"
 #include "daBook_c.h"
+#include "daPiano_c.h"
+#include "daChair_c.h"
 #include "daTrsTrap_c.h"
 #include "daStarGate_c.h"
 #include "daMip_c.h"
@@ -202,6 +204,8 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/crate_replay.h"
 static bool replay_course_route_complete;
 static bool replay_lava_bridge_reentered;
+static bool replay_book_puzzle_complete;
+static bool replay_furniture_complete;
 static unsigned replay_course_route_waypoint=0;
 // Observes original contact/state and supplies normal input only. Never
 // changes actor state, position, save flags or dialogue results.
@@ -480,6 +484,60 @@ static bool replay_big_boo_combat() {
     if(tick%30==0 || buttons)std::fprintf(stderr,"[native Big Boo pilot] tick=%llu hp=%u boss_state=%u opacity=%u distance=%.1f player=%s air=%u buttons=%x\n",static_cast<unsigned long long>(tick),unsigned(boss->mDataIdx),unsigned(boss->unk_5cc),unsigned(boss->mOpacity),distance,state,unsigned(p->mIsAirborne),unsigned(buttons));
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
+// Input-only encounter QA: original piano state starts a retreat through the
+// room door; the actor, collision, damage and scene systems remain in charge.
+static bool replay_furniture_encounter() {
+    if(!std::getenv("SM64DS_PC_TEST_FURNITURE_ENCOUNTER"))return false;
+    static unsigned phase=0;
+    static unsigned visit=1,first_piano=0,first_chair=0;
+    static uint64_t began=0,safe_at=0;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    const auto tick=ntr::rt_frame();
+    auto controls=[&](int16_t x=0,int16_t y=0){ntr::input_test_controls(true,0,x,y);return true;};
+    const bool cycle=std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE")!=nullptr;
+    auto event=[&](const char *name){std::fprintf(stderr,"[furniture encounter] event=%s tick=%llu level=%d phase=%u health=%d player=%s visit=%u\n",name,static_cast<unsigned long long>(tick),int(data_0209f2f8),phase,p?p->GetHealth():-1,pc_player_state_name(p),visit);std::fflush(stderr);};
+    if(phase==4 && cycle) {
+        if(visit==2)return controls();
+        if(!replay_lava_bridge_reentered || data_0209f2f8!=12)return false;
+        auto *piano=static_cast<daPiano_c *>(dActor_c::FindWithActorID(249,nullptr));
+        auto *chair=static_cast<daChair_c *>(dActor_c::FindWithActorID(326,nullptr));
+        if(!piano || !chair || piano->aliveState!=1 || chair->aliveState!=1)return controls();
+        std::fprintf(stderr,"[furniture reset] tick=%llu old_piano=%u new_piano=%u state=%d home=%d,%d,%d old_chair=%u new_chair=%u chair_state=%d chair_pos=%d,%d,%d\n",static_cast<unsigned long long>(tick),first_piano,unsigned(piano->uniqueID),piano->mStateIdx,piano->mHomePos.x,piano->mHomePos.y,piano->mHomePos.z,first_chair,unsigned(chair->uniqueID),chair->mState,chair->mPosX,chair->mPosY,chair->mPosZ);
+        std::fflush(stderr);phase=0;visit=2;began=0;safe_at=0;
+    }
+    if(!phase) {
+        if(data_0209f2f8!=12 || !p)return false;
+        auto *piano=static_cast<daPiano_c *>(dActor_c::FindWithActorID(249,nullptr));
+        if(!piano || piano->aliveState!=1 || piano->mStateIdx!=1)return false;
+        if(visit==1) {
+            first_piano=piano->uniqueID;
+            if(auto *chair=dActor_c::FindWithActorID(326,nullptr))first_chair=chair->uniqueID;
+        }
+        phase=1;began=tick;event("attack-retreat");
+    }
+    if(data_0209f2f8!=12 || !p || p->aliveState!=1) {
+        if(phase!=5){phase=5;event("failed-course-exit");}
+        return controls();
+    }
+    if(tick-began>2000 && phase<3){phase=5;event("retreat-timeout");}
+    if(phase>=3) {
+        if(phase==3 && tick-safe_at>=360 && !p->mIsAirborne && !p->mIsNoControl && !p->mIsControlDisabled) {
+            phase=4;event("recovery-verified");
+            if(cycle){replay_furniture_complete=true;replay_course_route_complete=true;}
+        }
+        return controls();
+    }
+    if(p->mIsNoControl || p->mIsControlDisabled)return controls();
+    const double tx=(phase==1?-600:200)*4096.0,tz=1425*4096.0;
+    const double dx=tx-p->mPosX,dz=tz-p->mPosZ;
+    if(std::hypot(dx,dz)<70*4096.0 && !p->mIsAirborne) {
+        if(phase==1){phase=2;event("room-clear");}
+        else {phase=3;safe_at=tick;event("safe-hall");}
+        return controls();
+    }
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    return controls(static_cast<int16_t>(std::sin(angle)*30000),static_cast<int16_t>(-std::cos(angle)*30000));
+}
 // Opt-in QA driver: observes the original puzzle and submits normal pad input.
 static bool replay_book_puzzle() {
     if(!std::getenv("SM64DS_PC_TEST_BOOK_PUZZLE") || !replay_course_route_complete || data_0209f2f8!=12)return false;
@@ -488,7 +546,17 @@ static bool replay_book_puzzle() {
     static uint64_t began=0,hit_tick=0;
     const auto tick=ntr::rt_frame();if(!began)began=tick;
     auto controls=[&](uint16_t b=0,int16_t x=0,int16_t y=0){ntr::input_test_controls(true,b,x,y);return true;};
-    if(index>=3 || tick-began>1800)return controls();
+    if(index>=3) {
+        auto *shelf=static_cast<daTrsTrap_c *>(dActor_c::FindWithActorID(158,nullptr));
+        if(shelf && shelf->aliveState==1)return controls();
+        if(!replay_book_puzzle_complete) {
+            replay_book_puzzle_complete=true;
+            std::fprintf(stderr,"[book puzzle replay] complete tick=%llu shelf=removed\n",static_cast<unsigned long long>(tick));
+            std::fflush(stderr);
+        }
+        return controls();
+    }
+    if(tick-began>1800)return controls();
     daBook_c *book=nullptr;
     for(auto *a=dActor_c::FindWithActorID(213,nullptr);a;a=dActor_c::FindWithActorID(213,a))
         if(a->aliveState==1 && a->param1==index)book=static_cast<daBook_c *>(a);
@@ -1009,6 +1077,75 @@ static bool replay_course_route(const char *route_override=nullptr) {
 #include "hal/arrow_sign_replay.h"
 #include "hal/fall_block_replay.h"
 
+// Opt-in courtyard encounter QA. Submit pad input; original actors own damage,
+// rewards, collision, animation and course transitions.
+static bool replay_courtyard_boo(Player *p) {
+    if(!std::getenv("SM64DS_PC_TEST_COURTYARD_BOO") || data_0209f2f8!=3 || !p)return false;
+    const auto tick=ntr::rt_frame();
+    static unsigned phase=0;
+    static uint64_t began=0,jumpUntil=0,poundUntil=0,nextJump=0;
+    daTrs_c *boo=nullptr;
+    for(auto *a=dActor_c::FindWithActorID(209,nullptr);a;a=dActor_c::FindWithActorID(209,a))
+        if(a->aliveState==1 && (a->param1&15)==5){boo=static_cast<daTrs_c *>(a);break;}
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto steer=[&](double dx,double dz,double magnitude) {
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(angle)*magnitude);sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+    };
+    if(!p->mIsNoControl && !p->mIsControlDisabled) {
+        const char *state=pc_player_state_name(p);
+        const bool grounded=!p->mIsAirborne && (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Land_Main"));
+        if(boo) {
+            const double dx=double(boo->mPosX)-p->mPosX,dz=double(boo->mPosZ)-p->mPosZ;
+            const double distance=std::hypot(dx,dz)/4096.0;
+            const double colliderDistance=std::hypot(double(boo->mdCcAcPos_c.pos.x)-p->mdCcAcPos_c.pos.x,
+                                                     double(boo->mdCcAcPos_c.pos.z)-p->mdCcAcPos_c.pos.z)/4096.0;
+            const double contactRadius=(double(boo->mdCcAcPos_c.radius)+double(p->mdCcAcPos_c.radius))/4096.0;
+            if(phase>=2 && tick%2==0) {
+                auto trace=[&](const char *name,dCcAcPos_c &c) {
+                    std::fprintf(stderr,"[courtyard collider] tick=%llu name=%s pos=%.1f,%.1f,%.1f radius=%.1f height=%.1f flags=%x vuln=%x hit=%x other=%u step=%u\n",
+                        static_cast<unsigned long long>(tick),name,double(c.pos.x)/4096,double(c.pos.y)/4096,double(c.pos.z)/4096,double(c.radius)/4096,double(c.height)/4096,
+                        unsigned(c.flags),unsigned(c.vulnFlags),unsigned(c.hitFlags),unsigned(c.otherOwner),unsigned(p->mStateStep));
+                };
+                trace("boo",boo->mdCcAcPos_c);trace("body",p->mdCcAcPos_c);trace("attack",p->mAttackClsn);
+            }
+            if(phase==0) {
+                // Turn away using movement so the original Boo facing test
+                // makes him visible; give the player room for a vertical jump.
+                steer(-dx,-dz,22000);
+                if(distance>320 && boo->mOpacity==255){phase=1;began=tick;}
+            } else if(phase==1) {
+                // Neutral input preserves the away-facing heading. The Boo
+                // closes the gap through its original chase state.
+                if(boo->mOpacity<255 && tick-began>60){phase=0;}
+                // The Boo cylinder is offset behind its visible center. Jump
+                // 30 units before body contact, giving time to rise and arm
+                // the pound while the original chase closes the remaining gap.
+                else if(grounded && colliderDistance<contactRadius+30 && boo->mOpacity==255 && tick>=nextJump) {
+                    phase=2;jumpUntil=tick+8;began=tick;buttons=2;
+                }
+            } else if(phase==2) {
+                if(tick<jumpUntil)buttons=2;
+                if(p->mIsAirborne && p->mPosY>boo->mPosY+60*4096 && distance<260) {
+                    phase=3;poundUntil=tick+4;buttons=0x100;
+                } else if(tick-began>100 && grounded){phase=0;}
+            } else {
+                if(tick<poundUntil)buttons=0x100;
+                if(grounded && tick>poundUntil+20){phase=0;nextJump=tick+30;}
+            }
+            if(tick%30==0 || buttons)std::fprintf(stderr,"[courtyard Boo pilot] tick=%llu phase=%u uid=%u state=%u opacity=%u distance=%.1f player=%s heading=%d buttons=%x\n",static_cast<unsigned long long>(tick),phase,boo->uniqueID,unsigned(boo->unk_5cc),unsigned(boo->mOpacity),distance,state,int(p->mAngleY),unsigned(buttons));
+        } else if(auto *cage=dActor_c::FindWithActorID(212,nullptr)) {
+            const double dx=double(cage->mPosX)-p->mPosX,dz=double(cage->mPosZ)-p->mPosZ;
+            const double distance=std::hypot(dx,dz)/4096.0;
+            steer(dx,dz,18000);
+            if(grounded && distance<220 && tick>=nextJump){jumpUntil=tick+8;nextJump=tick+100;}
+            if(tick<jumpUntil)buttons=2;
+            if(tick%30==0)std::fprintf(stderr,"[courtyard cage pilot] tick=%llu uid=%u distance=%.1f player=%s\n",static_cast<unsigned long long>(tick),cage->uniqueID,distance,state);
+        }
+    }
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
+
 // Input-only lava-bridge lifecycle QA: use the original Exit Course menu,
 // basement painting and mission selector, then repeat the same walking route.
 static bool replay_lava_bridge_lifecycle() {
@@ -1024,7 +1161,14 @@ static bool replay_lava_bridge_lifecycle() {
     const auto tick=ntr::rt_frame();
     auto event=[&](const char *name){std::fprintf(stderr,"[native lava bridge lifecycle] %s tick=%llu level=%d phase=%d\n",name,static_cast<unsigned long long>(tick),int(data_0209f2f8),phase);};
     if(phase>=4)return false;
-    if(!phase) {if(!replay_course_route_complete)return false;phase=1;began=tick;event("exit-request");}
+    if(!phase) {
+        if(!replay_course_route_complete)return false;
+        // For bookshelf reset tests, don't leave until the original shelf has
+        // completed its native slide and cleanup after all three book hits.
+        if(std::getenv("SM64DS_PC_TEST_BOOK_PUZZLE") && !replay_book_puzzle_complete)return false;
+        if(std::getenv("SM64DS_PC_TEST_FURNITURE_ENCOUNTER") && !replay_furniture_complete)return false;
+        phase=1;began=tick;event("exit-request");
+    }
     if(tick-began>12000){phase=4;event("timeout");return false;}
     auto *p=static_cast<Player *>(data_0209f394[0]);
     const bool ready=p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;
@@ -1052,6 +1196,15 @@ static bool replay_lava_bridge_lifecycle() {
         }
         if(data_0209f2f8==course_level && ready) {
             phase=3;event("original-course-reentry");
+            if(course_level==12) {
+                auto *shelf=static_cast<daTrsTrap_c *>(dActor_c::FindWithActorID(158,nullptr));
+                std::fprintf(stderr,"[bookshelf lifecycle] event=reentry-entry tick=%llu shelf=%s state=%u flags=%02x index=%d\n",
+                    static_cast<unsigned long long>(tick),shelf&&shelf->aliveState==1?"present":"absent",
+                    shelf&&shelf->aliveState==1?unsigned(shelf->mState):0u,
+                    shelf&&shelf->aliveState==1?unsigned(shelf->mBookFlags):0u,
+                    shelf&&shelf->aliveState==1?int(shelf->mIndex):-1);
+                std::fflush(stderr);
+            }
             replay_lava_bridge_reentered=true;
             replay_course_route_waypoint=0;
             const char *route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE");
@@ -1083,6 +1236,7 @@ static bool replay_lava_bridge_lifecycle() {
                 event("painting-approach");
             }
         }
+        if(replay_course_route_complete && replay_courtyard_boo(p))return true;
         if(course_level!=14 || data_0209f2f8!=4 || !ready)return controls();
         if(data_0209d660){if(tick%45<3)buttons=1;return controls();}
         // Original level4 exit/painting at(-1350,-1100,-3850), facing south.
@@ -1104,6 +1258,15 @@ static bool replay_lava_bridge_lifecycle() {
         const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         sx=static_cast<int16_t>(std::sin(angle)*22000);sy=static_cast<int16_t>(-std::cos(angle)*22000);
         return controls();
+    }
+    if(phase==3 && course_level==12 && data_0209f2f8==12 && tick%120==0) {
+        auto *shelf=static_cast<daTrsTrap_c *>(dActor_c::FindWithActorID(158,nullptr));
+        std::fprintf(stderr,"[bookshelf lifecycle] event=course-sample tick=%llu shelf=%s state=%u flags=%02x index=%d\n",
+            static_cast<unsigned long long>(tick),shelf&&shelf->aliveState==1?"present":"absent",
+            shelf&&shelf->aliveState==1?unsigned(shelf->mState):0u,
+            shelf&&shelf->aliveState==1?unsigned(shelf->mBookFlags):0u,
+            shelf&&shelf->aliveState==1?int(shelf->mIndex):-1);
+        std::fflush(stderr);
     }
     if(phase==3 && replay_course_route_complete){phase=4;event("done");}
     return false;
@@ -2372,9 +2535,10 @@ static bool trace_script_progress(uint64_t frame)
             if(last==~uint64_t(0))std::fputs("tick,id,kind,alive,x,y,z,state,step,broken,stump,fence,steps,cooldown,busy,disabled,collision,player_x,player_y,player_z,player_state,airborne,no_control,health,flags,area,camera_x,camera_y,camera_z,clip_result\n",file);
             last=tick;
             auto *p=static_cast<Player *>(data_0209f394[0]);
-            for(unsigned kind:{219u,27u,41u})
+            for(unsigned kind:{219u,27u,41u,158u})
             for(auto *a=dActor_c::FindWithActorID(kind,nullptr);a;a=dActor_c::FindWithActorID(kind,a)) {
                 int state=-1,step=-1,broken=-1,stump=-1,fence=-1,steps=-1,cooldown=-1,busy=-1,disabled=-1,collision=-1;
+                if(kind==158) {auto *s=static_cast<daTrsTrap_c *>(a);state=s->mState;step=s->mIndex;broken=s->mBookFlags;}
                 if(kind==219) {auto *c=static_cast<daWanwan_c *>(a);state=c->mState;step=c->mReleaseStep;broken=c->mChainBroken;stump=c->mStumpUniqueID;fence=c->mFenceUniqueID;}
                 if(kind==27) {auto *s=static_cast<daObjPile_c *>(a);steps=s->mStepsLeft;cooldown=s->mAttackCooldown;busy=s->mBusy;collision=s->mMeshCollider.IsEnabled();}
                 if(kind==41) {auto *f=static_cast<daObjWanwanShutter_c *>(a);disabled=f->mDisabled;collision=f->mMeshCollider.IsEnabled();}
@@ -2509,6 +2673,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
+        if(!replay_furniture_encounter())
         if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {

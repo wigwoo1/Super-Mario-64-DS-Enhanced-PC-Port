@@ -6250,8 +6250,8 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "7fc96ffec3243a0aef5380258970048245cac4666df13f6b4b600992bec2bd0d",
-      "bytes": 456426
+      "sha256": "1f674347e19bbbd9b8593012a063e4272d099e2fea8ae0d8f3b28bf6f72f6346",
+      "bytes": 456508
     },
     {
       "path": "port/build-support/pc_link_data.json",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "b1907b51e35b1033729e69a93dddb4a2f5ab5fb9ad4971eadb8ccc8559c6bf26",
-      "bytes": 87637
+      "sha256": "6b03a162a7a72152b0e2c89f67e6f29eb2a45b875dd49b89e27026c1b0e9b95b",
+      "bytes": 87809
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7350,8 +7350,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "1294fbb691933179fa81e1440b87d9ad0b4b76ba09efae6eba2c61eae70f0c0d",
-      "bytes": 306334
+      "sha256": "2c3b1be6b9eb53d2e2c01e90eafb8e942f79408aae50ddffa3326b10b4e99a6a",
+      "bytes": 310888
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -7390,8 +7390,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "b681a09b92010645ecf89022dc1cd237e4fe869e1c37dea766ab308faa943988",
-      "bytes": 18974
+      "sha256": "f56f811c464ef0feba349609ce434e82049a7fc804c2e74e3e5c21c6fa89b9a9",
+      "bytes": 19393
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7545,8 +7545,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "592fc8e0d413d2e7d6c0ffa22ef3e8e70a2fa6cc1ad0420b0d47941642b305db",
-      "bytes": 46743
+      "sha256": "be6502ed8d805fe0d357fd29ae7ae77a0e456e47eaa31ba122793e89a9d0a784",
+      "bytes": 47198
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8005,8 +8005,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "daf2c63afed3bcdfdb36256403d50fc4adbef0d18cd942882f5098113fae99cf",
-      "bytes": 194341
+      "sha256": "03c9fc7c4743bd770d12600c471d4eff743183bb96b6f6badd842b0f1efe2966",
+      "bytes": 205045
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8980,8 +8980,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "7a994a062a56efdfc84743e1477290a5b708ea6c376fd36afe9a6cdd07c83e38",
-      "bytes": 48238
+      "sha256": "f424b9ba07eb742b96b29cf68fc245a00b7002c3d866a09a73e7db04735d7387",
+      "bytes": 48560
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9120,8 +9120,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "f21d9925d56c4a331da46141c660b01dc837cf7cb4c45bf8728fcad6007b707f",
-      "bytes": 45413
+      "sha256": "0e1e37c146f242de2be6fb21b45731d76270999016688e59fbafc890f2d07df3",
+      "bytes": 47126
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9339,6 +9339,11 @@
       "bytes": 3091
     },
     {
+      "path": "port/tools/haunted_furniture_host.py",
+      "sha256": "f9d9b8965ec137980a2600c5c4f4e188df165acf39312f865932be5328cd2707",
+      "bytes": 3416
+    },
+    {
       "path": "port/tools/healing_heart_host.py",
       "sha256": "9c08bb17120c776aa994847b319aa1a464a57547c528c97a1b91774dfa7404e7",
       "bytes": 4009
@@ -9440,8 +9445,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "898a771f2d6f7910f1c3a3617dc9685c5d3b4ca799483f0958f23bfd61fd4d3f",
-      "bytes": 14241
+      "sha256": "437b8b650af72ace1ba205d18f27f0920b10865506cf7596f968d421a7d3f578",
+      "bytes": 14836
     },
     {
       "path": "port/tools/native_kit_data.py",

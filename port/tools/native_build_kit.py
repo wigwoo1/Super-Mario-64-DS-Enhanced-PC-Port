@@ -118,12 +118,20 @@ def main():
         'visibility checks in level12 missions1/2; all three render, child links ' +
         'are correct, and Mario traverses all three steps and the upper landing in a muted test. ' +
         'Boss-triggered rise and lifecycle remain open. ' +
-        'Bookshelf158 remains unsupported. Native Boo/Big Boo resources load; ' +
+        'Bookshelf158 and switch213 now pass the original three-book puzzle, ' +
+        'shelf opening and original course exit/re-entry with a fresh closed shelf. ' +
+        'Native piano249 and chairs326 spawn/render; selected checks cover piano ' +
+        'attack/damage, linked-chair tipping, safe escape, fresh course instances ' +
+        'and repeated piano activation. An independent chair leaps and breaks ' +
+        'with original wood/dust; the stationary replay later dies. Safe independent ' +
+        'chair escape and destroyed-chair re-entry remain unverified. ' +
+        'Native Boo/Big Boo resources load; ' +
         'three distinct ordinary Boo defeats, separate five-coin payouts and the main-hall boss counter ' +
         'advancing to three are verified. A separate Mission1 replay verifies the original rear entrance, ' +
         'the two additional area6 Boo defeats and their five-coin payouts. A continuous Mission1 run ' +
         'now verifies all five defeats and collected payouts, the same boss counter reaching five, ' +
-        'and Big Boo activation with safe player control. Active Big Boo combat, Star reward and staircase rise remain open. ' +
+        'and Big Boo activation with safe player control. Selected later checks cover ' +
+        'Big Boo defeat and Star spawn; full campaign acceptance remains open. ' +
         'Selected original brick debris and the opening sleep-bubble pop render; '
         'Mario collects the brick coins and the original Yoshi restriction is preserved. '
         'Wider effects remain open. '

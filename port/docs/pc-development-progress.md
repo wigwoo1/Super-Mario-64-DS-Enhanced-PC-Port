@@ -2451,3 +2451,70 @@ isolated fixtures. The two-Star library fixture cannot satisfy the original
 entrance Boo; two approach routes hit courtyard obstacles and ended in death.
 Entrance Boo defeat, cage interaction and course re-entry/reset remain unverified.
 These failures are diagnostic; no stable-install promotion is made.
+
+UPDATE 2026-10-29: BOOKSHELF COURSE RE-ENTRY RESET VERIFIED
+The later corrected isolated fixture preserves the original Big Boo's Haunt
+Mission 2 progression while supplying courtyard entry prerequisites. A muted
+17,000-frame replay solves all three original books, waits for shelf cleanup,
+uses original Pause Exit Course, defeats the courtyard entrance Boo, enters
+through its cage, and returns to the library. A new bookshelf instance starts
+closed with every switch flag cleared; screenshots show the restored three
+books and closed shelf. Runtime exit0, mixer errors0, muted device samples0;
+both isolated save files remain unchanged. This supersedes the earlier course
+re-entry/reset limitations above. No gameplay behavior was altered for this
+verification; test fixture and route setup were corrected. Repeat solving and
+the full campaign remain separate acceptance work.
+
+NEXT NATIVE ACTOR GAP: MAD PIANO AND HAUNTED CHAIRS
+The original daPiano_c and daChair_c sources exist but their factories/profiles
+are absent from the current native registry and linked actor closure. The
+chair can react to the nearby piano, so integrate and test both original actors
+with their activation, attacks, collision, resources, cleanup and course reset.
+Recovered constructor layouts, fixed DS field offsets and member callbacks
+need host adaptation through the existing source transformation architecture.
+This is an audited implementation gap, not a completed gameplay feature.
+
+UPDATE 2026-10-29: NATIVE PIANO/CHAIR INTEGRATION PARTIALLY VERIFIED
+Both original actors now compile/link and register their original profiles.
+The host adaptations retain original behavior while constructing native owned
+objects, deferring resource handles and addressing the chair timers through
+their host fields. Data audit verifies original profile metadata, native virtual
+and piano state callbacks and collision-property bytes; six focused tests pass.
+Muted Mission 2 runs spawn all authored chairs and the piano. The original room
+door is traversed, both models render, a normal jump triggers the piano attack,
+its linked chair tips, and Mario takes original damage. The combat replay then
+dies and returns normally to the courtyard; surviving the encounter, chair
+break/cleanup and course re-entry reset remain unverified. Runtime exits0 with
+audio errors0, muted output and unchanged disposable saves. No stable install
+or public build promotion is justified by this partial interaction coverage.
+
+FOLLOW-UP: PIANO SAFE ESCAPE VERIFIED
+The input-only pilot now reacts to the original piano attack state, retreats
+through the actual room door and waits for normal control in the hall. A muted
+6,000-frame replay remains in the course with eight health points, exits0 and
+preserves both disposable saves. The native actor-data audit passes. This
+supersedes the pilot-survival limitation above; independent chair break and
+furniture cleanup/course re-entry still need gameplay acceptance.
+
+FOLLOW-UP: FURNITURE COURSE RE-ENTRY AND REPEATED PIANO ENCOUNTER VERIFIED
+A muted 16,000-frame replay now performs original Pause Exit Course, castle
+and courtyard traversal, entrance-Boo/cage interaction and Mission 2 re-entry.
+The piano and all three chairs receive fresh native instances. The piano and
+linked chair reset to their original resting states/home positions. A second
+original piano activation and room-door escape restores normal control without
+additional damage. First encounter health remains8; courtyard Boo damage is
+carried into the second encounter, whose health remains6. Runtime exits0 with
+audio errors0/muted device samples0 and byte-identical disposable saves; current
+native actor-data audit passes. Independent unlinked chair leap/break behavior
+remains unverified; the complete game and actor coverage are still unfinished.
+
+FOLLOW-UP: SELECTED INDEPENDENT CHAIR LEAP/BREAK VERIFIED
+The original rear room is entered through its door. Approaching an unlinked
+chair triggers its rattle, airborne pursuit and impact Break routine without
+forcing actor state. Native state/position and render traces confirm the leap
+and destruction; screenshots show the original wood fragments and dust. The
+muted replay exits0 with unchanged disposable saves and no audio errors. Mario
+is hurt and later dies during the stationary test; safe escape and respawning
+this destroyed chair on a later visit are separate unverified checks. Native
+data audit and build pass. This supersedes the selected chair leap/break gap,
+not complete actor/course/campaign acceptance.

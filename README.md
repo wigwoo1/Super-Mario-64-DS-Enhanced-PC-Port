@@ -18,10 +18,16 @@ Audio listening accuracy and complete gameplay remain unverified.
 - Native Boo, Big Boo, bookshelf and book-switch factories load their original
   resources. Selected muted tests verify the five-Boo prerequisite sequence,
   Big Boo defeat and Star spawn, and a separate three-book puzzle opening.
-  These are diagnostic checks, not complete campaign acceptance. Original
-  castle-to-courtyard travel is verified with an isolated 20-Star fixture;
-  the entrance-Boo approach currently catches on obstacles, and cage entry,
-  full course re-entry and bookshelf reset remain unverified.
+  The original courtyard entrance-Boo/cage route and course re-entry now pass
+  with an isolated prerequisite save. The bookshelf resets closed with all
+  three switches restored. These are selected diagnostic checks, not complete
+  campaign acceptance.
+- Native Mad Piano and haunted chairs now spawn and render. Selected muted
+  tests verify piano attacks, damage, linked-chair tipping, safe room-door
+  escape, course re-entry with fresh actors and a second piano encounter.
+  An unlinked chair jumps, pursues and breaks with original wood/dust effects.
+  That stationary chair replay later dies; safe escape and respawning the
+  destroyed chair remain unverified. Other placements/courses remain open.
 - Native falling blocks and the original spinning floor now have selected
   Mario checks in Luigi's ghost-house maze. The block receives real player
   contact, shakes, drops and disables collision; normal ledge input restores
