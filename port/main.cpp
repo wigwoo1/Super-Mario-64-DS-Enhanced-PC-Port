@@ -23,6 +23,7 @@
 #include "daBook_c.h"
 #include "daPiano_c.h"
 #include "daChair_c.h"
+#include "daUdlift_c.h"
 #include "daTrsTrap_c.h"
 #include "daStarGate_c.h"
 #include "daMip_c.h"
@@ -206,6 +207,7 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 static bool replay_course_route_complete;
 static bool replay_lava_bridge_reentered;
 static bool replay_book_puzzle_complete;
+static bool replay_udlift_return_complete;
 static bool replay_furniture_complete;
 static unsigned replay_course_route_waypoint=0;
 // Observes original contact/state and supplies normal input only. Never
@@ -603,6 +605,68 @@ static bool replay_book_puzzle() {
         if(tick%40<8)buttons|=1;
     }
     return controls(buttons,static_cast<int16_t>(std::sin(angle)*mag),static_cast<int16_t>(-std::cos(angle)*mag));
+}
+// Opt-in input-only lift QA. Observe native stops/rider rearming; never move
+// actors or force a lift state to make the round trip pass.
+static bool replay_udlift_return() {
+    static unsigned first_uid=0,visit=1;
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!automation || !*automation || *automation=='0' ||
+       !std::getenv("SM64DS_PC_TEST_UDLIFT_RETURN") || !replay_course_route_complete)return false;
+    static unsigned phase=0;
+    static uint64_t began=0,off_at=0,reboard_at=0;
+    const auto tick=ntr::rt_frame();
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(32,nullptr));
+    auto controls=[&](int16_t x=0,int16_t y=0,uint16_t buttons=0){ntr::input_test_controls(true,buttons,x,y);return true;};
+    auto event=[&](const char *name){
+        std::fprintf(stderr,"[udlift return] event=%s tick=%llu phase=%u lift=%u state=%d bottom=%u armed=%u rider=%u player=%s pos=%d,%d,%d\n",
+            name,static_cast<unsigned long long>(tick),phase,lift?unsigned(lift->uniqueID):0,lift?lift->mState:-1,
+            lift?unsigned(lift->mIsAtBottom):0,lift?unsigned(lift->mIsArmed):0,
+            lift&&lift->mRider?unsigned(lift->mRider->uniqueID):0,pc_player_state_name(p),
+            p?p->mPosX:0,p?p->mPosY:0,p?p->mPosZ:0);std::fflush(stderr);
+    };
+    if(lift && lift->aliveState==1 && data_0209f2f8==12) {
+        if(!first_uid)first_uid=lift->uniqueID;
+        else if(visit==1 && lift->uniqueID!=first_uid && replay_lava_bridge_reentered) {
+            visit=2;phase=0;began=0;off_at=0;reboard_at=0;
+            replay_udlift_return_complete=false;event("fresh-lift-reentry");
+        }
+    }
+    if(!began){began=tick;event("wait-bottom");}
+    if(phase==5 && visit==1 && std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE"))return false;
+    if(phase>=5)return controls();
+    if(data_0209f2f8!=12 || !p || !lift || p->aliveState!=1 || lift->aliveState!=1){
+        phase=6;event("failed-actor-or-course");return controls();
+    }
+    if(tick-began>2400){phase=6;event("failed-timeout");return controls();}
+    if(p->mIsNoControl || p->mIsControlDisabled)return controls();
+    if(phase==0) {
+        if(lift->mIsAtBottom && lift->mState==3 && lift->mRider==p && !p->mIsAirborne){phase=1;event("bottom-arrived");}
+        else return controls();
+    }
+    if(phase==1 && !p->mIsAirborne && !lift->mRider && lift->mIsArmed &&
+       p->mPosY<lift->mBottomY-30*4096) {
+        phase=2;off_at=tick;event("dismounted-rearmed");return controls();
+    }
+    if(phase==2) {
+        if(tick-off_at<45)return controls();
+        phase=3;reboard_at=tick;event("reboard");
+    }
+    if(phase==3 && lift->mState==1 && lift->mRider==p){phase=4;event("upward-started");}
+    if(phase==4) {
+        if(!lift->mIsAtBottom && lift->mState==3 && lift->mPosY==lift->mTopY &&
+           lift->mRider==p && !p->mIsAirborne){phase=5;replay_udlift_return_complete=true;event("top-arrived");}
+        return controls();
+    }
+    const double tx=phase==1?-2925:lift->mPosX/4096.0;
+    const double tz=phase==1?5000:lift->mPosZ/4096.0;
+    const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0,dist=std::hypot(dx,dz);
+    if(dist<18)return controls();
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    const double mag=dist<80?14000:24000;
+    return controls(static_cast<int16_t>(std::sin(angle)*mag),static_cast<int16_t>(-std::cos(angle)*mag),
+        phase==3 && tick-reboard_at>=6 && tick-reboard_at<14?2:0);
 }
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -1186,6 +1250,7 @@ static bool replay_lava_bridge_lifecycle() {
     if(phase>=4)return false;
     if(!phase) {
         if(!replay_course_route_complete)return false;
+        if(std::getenv("SM64DS_PC_TEST_UDLIFT_RETURN") && !replay_udlift_return_complete)return false;
         // For bookshelf reset tests, don't leave until the original shelf has
         // completed its native slide and cleanup after all three book hits.
         if(std::getenv("SM64DS_PC_TEST_BOOK_PUZZLE") && !replay_book_puzzle_complete)return false;
@@ -2697,7 +2762,7 @@ static bool trace_script_progress(uint64_t frame)
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
         if(!replay_furniture_encounter())
-        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

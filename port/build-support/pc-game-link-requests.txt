@@ -3218,3 +3218,9 @@ unresolved external symbol _data_ov063_0211ec78
 unresolved external symbol _data_ov055_02111a90
 unresolved external symbol _data_ov055_02111b60
 unresolved external symbol "char data_ov063_0211ecb8" (?data_ov063_0211ecb8@@3DA)
+
+unresolved external symbol _data_ov063_0211ec38
+
+unresolved external symbol _data_ov021_02113aa0
+
+unresolved external symbol _data_ov036_02112aa8

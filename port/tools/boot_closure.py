@@ -50,6 +50,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daBook_c_classInit_SHOOT_BOOK",
                  "daBook_c_classInit_KILLER_BOOK", "daBookGen_c_classInit",
                  "daChair_c_classInit", "daPiano_c_classInit",
+                 "daUdlift_c_classInit_UDLIFT_TERESA",
                  "daTrs_c_classInit_TERESA", "daTrs_c_classInit_BOSS_TERESA",
                  "daTrsIcon_c_classInit", "daTBasket_c_classInit",
                  "func_ov055_02111264",
@@ -525,6 +526,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daBook_c.cpp':
                     import book_host
                     transformed=book_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daUdlift_c.cpp':
+                    import udlift_host
+                    transformed=udlift_host.transform(root,transformed)
                     rewrites+=1
                 if path.name in ('daChair_c.cpp','d_a_piano.cpp'):
                     import haunted_furniture_host

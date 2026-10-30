@@ -2587,3 +2587,41 @@ full native actor-data audit and six focused input/replay/scene tests pass.
 Initial entry uses the diagnostic picker; other characters/placements and
 repeated corridor firing remain separate acceptance work. The game remains
 an incomplete development port.
+
+FOLLOW-UP: ALL FOUR CORRIDOR BOOK GENERATORS FIRE AFTER COURSE RE-ENTRY
+A muted18000frame replay traverses the library, uses the original pause Exit
+Course and castle/courtyard entrance, and repeats the library route. All four
+generators receive fresh instances and each fires again: nine native projectile
+books per visit. Both sets visibly render, projectiles clear at the final stop,
+and Mario survives with normal control. Runtime exits0 with no audio errors,
+muted device output and byte-identical disposable saves. No gameplay code or
+executable changed; this adds an ordinary-input lifecycle regression. Initial
+course entry remains diagnostic with prepared prerequisites; other characters,
+other actor families and complete campaign acceptance remain open.
+
+UPDATE 2026-10-30: NATIVE HAUNTED-HOUSE ELEVATOR DOWNWARD RIDE VERIFIED
+The recovered daUdlift_c now supplies profile32 using the original descriptor,
+six deferred resource handles, three native model/collision/material rows and
+five native state callbacks. PC header overlays remove the base-tail padding
+the host compiler already retains, with size/field assertions. A corrected
+host-only ApproachLinear return declaration matches the compiled helper.
+Recovered game sources/headers and original movement rules remain unchanged.
+Three observed collision-data symbols are regenerated from the local ROM;
+symbol-only public metadata grows5283->5286 with all previous bindings intact.
+
+Build/link, full native actor-data audit and six focused tests pass. The audit
+checks the original profile, native factory/virtuals, handle identities, original
+collision material bytes, all five state callbacks and installed native motion/
+rider callbacks. The compiler inlines the rider helper into its stored veneer;
+verification checks that actual veneer rather than requiring an unused symbol.
+
+A muted6500frame diagnostic Mission2 replay enters through the original cottage
+door, boards the elevator and rides its complete2135unit descent from-200 to
+-2335. The player remains supported by this actual moving collider through1791
+grounded samples, and the visible original model reaches the basement. Final
+normal control/full health, exit0, no audio errors, muted output and unchanged
+disposable saves are verified. Follow-up muted tests verify dismount/rearm, jump reboarding, upward
+return and original course exit/re-entry with a fresh elevator. The full
+17000-frame lifecycle passes physical support and unchanged-save checks. Shared HMC33 and RainbowRide131
+variants are not registered or runtime-tested yet. No stable-install promotion
+or complete campaign acceptance is claimed.

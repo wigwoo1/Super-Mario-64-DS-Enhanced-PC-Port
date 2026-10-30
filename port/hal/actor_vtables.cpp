@@ -327,6 +327,10 @@ extern "C" void *daTrsTrap_c_classInit_BOOKSHELF();
 extern "C" void *daBook_c_classInit_BOOK_SWITCH(), *daBook_c_classInit_SHOOT_BOOK();
 extern "C" void *daBook_c_classInit_KILLER_BOOK(), *daBookGen_c_classInit();
 extern "C" void *daChair_c_classInit(), *daPiano_c_classInit();
+extern "C" void *daUdlift_c_classInit_UDLIFT_TERESA();
+static PcNativeActorProfile pc_haunt_lift_profile = {
+    (void *)&daUdlift_c_classInit_UDLIFT_TERESA,32,300,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
+};
 static PcNativeActorProfile pc_haunted_chair_profile = {
     (void *)&daChair_c_classInit,326,326,2,0x64000,0x64000,0x1000000,0x1000000
 };
@@ -648,6 +652,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[328] = &pc_book_generator_profile;
     data_020a4bb8_storage[326] = &pc_haunted_chair_profile;
     data_020a4bb8_storage[249] = &pc_mad_piano_profile;
+    data_020a4bb8_storage[32] = &pc_haunt_lift_profile;
     data_020a4bb8_storage[159] = &pc_merry_go_round_profile;
     data_020a4bb8_storage[160] = &pc_teresapit_profile;
     data_020a4bb8_storage[306] = g_profile_POWER_UP_ITEM;

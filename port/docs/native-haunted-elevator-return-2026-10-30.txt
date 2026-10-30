@@ -1,0 +1,11 @@
+Native haunted-house elevator round trip VERIFIED 2026-10-30.
+Input-only test now delays jump until walking begins, preserving native gameplay.
+Original cottage approach, descent, grounded dismount/rearm, jump boarding and full supported ascent pass.
+Release build, six focused tests and native-data audit pass.7000 muted frames exit0, no damage, saves unchanged, audioerrors0.
+Initial course entry diagnostic; other lift variants remain untested. No stable promotion or F install.
+
+Course lifecycle VERIFIED:17000 muted frames, original exit/courtyard entry,
+fresh elevator reset and second supported round trip. Both directions verified
+on both visits; saves unchanged, audioerrors0, exit0. Courtyard encounter causes
+two health points of damage; no damage-free claim. Uses prerequisite test save.
+Other lift variants remain untested. No stable/F install promotion.

@@ -150,6 +150,7 @@ def main():
             ('pc_shoot_book_profile','daBook_c_classInit_SHOOT_BOOK',20,0x021148b4),
             ('pc_killer_book_profile','daBook_c_classInit_KILLER_BOOK',20,0x02114860),
             ('pc_book_generator_profile','daBookGen_c_classInit',20,0x0211487c),
+            ('pc_haunt_lift_profile','daUdlift_c_classInit_UDLIFT_TERESA',95,0x021375cc),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
             ('pc_crate_profile','daObjBlockS_c_classInit',98,0x0213c510),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
@@ -221,6 +222,44 @@ def main():
         if table[16]!=arrow_method('??_G'+cls+'@@'):
             raise ValueError('Book deleting destructor is not native: '+cls)
     print('PASS: all four original haunted-book profiles/factories and compiler-owned book/generator callbacks')
+    lift_models=tuple(named('data_ov095_'+s) for s in ('02137898','021378a8','021378c0'))
+    lift_collisions=tuple(named('data_ov095_'+s) for s in ('021378b0','021378b8','021378a0'))
+    lift_clps=('data_ov063_0211ec38','data_ov021_02113aa0','data_ov036_02112aa8')
+    for label,expected in (('data_ov095_02136f68',lift_models),('data_ov095_02136f74',lift_collisions),
+                           ('data_ov095_021375a4',tuple(named(x) for x in lift_clps))):
+        if struct.unpack('<3I',pe_bytes(args.exe,named(label),12))!=expected:
+            raise ValueError('Vertical lift resource table has guest pointers or incorrect row order: '+label)
+    handles=sorted(lift_models+lift_collisions)
+    if any(b-a<8 for a,b in zip(handles,handles[1:])):
+        raise ValueError('Vertical lift eight-byte resource handles overlap')
+    lift_rows=records(ROOT)
+    for label in lift_clps:
+        row=next(x for x in lift_rows if x['name']==label);original=source_bytes(ROOT,row)
+        if pe_bytes(args.exe,named(label),len(original))!=original:
+            raise ValueError('Vertical lift collision materials differ from original: '+label)
+    lift_states=tuple(arrow_method('?'+name+'@daUdlift_c@@') for name in
+                      ('StateWait','StateMoveUp','StateMoveDown','StateStop','StateStopAtBottom'))+(0,)
+    if struct.unpack('<6I',pe_bytes(args.exe,named('data_ov095_02137910'),24))!=lift_states:
+        raise ValueError('Vertical lift state dispatch is not native with its zero padding slot')
+    lift_vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7daUdlift_c@@'),68))
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render')):
+        if lift_vtable[slot]!=arrow_method('?'+method+'@daUdlift_c@@'):
+            raise ValueError('Vertical lift callback mismatch: '+method)
+    if lift_vtable[16]!=arrow_method('??_GdaUdlift_c@@'):
+        raise ValueError('Vertical lift destructor is not native')
+    # The compiler may inline the rider helper into the address-taken veneer.
+    for callback in ('func_ov095_02136788',):
+        named(callback)
+        owners=[line for line in args.map.read_text().splitlines() if re.search(r'\s_'+callback+r'\s',line)]
+        if len(owners)!=1 or not owner_is(owners[0],'daUdlift_c.cpp.obj'):
+            raise ValueError('Vertical lift rider callback is not compiler-owned by the recovered actor: '+callback)
+    init=arrow_method('?InitResources@daUdlift_c@@')
+    factory=named('daUdlift_c_classInit_UDLIFT_TERESA')
+    body=pe_bytes(args.exe,init,factory-init)
+    before=arrow_method('?UpdatePosWithTransform@dBgW@@')
+    if struct.pack('<I',before) not in body or struct.pack('<I',named('func_ov095_02136788')) not in body:
+        raise ValueError('Vertical lift initialization does not install native motion and rider callbacks')
+    print('PASS: original haunted-lift profile/factory, six native handles, three resource/CLPS rows, five native states and rider/virtual callbacks')
     arrow_vtable=struct.unpack('<31I',pe_bytes(args.exe,arrow_method('??_7PcNativeArrowSign@@'),124))
     for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),
                         (21,'OnAttacked1'),(26,'OnHitByMegaChar'),(30,'Kill')):
