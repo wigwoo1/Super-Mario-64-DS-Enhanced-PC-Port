@@ -2518,3 +2518,72 @@ is hurt and later dies during the stationary test; safe escape and respawning
 this destroyed chair on a later visit are separate unverified checks. Native
 data audit and build pass. This supersedes the selected chair leap/break gap,
 not complete actor/course/campaign acceptance.
+
+UPDATE 2026-10-30: HAUNTED BOOKS REGISTERED; CORRIDOR SPAWNERS VERIFIED
+The original killer-book327 and book-generator328 factories now register their
+complete original profiles, including the killer book's high behavior flag.
+They reuse the existing native book source/resource adaptation. The data audit
+now checks all four book profiles/factories and native book/generator virtual
+callbacks; generator layout is asserted and optional read-only timer traces are
+available. Build/link, the full native actor-data audit and six focused input,
+replay and scene tests pass. All three authored killer books and all four
+generators are alive at their original placements in the scene census.
+
+A muted Mission2 library replay observes all four corridor generators firing
+nine native projectiles. Flight states, movement and submitted visible geometry
+are recorded; original contact damage occurs and normal control is restored at
+the final library stop. Projectiles clear, runtime exits0 after6500frames,
+audio errors/device samples remain0 and both disposable saves are unchanged.
+Entry uses the diagnostic course picker. Generator reset on course re-entry and
+killer-book attacks/blue-coin rewards remain unverified.
+
+Two killer-book approach tests do not establish an encounter. The rear entrance
+hits the original bookcase partition before the book and the stationary pilot
+later dies. A front-door route taken from Mission1 hits Mission2's raised main
+hall staircase before reaching the room. Original actor/collision rules were
+preserved; stop route trials pending an evidence-based pilot correction. This
+is partial actor-family acceptance, not a stable-install or campaign claim.
+
+FOLLOW-UP: KILLER-BOOK APPROACH, ATTACK AND RECOVERY VERIFIED
+The original staircase KCL bounds and native step placements now inform a
+clearance-aware ground-floor replay path. It bypasses Mission2's raised steps,
+uses the original west door and reaches the front side of the book room. The
+selected book follows its original waiting, tilt, wind-up and flight states,
+renders visibly, hits Mario and is destroyed. Mario survives and recovers normal
+control with six health points. The muted6500frame run exits0 with no audio
+errors and unchanged disposable saves. No gameplay code or collision rules
+changed; the previously compiled actor integration is the same executable.
+This supersedes the blocked approach/initial attack limitation above. Defeating
+the book for its blue coin, other placements and course re-entry reset still
+need separate tests. Initial course selection remains diagnostic.
+
+FOLLOW-UP: KILLER-BOOK BLUE-COIN REWARD AND PICKUP VERIFIED
+Normal jump/attack input now defeats the selected book during its wind-up.
+Its original blue-coin actor spawns at the book's position, falls into pickup
+range and pays exactly five coins. Mario takes no damage, completes the floor
+route and returns to idle with controls enabled. The first replay earned the
+coin but incorrectly treated an airborne height as a landing destination; its
+private test route was corrected to the actual floor height. The corrected
+muted6500frame replay exits0 with no audio errors and unchanged disposable
+saves. Incremental build passes; gameplay code and executable are unchanged.
+This verifies one Mario/book placement. Course re-entry/reset, other characters
+and other attacking-book placements remain separate acceptance work.
+
+FOLLOW-UP: KILLER-BOOK COURSE RESET AND REPEATED PAYOUT VERIFIED
+The original pause Exit Course, castle return, courtyard Boo/cage entrance and
+Mission2 re-entry now have a complete muted replay. All three killer books and
+four hidden generators receive fresh instances; the selected book starts at
+its original home/waiting state. Defeating it again drops a fresh blue coin and
+pays exactly five in the newly entered course, with normal control restored.
+
+The first replay's second attack missed because absolute-frame button pulses
+began a ground punch before the jump. An opt-in QA input-window phase now starts
+on entering the configured route window and resets between visits. Existing
+replays retain absolute timing by default; actor rules and player input behavior
+are unchanged. The corrected17000frame replay observes both book defeats and
+pickups, original course transitions, no damage after re-entry, exit0, muted
+output, no audio errors and byte-identical disposable saves. Build/link, the
+full native actor-data audit and six focused input/replay/scene tests pass.
+Initial entry uses the diagnostic picker; other characters/placements and
+repeated corridor firing remain separate acceptance work. The game remains
+an incomplete development port.

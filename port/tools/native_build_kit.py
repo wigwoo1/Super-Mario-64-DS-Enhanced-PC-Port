@@ -125,6 +125,13 @@ def main():
         'and repeated piano activation. An independent chair leaps and breaks ' +
         'with original wood/dust; the stationary replay later dies. Safe independent ' +
         'chair escape and destroyed-chair re-entry remain unverified. ' +
+        'Native attacking books327 and hidden generators328 use their original ' +
+        'profiles. All four corridor generators fire visible projectiles in a ' +
+        'selected muted test. Mario defeats one attacking book, collects its ' +
+        'original five-coin blue reward, exits and re-enters through the original ' +
+        'game, then defeats and collects it again. All three books and four ' +
+        'generators receive fresh instances. Other characters/placements and ' +
+        'repeated corridor firing remain unverified. ' +
         'Native Boo/Big Boo resources load; ' +
         'three distinct ordinary Boo defeats, separate five-coin payouts and the main-hall boss counter ' +
         'advancing to three are verified. A separate Mission1 replay verifies the original rear entrance, ' +

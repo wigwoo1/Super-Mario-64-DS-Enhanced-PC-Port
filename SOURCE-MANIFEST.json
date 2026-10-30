@@ -7350,8 +7350,8 @@
     },
     {
       "path": "port/docs/pc-development-progress.md",
-      "sha256": "2c3b1be6b9eb53d2e2c01e90eafb8e942f79408aae50ddffa3326b10b4e99a6a",
-      "bytes": 310888
+      "sha256": "26447528126210989506551321179bd1a0f684b8c8d699294d818c75330594ee",
+      "bytes": 315556
     },
     {
       "path": "port/docs/pc-hud-and-secret-portal-roadmap-2026-10-22.txt",
@@ -7390,8 +7390,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "f56f811c464ef0feba349609ce434e82049a7fc804c2e74e3e5c21c6fa89b9a9",
-      "bytes": 19393
+      "sha256": "31e8411dc39576dc8b2c98f30d7148272c46d96c0d7075bbdf9af2573b5b062f",
+      "bytes": 19841
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7545,8 +7545,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "be6502ed8d805fe0d357fd29ae7ae77a0e456e47eaa31ba122793e89a9d0a784",
-      "bytes": 47198
+      "sha256": "1ce6eb36a999a674cd773e2f6de0ca3b8054d939ac460a15bbf4a72f205f07e2",
+      "bytes": 47693
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8005,8 +8005,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "03c9fc7c4743bd770d12600c471d4eff743183bb96b6f6badd842b0f1efe2966",
-      "bytes": 205045
+      "sha256": "a72d8539ab6d29b151dc5465e5e6eb05c834748c20c18bf07df91dfca51000d4",
+      "bytes": 206295
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8975,13 +8975,13 @@
     },
     {
       "path": "port/tools/book_host.py",
-      "sha256": "c089212a6fb3796931f4008a3760ff2ec5fa0a477fc5c01a877738cfa63a44e3",
-      "bytes": 2635
+      "sha256": "ad9a80a1b3b86df8fe5fe628333ae34ca783bdbfd8e7536a976f03907ec7be9e",
+      "bytes": 3682
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "f424b9ba07eb742b96b29cf68fc245a00b7002c3d866a09a73e7db04735d7387",
-      "bytes": 48560
+      "sha256": "765da32926c8eb57866c94f4b64266ee4171420970025ca2eaebfb50a81753db",
+      "bytes": 48636
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9120,8 +9120,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "0e1e37c146f242de2be6fb21b45731d76270999016688e59fbafc890f2d07df3",
-      "bytes": 47126
+      "sha256": "a25dcf23c0dbba92a2ca567f9ca558d75f70acdd61959b3408b7a6a326e9c042",
+      "bytes": 48111
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9445,8 +9445,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "437b8b650af72ace1ba205d18f27f0920b10865506cf7596f968d421a7d3f578",
-      "bytes": 14836
+      "sha256": "50fffac0406b4e214b9d7560b712242a40c53cab454b73b5b85ffd8e8b4c664f",
+      "bytes": 15386
     },
     {
       "path": "port/tools/native_kit_data.py",

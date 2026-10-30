@@ -38,6 +38,21 @@ static void pc_book_observe(daBook_c *self) {
     anchor='int daBook_c::Render()\n{'
     assert text.count(anchor)==1
     text=text.replace(anchor,anchor+'\n    pc_render_probe::Scope probe(this,false,&mModel.mat4x3);')
+    helper=r'''
+static void pc_book_generator_observe(daBookGen_c *self) {
+    const char *prefix=std::getenv("SM64DS_PC_MERRY_TRACE");if(!prefix||!*prefix)return;
+    static FILE *file=nullptr;
+    if(!file){char path[2048];std::snprintf(path,sizeof(path),"%s.book-generators.csv",prefix);file=std::fopen(path,"w");if(file)std::fputs("tick,uid,actor,timer,x,y,z,yaw,area\n",file);}
+    if(file){std::fprintf(file,"%llu,%u,%u,%u,%d,%d,%d,%d,%d\n",static_cast<unsigned long long>(ntr::rt_frame()),unsigned(self->uniqueID),unsigned(self->actorID),unsigned(self->mSpawnTimer),self->mPosX,self->mPosY,self->mPosZ,int(self->mAngleY),int(self->mAreaId));std::fflush(file);}
+}
+'''
+    anchor='// @symbol _ZN11daBookGen_c8BehaviorEv'
+    assert text.count(anchor)==1
+    text=text.replace(anchor,helper+anchor)
+    anchor='int daBookGen_c::Behavior()\n{'
+    assert text.count(anchor)==1
+    text=text.replace(anchor,anchor+'\n    pc_book_generator_observe(this);')
+    text+='\nstatic_assert(sizeof(daBookGen_c)==0xd8,"native book generator layout");\n'
     text+='\nstatic_assert(sizeof(daBook_c)==0x454,"native book layout");\nstatic_assert(sizeof(BookModelFilePtr)==8 && sizeof(BookAnimationFileHandle)==8,"native book handles");\n'
     return '#include <cstdio>\n#include <cstdlib>\n#include <cstdint>\n#include "ntr/rt.h"\n#include "hal/actor_render_probe.h"\n'+text
 

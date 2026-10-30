@@ -325,6 +325,7 @@ static PcNativeActorProfile pc_boo_basket_profile = {
 };
 extern "C" void *daTrsTrap_c_classInit_BOOKSHELF();
 extern "C" void *daBook_c_classInit_BOOK_SWITCH(), *daBook_c_classInit_SHOOT_BOOK();
+extern "C" void *daBook_c_classInit_KILLER_BOOK(), *daBookGen_c_classInit();
 extern "C" void *daChair_c_classInit(), *daPiano_c_classInit();
 static PcNativeActorProfile pc_haunted_chair_profile = {
     (void *)&daChair_c_classInit,326,326,2,0x64000,0x64000,0x1000000,0x1000000
@@ -340,6 +341,12 @@ static PcNativeActorProfile pc_book_switch_profile = {
 };
 static PcNativeActorProfile pc_shoot_book_profile = {
     (void *)&daBook_c_classInit_SHOOT_BOOK,325,327,2,0x64000,0x64000,0x1000000,0x1000000
+};
+static PcNativeActorProfile pc_killer_book_profile = {
+    (void *)&daBook_c_classInit_KILLER_BOOK,327,328,0x10000002,0x64000,0x64000,0x1000000,0x1000000
+};
+static PcNativeActorProfile pc_book_generator_profile = {
+    (void *)&daBookGen_c_classInit,328,329,1,0x64000,0x64000,0x1000000,0x1000000
 };
 extern "C" void *daTrsTrap_c_classInit_MERRYGOROUND();
 extern "C" void *daTrsTrap_c_classInit_TERESAPIT();
@@ -637,6 +644,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[158] = &pc_bookshelf_profile;
     data_020a4bb8_storage[213] = &pc_book_switch_profile;
     data_020a4bb8_storage[325] = &pc_shoot_book_profile;
+    data_020a4bb8_storage[327] = &pc_killer_book_profile;
+    data_020a4bb8_storage[328] = &pc_book_generator_profile;
     data_020a4bb8_storage[326] = &pc_haunted_chair_profile;
     data_020a4bb8_storage[249] = &pc_mad_piano_profile;
     data_020a4bb8_storage[159] = &pc_merry_go_round_profile;

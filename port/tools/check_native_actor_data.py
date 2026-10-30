@@ -148,6 +148,8 @@ def main():
             ('pc_bookshelf_profile','daTrsTrap_c_classInit_BOOKSHELF',63,0x0211ea2c),
             ('pc_book_switch_profile','daBook_c_classInit_BOOK_SWITCH',20,0x02114898),
             ('pc_shoot_book_profile','daBook_c_classInit_SHOOT_BOOK',20,0x021148b4),
+            ('pc_killer_book_profile','daBook_c_classInit_KILLER_BOOK',20,0x02114860),
+            ('pc_book_generator_profile','daBookGen_c_classInit',20,0x0211487c),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
             ('pc_crate_profile','daObjBlockS_c_classInit',98,0x0213c510),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
@@ -208,6 +210,17 @@ def main():
         candidates={address for name,address in symbols.items() if name.startswith(prefix)}
         if len(candidates)!=1:raise ValueError('Missing/ambiguous native arrow callback: '+prefix)
         return candidates.pop()
+    for cls, methods in (
+            ('daBook_c', ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),
+                          (9,'Render'),(17,'OnYoshiTryEat'),(28,'OnAimedAtWithEgg'))),
+            ('daBookGen_c', ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior')))):
+        table=struct.unpack('<29I',pe_bytes(args.exe,arrow_method('??_7'+cls+'@@'),116))
+        for slot,method in methods:
+            if table[slot]!=arrow_method('?'+method+'@'+cls+'@@'):
+                raise ValueError('Incorrect compiler-owned book callback: '+cls+'::'+method)
+        if table[16]!=arrow_method('??_G'+cls+'@@'):
+            raise ValueError('Book deleting destructor is not native: '+cls)
+    print('PASS: all four original haunted-book profiles/factories and compiler-owned book/generator callbacks')
     arrow_vtable=struct.unpack('<31I',pe_bytes(args.exe,arrow_method('??_7PcNativeArrowSign@@'),124))
     for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),
                         (21,'OnAttacked1'),(26,'OnHitByMegaChar'),(30,'Kill')):

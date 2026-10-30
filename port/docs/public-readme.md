@@ -15,6 +15,12 @@ Audio listening accuracy and complete gameplay remain unverified.
 
 ## Current state
 
+- Native attacking books and hidden book generators now use their original
+  profiles. Selected muted tests cover all four corridor generators firing,
+  one attacking book's activation/damage and Mario defeating it for a blue coin
+  worth five coins. Original course exit/re-entry restores fresh book instances;
+  the selected book can be defeated and collected again. Other placements,
+  characters and repeated corridor firing remain unverified.
 - Native Boo, Big Boo, bookshelf and book-switch factories load their original
   resources. Selected muted tests verify the five-Boo prerequisite sequence,
   Big Boo defeat and Star spawn, and a separate three-book puzzle opening.

@@ -51,6 +51,7 @@
 #include <windows.h>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 #include <cstring>
 #include <cstddef>
 #include <cmath>
@@ -427,18 +428,40 @@ static bool replay_pillar_controls() {
 }
 static uint16_t replay_route_window_buttons(unsigned waypoint,bool settling=false) {
     uint16_t buttons=0;
+    // Opt-in QA clocks repeat a combat input phase on each visit, regardless
+    // of time spent in original menus, doors and course transitions. Existing
+    // replays retain their absolute-frame timing unless explicitly configured.
+    struct WindowClock {uint64_t began=0;bool active=false;};
+    static std::vector<WindowClock> clocks;
+    unsigned index=0;long phase_offset=-1;
+    if(const char *value=std::getenv("SM64DS_PC_TEST_ROUTE_WINDOW_PHASE")) {
+        char *end=nullptr;const long parsed=std::strtol(value,&end,10);
+        if(end && !*end && parsed>=0 && parsed<600)phase_offset=parsed;
+    }
     for(const char *s=std::getenv("SM64DS_PC_TEST_ROUTE_BUTTON_WINDOWS");s && *s;) {
         unsigned first=0,last=0,mask=0,period=0,hold=0,include_settle=0;int used=0;
         if(std::sscanf(s,"%u:%u:%x:%u:%u:%u%n",&first,&last,&mask,&period,&hold,&include_settle,&used)!=6) {
             used=0;include_settle=0;
             std::sscanf(s,"%u:%u:%x:%u:%u%n",&first,&last,&mask,&period,&hold,&used);
         }
-        if(
-           used>0 && (!s[used] || s[used]==',') && first<last && mask<=0xfff &&
-           include_settle<=1 && (!settling || include_settle) &&
-           period>0 && period<=600 && hold>0 && hold<period &&
-           waypoint>=first && waypoint<last && ntr::rt_frame()%period<hold)
+        const bool active=used>0 && (!s[used] || s[used]==',') && first<last && mask<=0xfff &&
+            include_settle<=1 && period>0 && period<=600 && hold>0 && hold<period &&
+            waypoint>=first && waypoint<last;
+        uint64_t phase=ntr::rt_frame();
+        if(phase_offset>=0) {
+            if(clocks.size()<=index)clocks.resize(index+1);
+            auto &clock=clocks[index];
+            if(active && !clock.active) {
+                clock.began=phase;
+                std::fprintf(stderr,"[native route window] tick=%llu level=%d waypoint=%u phase=%ld period=%u\n",
+                    static_cast<unsigned long long>(phase),int(data_0209f2f8),waypoint,phase_offset,period);
+            }
+            clock.active=active;
+            phase=phase-clock.began+static_cast<unsigned>(phase_offset);
+        }
+        if(active && (!settling || include_settle) && phase%period<hold)
             buttons|=static_cast<uint16_t>(mask);
+        ++index;
         const char *next=std::strchr(s,',');s=next?next+1:nullptr;
     }
     return buttons;
