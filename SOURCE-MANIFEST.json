@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "3fb95471526e9805516cb0cd1c4d9e8594bf47dd13d3781366ed36a257c33589",
-      "bytes": 88253
+      "sha256": "4c3d59abd5cfd5b5f1aa20068cd3c8fbde08aaa80d5a4acfeec5a306b8b534c8",
+      "bytes": 88403
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7104,6 +7104,11 @@
       "bytes": 4362
     },
     {
+      "path": "port/docs/native-rainbow-carpet-2026-10-31.txt",
+      "sha256": "f3c8ba93c13d7f1ac1874386194f24fb5f1b44b765eaa419b1d740eeb30e8f31",
+      "bytes": 4354
+    },
+    {
       "path": "port/docs/native-rebinding-verified-2026-10-22.txt",
       "sha256": "3941425468aa5c686e2bcde85ca58a0c445937dc18122aebdc4e4aac209620b3",
       "bytes": 4482
@@ -7565,8 +7570,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "013e17e07ba2fd0ba6a09dd60145c48a342a6028b3234e3d419c8a088e09f140",
-      "bytes": 49319
+      "sha256": "e1a7ed7d5de4efb37314e96a992c3896c7e3d3226f10fca249b62f8b3d83b334",
+      "bytes": 49421
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8025,8 +8030,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "e04dbb79c52286c3c989f323af9cd851a36132177ddbd5ce23939bc26232e68a",
-      "bytes": 219083
+      "sha256": "507230d0719c2bdd7737ee19dabba0ff987ab250e334817ed8a8bc1848695d5a",
+      "bytes": 222311
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9000,8 +9005,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "9e847fee7286ff77c294730223a7ca32840deca93728c3e6fb655c3057193e06",
-      "bytes": 49521
+      "sha256": "a9d53276ac203eaa488e2d29011cd65706d9fac20c3b603c6dc3e49f62eac445",
+      "bytes": 49785
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9017,6 +9022,11 @@
       "path": "port/tools/cannon_host.py",
       "sha256": "5138d4ea93548eb5dbd085fd583890cdc34d2408b3471d632167d80ac5d6061e",
       "bytes": 4000
+    },
+    {
+      "path": "port/tools/carpet_host.py",
+      "sha256": "2ab455cf26e8c968fabcc1061402b4e6869bd58ace3c9d215c41725845f666ed",
+      "bytes": 3897
     },
     {
       "path": "port/tools/casket_host.py",
@@ -9145,8 +9155,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "d83b06c0d54e8ce4fc1efbeb34dffd9a3ca76722b0e49089c1c2ccd0a96f7aa0",
-      "bytes": 53836
+      "sha256": "0200cbc4d00edce3b061081ca8cc067a8daa9c186602faf52a49eb2c4fd6daed",
+      "bytes": 54495
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9380,8 +9390,8 @@
     },
     {
       "path": "port/tools/host_headers.py",
-      "sha256": "5b3c96130469c504b5f7361bf7384278f10d5df1d548189ad558e846295c6349",
-      "bytes": 3093
+      "sha256": "7e774170502b5e0fe9db9345412e5ecbf9e841e0e378fec99623d80622dcbf68",
+      "bytes": 3121
     },
     {
       "path": "port/tools/hostgen.py",
@@ -9475,8 +9485,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "50fffac0406b4e214b9d7560b712242a40c53cab454b73b5b85ffd8e8b4c664f",
-      "bytes": 15386
+      "sha256": "7487759128e5d7f4a740f41b7e738c0bdae721e59da755388a3a2de9157b3eb4",
+      "bytes": 15653
     },
     {
       "path": "port/tools/native_kit_data.py",

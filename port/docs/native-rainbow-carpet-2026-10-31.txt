@@ -1,0 +1,63 @@
+Native Rainbow Ride flying carpet - 2026-10-31
+
+Registered original actor130 RC_CARPET, with recovered dPathLiftActor_c base,
+animated model/collision and original four path placements. Host-only generation
+uses native C++ construction, eight-byte deferred resource handles, and removes
+MSVC base-tail padding. Both first-node integer divisions preserve the recovered
+_s32_div_f zero-denominator result (numerator); x86 would trap. CMake watches the
+new transform for correct regeneration. Recovered game source is unchanged.
+
+Current source build SHA256:
+bd5eb7136a32050a67afc532d02372ee46e3bfe0d4347beee647e7da3348b187
+Compile/link and eight focused CTests pass. Full native actor-data audit passes,
+including original carpet profile/factory and all five native lifecycle targets.
+
+Muted 4000-frame run rainbow-carpet-native-sol-r4-20261031 (private work folder
+suffix 20261021) exits0, audio errors0/device nonzero0, isolated synthetic saves
+unchanged. Four carpets have13/24/25/36-node original paths. Yoshi walks from
+spawn onto first carpet26;94 supported contact samples, travel3302units from
+start, node11 reached. Screenshot2300 shows Yoshi riding beneath stone obstacle.
+At2340 pilot catches St_LedgeHang_Main on obstacle; final4000 still hanging.
+Carpet later resets after rider leaves. This is partial route acceptance.
+
+Not verified: jumping past obstacle, complete first path/dismount, second ride,
+course re-entry/cleanup, other three carpet rides, route to vertical lift131.
+Do not claim complete Rainbow Ride or promote stable install from this test.
+No new public release or F install. Goal active. Next use ordinary jump input
+before tick2340 and measured player/contact states, preserving accepted bridge
+approach28:4400:2000:60 and original actor logic. Sol Medium suitable.
+
+2026-10-31 OBSTACLE LANDING AND UNATTENDED RESET VERIFIED
+Same compiled build (BD5EB713...3348B187), no game source changes this milestone.
+Muted3600frame r6 run exits0/audioerrors0/nonzero device samples0, synthetic saves
+unchanged. Ordinary jump2 at2290 -> ledgehang2315 -> normal ledge-climb input2
+2350 -> native St_LedgeGrab_Main -> standing on static block2405, final Wait
+with normal control/grounded. Carpet26 resets to4450,-1750,2000/node0/state0 at
+2895.84 supported carpet samples before dismount. Screenshot2600 inspected:
+Yoshi standing on stone block, carpet travels away above rainbow. This verifies
+recovery onto obstacle, not a direct jump over it or complete carpet route.
+Private strict check-rainbow-carpet-obstacle-20261031.py passes. Repeat wrapper
+run-rainbow-carpet-obstacle-20261031.ps1 preserves exact accepted ordinary inputs.
+Next reboard carpet from obstacle or establish full-route input pilot; fullpath,
+second boarding, course re-entry and other carpets remain unverified. SolMedium
+suitable, goalACTIVE. No F install or release/stable promotion.
+
+2026-10-31 FIRST CARPET FULL ROUTE + SAFE DISMOUNT VERIFIED
+Build C800E7DA1FCADAD7FB951445E8DBBEBB260FEE96E116FDD393FFEDE0D33764CF.
+Added opt-in input-only replay_carpet_reboard() in port/main.cpp, flagged through
+private runner CarpetReboard. No actor/player/physics/save state mutations.
+Uses native crouch+long-jump after measured short runway. First reboard attempt
+r7 required too much runway speed and fell; measured correction r8 launches2432,
+reboards2488,185supported samples through remaining path. r8 deliberately had no
+endpoint dismount and died after riding carpet's original fall; diagnostic only.
+Current r9 adds second ordinary long jump at3414 toward static KCL platform,
+lands3484,184 final static-ground samples, normal Wait/control4500. Carpet resets
+4015. Initialride84contact samples, reboard185; original node12/endpoint reached.
+Muted4500frame r9 terminalexit0/audioerrors0/device nonzero0/synthetic saves
+unchanged. Finalpos2735.7,-1090.93,15.72 within authored platform bounds. Screens
+2900/3500/4400 inspected. Seven focused CTests pass on current compiled build.
+Strict private check-rainbow-carpet-route-20261031.py PASS; per-case JSON. Repeat
+wrapper work/run-rainbow-carpet-route-20261031.ps1. All sessions terminal.
+Other3carpets and course reentry still open. No F install/newpublicrelease/stable
+promotion. LunaMedium suitable for repeating accepted pilot/reset checks; further
+new route/combat integration may benefit SolMedium. GoalACTIVE.

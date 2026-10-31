@@ -24,6 +24,7 @@
 #include "daPiano_c.h"
 #include "daChair_c.h"
 #include "daUdlift_c.h"
+#include "daObjRcCarpet_c.h"
 #include "daEykn_c.h"
 #include "daTrsTrap_c.h"
 #include "daStarGate_c.h"
@@ -794,6 +795,49 @@ static bool replay_udlift_return() {
     const double mag=dist<80?14000:24000;
     return controls(static_cast<int16_t>(std::sin(angle)*mag),static_cast<int16_t>(-std::cos(angle)*mag),
         phase==3 && tick-reboard_at>=6 && tick-reboard_at<14?2:0);
+}
+// Input-only Rainbow Ride QA: use the native crouch/long-jump sequence to
+// catch the moving carpet after climbing the authored stone obstacle.
+static bool replay_carpet_reboard() {
+    if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !std::getenv("SM64DS_PC_TEST_CARPET_REBOARD") ||
+       !replay_course_route_complete || data_0209f2f8!=28 || ntr::rt_frame()<2400)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    daObjRcCarpet_c *carpet=nullptr;
+    for(auto *a=dActor_c::FindWithActorID(130,nullptr);a;a=dActor_c::FindWithActorID(130,a))
+        if(a->param1==1536){carpet=static_cast<daObjRcCarpet_c *>(a);break;}
+    if(!p || !carpet)return false;
+    static unsigned phase=0;static uint64_t began=0,launch=0;
+    const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
+    if(!began)began=tick;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto event=[&](const char *name){std::fprintf(stderr,"[carpet reboard] %s tick=%llu phase=%u player=%s pos=%d,%d,%d speed=%d carpet=%d,%d,%d node=%d ridden=%u\n",name,static_cast<unsigned long long>(tick),phase,state,p->mPosX,p->mPosY,p->mPosZ,p->mHorzSpeed,carpet->mPosX,carpet->mPosY,carpet->mPosZ,carpet->mCurrPathNode,unsigned(carpet->mAfterClsnRan));};
+    if(phase<4 && tick-began>600){phase=5;event("timeout");}
+    if(phase==0 && !p->mIsAirborne && !std::strcmp(state,"St_Wait_Main")){phase=1;event("runway");}
+    if(phase==1 && !p->mIsAirborne && p->mPosX>6050*4096 && p->mHorzSpeed>0xa000){phase=2;launch=tick;event("crouch");}
+    if(phase==2){
+        if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+        else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+        if(!std::strcmp(state,"St_LongJump_Main")){phase=3;event("long-jump");}
+        else if(tick-launch>24){phase=5;event("failed-launch");}
+    }
+    if(phase==3 && !p->mIsAirborne && carpet->mAfterClsnRan){phase=4;event("reboarded");}
+    if(phase==4 && carpet->mCurrPathNode==12 && carpet->mPosX<4600*4096){phase=6;event("exit-runway");}
+    if(phase==6 && !p->mIsAirborne && p->mPosX-carpet->mPosX< -100*4096 && p->mHorzSpeed>0xa000){phase=7;launch=tick;event("exit-crouch");}
+    if(phase==7){
+        if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+        else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+        if(!std::strcmp(state,"St_LongJump_Main")){phase=8;event("exit-long-jump");}
+        else if(tick-launch>24){phase=5;event("failed-exit-launch");}
+    }
+    if(phase==8 && !p->mIsAirborne && p->mPosY< -1000*4096 && std::abs(p->mPosX-3100*4096)<350*4096){phase=9;event("landed-platform");}
+    if(phase>=1 && phase<=3 || phase>=6 && phase<=8){
+        const double dx=phase>=6?3100-p->mPosX/4096.0:(phase==1?1000:carpet->mPosX/4096.0-p->mPosX/4096.0);
+        const double dz=phase>=6?-36-p->mPosZ/4096.0:(phase==1?0:carpet->mPosZ/4096.0-p->mPosZ/4096.0);
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(angle)*32700);sy=static_cast<int16_t>(-std::cos(angle)*32700);
+    }
+    if(tick%20==0)event("sample");
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -2891,7 +2935,7 @@ static bool trace_script_progress(uint64_t frame)
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())
-        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

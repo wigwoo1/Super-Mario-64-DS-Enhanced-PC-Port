@@ -153,6 +153,7 @@ def main():
             ('pc_haunt_lift_profile','daUdlift_c_classInit_UDLIFT_TERESA',95,0x021375cc),
             ('pc_hmc_lift_profile','daUdlift_c_classInit_UDLIFT',95,0x021375e8),
             ('pc_rainbow_lift_profile','daUdlift_c_classInit_RC_RIFT02',95,0x02137604),
+            ('g_profile_RC_CARPET','daObjRcCarpet_c_classInit',36,0x02113f78),
             ('pc_casket_profile','daObjCasket_c_classInit',71,0x02122eb0),
             ('pc_mri_profile','daEykn_c_classInit_EYEKUN',71,0x02122cf0),
             ('pc_big_mri_profile','daEykn_c_classInit_EYEKUN_BOSS',71,0x02122d0c),
@@ -294,6 +295,13 @@ def main():
     if struct.pack('<I',before) not in body or struct.pack('<I',named('func_ov095_02136788')) not in body:
         raise ValueError('Vertical lift initialization does not install native motion and rider callbacks')
     print('PASS: original haunted-lift profile/factory, six native handles, three resource/CLPS rows, five native states and rider/virtual callbacks')
+    carpet_vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7daObjRcCarpet_c@@'),68))
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render')):
+        if carpet_vtable[slot]!=arrow_method('?'+method+'@daObjRcCarpet_c@@'):
+            raise ValueError('Flying carpet callback is not native: '+method)
+    if carpet_vtable[16]!=arrow_method('??_GdaObjRcCarpet_c@@'):
+        raise ValueError('Flying carpet destructor is not native')
+    print('PASS: original flying-carpet profile/factory and five native lifecycle callbacks')
     arrow_vtable=struct.unpack('<31I',pe_bytes(args.exe,arrow_method('??_7PcNativeArrowSign@@'),124))
     for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),
                         (21,'OnAttacked1'),(26,'OnHitByMegaChar'),(30,'Kill')):

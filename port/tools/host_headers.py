@@ -20,7 +20,7 @@ def main() -> int:
     # Quoted nested includes search beside their parent first. Mirror all
     # consumers of the adapted state header so none bypass the host overlay.
     native = {'dMgState_c.h', 'daObj_Mip_Key_c.h', 'daObjCannonShutter_c.h',
-              'daObjHatenaBlock_c.h', 'daUdlift_c.h'}
+              'daObjHatenaBlock_c.h', 'daUdlift_c.h', 'PathLift.h'}
     while True:
         expanded = native | {p.name for p, text in headers.items() if any(
             '#include "' + name + '"' in text for name in native)}
@@ -31,7 +31,7 @@ def main() -> int:
             continue
         transformed, rewrites = PATTERN.subn("operator new(size_t", text)
         transformed, dtor_rewrites = BASE_DTOR.subn("", transformed)
-        if source.name in ('daObjCannonShutter_c.h', 'daObjHatenaBlock_c.h', 'daUdlift_c.h'):
+        if source.name in ('daObjCannonShutter_c.h', 'daObjHatenaBlock_c.h', 'daUdlift_c.h', 'PathLift.h'):
             # MSVC does not reuse the two bytes of dBgActor tail padding.
             transformed, tail_rewrites = re.subn(r'(?m)^[ \t]*u8[ \t]+pad_31e\[0x2\];[ \t]*$', '', transformed)
             if tail_rewrites != 1: raise ValueError('Expected one native base-tail padding adjustment: '+source.name)

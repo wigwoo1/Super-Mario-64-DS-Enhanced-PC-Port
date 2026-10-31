@@ -327,6 +327,7 @@ extern "C" void *daTrsTrap_c_classInit_BOOKSHELF();
 extern "C" void *daBook_c_classInit_BOOK_SWITCH(), *daBook_c_classInit_SHOOT_BOOK();
 extern "C" void *daBook_c_classInit_KILLER_BOOK(), *daBookGen_c_classInit();
 extern "C" void *daChair_c_classInit(), *daPiano_c_classInit();
+extern "C" unsigned char g_profile_RC_CARPET[];
 extern "C" void *daUdlift_c_classInit_UDLIFT_TERESA();
 extern "C" void *daUdlift_c_classInit_UDLIFT(), *daUdlift_c_classInit_RC_RIFT02();
 extern "C" void *daObjCasket_c_classInit();
@@ -668,6 +669,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[32] = &pc_haunt_lift_profile;
     data_020a4bb8_storage[33] = &pc_hmc_lift_profile;
     data_020a4bb8_storage[131] = &pc_rainbow_lift_profile;
+    data_020a4bb8_storage[130] = g_profile_RC_CARPET;
     data_020a4bb8_storage[64] = &pc_casket_profile;
     data_020a4bb8_storage[262] = &pc_mri_profile;
     data_020a4bb8_storage[263] = &pc_big_mri_profile;

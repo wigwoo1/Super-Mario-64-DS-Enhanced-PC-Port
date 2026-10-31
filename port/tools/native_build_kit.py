@@ -192,6 +192,9 @@ def main():
         'Black sign text receives a light parchment dialogue card while white Lakitu text keeps '
         'the dark card; contrast was visually checked on D3D11. Software-renderer appearance and '
         'other dialogue coverage remain unverified. '
+        'The first native Rainbow Ride flying carpet has a selected Yoshi route check, '
+        'including obstacle climb, long-jump reboarding, safe endpoint dismount and '
+        'reset. The other three paths and Rainbow Ride course re-entry remain unverified. '
         'High-refresh presentation repeats original-rate game frames; interpolation, '
         'HD texture packs, online/browser VS and other roadmap features remain unfinished.')
     validate_manifest(metadata)
