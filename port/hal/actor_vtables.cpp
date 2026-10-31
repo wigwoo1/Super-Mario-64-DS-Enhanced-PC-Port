@@ -328,6 +328,8 @@ extern "C" void *daBook_c_classInit_BOOK_SWITCH(), *daBook_c_classInit_SHOOT_BOO
 extern "C" void *daBook_c_classInit_KILLER_BOOK(), *daBookGen_c_classInit();
 extern "C" void *daChair_c_classInit(), *daPiano_c_classInit();
 extern "C" unsigned char g_profile_RC_CARPET[];
+extern "C" void *daObjRc_Kaitendai_c_classInit();
+extern "C" void *daIbl_c_classInit();
 extern "C" void *daUdlift_c_classInit_UDLIFT_TERESA();
 extern "C" void *daUdlift_c_classInit_UDLIFT(), *daUdlift_c_classInit_RC_RIFT02();
 extern "C" void *daObjCasket_c_classInit();
@@ -342,6 +344,8 @@ static PcNativeActorProfile pc_haunt_lift_profile = {
 static PcNativeActorProfile pc_hmc_lift_profile = {
     (void *)&daUdlift_c_classInit_UDLIFT,33,301,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
 };
+static PcNativeActorProfile pc_ironball_profile = {(void *)&daIbl_c_classInit,220,69,2,409600,8192000,25165824,25165824};
+static PcNativeActorProfile pc_rainbow_disc_profile = {(void *)&daObjRc_Kaitendai_c_classInit,129,259,2,409600,4096000,29491200,6553600};
 static PcNativeActorProfile pc_rainbow_lift_profile = {
     (void *)&daUdlift_c_classInit_RC_RIFT02,131,261,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
 };
@@ -670,6 +674,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[33] = &pc_hmc_lift_profile;
     data_020a4bb8_storage[131] = &pc_rainbow_lift_profile;
     data_020a4bb8_storage[130] = g_profile_RC_CARPET;
+    data_020a4bb8_storage[129] = &pc_rainbow_disc_profile;
+    data_020a4bb8_storage[220] = &pc_ironball_profile;
     data_020a4bb8_storage[64] = &pc_casket_profile;
     data_020a4bb8_storage[262] = &pc_mri_profile;
     data_020a4bb8_storage[263] = &pc_big_mri_profile;

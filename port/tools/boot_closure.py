@@ -51,7 +51,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daBook_c_classInit_KILLER_BOOK", "daBookGen_c_classInit",
                  "daChair_c_classInit", "daPiano_c_classInit",
                  "daUdlift_c_classInit_UDLIFT_TERESA", "daUdlift_c_classInit_UDLIFT",
-                 "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjCasket_c_classInit",
+                 "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
                  "daEykn_c_classInit_EYEKUN", "daEykn_c_classInit_EYEKUN_BOSS", "daEyBm_c_classInit",
                  "daTrs_c_classInit_TERESA", "daTrs_c_classInit_BOSS_TERESA",
                  "daTrsIcon_c_classInit", "daTBasket_c_classInit",
@@ -540,6 +540,14 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name in ('d_a_obj_rc_carpet.cpp','dPathLiftActor_c.cpp'):
                     import carpet_host
                     transformed=carpet_host.transform(root,transformed,path.name)
+                    rewrites+=1
+                if path.name in ('d_a_obj_rc_kaitendai.cpp','daObjKaitendai_c.cpp'):
+                    import rainbow_disc_host
+                    transformed=rainbow_disc_host.transform(root,transformed,path.name)
+                    rewrites+=1
+                if path.name == 'daIbl_c.cpp':
+                    import ironball_host
+                    transformed=ironball_host.transform(root,transformed)
                     rewrites+=1
                 if path.name == 'daUdlift_c.cpp':
                     import udlift_host

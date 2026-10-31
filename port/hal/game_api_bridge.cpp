@@ -832,3 +832,10 @@ extern "C" int _Z15ApproachLinear2Riii(int *value, int target, int step)
 #pragma comment(linker,"/alternatename:?GetBG2ScrPtr@G2@@YAPADXZ=?GetBG2ScrPtr@G2@@YAPAXXZ")
 #pragma comment(linker,"/alternatename:?GetBG3ScrPtr@G2@@YAPADXZ=?GetBG3ScrPtr@G2@@YAPAXXZ")
 #pragma comment(linker,"/alternatename:?GetBG3ScrPtr@G2S@@YAPADXZ=?GetBG3ScrPtr@G2S@@YAIXZ")
+
+// Literal ARM ABI names used by the recovered iron-ball actor.
+extern "C" void _ZN8dActor_c8PoofDustEv(dActor_c *self) { self->PoofDust(); }
+extern "C" void _ZN8dActor_c14TriplePoofDustEv(dActor_c *self) { self->TriplePoofDust(); }
+extern "C" void _ZN8dActor_c19MakeVanishLuigiWorkER5dCc_c(dActor_c *self,dCc_c *clsn) { self->MakeVanishLuigiWork(*clsn); }
+extern "C" void _ZN8dActor_c28UpdatePosWithHorzSpeedAndAngEv(dActor_c *self) { self->UpdatePosWithHorzSpeedAndAng(); }
+extern "C" void _ZN12dEnemyBase_c9SpawnCoinEv(dEnemyBase_c *self) { self->SpawnCoin(); }

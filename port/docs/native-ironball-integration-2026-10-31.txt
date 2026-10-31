@@ -1,0 +1,79 @@
+Native rolling iron balls (actor220) - 2026-10-31
+Status: PARTIALLY VERIFIED / DIAGNOSTIC. Gameplay acceptance is NOT complete.
+
+FOLLOW-UP: user confirmed Sol Medium. Input-only approach helper now engages
+nearby original Goombas with ordinary aiming/attack/swallow controls instead
+of the old unconditional dodge jumps. The exact existing measured route then
+reaches its endpoint at9788 in muted14000frame r3. Added fallback route rewind
+after actual Hurt/low-floor landing; that fallback is NOT exercised in r3.
+No enemy, player, collision, health, position, event or reward state is assigned.
+
+Current EXE14710CBB3ECC8D6D9BFD1C81690844908995DB932A3CF2E870EBA53869435937.
+Seven focused CTests and current native actor-data audit PASS after the helper.
+Original D7B9 69/69 suite below predates this QA-only main.cpp/header change.
+Strict r3 checker PASS for lower dispenser14: twelve children spawn at9591
+through13673, original >=256tick cooldown, maximum3live, nodes0..4 and path-to-
+free variant2->3 observed. Nine child cleanups and replacement spawning occur.
+Original free balls16/17 move too: observed X/Z ranges1613/2310 and874/439units.
+Final original Yoshi Wait/grounded/normalcontrol, exit0, audio output muted/
+nonzero0/errors0; isolated save files byte-identical. No player damage from
+balls, Wario breaking, upper dispenser, re-entry or other levels accepted.
+
+Visual limit: r3 screenshots show the completed route. The r4 no-minimap
+6200frame follow-up exits0 and shows the approach/bridge, but Chain Chomp and
+terrain obscure the distant balls; clipped-triangle samples alone do not prove
+visible pixels. Final r5 normal R3 zoom-out run14000 terminalexit0/muted/errors0/
+savesunchanged, same bounded spawning/movement checkerPASS. Inspected10000,
+10500,13500 screenshots do not establish ball appearance. Render is called
+2764times after9840;47samples retain onscreen triangles during9841..9887,
+whereas all r5 scheduled screenshots start10000. This corrects the initial
+summary claiming zero onscreen samples after9840. No culling bug established.
+Two visual approaches exhausted; no third capture attempted this turn. The
+exact interval now makes the next check a bounded replay suitable for Luna
+Medium: repeat identical r5 route/R3 schedule and capture9840,9850,9860,9870,
+9880,9890. Require identifiable pixels, not triangles, before visual acceptance.
+If still obscured, investigate actual view/occlusion and closer original route.
+Evidence work/ironball-visual-limit-20261031.json. All private case names retain
+the legacy20261021 suffix. No F/public promotion; all sessions terminal. Model
+handoff recommends lowering to Luna Medium; full project remains incomplete.
+
+Historical pre-helper integration and failed routes:
+
+Native factory/profile matches the original ov10002147f58 record. Recovered
+src/actors/daIbl_c.cpp and include/daIbl_c.h remain unchanged. Host generation
+uses native typed variant dispatch, deferred canonical model handle Construct
+0x9c00, typed model drawing and opt-in read-only CSV observation. Five missing
+host ABI wrappers forward to the actual native actor/enemy methods; shared
+data_02092138 retains canonical C linkage. CMake watches the transformation.
+Native allocation3fc and variant offset3d0 asserted.
+
+Current EXE D7B9B4405C9D1B8E272555C1A45CF1BACFC898B221CA2421E089A26B261C11D4.
+Build and eight focused tests pass; subsequent full69/69CTest and actor,
+minigame, RecRoom linked audits pass. Iron-ball audit checks original profile,
+factory, lifecycle/destructor, variant handlers and canonical resource storage.
+
+Private muted runtime r1 (9000frames) initializes four original Battlefield
+actors but its coarse approach route reaches a raised-field wall. R2 uses the
+previously accepted measured Yoshi slope/lip/bridge path and existing western
+path; ordinary Hurt at4065 knocks Yoshi below the slope. Last waypoint21 at4030;
+height-aware input pilot waits beneath its next target, final14000 Wait.
+Four authored actors initialize; neither dispenser creates a child. Both runs
+exit0 with audio output muted/errors0. R2 synthetic saves remain byte-identical.
+Strict checker fails 'No dispenser-created ball has verified movement'; no
+acceptance artifact produced. Screenshot6000 visually confirms lower-floor
+stranding. These are route failures, not proof that the rolling actor works.
+
+Two focused route attempts exhausted: do not try a third guessed path. Next
+investigate the actual Hurt/collision/nearby enemy encounter and the pilot's
+height-wait behavior. Compare current mission1/Yoshi fixture with the accepted
+mission2 approach. Preserve original physics, enemies, spawn gates and rewards;
+test improvements must use ordinary controller input. Sol Medium recommended
+under the user's Luna default for this bounded route investigation.
+
+Still unverified: dispenser children/path travel, visible rolling/free balls,
+damage, Wario breaking/rewards, player avoidance, cleanup and course re-entry,
+all variants and other levels. No F installation/public export/release for this
+diagnostic actor. Prior verified checkpoint and public carpet kit preserved.
+Private reproductions: work/run-ironball-native-route-20261031.ps1,
+work/check-ironball-native-20261031.py and r2/route-failure-analysis.json.
+Private logs, ROM/generated data, screenshots, saves and fullEXE stay local.

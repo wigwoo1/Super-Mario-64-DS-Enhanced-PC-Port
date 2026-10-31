@@ -72,6 +72,10 @@
 #include "decl_PathPtr.h"
 #include "Player.h"
 
+#ifdef SM64DS_PLATFORM_PC
+extern "C" void pc_ironball_report_player_hurt();
+#endif
+
 /* Actor IDs from symbols/actor_debug_names.tsv. */
 enum {
     daIbl_ACTOR_PLAYER   = 191,     /* PLAYER */
@@ -294,6 +298,9 @@ void daIbl_c::func_ov100_02141fb0()
         v.x = mPosX;
         v.y = mPosY;
         v.z = mPosZ;
+#ifdef SM64DS_PLATFORM_PC
+        pc_ironball_report_player_hurt();
+#endif
         _ZN6Player4HurtERK7Vector3j5Fix12IiEjjj(a, &v, 2, 0xc000, 1, 0, 1);
     }
 }

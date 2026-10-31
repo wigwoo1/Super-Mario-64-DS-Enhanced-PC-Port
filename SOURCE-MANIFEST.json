@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "33a4290b21d8ded84e536925f50c791740efea8bb95c1ebc0ac008c6b5d7e45f",
-      "bytes": 456704
+      "sha256": "316162a448c12ebb1d826b0964e568d8dab8404a157da15d5c14269d63f415a0",
+      "bytes": 456848
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "2d4c7830fdd18c61bcc5d7b118f8d86bdf45c7a2d15d82e18541ae7044cf4576",
-      "bytes": 252015
+      "sha256": "f0702005604d0ff625932bb8be0049fce8a1dc9b4782e1c8022d1945aff24cf9",
+      "bytes": 252162
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "4c3d59abd5cfd5b5f1aa20068cd3c8fbde08aaa80d5a4acfeec5a306b8b534c8",
-      "bytes": 88403
+      "sha256": "b47a63feb44a11755b6ac9dd45d36e2408c523daf3eacf0a31291406e748fa5c",
+      "bytes": 88719
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6879,6 +6879,11 @@
       "bytes": 3470
     },
     {
+      "path": "port/docs/native-ironball-integration-2026-10-31.txt",
+      "sha256": "e6002745649db24f64a754427c857b064c4fb843fb475d8be6ac547be61f869f",
+      "bytes": 5341
+    },
+    {
       "path": "port/docs/native-item-block-integration-2026-10-24.txt",
       "sha256": "a7e2110b6d34172760ff12c755a0bdf14b2938e847784578e184571a98786489",
       "bytes": 6679
@@ -7107,6 +7112,11 @@
       "path": "port/docs/native-rainbow-carpet-2026-10-31.txt",
       "sha256": "f3c8ba93c13d7f1ac1874386194f24fb5f1b44b765eaa419b1d740eeb30e8f31",
       "bytes": 4354
+    },
+    {
+      "path": "port/docs/native-rainbow-disc-2026-10-31.txt",
+      "sha256": "f871ec7895f1b4ba11de72ca63f1659aa25b8e41d1d7e57c1a80ff65bbe1b3d4",
+      "bytes": 3278
     },
     {
       "path": "port/docs/native-rebinding-verified-2026-10-22.txt",
@@ -7570,8 +7580,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "e1a7ed7d5de4efb37314e96a992c3896c7e3d3226f10fca249b62f8b3d83b334",
-      "bytes": 49421
+      "sha256": "6c31f1ab027ae9d16ced16794bf2fb8f28c6099f1d371316aae673e879a1b3e9",
+      "bytes": 49883
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7720,8 +7730,8 @@
     },
     {
       "path": "port/hal/game_api_bridge.cpp",
-      "sha256": "15932930ede0c8dab4f2717e7076ffab908445e6a1df897593812cf85d620516",
-      "bytes": 38941
+      "sha256": "95405e8927942c791a1bca2a5642ff63f0a41d05bc87d5264c0af8cb72dcea18",
+      "bytes": 39507
     },
     {
       "path": "port/hal/gx_bank_state.asm",
@@ -7757,6 +7767,11 @@
       "path": "port/hal/input_state.asm",
       "sha256": "6765367f399782395b97b17242923a0cffeee05c77f0391ca80027beb91d11b9",
       "bytes": 1423
+    },
+    {
+      "path": "port/hal/ironball_replay.h",
+      "sha256": "d5f1f8442eaaa5722486274159ced0498fd0068c64eeb6886adb3e8e41659e18",
+      "bytes": 5623
     },
     {
       "path": "port/hal/itcm_math.cpp",
@@ -8030,8 +8045,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "507230d0719c2bdd7737ee19dabba0ff987ab250e334817ed8a8bc1848695d5a",
-      "bytes": 222311
+      "sha256": "f68f444c568362e4277d222536d91e1237e1149127b19fd2601baadf92fa8e11",
+      "bytes": 226637
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9005,8 +9020,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "a9d53276ac203eaa488e2d29011cd65706d9fac20c3b603c6dc3e49f62eac445",
-      "bytes": 49785
+      "sha256": "ddc107a432975ca2182826062ab290742bff67a6b5c383adba3978ffce76fdc6",
+      "bytes": 50283
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9155,8 +9170,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "0200cbc4d00edce3b061081ca8cc067a8daa9c186602faf52a49eb2c4fd6daed",
-      "bytes": 54495
+      "sha256": "365e49225aa78485c3157345dea72a4559d24cc9673d435059460e11b5b81544",
+      "bytes": 56766
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9404,6 +9419,11 @@
       "bytes": 945
     },
     {
+      "path": "port/tools/ironball_host.py",
+      "sha256": "dec9055f3bb1b70fe3193d8730e0ea3ed0db9610999541405ae36c573f2f3a04",
+      "bytes": 3897
+    },
+    {
       "path": "port/tools/item_block_host.py",
       "sha256": "0d5353ed54a98cc33b0b75b225a9e950b190460a8a5eff81e1bc1f656747b3c4",
       "bytes": 9310
@@ -9562,6 +9582,11 @@
       "path": "port/tools/rabbit_host.py",
       "sha256": "8777d0971b22107c2fe4b53417bb3bc2024c0a034e2af927dc766642c5f170e5",
       "bytes": 4955
+    },
+    {
+      "path": "port/tools/rainbow_disc_host.py",
+      "sha256": "21c6640e586c63e5ea29085e0baa2d5c02a37043c7232ac9d220c8676cafd29d",
+      "bytes": 3058
     },
     {
       "path": "port/tools/rec_room_touch_fixture.py",
@@ -12405,8 +12430,8 @@
     },
     {
       "path": "src/actors/daIbl_c.cpp",
-      "sha256": "53d6f0d728361aaab818c0a4591ebc37f5c56194e8db74d6745dbe27076bae69",
-      "bytes": 43671
+      "sha256": "7b63382f833d5d43c37ce2fc1e263b2eb85c6f7eec1238d321e90dcccc57e59f",
+      "bytes": 43830
     },
     {
       "path": "src/actors/daJango_c.cpp",

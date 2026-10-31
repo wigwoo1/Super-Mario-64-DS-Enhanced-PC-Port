@@ -154,6 +154,8 @@ def main():
             ('pc_hmc_lift_profile','daUdlift_c_classInit_UDLIFT',95,0x021375e8),
             ('pc_rainbow_lift_profile','daUdlift_c_classInit_RC_RIFT02',95,0x02137604),
             ('g_profile_RC_CARPET','daObjRcCarpet_c_classInit',36,0x02113f78),
+            ('pc_rainbow_disc_profile','daObjRc_Kaitendai_c_classInit',36,0x02113b50),
+            ('pc_ironball_profile','daIbl_c_classInit',100,0x02147f58),
             ('pc_casket_profile','daObjCasket_c_classInit',71,0x02122eb0),
             ('pc_mri_profile','daEykn_c_classInit_EYEKUN',71,0x02122cf0),
             ('pc_big_mri_profile','daEykn_c_classInit_EYEKUN_BOSS',71,0x02122d0c),
@@ -302,6 +304,33 @@ def main():
     if carpet_vtable[16]!=arrow_method('??_GdaObjRcCarpet_c@@'):
         raise ValueError('Flying carpet destructor is not native')
     print('PASS: original flying-carpet profile/factory and five native lifecycle callbacks')
+    disc_vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7daObjRc_Kaitendai_c@@'),68))
+    for slot,method,kind in ((0,'InitResources','daObjRc_Kaitendai_c'),(3,'CleanupResources','daObjRc_Kaitendai_c'),(6,'Behavior','daObjKaitendai_c'),(9,'Render','daObjKaitendai_c')):
+        if disc_vtable[slot]!=arrow_method('?'+method+'@'+kind+'@@'):
+            raise ValueError('Rainbow disc callback is not native: '+method)
+    if disc_vtable[16]!=arrow_method('??_GdaObjRc_Kaitendai_c@@'):
+        raise ValueError('Rainbow disc destructor is not native')
+    if struct.unpack('<3I',pe_bytes(args.exe,named('data_ov036_02113b2c'),12))!=tuple(named(x) for x in ('data_ov036_02114050','data_ov036_02114048','data_ov036_02112bc8')):
+        raise ValueError('Rainbow disc resource row does not use canonical native handles')
+    base,raw=overlay(36)
+    for label,address,size in (('data_ov036_02112bc8',0x02112bc8,16),('data_ov036_02113b18',0x02113b18,2),('data_ov036_02113b1c',0x02113b1c,2)):
+        if pe_bytes(args.exe,named(label),size)!=raw[address-base:address-base+size]:
+            raise ValueError('Rainbow disc original collision/rotation data differs: '+label)
+    print('PASS: original rotating-disc profile, resources, collision data, rotation increments and native virtual callbacks')
+    iron_vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7daIbl_c@@'),68))
+    for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render')):
+        if iron_vtable[slot]!=arrow_method('?'+method+'@daIbl_c@@'):
+            raise ValueError('Iron-ball lifecycle callback is not native: '+method)
+    if iron_vtable[16]!=arrow_method('??_GdaIbl_c@@'):
+        raise ValueError('Iron-ball destructor is not native')
+    named('data_ov100_02148668')
+    # The native compiler inlines the dispenser into Behavior.
+    for method in ('func_ov100_02142918','func_ov100_021424c0','func_ov100_0214272c'):
+
+        arrow_method('?'+method+'@daIbl_c@@')
+    print('PASS: original iron-ball profile/factory, native lifecycle/destructor and original rolling handlers')
+
+
     arrow_vtable=struct.unpack('<31I',pe_bytes(args.exe,arrow_method('??_7PcNativeArrowSign@@'),124))
     for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render'),
                         (21,'OnAttacked1'),(26,'OnHitByMegaChar'),(30,'Kill')):

@@ -206,6 +206,17 @@ extern "C" int pc_star_select_status(unsigned *,unsigned *,unsigned *,unsigned *
 #include "hal/lift_replay.h"
 #include "hal/signpost_replay.h"
 #include "hal/crate_replay.h"
+static bool pc_ironball_player_hurt_pending=false;
+extern "C" void pc_ironball_report_player_hurt() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_IRONBALL_RECOVER");
+    if(enabled && !std::strcmp(enabled,"1"))pc_ironball_player_hurt_pending=true;
+}
+extern "C" bool pc_ironball_consume_player_hurt() {
+    const bool pending=pc_ironball_player_hurt_pending;
+    pc_ironball_player_hurt_pending=false;
+    return pending;
+}
+#include "hal/ironball_replay.h"
 static bool replay_course_route_complete;
 static bool replay_lava_bridge_reentered;
 static bool replay_book_puzzle_complete;
@@ -839,6 +850,57 @@ static bool replay_carpet_reboard() {
     if(tick%20==0)event("sample");
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
+// Ordinary-input QA for the disc adjacent to the accepted carpet landing.
+static bool replay_rainbow_disc() {
+    if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !std::getenv("SM64DS_PC_TEST_RAINBOW_DISC") ||
+       data_0209f2f8!=28 || ntr::rt_frame()<3600 || !replay_course_route_complete)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);dActor_c *disc=nullptr;
+    for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
+        if(a->mPosX>1500*4096 && a->mPosX<2000*4096 && std::abs(a->mPosZ)<100*4096){disc=a;break;}
+    if(!p || !disc)return false;
+    dActor_c *nextDisc=nullptr;
+    if(std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_CHAIN"))
+        for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
+            if(a->mPosZ< -1000*4096 && a->mPosX>0 && a->mPosX<1000*4096){nextDisc=a;break;}
+    static unsigned phase=0;static uint64_t began=0,launch=0,transfer=0;
+    const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
+    if(!began)began=tick;
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto event=[&](const char *name){std::fprintf(stderr,"[rainbow disc] %s tick=%llu phase=%u uid=%u player=%s pos=%d,%d,%d speed=%d\n",name,static_cast<unsigned long long>(tick),phase,disc->uniqueID,state,p->mPosX,p->mPosY,p->mPosZ,p->mHorzSpeed);};
+    if(phase<5 && tick-began>650){phase=6;event("timeout");}
+    if(phase==0 && p->mPosX>3000*4096){phase=1;event("brake");}
+    if(phase==1 && p->mHorzSpeed==0 && !p->mIsAirborne){phase=2;event("runway");}
+    if(phase==2 && p->mPosX<2850*4096 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=3;launch=tick;event("crouch");}
+    if(phase==3){
+        if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+        else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+        if(!std::strcmp(state,"St_LongJump_Main")){phase=4;event("long-jump");}
+        else if(tick-launch>24){phase=6;event("failed-launch");}
+    }
+    if(phase==4 && !p->mIsAirborne && p->mPosX<2200*4096){phase=5;event("landed-candidate");}
+    if(phase==5 && nextDisc && tick>=4200){phase=7;transfer=tick;event("transfer-runway");}
+    if(phase>=7 && phase<=9 && tick-transfer>600){phase=6;event("transfer-timeout");}
+    const double transferDistance=nextDisc?std::hypot(double(nextDisc->mPosX)-p->mPosX,double(nextDisc->mPosZ)-p->mPosZ)/4096.0:0;
+    if(phase==7 && transferDistance<1250 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=8;launch=tick;event("transfer-crouch");}
+    if(phase==8){
+        if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+        else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+        if(!std::strcmp(state,"St_LongJump_Main")){phase=9;event("transfer-long-jump");}
+        else if(tick-launch>24){phase=6;event("failed-transfer-launch");}
+    }
+    if(phase==9 && !p->mIsAirborne && transferDistance<650){phase=10;event("transfer-landed-candidate");}
+    if(phase==0 || phase>=2 && phase<=4 || phase>=7 && phase<=9){
+        // Aim before the destination center to account for measured long-jump
+        // braking distance; this changes only ordinary QA stick input.
+        const double dx=phase>=7?nextDisc->mPosX/4096.0+170-p->mPosX/4096.0:(phase==0?1000:disc->mPosX/4096.0+250-p->mPosX/4096.0);
+        const double dz=phase>=7?nextDisc->mPosZ/4096.0+184-p->mPosZ/4096.0:(phase==0?0:disc->mPosZ/4096.0-p->mPosZ/4096.0);
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        const double mag=phase==0?20000:32700;
+        sx=static_cast<int16_t>(std::sin(angle)*mag);sy=static_cast<int16_t>(-std::cos(angle)*mag);
+    }
+    if(tick%20==0)event("sample");
+    ntr::input_test_controls(true,buttons,sx,sy);return true;
+}
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -898,6 +960,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
             std::fprintf(stderr,"[native course route] door param=%08x pos=%d,%d,%d heading=%d\n",
                 a->param1,a->mPosX,a->mPosY,a->mPosZ,a->mAngleY);
     }
+    if(pc_replay_ironball_approach(player,route,waypoint,has_y,y))return true;
     static uint64_t jump_until=0,next_jump=0;
     static uint64_t settle_until=0;
     const char *settle=std::getenv("SM64DS_PC_TEST_ROUTE_SETTLE");
@@ -2935,7 +2998,7 @@ static bool trace_script_progress(uint64_t frame)
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())
-        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
