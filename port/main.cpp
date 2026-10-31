@@ -216,9 +216,9 @@ extern "C" bool pc_ironball_consume_player_hurt() {
     pc_ironball_player_hurt_pending=false;
     return pending;
 }
+static bool replay_lava_bridge_reentered;
 #include "hal/ironball_replay.h"
 static bool replay_course_route_complete;
-static bool replay_lava_bridge_reentered;
 static bool replay_book_puzzle_complete;
 static bool replay_udlift_return_complete;
 static bool replay_furniture_complete;

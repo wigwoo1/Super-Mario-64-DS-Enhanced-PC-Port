@@ -5,7 +5,9 @@
 static bool pc_replay_ironball_approach(Player *p,const char *route,unsigned &waypoint,
                                        bool has_y,int target_y) {
     const char *mode=std::getenv("SM64DS_PC_TEST_IRONBALL_APPROACH");
-    if(!mode || std::strcmp(mode,"1") || data_0209f2f8!=6 || p->mCharacter!=3 ||
+    const bool after_reentry=mode && !std::strcmp(mode,"after-reentry");
+    if(!mode || (!after_reentry && std::strcmp(mode,"1")) ||
+       (after_reentry && !replay_lava_bridge_reentered) || data_0209f2f8!=6 || p->mCharacter!=3 ||
        p->mIsNoControl || p->mIsControlDisabled || data_0209d660)return false;
     const auto tick=ntr::rt_frame();
     const char *state=pc_player_state_name(p);
@@ -15,6 +17,15 @@ static bool pc_replay_ironball_approach(Player *p,const char *route,unsigned &wa
     static bool ironball_hurt=false;
     static unsigned recoveries=0;
     static uint64_t attack_until=0,next_attack=0,swallow_until=0,next_swallow=0;
+    static bool reentry_state_reset=false;
+    if(replay_lava_bridge_reentered && !reentry_state_reset) {
+        hurt=false;ironball_hurt=false;recoveries=0;
+        attack_until=next_attack=swallow_until=next_swallow=0;
+        pc_ironball_consume_player_hurt();
+        reentry_state_reset=true;
+        std::fprintf(stderr,"[ironball approach] reset pilot after course re-entry tick=%llu\n",
+            static_cast<unsigned long long>(ntr::rt_frame()));
+    }
     auto controls=[](uint16_t buttons=0,int16_t x=0,int16_t y=0){
         ntr::input_test_controls(true,buttons,x,y);return true;
     };
