@@ -1,3 +1,5 @@
+FOLLOW-UP 2026-10-31: Battlefield mission1 Yoshi course re-entry, fresh ball contact and surviving recovery now VERIFIED in isolated muted r9. Fresh ball466 contacts13651 after re-entry3334; normal Hurt, recovery13714, retreat endpoint14454, normal alive Wait at18000. Source changes are QA-only Goomba tongue/swallow coverage across the second-visit route; native actor/physics unchanged. Build75254199, seven focused CTestsPASS; saves unchanged. Wario destruction, upper dispenser and other variants remain unverified. Full project remains diagnostic.
+
 Native rolling iron balls (actor220) - 2026-10-31
 Status: PARTIALLY VERIFIED / DIAGNOSTIC. Gameplay acceptance is NOT complete.
 

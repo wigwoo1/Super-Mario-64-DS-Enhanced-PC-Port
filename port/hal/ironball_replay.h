@@ -76,9 +76,11 @@ static bool pc_replay_ironball_approach(Player *p,const char *route,unsigned &wa
             waypoint=best;++recoveries;hurt=false;return controls();
         }
     }
-    // Keep normal route input outside the initial field/slope encounter.
-    if(p->mPosZ<4800*4096 || p->mPosZ>6600*4096 ||
-       p->mPosX< -4000*4096 || p->mPosX>1000*4096)return false;
+    // The second-visit route also meets Goombas on the upper field and
+    // bridge bank. Use the same ordinary tongue/swallow controls there;
+    // the initial-visit pilot retains its original field boundary.
+    if(!after_reentry && (p->mPosZ<4800*4096 || p->mPosZ>6600*4096 ||
+       p->mPosX< -4000*4096 || p->mPosX>1000*4096))return false;
     if(p->mObjInMouth) {
         if(tick>=next_swallow) {
             swallow_until=tick+8;next_swallow=tick+100;

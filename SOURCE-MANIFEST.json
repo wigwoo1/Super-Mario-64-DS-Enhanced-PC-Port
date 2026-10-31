@@ -6880,8 +6880,8 @@
     },
     {
       "path": "port/docs/native-ironball-integration-2026-10-31.txt",
-      "sha256": "e6002745649db24f64a754427c857b064c4fb843fb475d8be6ac547be61f869f",
-      "bytes": 5341
+      "sha256": "e8faa5d8a2a58380b8008f0a80000dcabe603214a4fdc14126aa5de71c93d8fb",
+      "bytes": 5896
     },
     {
       "path": "port/docs/native-item-block-integration-2026-10-24.txt",
@@ -7770,8 +7770,8 @@
     },
     {
       "path": "port/hal/ironball_replay.h",
-      "sha256": "0986ca4af469f55165b06db9b13a1e4990ca8a597a5ebc187ff78226dcb47d0c",
-      "bytes": 6240
+      "sha256": "bd94670cb26a835eea1cd481dd2477b0070987359e3d90978cbb0c474695b3ec",
+      "bytes": 6399
     },
     {
       "path": "port/hal/itcm_math.cpp",
