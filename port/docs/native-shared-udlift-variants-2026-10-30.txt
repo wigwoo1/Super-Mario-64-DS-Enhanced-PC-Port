@@ -50,3 +50,57 @@ jumping again. Muted7500frame run exits0, audio errors0, isolated saves
 unchanged. No gameplay code changed. Lift approach beyond the doorway and
 the lift ride remain unverified. Private evidence: native-hmc-first-gap-
 acceptance-20261030.json.
+
+HMC ascent follow-up: VERIFIED on the current native build in a muted
+15,000-frame run. Original-input route crosses the first chasm and doorway,
+uses the northern cage opening and descends to the room floor. The lift
+follows to its lower stop. Ordinary jump input boards it; moving contact
+confirms supported ascent through more than 1,400 world units to the top.
+Final grounded Wait/control, unchanged isolated saves, exit0/audioerrors0.
+Approach includes damage and diagnostic initial selection. Dismount, downward
+return and HMC course re-entry remain unverified; Rainbow runtime remains open.
+
+HMC lifecycle follow-up: VERIFIED for the area-1 lift on build SHA256
+3ADD808AA78140DA8B0B51388F637ADA4D1E7CC822DCECD30C700E045297F4D5.
+The 33,000-frame muted replay completes an ascent, grounded dismount/rearm,
+reboarding and descent, uses the original Exit Course menu, returns through
+the castle basement pool entrance, then repeats the same lift cycle. The new
+actor initializes at the authored upper stop with state 0, armed 1 and
+at-bottom 0. Both visits record 151 supported ascent samples and 153 supported
+descent samples spanning 1,465 units each. Exit 0, audio errors 0, zero audio
+samples submitted, final grounded Wait with normal controls and isolated saves
+unchanged. Three focused input/clock/route smoke tests pass. The only change
+for this follow-up resets the opt-in lifecycle replay deadline on course
+re-entry; gameplay lift behavior did not require a change.
+
+Private evidence: work/native-hmc-lift-lifecycle-acceptance-20261030.json,
+checker check-hmc-lift-lifecycle-20261030.py and run-native-hmc-lift-lifecycle-
+20261030.ps1. The earlier verified castle route is retained in
+native-hmc-castle-entry-r6-20261026/test-config.json. Initial course selection
+and the prerequisite save are diagnostic; the approach includes damage.
+Other HMC lift locations, other characters and Rainbow Ride remain unverified.
+
+2026-10-31 current-build BBH lifecycle follow-up: VERIFIED. A muted replay
+completes two lift round trips separated by original Exit Course, castle
+travel, courtyard Boo defeat, and cage entry. Both native lift instances reset
+to their authored top stop and support 2,135 units of descent and ascent,
+including dismount/rearm/reboard. Final normal Mario controls, no death,
+audio errors 0 and unchanged isolated saves. Build and seven focused tests
+pass. Recent failed replay attempts omitted the existing courtyard Boo
+pilot flag; restoring that flag fixes the QA route without changing physics.
+Initial mission selection and prerequisite save remain diagnostic. Other
+HMC rooms and Rainbow lift rides remain unverified.
+
+Visual limitation found during this replay: a midshaft ascent screenshot
+shows a black 3D view, while the HUD remains visible. The view recovers at
+the upper stop. Lift contact and course reset acceptance does not verify
+shaft camera behavior; camera obstruction remains open.
+
+2026-10-31 camera correction supersedes the visual limitation above.
+A solid-surface ray keeps the preset render camera on the rider's side of
+the landing underside while grounded on a native vertical lift. BBH course
+exit, courtyard Boo defeat/cage re-entry, and two complete lift round trips
+pass. Screenshot review confirms Mario visible at the previously black
+second-ride frame. Muted output, zero audio errors, isolated saves unchanged.
+Temporary GPU diagnostics removed. Seven focused tests and a clean-build
+first-ride camera check pass. HMC and Rainbow lift camera runtime remains open.

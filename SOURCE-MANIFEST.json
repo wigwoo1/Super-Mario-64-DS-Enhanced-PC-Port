@@ -7195,8 +7195,8 @@
     },
     {
       "path": "port/docs/native-shared-udlift-variants-2026-10-30.txt",
-      "sha256": "eb07cc92c4f0350805a7fa77402896bc211c8b334ef75f15709924ed05e196ca",
-      "bytes": 3359
+      "sha256": "cbcbe5d23ab163f7af8493579782602ce0a4afee7cdfeb97841aac0d913feb45",
+      "bytes": 6887
     },
     {
       "path": "port/docs/native-signpost-ground-pound-verified-2026-10-25.txt",
@@ -8025,8 +8025,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "255f88ec6556a5202c965d2ce04994c9dbeefa59bbc3d56143f36deabcbaf074",
-      "bytes": 218321
+      "sha256": "e04dbb79c52286c3c989f323af9cd851a36132177ddbd5ce23939bc26232e68a",
+      "bytes": 219083
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9010,8 +9010,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "12bb491e4d0ff13ad2cbd32a2a024b5e236583690784f70388ad34dca5598f84",
-      "bytes": 23625
+      "sha256": "474183b17f321fbfa3b974a2b62ad9b217cc55defc9dcdd9b5d83633251130a2",
+      "bytes": 24686
     },
     {
       "path": "port/tools/cannon_host.py",

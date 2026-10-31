@@ -128,6 +128,7 @@ def transform(text):
             '#include <algorithm>\n#include <cmath>\n#include <climits>\n' + text)
     text += r'''
 extern "C" int pc_chomp_release_target(int *);
+extern "C" bool pc_camera_on_vertical_lift(const void *);
 extern "C" void pc_camera_set_movement_yaw_offset(short, int);
 
 static bool pc_camera_gameplay(const dCamera_c *camera)
@@ -376,11 +377,31 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
         }
         _ZN9dBgCh_LinD1Ev(&line);
     }
+    if(pc_camera_on_vertical_lift(player)) {
+        // The retail camera filter ignores the solid underside of the landing.
+        // Keep the PC render eye below it until the rider clears the opening.
+        Vec3 anchor={view[0],view[1],view[2]};
+        dBgCh_Lin solid;
+        _ZN9dBgCh_LinC1Ev(&solid);
+        _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&solid,&anchor,&end,nullptr);
+        if(_ZN9dBgCh_Lin10DetectClsnEv(&solid)) {
+            Vec3 hit;
+            _ZN9dBgCh_Lin10GetClsnPosEv(&hit,&solid);
+            const double x=double(hit.x)-anchor.x,y=double(hit.y)-anchor.y,z=double(hit.z)-anchor.z;
+            const double length=std::sqrt(x*x+y*y+z*z);
+            const double scale=length>32*4096 ? 1-32*4096/length : 0;
+            end={anchor.x+int(x*scale),anchor.y+int(y*scale),anchor.z+int(z*scale)};
+        }
+        _ZN9dBgCh_LinD1Ev(&solid);
+    }
     view[3]=end.x;view[4]=end.y;view[5]=end.z;
-    if (std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE") && ntr::rt_frame()%30==0)
+    static unsigned long long last_view_trace=0;
+    if (std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE") && ntr::rt_frame()>=last_view_trace+30) {
+        last_view_trace=ntr::rt_frame();
         std::fprintf(stderr,"[camera zoom view] tick=%llu option=%u blocked=%d base=%d,%d,%d eye=%d,%d,%d target=%d,%d,%d\n",
             static_cast<unsigned long long>(ntr::rt_frame()),unsigned(settings.camera_zoom),int(blocked),
             start.x,start.y,start.z,end.x,end.y,end.z,view[0],view[1],view[2]);
+    }
 }
 
 extern "C" void pc_camera_restore_after_inspection(void *object)

@@ -726,6 +726,14 @@ static bool replay_mri_circle() {
     ntr::input_test_controls(true,sx||sy?2048:0,sx,sy);return true;
 }
 
+extern "C" bool pc_camera_on_vertical_lift(const Player *rider) {
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    if(!player || player!=rider || player->mIsAirborne || !player->mMeshClsn.IsOnGround())return false;
+    const auto *floor=static_cast<dBgPi *>(player->mMeshClsn.GetFloorResult());
+    const auto *owner=floor && floor->colliderIdx<24 ? floor->owner : nullptr;
+    return owner && (owner->actorID==32 || owner->actorID==33 || owner->actorID==131);
+}
+
 static bool replay_udlift_return() {
     static unsigned first_uid=0,visit=1;
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -735,7 +743,8 @@ static bool replay_udlift_return() {
     static uint64_t began=0,off_at=0,reboard_at=0;
     const auto tick=ntr::rt_frame();
     auto *p=static_cast<Player *>(data_0209f394[0]);
-    auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(32,nullptr));
+    const bool hmc=std::getenv("SM64DS_PC_TEST_HMC_LIFT_RETURN")!=nullptr;
+    auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(hmc?33:32,nullptr));
     auto controls=[&](int16_t x=0,int16_t y=0,uint16_t buttons=0){ntr::input_test_controls(true,buttons,x,y);return true;};
     auto event=[&](const char *name){
         std::fprintf(stderr,"[udlift return] event=%s tick=%llu phase=%u lift=%u state=%d bottom=%u armed=%u rider=%u player=%s pos=%d,%d,%d\n",
@@ -744,7 +753,7 @@ static bool replay_udlift_return() {
             lift&&lift->mRider?unsigned(lift->mRider->uniqueID):0,pc_player_state_name(p),
             p?p->mPosX:0,p?p->mPosY:0,p?p->mPosZ:0);std::fflush(stderr);
     };
-    if(lift && lift->aliveState==1 && data_0209f2f8==12) {
+    if(lift && lift->aliveState==1 && data_0209f2f8==(hmc?13:12)) {
         if(!first_uid)first_uid=lift->uniqueID;
         else if(visit==1 && lift->uniqueID!=first_uid && replay_lava_bridge_reentered) {
             visit=2;phase=0;began=0;off_at=0;reboard_at=0;
@@ -754,31 +763,31 @@ static bool replay_udlift_return() {
     if(!began){began=tick;event("wait-bottom");}
     if(phase==5 && visit==1 && std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE"))return false;
     if(phase>=5)return controls();
-    if(data_0209f2f8!=12 || !p || !lift || p->aliveState!=1 || lift->aliveState!=1){
+    if(data_0209f2f8!=(hmc?13:12) || !p || !lift || p->aliveState!=1 || lift->aliveState!=1){
         phase=6;event("failed-actor-or-course");return controls();
     }
     if(tick-began>2400){phase=6;event("failed-timeout");return controls();}
     if(p->mIsNoControl || p->mIsControlDisabled)return controls();
     if(phase==0) {
-        if(lift->mIsAtBottom && lift->mState==3 && lift->mRider==p && !p->mIsAirborne){phase=1;event("bottom-arrived");}
+        if((hmc?!lift->mIsAtBottom:lift->mIsAtBottom) && lift->mState==3 && lift->mRider==p && !p->mIsAirborne){phase=1;event(hmc?"top-arrived":"bottom-arrived");}
         else return controls();
     }
     if(phase==1 && !p->mIsAirborne && !lift->mRider && lift->mIsArmed &&
-       p->mPosY<lift->mBottomY-30*4096) {
+       (hmc || p->mPosY<lift->mBottomY-30*4096)) {
         phase=2;off_at=tick;event("dismounted-rearmed");return controls();
     }
     if(phase==2) {
         if(tick-off_at<45)return controls();
         phase=3;reboard_at=tick;event("reboard");
     }
-    if(phase==3 && lift->mState==1 && lift->mRider==p){phase=4;event("upward-started");}
+    if(phase==3 && (hmc?lift->mState==2:lift->mState==1) && lift->mRider==p){phase=4;event(hmc?"downward-started":"upward-started");}
     if(phase==4) {
-        if(!lift->mIsAtBottom && lift->mState==3 && lift->mPosY==lift->mTopY &&
-           lift->mRider==p && !p->mIsAirborne){phase=5;replay_udlift_return_complete=true;event("top-arrived");}
+        if((hmc?lift->mIsAtBottom:!lift->mIsAtBottom) && lift->mState==3 && (hmc || lift->mPosY==lift->mTopY) &&
+           lift->mRider==p && !p->mIsAirborne){phase=5;replay_udlift_return_complete=true;event(hmc?"bottom-arrived":"top-arrived");}
         return controls();
     }
-    const double tx=phase==1?-2925:lift->mPosX/4096.0;
-    const double tz=phase==1?5000:lift->mPosZ/4096.0;
+    const double tx=phase==1?(hmc?-2800:-2925):lift->mPosX/4096.0;
+    const double tz=phase==1?(hmc?1358:5000):lift->mPosZ/4096.0;
     const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0,dist=std::hypot(dx,dz);
     if(dist<18)return controls();
     const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
@@ -1401,7 +1410,7 @@ static bool replay_lava_bridge_lifecycle() {
             return controls();
         }
         if(data_0209f2f8==course_level && ready) {
-            phase=3;event("original-course-reentry");
+            phase=3;began=tick;event("original-course-reentry");
             if(course_level==12) {
                 auto *shelf=static_cast<daTrsTrap_c *>(dActor_c::FindWithActorID(158,nullptr));
                 std::fprintf(stderr,"[bookshelf lifecycle] event=reentry-entry tick=%llu shelf=%s state=%u flags=%02x index=%d\n",
