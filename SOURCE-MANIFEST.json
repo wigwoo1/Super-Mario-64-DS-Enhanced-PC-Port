@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "b47a63feb44a11755b6ac9dd45d36e2408c523daf3eacf0a31291406e748fa5c",
-      "bytes": 88719
+      "sha256": "dcf7a5369b4cb2bef907f55e44e69a6d9d833ec96ce52cc778bb3ce39a89707b",
+      "bytes": 88868
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7769,6 +7769,11 @@
       "bytes": 1423
     },
     {
+      "path": "port/hal/ironball_encounter_state.h",
+      "sha256": "cba2ef564706052a4f9badceb19a89b800c977bfac82c6aab5bf05be4f6fd674",
+      "bytes": 502
+    },
+    {
       "path": "port/hal/ironball_replay.h",
       "sha256": "bd94670cb26a835eea1cd481dd2477b0070987359e3d90978cbb0c474695b3ec",
       "bytes": 6399
@@ -8045,8 +8050,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "c95c7ee023796d8baee231a3fc3579a194caf88823989fc3476d54cd9fa1e667",
-      "bytes": 232466
+      "sha256": "39d78f5296775dea8e42a9d5df5e0cb6e4a65a5cc6fcff55bf89fe25a226b024",
+      "bytes": 245918
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8527,6 +8532,11 @@
       "path": "port/tests/smoke_input_state.cpp",
       "sha256": "132e429425639054885eb5987137b1f33d35d54d2103e56b72df83002ce43023",
       "bytes": 1940
+    },
+    {
+      "path": "port/tests/smoke_ironball_encounter.cpp",
+      "sha256": "5ff38d0ee5696e85e59452f05e0a17c8ae0896db9323687f1d69d7aa3b6fd7c4",
+      "bytes": 919
     },
     {
       "path": "port/tests/smoke_level_overlay.cpp",
