@@ -13,6 +13,7 @@
 #include "daKrb_c.h"
 #include "daBombking_c.h"
 #include "daBmb_c.h"
+#include "daIbl_c.h"
 #include "daYegg_c.h"
 #include "daCoin_c.h"
 #include "daStar_c.h"
@@ -901,6 +902,63 @@ static bool replay_rainbow_disc() {
     if(tick%20==0)event("sample");
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
+// Input-only course-reentry acceptance. Check threats before waypoint settling:
+// the ordinary route can otherwise wait beside a pursuing Goomba. Retail Wait
+// accepts a neutral jump edge reliably; Walk may consume it while braking.
+static uint64_t replay_reentry_goomba_run_until;
+static uint64_t replay_reentry_jump_held_until;
+static bool replay_reentry_goomba_dodge(Player *player) {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_REENTRY_GOOMBA_DODGE");
+    if(!enabled || std::strcmp(enabled,"1") || !replay_lava_bridge_reentered ||
+       !player || player->aliveState!=1 || player->mIsNoControl ||
+       player->mIsControlDisabled || data_0209d660)return false;
+    static uint64_t jump_until=0,next_jump=0;
+    static bool braking=false;
+    const auto tick=ntr::rt_frame();
+    if(player->mIsAirborne) {
+        if(jump_until) {
+            std::fprintf(stderr,"[native reentry goomba dodge] airborne tick=%llu\n",
+                static_cast<unsigned long long>(tick));
+            jump_until=0;
+        }
+        braking=false;
+        return false;
+    }
+    if(tick<jump_until) {ntr::input_test_controls(true,2,0,0);return true;}
+    if(tick<next_jump)return false;
+    const char *state=pc_player_state_name(player);
+    if(std::strcmp(state,"St_Wait_Main") && std::strcmp(state,"St_Walk_Main") &&
+       std::strcmp(state,"St_OnWall_Main"))return false;
+    dActor_c *threat=nullptr;
+    double nearest=450*4096.0;
+    for(unsigned kind:{200u,201u,202u})
+        for(auto *a=dActor_c::FindWithActorID(kind,nullptr);a;a=dActor_c::FindWithActorID(kind,a)) {
+            if(a->aliveState!=1 || std::abs(a->mPosY-player->mPosY)>=200*4096)continue;
+            // A Goomba below the ramp cannot hit a rider whose feet already
+            // clear its native cylinder. Avoid jumping toward that false threat.
+            const auto *goomba=static_cast<const daKrb_c *>(a);
+            if(player->mPosY>a->mPosY+int(goomba->mdCcAc_c.height)+40*4096)continue;
+            const double distance=std::hypot(double(a->mPosX)-player->mPosX,
+                double(a->mPosZ)-player->mPosZ);
+            if(distance<nearest){nearest=distance;threat=a;}
+        }
+    if(!threat){braking=false;return false;}
+    if(!std::strcmp(state,"St_Wait_Main")) {
+        jump_until=tick+12;next_jump=tick+180;braking=false;
+        replay_reentry_goomba_run_until=tick+180;
+        replay_reentry_jump_held_until=jump_until;
+        std::fprintf(stderr,"[native reentry goomba dodge] jump tick=%llu uid=%u distance=%.1f\n",
+            static_cast<unsigned long long>(tick),threat->uniqueID,nearest/4096.0);
+        ntr::input_test_controls(true,2,0,0);
+    } else {
+        if(!braking)std::fprintf(stderr,"[native reentry goomba dodge] brake tick=%llu uid=%u distance=%.1f\n",
+            static_cast<unsigned long long>(tick),threat->uniqueID,nearest/4096.0);
+        braking=true;
+        ntr::input_test_controls(true,0,0,0);
+    }
+    return true;
+}
+
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -969,7 +1027,11 @@ static bool replay_course_route(const char *route_override=nullptr) {
     // Castle waypoints need precise stops, but the verified slide approach
     // needs continuous input into its ledge jump. Settling there carries the
     // player beneath the box before takeoff and causes an underside collision.
-    const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course);
+    if(!route_override && replay_reentry_goomba_dodge(player))return true;
+    // Keep advancing markers during the evasive jump. Stopping at each marker
+    // lets the pursuing Goomba catch the player again immediately after landing.
+    const bool evading=!route_override && ntr::rt_frame()<replay_reentry_goomba_run_until;
+    const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course && !evading);
     if(precise && ntr::rt_frame()<settle_until) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
     }
@@ -1302,7 +1364,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
             (!player->mIsAirborne && !std::strcmp(state,"St_OnWall_Main")))) {
             jump_until=tick+12;next_jump=tick+75;
         }
-        if(tick<jump_until)buttons|=2;
+        if(tick<jump_until || (evading && tick<replay_reentry_jump_held_until))buttons|=2;
         // Height-aware route points represent walkable floor positions, not
         // transient jump arcs. Only advance after the player has landed at
         // the requested height; otherwise an overhead stair edge can make
@@ -1491,7 +1553,12 @@ static bool replay_lava_bridge_lifecycle() {
         if(std::getenv("SM64DS_PC_TEST_FURNITURE_ENCOUNTER") && !replay_furniture_complete)return false;
         phase=1;began=tick;event("exit-request");
     }
-    if(tick-began>12000){phase=4;event("timeout");return false;}
+    uint64_t lifecycle_timeout=12000;
+    if(const char *configured_timeout=std::getenv("SM64DS_PC_TEST_LAVA_LIFECYCLE_TIMEOUT")) {
+        const unsigned long long requested=std::strtoull(configured_timeout,nullptr,10);
+        if(requested>=12000 && requested<=60000)lifecycle_timeout=requested;
+    }
+    if(tick-began>lifecycle_timeout){phase=4;event("timeout");return false;}
     auto *p=static_cast<Player *>(data_0209f394[0]);
     const bool ready=p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled;
     uint16_t buttons=0;int16_t sx=0,sy=0;
@@ -3130,6 +3197,33 @@ static bool trace_script_progress(uint64_t frame)
                     (int)c.pos.x,(int)c.pos.y,(int)c.pos.z,(int)c.radius,(int)c.height,
                     g->uniqueID,g->mPosX,g->mPosY,g->mPosZ,g->mFlags,g->mdCcAc_c.hitFlags,g->mdCcAc_c.otherOwner,g->mEatenByYoshi,
                     egg?egg->uniqueID:0,egg?egg->mPosX:0,egg?egg->mPosY:0,egg?egg->mPosZ:0);
+            }
+            std::fflush(file);
+        }
+    }
+    // Optional per-frame Wario/iron-ball attack diagnostic. This only reads
+    // the live colliders; it does not alter collision or gameplay state.
+    if (const char *path = std::getenv("SM64DS_PC_IRONBALL_ATTACK_TRACE")) {
+        static FILE *file = std::fopen(path, "w");
+        static uint64_t previous = ~uint64_t(0);
+        const auto tick = ntr::rt_frame();
+        auto *p = static_cast<Player *>(data_0209f394[0]);
+        if (file && tick != previous && p && data_0209f2f8 == 6 && p->param1 == 2 && tick >= 10000) {
+            if (previous == ~uint64_t(0))
+                std::fputs("tick,state,step,pchar,px,py,pz,heading,grounded,body_x,body_y,body_z,body_r,body_h,body_flags,body_vuln,body_hit,body_other,attack_x,attack_y,attack_z,attack_r,attack_h,attack_flags,attack_vuln,attack_hit,attack_other,ball_uid,ball_kind,bx,by,bz,ball_flags,ball_vuln,ball_hit,ball_other\n", file);
+            previous = tick;
+            auto &body = p->mdCcAcPos_c;
+            auto &attack = p->mAttackClsn;
+            for (dActor_c *a = dActor_c::Next(nullptr); a; a = dActor_c::Next(a)) {
+                if (a->actorID != 220 || a->aliveState != 1) continue;
+                auto *ball = static_cast<daIbl_c *>(a);
+                std::fprintf(file, "%llu,%s,%u,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%u,%u,%u,%u,%u,%d,%d,%d,%u,%u,%u,%u\n",
+                    static_cast<unsigned long long>(tick), pc_player_state_name(p), p->mStateStep, p->param1,
+                    p->mPosX, p->mPosY, p->mPosZ, p->mAngleY, int(!p->mIsAirborne),
+                    body.pos.x, body.pos.y, body.pos.z, body.radius, body.height, body.flags, body.vulnFlags, body.hitFlags, body.otherOwner,
+                    attack.pos.x, attack.pos.y, attack.pos.z, attack.radius, attack.height, attack.flags, attack.vulnFlags, attack.hitFlags, attack.otherOwner,
+                    ball->uniqueID, ball->mVariant, ball->mPosX, ball->mPosY, ball->mPosZ,
+                    ball->mdCcAc_c.flags, ball->mdCcAc_c.vulnFlags, ball->mdCcAc_c.hitFlags, ball->mdCcAc_c.otherOwner);
             }
             std::fflush(file);
         }

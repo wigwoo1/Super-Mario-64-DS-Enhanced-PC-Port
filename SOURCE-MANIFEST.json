@@ -6880,8 +6880,8 @@
     },
     {
       "path": "port/docs/native-ironball-integration-2026-10-31.txt",
-      "sha256": "e8faa5d8a2a58380b8008f0a80000dcabe603214a4fdc14126aa5de71c93d8fb",
-      "bytes": 5896
+      "sha256": "0d7568fe4473616226bd28e3c874130cb2ff6af902bdfe0daaffc6e6f55ad40b",
+      "bytes": 7289
     },
     {
       "path": "port/docs/native-item-block-integration-2026-10-24.txt",
@@ -8045,8 +8045,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "32b4e33db0171254d862a1bf79cfd8fd37a3490ba8e3c28ee4a63e6dfa7a1f25",
-      "bytes": 226637
+      "sha256": "c95c7ee023796d8baee231a3fc3579a194caf88823989fc3476d54cd9fa1e667",
+      "bytes": 232466
     },
     {
       "path": "port/ntr/audio.cpp",
