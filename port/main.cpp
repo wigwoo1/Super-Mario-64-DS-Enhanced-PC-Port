@@ -1166,8 +1166,9 @@ static bool replay_course_route(const char *route_override=nullptr) {
     if(!route_override && replay_reentry_goomba_dodge(player,x,z))return true;
     // Keep advancing markers during the evasive jump. Stopping at each marker
     // lets the pursuing Goomba catch the player again immediately after landing.
-    // Input-only QA: retain the measured Chomp path without marker stops.
-    // The old stops allowed a second lunge after its first missed attack.
+    // Input-only QA: retain the measured Chomp path without marker stops
+    // during the re-entry pass. The first lunge on that visit follows a
+    // missed attack if the pilot stops at the route markers.
     const char *chomp_pass=std::getenv("SM64DS_PC_TEST_CHOMP_PASS");
     const bool passing_chomp=!route_override && replay_lava_bridge_reentered &&
         level==6 && chomp_pass && !std::strcmp(chomp_pass,"1") &&
