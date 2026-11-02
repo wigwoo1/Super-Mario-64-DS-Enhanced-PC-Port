@@ -24,6 +24,14 @@ class StarSelectionTransformTests(unittest.TestCase):
         self.assertIn('data_020a0e58[0] & 0x20', behavior)
         self.assertIn('if (cur != 0)', behavior)
 
+    def test_mission_override_is_opt_in_and_bounded(self):
+        behavior = transform((ROOT / 'src/_ZN12dScStarSel_c8BehaviorEv.cpp').read_text())
+        self.assertIn('std::getenv("SM64DS_PC_TEST_MISSION_SELECT")', behavior)
+        self.assertIn('mission >= 1 && mission <= FB(this, 0x114)', behavior)
+        self.assertIn('[native mission test override]', behavior)
+        self.assertIn('[native mission context]', behavior)
+        self.assertIn('SublevelToLevel(data_02092110)', behavior)
+
     def test_unrelated_source(self):
         source = 'int unrelated() { return 7; }'
         self.assertEqual(transform(source), source)

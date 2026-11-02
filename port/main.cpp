@@ -13,6 +13,8 @@
 #include "daKrb_c.h"
 #include "daBombking_c.h"
 #include "daBmb_c.h"
+#include "daOwl_c.h"
+#include "hal/pc_session.h"
 #include "daObjSwitch_c.h"
 #include "daIbl_c.h"
 #include "daYegg_c.h"
@@ -995,6 +997,103 @@ static bool replay_reentry_goomba_dodge(Player *player,int targetX,int targetZ) 
     return true;
 }
 
+static bool replay_owl_ride(Player *p) {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_OWL_RIDE");
+    int expected_level=7;
+    if(const char *configured=std::getenv("SM64DS_PC_TEST_OWL_LEVEL")) {
+        char *end=nullptr;const long parsed=std::strtol(configured,&end,10);
+        if(end && *end==0 && parsed>=1 && parsed<=51)expected_level=static_cast<int>(parsed);
+    }
+    if(!enabled || std::strcmp(enabled,"1") || data_0209f2f8!=expected_level)return false;
+    auto *owl=static_cast<daOwl_c *>(dActor_c::FindWithActorID(234,nullptr));
+    if(!owl)return false;
+    const auto tick=ntr::rt_frame();
+    struct Pilot {
+        uint64_t began=0,ride=0,jump_until=0,next_jump=0,recovered=0,flight=0;
+        int recovered_x=0,recovered_z=0;
+        bool moved=false,released=false,done=false;
+        unsigned uid=0;
+    };
+    static Pilot pilot;
+    if(pilot.uid!=owl->uniqueID){pilot=Pilot{};pilot.uid=owl->uniqueID;}
+    auto &began=pilot.began,&ride=pilot.ride,&jump_until=pilot.jump_until,&next_jump=pilot.next_jump,&recovered=pilot.recovered,&flight=pilot.flight;
+    auto &recovered_x=pilot.recovered_x,&recovered_z=pilot.recovered_z;
+    auto &moved=pilot.moved,&released=pilot.released,&done=pilot.done;
+    if(owl->mTalkState!=2)return false;
+    if(!began)began=tick;
+    const char *state=pc_player_state_name(p);
+    const bool riding=!std::strcmp(state,"St_Owl_Main");
+    auto controls=[](uint16_t buttons=0,int16_t x=0,int16_t y=0){ntr::input_test_controls(true,buttons,x,y);return true;};
+    if(tick%30==0)std::fprintf(stderr,"[native owl ride] tick=%llu state=%s player=%d,%d,%d owl=%d,%d,%d rider=%u contact=%u hit=%u\n",
+        static_cast<unsigned long long>(tick),state,p->mPosX,p->mPosY,p->mPosZ,owl->mPosX,owl->mPosY,owl->mPosZ,
+        owl->mRider?owl->mRider->uniqueID:0,owl->mdCcAcPos_c.otherOwner,owl->mdCcAcPos_c.hitFlags);
+    if(riding && !ride){ride=tick;std::fprintf(stderr,"[native owl ride] attached tick=%llu\n",static_cast<unsigned long long>(tick));}
+    if(ride){
+        const char *full=std::getenv("SM64DS_PC_TEST_OWL_FLIGHT");
+        const bool full_flight=full && !std::strcmp(full,"1");
+        uint64_t flight_hold_frames=60;
+        uint64_t flight_steer_frames=60;
+        if(const char *requested=std::getenv("SM64DS_PC_TEST_OWL_HOLD_FRAMES")) {
+            char *end=nullptr;
+            const unsigned long value=std::strtoul(requested,&end,10);
+            if(end && *end==0 && value>=60 && value<=700)flight_hold_frames=value;
+        }
+        if(const char *requested=std::getenv("SM64DS_PC_TEST_OWL_STEER_FRAMES")) {
+            char *end=nullptr;
+            const unsigned long value=std::strtoul(requested,&end,10);
+            if(end && *end==0 && value>=60 && value<=700)flight_steer_frames=value;
+        }
+        int flight_target_x=2500,flight_target_z=4500;
+        if(const char *requested=std::getenv("SM64DS_PC_TEST_OWL_TARGET")) {
+            int x=0,z=0;
+            if(std::sscanf(requested,"%d:%d",&x,&z)==2 &&
+               x>=-20000 && x<=20000 && z>=-20000 && z<=20000) {
+                flight_target_x=x;flight_target_z=z;
+            }
+        }
+        if(full_flight && riding && !flight && p->mStateStep==1){
+            flight=tick;std::fprintf(stderr,"[native owl ride] flight-ready tick=%llu pos=%d,%d,%d\n",static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+            std::fprintf(stderr,"[native owl ride] requested-hold-frames=%llu\n",static_cast<unsigned long long>(flight_hold_frames));
+            std::fprintf(stderr,"[native owl ride] requested-steer-frames=%llu target=%d:%d\n",static_cast<unsigned long long>(flight_steer_frames),flight_target_x,flight_target_z);
+        }
+        if(full_flight && riding && tick<ride+1000 && !released){
+            if(!flight)return controls(2);
+            if(tick<flight+flight_hold_frames){
+                if(tick<flight+flight_steer_frames){
+                    const double angle=std::atan2(flight_target_x*4096.0-p->mPosX,flight_target_z*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    return controls(2,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
+                }
+                return controls(2);
+            }
+        }
+        if(!full_flight && tick<ride+80)return controls(2,tick>=ride+40 && tick<ride+70?12000:0);
+        if(!released){released=true;std::fprintf(stderr,"[native owl ride] release-input tick=%llu\n",static_cast<unsigned long long>(tick));}
+        if(!riding && !p->mIsAirborne && !p->mIsControlDisabled && !p->mIsNoControl && !done && !std::strcmp(state,"St_Wait_Main")){
+            done=true;recovered=tick;recovered_x=p->mPosX;recovered_z=p->mPosZ;
+            std::fprintf(stderr,"[native owl ride] landed tick=%llu state=%s\n",static_cast<unsigned long long>(tick),state);
+        }
+        if(recovered && tick<recovered+24){
+            if(full_flight){
+                const double angle=std::atan2(3100*4096.0-p->mPosX,4400*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                return controls(0,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
+            }
+            return controls(0,12000);
+        }
+        if(recovered && !moved && std::hypot(double(p->mPosX)-recovered_x,double(p->mPosZ)-recovered_z)>20*4096.0){
+            moved=true;std::fprintf(stderr,"[native owl ride] movement-recovered tick=%llu state=%s\n",static_cast<unsigned long long>(tick),state);
+            if(std::getenv("SM64DS_PC_TEST_OWL_CYCLE"))replay_course_route_complete=true;
+        }
+        return controls();
+    }
+    if(tick-began>1000)return controls();
+    const double dx=double(owl->mPosX)-p->mPosX,dz=double(owl->mPosZ)-p->mPosZ;
+    const double distance=std::hypot(dx,dz);
+    if(!p->mIsAirborne && tick>=next_jump && distance<220*4096.0 &&
+       (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))){jump_until=tick+50;next_jump=tick+90;}
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    const double magnitude=distance>35*4096.0?18000:0;
+    return controls(tick<jump_until?2:0,static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));
+}
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -1487,9 +1586,12 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // reaches the trunk, rest at its top, then jump off. No actor/state
         // placement or save edits are involved.
         const char *tree_test=std::getenv("SM64DS_PC_TEST_TREE_CLIMB");
+        if(!route_override && replay_owl_ride(player))return true;
         if(tree_test && !std::strcmp(tree_test,"1")) {
             static uint64_t attached_at=0;
             static const char *last_state=nullptr;
+            static unsigned climb_player=0;
+            if(climb_player!=player->uniqueID){climb_player=player->uniqueID;attached_at=0;last_state=nullptr;}
             if(!attached_at && player->mIsAirborne && !std::strcmp(state,"St_Climb_Main"))attached_at=tick;
             if(attached_at) {
                 const auto elapsed=tick-attached_at;
@@ -1751,8 +1853,12 @@ static bool replay_lava_bridge_lifecycle() {
     if(phase==2) {
         unsigned selected=0,selectionPhase=0,selectionMode=0,confirmed=0,selectionReady=0;
         if(pc_star_select_status(&selected,&selectionPhase,&selectionMode,&confirmed,&selectionReady)) {
+            const unsigned target=std::getenv("SM64DS_PC_TEST_OWL_CYCLE") ? unsigned(pc_test_mission()-1):0;
             if(selectionReady && !confirmed && selectionMode==0 && tick%20<3)
-                buttons=selected==0 && selectionPhase==2?1:0x20;
+                buttons=selected==target && selectionPhase==2?1:0x20;
+            else if(selectionReady && !confirmed && selectionMode==2 && selected==target &&
+                    std::getenv("SM64DS_PC_TEST_OWL_CYCLE") && tick%20<3)
+                buttons=1; // Original Yoshi character choice needs a second confirm edge.
             return controls();
         }
         if(data_0209f2f8==course_level && ready) {

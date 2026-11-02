@@ -17,7 +17,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "_ZN10dScStage_c14GraphCallback1Ev",
                  "func_0204c194", "func_0204c0a8", "func_0204c0e8",
                  "daKinopio_c_classInit", "_ZN11daKinopio_cD1Ev",
-                 "daSBird_c_classInit", "_ZN9daSBird_cD1Ev",
+                 "daSBird_c_classInit", "_ZN9daSBird_cD1Ev", "daOwl_c_classInit",
                  "daCnn_c_classInit", "daWbm_c_classInit", "daTree_c_classInit",
                  "daWarpkun_c_classInit", "_ZN11daWarpkun_cD1Ev",
                  "daObjMc_Metalnet_c_classInit",
@@ -548,6 +548,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daIbl_c.cpp':
                     import ironball_host
                     transformed=ironball_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daOwl_c.cpp':
+                    import owl_host
+                    transformed=owl_host.transform(root,transformed)
                     rewrites+=1
                 if path.name == 'daUdlift_c.cpp':
                     import udlift_host

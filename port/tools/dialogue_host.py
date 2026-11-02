@@ -3,6 +3,13 @@ import re
 
 
 def transform(text):
+    # ARM's plain char is unsigned; MSVC's is signed. Preserve the original
+    # AddChar ABI while keeping controller icons and accented glyphs within
+    # the 256-entry width table (F6/F7 must not index entries -10/-9).
+    if 'void Message::AddChar(char c)\n{' in text:
+        lookup='data_0208f074[c]'
+        if text.count(lookup)!=1:raise ValueError('Message glyph width lookup changed')
+        return text.replace(lookup,'data_0208f074[static_cast<unsigned char>(c)]',1)
     update='void Message::Update()\n{'
     if update in text:
         if text.count(update)!=1:raise ValueError('Message update definition changed')

@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "316162a448c12ebb1d826b0964e568d8dab8404a157da15d5c14269d63f415a0",
-      "bytes": 456848
+      "sha256": "96da05dec10e04d4bc3ac624dbf3521b8c856cee6445dbfe69aed1cae2006430",
+      "bytes": 456896
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "f0702005604d0ff625932bb8be0049fce8a1dc9b4782e1c8022d1945aff24cf9",
-      "bytes": 252162
+      "sha256": "ff2c9ca089bab462c79dc431f62b3f453ddb92115d175ff7f98a8fc100d654df",
+      "bytes": 252211
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "dcf7a5369b4cb2bef907f55e44e69a6d9d833ec96ce52cc778bb3ce39a89707b",
-      "bytes": 88868
+      "sha256": "2e20259914721dad949030001b4dde83b47663f61622a48eea8935505a91e4bf",
+      "bytes": 89012
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7049,6 +7049,11 @@
       "bytes": 2868
     },
     {
+      "path": "port/docs/native-owl-integration-2026-11-01.txt",
+      "sha256": "3a37e8eb04875e2aeb9f26a0cc8e7304672945a8b9533724dc9c7f90545da855",
+      "bytes": 11431
+    },
+    {
       "path": "port/docs/native-particle-rendering-2026-10-23.txt",
       "sha256": "5c61f1fac15381fb67661b35b9f4f4338352ea2c019bfa23b7dea47e7a5beca2",
       "bytes": 6196
@@ -7580,8 +7585,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "6c31f1ab027ae9d16ced16794bf2fb8f28c6099f1d371316aae673e879a1b3e9",
-      "bytes": 49883
+      "sha256": "c051dcef7c593745961c819f7479fe046635b5c7f9a3e85eae9ac0aa593457ad",
+      "bytes": 50087
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7730,8 +7735,8 @@
     },
     {
       "path": "port/hal/game_api_bridge.cpp",
-      "sha256": "95405e8927942c791a1bca2a5642ff63f0a41d05bc87d5264c0af8cb72dcea18",
-      "bytes": 39507
+      "sha256": "badbb50184e4eb3e51402a3a334b3d5265c9687e6b9504ea522ade7846d03ea6",
+      "bytes": 39589
     },
     {
       "path": "port/hal/gx_bank_state.asm",
@@ -8050,8 +8055,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "880707bfbb631996c65347ab29572af17d9757e71cce7dcfea1a32c7ab60ce35",
-      "bytes": 245977
+      "sha256": "345820bff9453e9344d13b104431ce4305c3633fdb33c4dfc2bbb4a13d6d1044",
+      "bytes": 252927
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8315,8 +8320,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "17f77dc5af902fa9cc29fe4ca663796c9b4d2c1c0dc853aebac27c0c2112ab2d",
-      "bytes": 67102
+      "sha256": "8208741e54ada79ade1476ec143b4a9e76d58468efebd1920c16972c11e6008f",
+      "bytes": 67251
     },
     {
       "path": "port/README.md",
@@ -8855,8 +8860,8 @@
     },
     {
       "path": "port/tests/test_star_select_transform.py",
-      "sha256": "66d747315db211346a114c9a4051de0bf456d5037f7662b70fbce910c753388e",
-      "bytes": 1380
+      "sha256": "b751ea9725f702859a709446ae67f7356a6b1afaaf709532a32f21a4a107e927",
+      "bytes": 1880
     },
     {
       "path": "port/tests/test_toad_host.py",
@@ -9030,8 +9035,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "ddc107a432975ca2182826062ab290742bff67a6b5c383adba3978ffce76fdc6",
-      "bytes": 50283
+      "sha256": "30dfa9c31a4b6f3361bca38dd9625be1a1f547f1b83131c100bb8397123c0c8a",
+      "bytes": 50488
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9234,6 +9239,11 @@
       "bytes": 5414
     },
     {
+      "path": "port/tools/check_native_owl_flight.py",
+      "sha256": "fc94d830d4c66d3e8304f5399b73f7a6f3e0fe3124816626933806add2a86b71",
+      "bytes": 3638
+    },
+    {
       "path": "port/tools/check_original_course_entry_replay.py",
       "sha256": "bcf927fd9e9646abb11576febe00cfac03cef5c88ecd02e3df5cf40c1b72dbae",
       "bytes": 3454
@@ -9355,8 +9365,8 @@
     },
     {
       "path": "port/tools/dialogue_host.py",
-      "sha256": "25d9e0804b60fc097f83cddeb7a7d4aa2cab2e85bddb30f90ec4f516b1ad1a6a",
-      "bytes": 1124
+      "sha256": "c70d09257f310b35b78b8c21503ef660444f0e3f0f7a102655c73fdb3971636f",
+      "bytes": 1605
     },
     {
       "path": "port/tools/dialogue_mod.py",
@@ -9515,8 +9525,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "7487759128e5d7f4a740f41b7e738c0bdae721e59da755388a3a2de9157b3eb4",
-      "bytes": 15653
+      "sha256": "eccf935fbeb7725c5641e07989b3e34a67c09eda978f4d8a7088c81d913480ed",
+      "bytes": 16189
     },
     {
       "path": "port/tools/native_kit_data.py",
@@ -9557,6 +9567,11 @@
       "path": "port/tools/overlay_data.py",
       "sha256": "40d6ab1c13e1a2a8d6fc18821a808913164b11ddb2b47e73b6b6d29f36a3e618",
       "bytes": 6258
+    },
+    {
+      "path": "port/tools/owl_host.py",
+      "sha256": "e44948c7a9e355bc41e58f54f9336fc46ba6a07329fa5225b0f218b8d257771d",
+      "bytes": 3005
     },
     {
       "path": "port/tools/particle_host.py",
@@ -9645,8 +9660,8 @@
     },
     {
       "path": "port/tools/star_select_host.py",
-      "sha256": "ca73e04eee0f9c11fb88ea81d4d82b2ef107c07ea05807b08141b74870a4cb8a",
-      "bytes": 4961
+      "sha256": "89587a9a850a402d2d15809fa17895a4fda4276d01809bb2e050cf26f15c2808",
+      "bytes": 6298
     },
     {
       "path": "port/tools/test_battlefield_platform_host.py",

@@ -1,0 +1,170 @@
+Native Hoot integration checkpoint (partial) - 2026-11-01
+
+TTM original re-entry and second ride VERIFIED 2026-11-02:
+Case ttm-yoshi-confirm-cycle-20261102-r25, EXE SHA256
+50A997571D92DD8F28A1FD6B9F5525070AFB2B49638DEB1F7D7B49746F161E4F.
+After real Exit Course and key-door/stair route, the wall-filtered KCL planner
+started beyond the upper doorway yields a valid hall detour via x200, avoiding
+the central staircase. Painting entry jumps toward z-250, within 120 units of
+the measured blocking wall; the prior z-150 target never requested takeoff.
+Actual painting trigger216 destination22 opens original mission selection.
+Two test-only fixes complete the return: OwlCycle now passes MenuMission into
+SM64DS_PC_TEST_MISSION, and lifecycle mode2 supplies the original Yoshi
+character-choice second confirmation edge. Previously default mission1
+conflicted with the bounded mission2 override, then mode2 awaited confirmation.
+Original mission2 confirms twice. Old Owl144 cleans up; new Owl406 spawns.
+Course re-entry7512, second attach8736, flight9034, release9274, landing9578,
+walking9602. Second flight moves1617.52 world units sideways. Final15000 is
+grounded Wait with control enabled. Strict private re-entry checker PASS;
+exit0, audible submitted samples0, audioerrors0, both copied saves unchanged.
+Build and three input/session CTests pass. Screens8500 and10000 reviewed:
+second-visit dialogue (during message scrolling) and recovered normal play.
+Two high drops cause fall damage; final health1. Not a safe-landing route.
+Repro: work/run-hoot-ttm-reentry-verified-20261102.ps1 plus saved config/route.
+Limit: initial development-picker entry and synthetic upstairs-key/Star
+prerequisites. Original castle exit/return route is verified; earned campaign,
+full hold timeout, and all other characters on this route remain unverified.
+This milestone did not replace the F preview or publish a new build kit.
+
+Further TTM return route evidence 2026-11-02:
+R18 ttm-stair-original-cycle reaches the first stair flight by5189.
+R19's unfiltered KCL path cut across the column and stopped at y725.
+R20 ttm-outer-spiral-cycle instead uses measured outer floor samples:
+(-1450,800,-2600),(-1600,850,-2500),(-1700,900,-2200),
+(-1650,925,-2100),(-1550,950,-2050),(-1450,975,-2000),
+(-1350,1000,-1950),(-1250,1050,-1900),(-1150,1050,-1900),
+(-1050,1075,-1950),(-950,1125,-2050),(-850,1175,-2200).
+These ordinary walking waypoints all pass; upper landing reached6083.
+R20 aimed right of the upper door. R21 ttm-upper-door-cycle corrects it
+to(-975,1175,-2600),(-975,1175,-3100) and passes the real door by6421.
+The next candidate point(-450,1175,-1675) is not traversable as configured:
+it drives onto the central red staircase and presses against its right wall,
+actual position about(-402,1481,-1702), St_OnWall_Main. Screenshot11000
+shows that blockage. Do not claim TTM re-entry or second Owl acceptance.
+Next inspect a route around the central staircase toward trigger216 at
+(-659,1450,-276), param16000522 (destination22), painting227 at
+(-659,1300,-276), picture10. Upper-door actor208 center(-975,1175,-2850).
+The wall-filtered static planner cannot account for opening doors; unfiltered
+floor routes also cross solid walls. Its outputs are candidates only.
+Added configurable height, bounds, wall-height and rise limits to the private
+KCL planner; defaults preserved and options recorded in new output metadata.
+Direct diagnostic picker entry to level5 is not a valid shortcut: R17 stops
+in a mission selector with zero visible plates. Use the original exit route.
+
+TTM original-return route survey 2026-11-02 (partial):
+The earlier statement that lifecycle code only supports Lava Bridge was
+incorrect: it accepts configured castle and course routes. Its fallback
+painting approach is Lava-specific. Owl-cycle mission selection was also
+restricted to level7; the host test pilot now honors the requested Owl
+mission on all configured levels. Production controls are unaffected.
+Build and smoke_input/smoke_pc_session/smoke_input_state pass (3/3).
+Case hoot-ttm-exit-survey-20261102-r15 confirms native Exit Course,
+Owl144 cleanup4044 and original lobby return4109.
+Case hoot-ttm-upstairs-survey-20261102-r16 repeats the ride and uses a
+fresh synthetic upstairs-key-held fixture (door variant8 keyIndex1, bit4).
+Ordinary route after lobby return:
+2:-900:0:200:35:0,2:-900:0:100:25:0,2:-900:500:-400:30:0,2:-1000:500:-1300:30:0
+enters original upstairs castle level5. By5000, Yoshi is at
+(-950,500,-1450), grounded Wait with controls enabled. Final11000 remains
+there because no level5 route segment was supplied. Screenshot10000 shows
+the stair hall after the key door. This is successful exit/key-door entry,
+not Tall Tall Mountain course re-entry. Both runs exit0, mixererrors0 and
+audible submitted samples0. All saves are private copies; the new key fixture
+is synthetic, not earned. No F install or public release promotion.
+Next: use castle_2f KCL and level5 actor census6500 to route up the stair
+hall to TTM's painting, then repeat mission2 and confirm a new Owl UID.
+
+Tall Tall Mountain alternate placement verified 2026-11-02:
+Private case native-muted-audio-walk-hoot-ttm-climb-20261102-r14-20261021
+uses synthetic Yoshi prerequisites, menu level22/save course11 and mission2.
+The opt-in mission override is bounded to the two unlocked visible plates;
+this does not prove earned campaign entry. The old route stopped 80 units
+from the tree without jumping. Corrected input-only route
+22:-1250:5350:12:1 jumps within 120 units and continues toward the trunk.
+Existing tree climb then wakes authored Owl144 and completes the conversation.
+Attach2885, steerable flight3183, release3423, grounded Wait3727,
+walking recovery3751; lateral flight displacement1614.95 world units.
+Strict check_native_owl_flight.py passes; final5500 grounded Wait/control,
+exit0, audioerrors0, muted submitted samples0, both isolated saves unchanged.
+Screenshot3300 visually confirms Yoshi carried by Hoot over the course.
+EXE A90B1098692AD4098855BE27A560E8AF041D4C58D4DB937BCF68752A2B5AC541.
+No gameplay source change was needed. No F preview replacement or campaign,
+alternate-placement re-entry, full timeout or Star collection acceptance.
+
+Actor 234 uses the recovered overlay 94 profile and daOwl_c implementation.
+The host adapter checks the original profile bytes before adapting resources.
+Resource handles are initialized after filesystem startup. Native C++ creates
+the five state callback pairs. The original raw +8 main-callback presence
+check is replaced with the typed mMain field: native member-pointer layout
+differs from the DS layout. Player's owl-cleanup C bridge delegates to the
+recovered Player method. The original matched actor source remains untouched.
+
+Verified with a prepared Wario save, original mission selector mission 3,
+Whomp's Fortress level 7. This is a diagnostic setup, not earned campaign
+progression. Ordinary stick/jump inputs approach the tree and climb it.
+The same authored Owl UID 136 changes dormant -> hover at tick 1955, starts
+original dialogue at 2579, and returns to hover with talk completed at 2847.
+Render instrumentation recorded 1523 nonempty samples with 190 triangles each.
+The 5000-frame muted replay exits normally, reports zero audible submitted
+samples and zero audio errors, and preserves both copied save files. Seven
+input/session/route regression tests pass. Native allocation and callback
+layout assertions compile.
+
+Follow-up: a separately gated ordinary-input ride pilot yields to the tree
+climb until dialogue completes, pursues Hoot, jumps and holds Jump to grab,
+then releases it. Two muted runs completed normally. The second verified
+player St_Owl_Main and matching Owl rider UID at 2908, ascent, release input
+at 2988, Owl return at 2989 and hover at 3117, player Wait at 3136 and actual
+Walk/displacement at 3160. Final state is grounded Wait with controls enabled;
+copied saves remain unchanged. Carry screenshot 2970 shows Wario hanging
+from Hoot. No gameplay pose/state/health changes were used by the pilot.
+
+Full-flight follow-up: the pilot waits for original player step 1 at tick
+3124, then steers toward the tree ground area while holding Jump. The accepted
+4500-frame run records 549 world units of lateral displacement during flight,
+release at 3184, landing/Wait at 3430, and real Walk recovery at 3454. Final
+state is grounded Wait with controls enabled. Dropping from full height costs
+four health segments; this is not a damage-free route. Both copied saves are
+unchanged and audio output is muted. The strict check_native_owl_flight.py
+checks flight phase, input, displacement, release, recovery, final state and
+save preservation. An earlier recovery pulse faced the wall; the accepted
+pilot directs ordinary stick input toward the known starting ground instead.
+
+Open: control-symbol text is incomplete in the dialogue screenshot. Timeout,
+course unload/reentry, other characters and other authored placements remain
+unverified. Diagnostic flight acceptance does not establish campaign progress.
+
+Unload follow-up: after flight and walking recovery, the opt-in OwlCycle
+pilot hands control to the existing original Exit Course menu replay.
+Native Owl cleanup executes at 3729 for UID 136, castle level 2 returns at
+3794, and final 6500 is normal grounded Wait in the lobby. Muted normal exit,
+unchanged copied saves, and seven regression tests pass. This establishes
+cleanup/exit only, not re-entry. The ride pilot now resets on Owl unique-ID
+changes, and the climb helper resets on player unique-ID changes; exercising
+those reset branches still requires the second visit.
+No Owl prototype was installed over the accepted playable F checkpoint.
+Refresh symbol-only build-support metadata for the new collision-offset data
+symbol before creating any public reconstruction kit. ROM-derived generated
+data and runtime screenshots remain private.
+
+Original course re-entry verified (2026-11-01): the input-only castle route
+now accepts the measured lower-floor landing within 60 units and requests
+the painting jump within the existing 120-unit trigger distance. No collision
+or player-state changes were needed. Original mission 3 selection repeats;
+Owl 136 cleans up and fresh Owl 329 spawns dormant, wakes and talks again.
+The second ride enters steerable flight, moves 549 world units sideways,
+releases and recovers ordinary walking. The 14000-frame muted replay exits
+normally with unchanged isolated saves and final grounded Wait. Seven input
+and replay regression tests pass. This verifies the per-actor pilot reset
+branches and original course lifecycle. High drops cause fall damage; this
+is not a damage-free route. Other characters, full hold timeout and dialogue
+control-symbol rendering remain open. No F installation or public kit update.
+
+Dialogue icon fix verified: MSVC plain char is signed, so AddChar indexed
+before the font-width table for high glyphs. The host adaptation casts that
+index to unsigned char, preserving original source and function ABI. A native
+test reproduces old failure at 0x80 and passes all 256 glyph values with the fix.
+A muted Luigi replay exits normally at 5000, verifies flight/release/walk,
+and preserves isolated saves. Screenshot 2700 shows both B icons and complete
+hold/release instruction text. Four CTests and three dialogue Python tests pass.
+Other placements and extended holds remain unverified.

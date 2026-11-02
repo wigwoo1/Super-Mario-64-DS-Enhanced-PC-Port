@@ -70,7 +70,11 @@ extern "C" void *dScStarSel_c_classInit() {
         anchor='s32 dScStarSel_c::Behavior()\n{'
         assert text.count(anchor)==1
         text='extern "C" void pc_star_select_observe(unsigned,unsigned,unsigned,unsigned,unsigned);\n'+text
-        text=text.replace(anchor,anchor+'\n    pc_star_select_observe(FB(this,0x115),FB(this,0x135),FB(this,0x133),FB(this,0x119),reinterpret_cast<dFader_c *>(data_0209f5bc)->IsAtStart()!=0);')
+        text=text.replace(anchor,anchor+'\n    if (const char *requested = std::getenv("SM64DS_PC_TEST_MISSION_SELECT")) {\n        char *end = nullptr;\n        const long mission = std::strtol(requested, &end, 10);\n        if (end != requested && *end == \'\\0\' && mission >= 1 && mission <= FB(this, 0x114)) {\n            const unsigned selected = static_cast<unsigned>(mission - 1);\n            if (FB(this, 0x115) != selected) {\n                FB(this, 0x115) = static_cast<u8>(selected);\n                if (std::getenv("SM64DS_PC_STATE_CAPTURE")) std::fprintf(stderr, "[native mission test override] selected=%u level=%d\\n", selected + 1, int(data_02092110));\n            }\n        }\n    }\n    pc_star_select_observe(FB(this,0x115),FB(this,0x135),FB(this,0x133),FB(this,0x119),reinterpret_cast<dFader_c *>(data_0209f5bc)->IsAtStart()!=0);')
+        needle='    if (const char *requested = std::getenv("SM64DS_PC_TEST_MISSION_SELECT")) {'
+        assert text.count(needle)==1
+        context='    static bool pc_mission_context_logged=false;\n    if (!pc_mission_context_logged && std::getenv("SM64DS_PC_STATE_CAPTURE")) {\n        const int course=SublevelToLevel(data_02092110);\n        std::fprintf(stderr,"[native mission context] menu_level=%d save_course=%d collected_stars=%u visible_plates=%u\\n",int(data_02092110),course,unsigned(CountStarsCollectedInLevelToDisplay(course)),unsigned(FB(this,0x114)));\n        pc_mission_context_logged=true;\n    }\n'
+        text=text.replace(needle,context+needle)
     if 'int func_02043098(int idx, int b, int c, int d)' in text:
         assert text.count('else if (idx == 3 || idx == 4)')==1
         text=text.replace('else if (idx == 3 || idx == 4)', 'else if (idx == 3)')

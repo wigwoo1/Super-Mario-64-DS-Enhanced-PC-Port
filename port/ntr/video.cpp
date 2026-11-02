@@ -112,7 +112,9 @@ void dialogue_card_on_scene(Framebuffer &frame,const DialogueCardBounds &bounds)
         const bool inner_border=x==left+2 || x==right-3 || y==top+2 || y==bottom-3;
         const bool corner=(x<left+4 || x>=right-4) && (y<top+4 || y>=bottom-4);
         if(corner && !border && !inner_border) continue;
-        const uint32_t fill=g_dialogue_card_dark_text?0xe8fff0c8u:0xb8172033u;
+        // NPC cards sit above the 3D scene, so keep the character model from
+        // washing out the dialogue text through the translucent fill.
+        const uint32_t fill=g_dialogue_card_dark_text?0xe8fff0c8u:0xe8172033u;
         const uint32_t color=border?0xe8e8b850u:inner_border?0xffedcf86u:fill;
         auto &pixel=frame.px[y][x];
         pixel=dialogue_card_color(pixel,color);
@@ -130,7 +132,7 @@ void dialogue_card_on_foreground(Framebuffer &frame,const DialogueCardBounds &bo
         if(pixel>>24) continue; // retain every original text and UI pixel
         if(border) pixel=0xe8e8b850u;
         else if(inner_border) pixel=0xffedcf86u;
-        else pixel=g_dialogue_card_dark_text?0xe8fff0c8u:0xb8172033u;
+        else pixel=g_dialogue_card_dark_text?0xe8fff0c8u:0xe8172033u;
     }
 }
 

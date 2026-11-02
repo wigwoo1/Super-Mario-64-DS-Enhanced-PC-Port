@@ -195,6 +195,12 @@ def main():
         'The first native Rainbow Ride flying carpet has a selected Yoshi route check, '
         'including obstacle climb, long-jump reboarding, safe endpoint dismount and '
         'reset. The other three paths and Rainbow Ride course re-entry remain unverified. '
+        'Native Hoot has selected dialogue, carry, steerable flight, release and movement '
+        'recovery checks for prepared character saves. Yoshi completes original Tall Tall '
+        'Mountain Exit Course, castle key-door/stair/painting return, mission2 re-entry '
+        'and a second ride with a fresh Hoot instance. Dialogue controller icons and '
+        'card contrast have selected checks. High drops cause fall damage. Earned unlock '
+        'progression, full hold timeout and broader placements remain unverified. '
         'High-refresh presentation repeats original-rate game frames; interpolation, '
         'HD texture packs, online/browser VS and other roadmap features remain unfinished.')
     validate_manifest(metadata)

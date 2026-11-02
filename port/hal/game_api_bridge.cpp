@@ -630,6 +630,8 @@ int _ZN6Player20IsStateEnteringLevelEv(Player *self)
 { return self->IsStateEnteringLevel(); }
 int _ZN6Player16St_Shell_CleanupEv(Player *self)
 { return self->St_Shell_Cleanup(); }
+int _ZN6Player14St_Owl_CleanupEv(Player *self)
+{ return self->St_Owl_Cleanup(); }
 int _ZN6Player14St_OnWall_InitEv(Player *self)
 { return self->St_OnWall_Init(); }
 int _ZN6Player17St_PunchKick_InitEv(Player *self)
