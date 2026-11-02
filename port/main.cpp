@@ -1059,6 +1059,18 @@ static bool replay_owl_ride(Player *p) {
         if(full_flight && riding && tick<ride+1000 && !released){
             if(!flight)return controls(2);
             if(tick<flight+flight_hold_frames){
+                // The optional landing target starts redirecting the final
+                // 180 frames before release so the rider reaches the drop
+                // point above the platform instead of correcting too late.
+                if(const char *target=std::getenv("SM64DS_PC_TEST_OWL_LANDING_TARGET")){
+                    int x=0,z=0;
+                    if(tick+180>=flight+flight_hold_frames &&
+                       std::sscanf(target,"%d:%d",&x,&z)==2 &&
+                       x>=-20000 && x<=20000 && z>=-20000 && z<=20000){
+                        const double angle=std::atan2(x*4096.0-p->mPosX,z*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                        return controls(2,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
+                    }
+                }
                 if(tick<flight+flight_steer_frames){
                     const double angle=std::atan2(flight_target_x*4096.0-p->mPosX,flight_target_z*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
                     return controls(2,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
@@ -1068,6 +1080,21 @@ static bool replay_owl_ride(Player *p) {
         }
         if(!full_flight && tick<ride+80)return controls(2,tick>=ride+40 && tick<ride+70?12000:0);
         if(!released){released=true;std::fprintf(stderr,"[native owl ride] release-input tick=%llu\n",static_cast<unsigned long long>(tick));}
+        // Optional input-only landing approach. Neutral air input otherwise
+        // brakes outside the platform after an extended flight orbit.
+        if(!riding && p->mIsAirborne && !std::strcmp(state,"St_Fall_Main")){
+            if(const char *target=std::getenv("SM64DS_PC_TEST_OWL_LANDING_TARGET")){
+                int x=0,z=0;
+                if(std::sscanf(target,"%d:%d",&x,&z)==2 &&
+                   x>=-20000 && x<=20000 && z>=-20000 && z<=20000){
+                    const double dx=x*4096.0-p->mPosX,dz=z*4096.0-p->mPosZ;
+                    if(std::hypot(dx,dz)>120*4096.0){
+                        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                        return controls(0,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
+                    }
+                }
+            }
+        }
         if(!riding && !p->mIsAirborne && !p->mIsControlDisabled && !p->mIsNoControl && !done && !std::strcmp(state,"St_Wait_Main")){
             done=true;recovered=tick;recovered_x=p->mPosX;recovered_z=p->mPosZ;
             std::fprintf(stderr,"[native owl ride] landed tick=%llu state=%s\n",static_cast<unsigned long long>(tick),state);

@@ -7050,8 +7050,8 @@
     },
     {
       "path": "port/docs/native-owl-integration-2026-11-01.txt",
-      "sha256": "3a37e8eb04875e2aeb9f26a0cc8e7304672945a8b9533724dc9c7f90545da855",
-      "bytes": 11431
+      "sha256": "6308b5b99613160837c6e8ed4f873cca2457e6ec27779cd8525c45d02aca2e5f",
+      "bytes": 13388
     },
     {
       "path": "port/docs/native-particle-rendering-2026-10-23.txt",
@@ -8055,8 +8055,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "345820bff9453e9344d13b104431ce4305c3633fdb33c4dfc2bbb4a13d6d1044",
-      "bytes": 252927
+      "sha256": "b488e0b0de12b7d324c485a557400b827bd22698045f203edd48cd8511e552d5",
+      "bytes": 254685
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9240,8 +9240,8 @@
     },
     {
       "path": "port/tools/check_native_owl_flight.py",
-      "sha256": "fc94d830d4c66d3e8304f5399b73f7a6f3e0fe3124816626933806add2a86b71",
-      "bytes": 3638
+      "sha256": "689a5f7c8533587138e24c5452e9a1bae323aa658a5da563ea0e4a9341aa0890",
+      "bytes": 3787
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",

@@ -1,5 +1,34 @@
 Native Hoot integration checkpoint (partial) - 2026-11-01
 
+Extended Whomp flight and air-steered landing VERIFIED 2026-11-02:
+Case hoot-wario-700-air-landing-20261102-r1, EXE SHA256
+CFB329120883FB55E7E607F18C7F5A5D868591A28627D58126B195A086C0448A.
+Wario attaches2908, enters flight3124, holds700 frames, releases3824,
+lands4052, and recovers walking4076. Final5000 is grounded Wait/control
+enabled. Strict flight checker passes, copied saves unchanged, muted output0,
+audioerrors0. Build and three input/session CTests pass. Screenshot4150
+shows Wario on the platform with Hoot nearby. Synthetic save/dev picker.
+The prior700-frame Whomp failure released over void near1900:4800; original
+KCL has only the death floor there, while3100:4400 has solid floor at250.
+Optional SM64DS_PC_TEST_OWL_LANDING_TARGET=x:z now steers during St_Fall_Main
+and brakes within120 units using ordinary input only. No gameplay physics
+or player state writes. Runner parameter OwlLandingTarget records the target.
+Correction: prior Whomp return3825 follows manual button release3824; it
+does not prove a wall-triggered drop. TTM's early return3798 remains
+unclassified. Full exhaustion/warning/drop behavior is still unverified.
+
+Yoshi 700-frame Whomp landing diagnostics 2026-11-03 FAILED:
+Three muted runs held Jump700 frames and did not land: r1 target3100:4400,
+r2 target2500:4500, r3 began steering toward3100:4400 during the final180
+flight frames. All fell into the void and respawned. r3 EXE was rebuilt;
+flight3110, release3810, release position about(1922,5361,4770), frame3950
+position about(2492,908,5561), off the platform. The test-only steering
+does not prove a production movement defect. Wario lands with the same
+air-control setup; Yoshi's heading remained63255 while position curved, so
+the trace does not support the earlier claim that his direction stayed fixed.
+Investigate character-specific speed/air-control and camera-relative input
+before another target guess. No earned progression or natural timeout claim.
+
 TTM original re-entry and second ride VERIFIED 2026-11-02:
 Case ttm-yoshi-confirm-cycle-20261102-r25, EXE SHA256
 50A997571D92DD8F28A1FD6B9F5525070AFB2B49638DEB1F7D7B49746F161E4F.
