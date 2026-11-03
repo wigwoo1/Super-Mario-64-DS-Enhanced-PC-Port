@@ -377,9 +377,10 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
         }
         _ZN9dBgCh_LinD1Ev(&line);
     }
-    if(pc_camera_on_vertical_lift(player)) {
-        // The retail camera filter ignores the solid underside of the landing.
-        // Keep the PC render eye below it until the rider clears the opening.
+    {
+        // Retail camera filtering can ignore solid undersides, including maze
+        // shelves as well as lift landings. Keep the gameplay preset render
+        // eye on the target side of the nearest original solid surface.
         Vec3 anchor={view[0],view[1],view[2]};
         dBgCh_Lin solid;
         _ZN9dBgCh_LinC1Ev(&solid);
@@ -393,6 +394,56 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
             end={anchor.x+int(x*scale),anchor.y+int(y*scale),anchor.z+int(z*scale)};
         }
         _ZN9dBgCh_LinD1Ev(&solid);
+        auto lengthFrom=[](const Vec3 &a,const Vec3 &b){return std::sqrt(double(a.x-b.x)*(a.x-b.x)+double(a.y-b.y)*(a.y-b.y)+double(a.z-b.z)*(a.z-b.z));};
+        auto solidEye=[&](const Vec3 &a,Vec3 b){
+            dBgCh_Lin ray;_ZN9dBgCh_LinC1Ev(&ray);
+            _ZN9dBgCh_Lin13SetObjAndLineERK7Vector3S2_P8dActor_c(&ray,&a,&b,nullptr);
+            if(_ZN9dBgCh_Lin10DetectClsnEv(&ray)){
+                Vec3 hit;_ZN9dBgCh_Lin10GetClsnPosEv(&hit,&ray);
+                const double length=lengthFrom(a,hit),scale=length>32*4096?1-32*4096/length:0;
+                b={a.x+int((double(hit.x)-a.x)*scale),a.y+int((double(hit.y)-a.y)*scale),a.z+int((double(hit.z)-a.z)*scale)};
+            }
+            _ZN9dBgCh_LinD1Ev(&ray);return b;
+        };
+        static const dCamera_c *tightCamera=nullptr;
+        static bool tightActive=false;static double tightYaw=0,tightGoal=0;
+        static unsigned long long tightTick=0;static Vec3 lastAnchor={0,0,0};
+        const double nativeYaw=std::atan2(dz,dx);
+        auto difference=[](double a,double b){return std::atan2(std::sin(a-b),std::cos(a-b));};
+        if(tightCamera!=camera || lengthFrom(anchor,lastAnchor)>2000*4096.0){tightCamera=camera;tightActive=false;}
+        lastAnchor=anchor;
+        const bool cramped=lengthFrom(anchor,end)<300*4096.0;
+        if(cramped || tightActive){
+            const auto *position=reinterpret_cast<const s32 *>(player+0x5c);
+            Vec3 body={position[0],position[1]+100*4096,position[2]};
+            const double radius=std::min(distance,650*4096.0);
+            auto eyeAt=[&](double yaw){return solidEye(body,{body.x+int(std::cos(yaw)*radius),body.y+100*4096,body.z+int(std::sin(yaw)*radius)});};
+            if(!tightActive){tightActive=true;tightYaw=nativeYaw;tightGoal=nativeYaw;tightTick=ntr::rt_frame();}
+            if(cramped && lengthFrom(body,eyeAt(tightGoal))<350*4096.0){
+                double best=-1e30;const double previousGoal=tightGoal;
+                for(int i=-4;i<=4;++i){
+                    const double yaw=nativeYaw+i*0.7853981633974483;
+                    const double score=lengthFrom(body,eyeAt(yaw))/4096.0-35*std::abs(difference(yaw,nativeYaw))-25*std::abs(difference(yaw,previousGoal));
+                    if(score>best){best=score;tightGoal=yaw;}
+                }
+            }
+            if(!cramped && lengthFrom(anchor,end)>450*4096.0)tightGoal=nativeYaw;
+            const auto tick=ntr::rt_frame();const double step=0.04*std::min<unsigned long long>(4,tick>=tightTick?tick-tightTick:1);tightTick=tick;
+            tightYaw+=std::clamp(difference(tightGoal,tightYaw),-step,step);
+            if(!cramped && std::abs(difference(nativeYaw,tightYaw))<0.02)tightActive=false;
+            if(tightActive){
+                end=eyeAt(tightYaw);view[0]=body.x;view[1]=body.y;view[2]=body.z;
+                const int renderedAngle=int(std::lround((1.5707963267948966-tightYaw)*65536.0/6.283185307179586));
+                const int originalAngle=int(camera->mAngleY)+*reinterpret_cast<const short *>(reinterpret_cast<const char *>(camera)+0x188);
+                const int offset=((renderedAngle-originalAngle+32768)&0xffff)-32768;
+                pc_camera_set_movement_yaw_offset(static_cast<short>(offset),1);
+                static unsigned long long lastTightTrace=0;
+                if(std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE") && tick>=lastTightTrace+30){
+                    lastTightTrace=tick;
+                    std::fprintf(stderr,"[camera tight] tick=%llu yaw=%.5f goal=%.5f clearance=%.2f movement=%d\n",tick,tightYaw,tightGoal,lengthFrom(body,end)/4096.0,offset);
+                }
+            }
+        }
     }
     view[3]=end.x;view[4]=end.y;view[5]=end.z;
     static unsigned long long last_view_trace=0;

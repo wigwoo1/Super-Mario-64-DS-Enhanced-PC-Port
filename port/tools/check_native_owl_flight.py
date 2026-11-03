@@ -32,8 +32,25 @@ def check(case):
         rows = list(csv.DictReader(f))
     flying = [r for r in rows if flight <= int(r['tick']) < release]
     assert len(flying) >= 8
-    assert all(r['player_state'] == 'St_Owl_Main' and r['player_state_step'] == '1' for r in flying)
-    assert all(int(r['game_held']) & 2 for r in flying), 'Hold button was released during flight'
+    natural = bool(config.get('owl_natural_release', False))
+    assert all(r['player_state'] == 'St_Owl_Main' for r in flying)
+    if natural:
+        steps = {int(r['player_state_step']) for r in flying}
+        assert steps == {1, 2, 3, 4}, 'Exhaustion warning and final carry phase were not observed'
+        # The sample that transitions out of the warning still records that
+        # dialogue frame's input. Hold resumes on the following simulation tick.
+        held_rows = [r for i, r in enumerate(flying)
+                     if r['player_state_step'] == '1' or
+                     (r['player_state_step'] == '4' and i > 0 and
+                      flying[i-1]['player_state_step'] == '4')]
+        assert re.search(r'\[native owl transition\] tick=' + str(release) +
+                         r' rider=0 held=0 riding=0 wall=0 .*state=St_Fall_Main', log), 'Release was not a natural detach'
+        assert flying[-1]['player_state_step'] == '4' and int(flying[-1]['player_state_timer']) <= 3, 'Final exhaustion countdown did not expire'
+        assert all(int(r['level']) == expected_level for r in rows if int(r['tick']) >= attached), 'Player left the course or respawned'
+    else:
+        assert all(r['player_state_step'] == '1' for r in flying)
+        held_rows = flying
+    assert held_rows and all(int(r['game_held']) & 2 for r in held_rows), 'Hold button was released during flight'
     assert any(int(r['reader_magnitude']) > 0 and int(r['game_held']) & 2 for r in flying)
     first, last = flying[0], flying[-1]
     distance = math.hypot(int(last['player_x'])-int(first['player_x']),
@@ -57,7 +74,8 @@ def check(case):
                 frames=int(final['tick']), held_flight_frames=release-flight,
                 exe_sha256=config['exe_sha256'], saves=hashes,
                 character=int(final['player_character']),
-                limitations='Prepared character save; no campaign, timeout or course-reentry acceptance. Dialogue appearance requires separate screenshot review.')
+                natural_exhaustion_release=natural,
+                limitations='Prepared character save; no earned campaign or course-reentry acceptance. Natural exhaustion is covered only when natural_exhaustion_release is true. Dialogue appearance requires separate screenshot review.')
 
 
 if __name__ == '__main__':

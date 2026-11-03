@@ -1,5 +1,37 @@
 Native Hoot integration checkpoint (partial) - 2026-11-01
 
+Yoshi extended-flight landing pilot corrected 2026-11-02:
+Supersedes the failed Yoshi landing diagnostics below. Recovered air control
+func_ov002_020e28d4 turns movement angle at offset0x94 gradually while speed
+at0x98 is nonzero; the CSV player_heading is the separate body angle0x8e.
+Thus a fixed body heading did not prove unresponsive air steering. Pursuing
+a nearby landing target while carrying speed makes a wide curved approach.
+Neutral input decelerates by0x800 (0.5 world units/frame); at speed zero,
+the original function can adopt the requested movement angle immediately.
+Opt-in OwlLandingTarget pilot now brakes to zero before steering, then uses
+the neutral stopping distance plus40units to approach. Only ordinary stick
+inputs; no production physics, state, position or save writes.
+
+Build2C0B781B0976F914E12998C31DEDF89982D60C82D3368E4D90E9D9BE06A02330
+passes three input/session CTests. Muted Yoshi case
+hoot-yoshi-brake-landing-20261102-sol-r5: attach2904,flight3110,release3810,
+braked3892,groundedWait4032,walking4056,final5000groundedWait/controlenabled.
+Strict flight checker passes700heldframes/1464.64lateralunits, normalexit0,
+audioerrors0/deviceoutput0 and both isolated saves unchanged. Screenshot4150
+shows Yoshi on the grassy platform with Hoot. Landing causes fall damage;
+this is not a damage-free route. Synthetic save/development-picker fixture;
+natural exhaustion and campaign progression remain unverified.
+Initial r4 omitted KoopaMode=select so never confirmed mission3; runner
+correctly rejected it. It did not exercise the landing code. R5 restores
+the exact original mission-selection setup before assessing the correction.
+Wario regression on the same executable also passes: case
+hoot-wario-brake-landing-20261102-sol-r6, attach2908,flight3124,release3824,
+braked3906,landed4046,walking4070,final5000groundedWait/controlenabled.
+Strict checker passes700heldframes/1473.31lateralunits,normalexit0,muted,
+audioerrors0,bothisolatedsavesunchanged. Screenshot4150 shows Wario grounded
+on the platform; fall damage applies. No F playable installation or release
+needed for this gated replay-only correction.
+
 Extended Whomp flight and air-steered landing VERIFIED 2026-11-02:
 Case hoot-wario-700-air-landing-20261102-r1, EXE SHA256
 CFB329120883FB55E7E607F18C7F5A5D868591A28627D58126B195A086C0448A.
@@ -121,6 +153,31 @@ No gameplay source change was needed. No F preview replacement or campaign,
 alternate-placement re-entry, full timeout or Star collection acceptance.
 
 Actor 234 uses the recovered overlay 94 profile and daOwl_c implementation.
+ 
+Natural exhaustion / Wario route verified 2026-11-02 (Sol):
+Private case native-muted-audio-walk-hoot-wario-interior-orbit-sol-20261102-r2-20261021.
+The original St_Owl_Main turns at a bounded rate (ApproachAngle divisor32,
+band256) while moving20 world units per game tick. A nearby point produces a
+wide orbit; the prior target near the map edge allowed the orbit over the void.
+Controller magnitude/angle samples confirm input reaches the original state.
+The opt-in natural pilot now honors its configured flight target. The verified
+route aims at3000:2000, inside a broad region with original solid KCL floors.
+Wario naturally exhausts Hoot, catches a ledge and uses ordinary Jump input to
+climb. The pilot now pulses Jump for that original ledge state when the optional
+landing target is enabled. No actor, physics, player state or health edits.
+EXE FE82BB4A3CCB7A20C8B99EAE9618AE3D1A8EB2BA3E3596D7349B917AA059E12F.
+Attach2908 / flight3124 / exhaustion release6240 / ledge Jump6300 /
+grounded Wait6344 / actual walking6368 / final7000 grounded Wait/control,
+same level7 throughout. Screenshot6800 shows eight health segments and Wario
+on the platform. Exit0, audioerrors0, submitted audible samples0; both isolated
+saves byte-identical to seed. Updated check_native_owl_flight.py accepts original
+warning phases2/3 and final countdown4, verifies held Jump through active flight,
+natural detach/countdown expiry, no course exit/respawn, landing/walk/final state.
+It passes earlier normal-release and Yoshi exhaustion cases, rejects the earlier
+Wario void fall; three relevant input/session/replay CTests pass. Prior full70
+CTest suite passed before the ledge-input-only addition. Prepared save only;
+no earned campaign proof, F preview replacement or public kit refresh this task.
+
 The host adapter checks the original profile bytes before adapting resources.
 Resource handles are initialized after filesystem startup. Native C++ creates
 the five state callback pairs. The original raw +8 main-callback presence
@@ -197,3 +254,6 @@ A muted Luigi replay exits normally at 5000, verifies flight/release/walk,
 and preserves isolated saves. Screenshot 2700 shows both B icons and complete
 hold/release instruction text. Four CTests and three dialogue Python tests pass.
 Other placements and extended holds remain unverified.
+
+Tall Tall Mountain natural exhaustion verified 2026-11-03 (Luna):
+Private case work/native-muted-audio-walk-hoot-ttm-natural-exhaustion-luna-20261103-20261021, prepared Yoshi mission2/course11 seed. Authored Owl UID144 wakes, talks, carries and releases naturally at tick6285. Yoshi lands in Wait6501 and walks at6525; final7000 is grounded/control in level22. Target100:5550 kept this TTM flight inside the course. Exit0, audioerrors0, output muted with0 submitted samples, isolated saves unchanged. Strict updated checker passes natural phase/countdown and release/ground/walk lifecycle. Screenshot frame6800 shows Yoshi on the stone platform in TTM. This confirms a second authored course placement and natural exhaustion route; not course re-entry or earned campaign progression.

@@ -7050,8 +7050,8 @@
     },
     {
       "path": "port/docs/native-owl-integration-2026-11-01.txt",
-      "sha256": "6308b5b99613160837c6e8ed4f873cca2457e6ec27779cd8525c45d02aca2e5f",
-      "bytes": 13388
+      "sha256": "8d5860d33eff7f69c8dfb4d38042db8668b7e728fc6645d3d24135fbfb1bbb2e",
+      "bytes": 18106
     },
     {
       "path": "port/docs/native-particle-rendering-2026-10-23.txt",
@@ -7120,8 +7120,8 @@
     },
     {
       "path": "port/docs/native-rainbow-disc-2026-10-31.txt",
-      "sha256": "f871ec7895f1b4ba11de72ca63f1659aa25b8e41d1d7e57c1a80ff65bbe1b3d4",
-      "bytes": 3278
+      "sha256": "a7fdee8d97f59541369e414ca0ed215ca75f0b74a010c01747d228bf8c6de5e3",
+      "bytes": 11424
     },
     {
       "path": "port/docs/native-rebinding-verified-2026-10-22.txt",
@@ -8055,8 +8055,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "b488e0b0de12b7d324c485a557400b827bd22698045f203edd48cd8511e552d5",
-      "bytes": 254685
+      "sha256": "23154acfaddccd6a6b96cb91a49f2e85ac78092bd7271f44557dc525bec59c65",
+      "bytes": 266959
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9045,8 +9045,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "474183b17f321fbfa3b974a2b62ad9b217cc55defc9dcdd9b5d83633251130a2",
-      "bytes": 24686
+      "sha256": "0e69f9837f0a9d6bacf0649d0f3e72be435e174c7f5db3aa961a6aac3db2ea95",
+      "bytes": 28376
     },
     {
       "path": "port/tools/cannon_host.py",
@@ -9240,8 +9240,8 @@
     },
     {
       "path": "port/tools/check_native_owl_flight.py",
-      "sha256": "689a5f7c8533587138e24c5452e9a1bae323aa658a5da563ea0e4a9341aa0890",
-      "bytes": 3787
+      "sha256": "325744933f7cc0041c6d0ee822b035de990e0d43632186a8fb6c41fa130e7c2c",
+      "bytes": 5117
     },
     {
       "path": "port/tools/check_original_course_entry_replay.py",

@@ -67,6 +67,7 @@ static_assert(offsetof(dActor_c,mPosX)==0x5c,"Position telemetry must read the n
 static_assert(offsetof(Player,mState)==0x370,"Player state telemetry offset");
 static_assert(offsetof(Player,mIsControlDisabled)==0x6f6,"Player control telemetry offset");
 
+extern "C" Player::State data_ov002_0211052c; // Original crouch-jump/backflip descriptor; shares SideFlip main.
 extern "C" void func_0201a054(void);
 extern "C" void func_020197b8(void);
 extern "C" void func_02048fd4(int);
@@ -871,7 +872,9 @@ static bool replay_rainbow_disc() {
     if(std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_CHAIN"))
         for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
             if(a->mPosZ< -1000*4096 && a->mPosX>0 && a->mPosX<1000*4096){nextDisc=a;break;}
-    static unsigned phase=0;static uint64_t began=0,launch=0,transfer=0;
+    static unsigned phase=0;static bool westTransfer=false;static uint64_t began=0,launch=0,transfer=0;
+    if(westTransfer) for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
+        if(a->mPosX<0 && std::abs(a->mPosZ)<100*4096){nextDisc=a;break;}
     const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
     if(!began)began=tick;
     uint16_t buttons=0;int16_t sx=0,sy=0;
@@ -888,6 +891,11 @@ static bool replay_rainbow_disc() {
     }
     if(phase==4 && !p->mIsAirborne && p->mPosX<2200*4096){phase=5;event("landed-candidate");}
     if(phase==5 && nextDisc && tick>=4200){phase=7;transfer=tick;event("transfer-runway");}
+    if(phase==10 && !westTransfer && tick>=5000 && std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_WEST")){
+        westTransfer=true;phase=7;transfer=tick;event("west-transfer-runway");
+        for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
+            if(a->mPosX<0 && std::abs(a->mPosZ)<100*4096){nextDisc=a;break;}
+    }
     if(phase>=7 && phase<=9 && tick-transfer>600){phase=6;event("transfer-timeout");}
     const double transferDistance=nextDisc?std::hypot(double(nextDisc->mPosX)-p->mPosX,double(nextDisc->mPosZ)-p->mPosZ)/4096.0:0;
     if(phase==7 && transferDistance<1250 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=8;launch=tick;event("transfer-crouch");}
@@ -898,11 +906,111 @@ static bool replay_rainbow_disc() {
         else if(tick-launch>24){phase=6;event("failed-transfer-launch");}
     }
     if(phase==9 && !p->mIsAirborne && transferDistance<650){phase=10;event("transfer-landed-candidate");}
+    // Input-only approach to the authored static bank west of the discs.
+    if(phase==10 && westTransfer && tick>=5800 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_APPROACH")){phase=11;transfer=tick;event("maze-runway");}
+    if(phase>=11 && phase<=13 && tick-transfer>600){phase=6;event("maze-timeout");}
+    if(phase==11 && p->mPosX< -700*4096 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=12;launch=tick;event("maze-crouch");}
+    if(phase==12){
+        if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+        else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+        if(!std::strcmp(state,"St_LongJump_Main")){phase=13;event("maze-long-jump");}
+        else if(tick-launch>24){phase=6;event("maze-failed-launch");}
+    }
+    if(phase==13 && !p->mIsAirborne && p->mPosX< -1422*4096 && p->mPosX> -1822*4096 && std::abs(p->mPosY+1091*4096)<40*4096 && p->mPosZ> -336*4096 && p->mPosZ<264*4096){phase=14;event("maze-bank-landed");}
+    if(phase>=11 && phase<=13){
+        const double angle=std::atan2(-1300*4096.0-p->mPosX,-35*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(angle)*32700);sy=static_cast<int16_t>(-std::cos(angle)*32700);
+    }
+    if(phase==14 && tick>=6300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_FLOOR")){phase=15;transfer=tick;event("maze-floor-approach");}
+    if(phase>=15 && phase<=18){
+        const double tx=-3300, tz=phase<=16?600:0;
+        const double distance=std::hypot(tx-p->mPosX/4096.0,tz-p->mPosZ/4096.0);
+        if(phase==15 && distance<45 && !p->mIsAirborne && std::abs(p->mPosY+1741*4096)<40*4096){phase=16;launch=tick;event("maze-floor-reached");}
+        const bool shelfBackflip=std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_BACKFLIP")!=nullptr;
+        static bool shelfFacing=false;
+        if(phase==16 && shelfBackflip && !shelfFacing){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY)))<800)shelfFacing=true;
+            else {const double a=-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*11000);sy=static_cast<int16_t>(-std::cos(a)*11000);}
+        }
+        if(phase==16 && (!shelfBackflip || shelfFacing) && tick-launch>30 && !p->mIsAirborne && p->mHorzSpeed==0){
+            if(shelfBackflip){buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;}
+            else {phase=17;launch=tick;event("maze-shelf-jump");}
+        }
+        if(phase==16 && shelfBackflip && p->mState==&data_ov002_0211052c){phase=17;launch=tick;event("maze-shelf-backflip");}
+        if(phase==17 && tick-launch<100)buttons=2;
+        if(phase==17 && !p->mIsAirborne && tick-launch>15 && std::abs(p->mPosY+1091*4096)<40*4096){phase=18;event("maze-shelf-landed");}
+        if(phase==18 && p->mHorzSpeed==0 && !p->mIsAirborne){phase=19;event("maze-shelf-done");}
+        if(phase==15 || phase==17){
+            const double angle=std::atan2(tx-p->mPosX/4096.0,tz-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const double magnitude=distance<35?0:22000;
+            sx=static_cast<int16_t>(std::sin(angle)*magnitude);sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+        }
+        if(tick-transfer>1400 && phase!=19){phase=6;buttons=0;sx=sy=0;event("maze-floor-timeout");}
+    }
+    if(phase==19 && tick>=7100 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_CLIMB")){phase=20;transfer=tick;event("maze-tier2-facing");}
+    if(phase>=20 && phase<=23){
+        const double cameraAngle=GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(phase==20){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0x4000)))<800){phase=21;launch=tick;}
+            else {sx=static_cast<int16_t>(std::sin(1.5707963267948966-cameraAngle)*10000);sy=static_cast<int16_t>(-std::cos(1.5707963267948966-cameraAngle)*10000);}
+        }
+        if(phase==21 && p->mHorzSpeed==0 && !p->mIsAirborne && tick-launch>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+        if(phase==21 && p->mState==&data_ov002_0211052c){phase=22;launch=tick;event("maze-tier2-backflip");}
+        if(phase==22){
+            const double dx=-3670-p->mPosX/4096.0,dz=-p->mPosZ/4096.0;
+            const double a=std::atan2(dx,dz)-cameraAngle,mag=std::hypot(dx,dz)<30?0:22000;
+            sx=static_cast<int16_t>(std::sin(a)*mag);sy=static_cast<int16_t>(-std::cos(a)*mag);
+            if(tick-launch<100)buttons=2;
+            if(!p->mIsAirborne && tick-launch>15 && std::abs(p->mPosY+691*4096)<40*4096 && p->mPosX> -3822*4096 && p->mPosX< -3522*4096){phase=23;buttons=0;sx=sy=0;event("maze-tier2-landed");}
+        }
+        if(phase==23 && !p->mIsAirborne && p->mHorzSpeed==0){phase=24;event("maze-tier2-done");}
+        if(tick-transfer>900 && phase!=24){phase=6;buttons=0;sx=sy=0;event("maze-tier2-timeout");}
+    }
+    static int tier3Leg=0;
+    if(phase==24 && tick>=8000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TIER3")){phase=25;transfer=tick;event("maze-tier3-corner");}
+    if(phase>=25 && phase<=29){
+        const double ca=GetAngleToCamera(0)*6.283185307179586/65536.0;
+        auto aim=[&](double x,double z,double magnitude){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-ca;sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);};
+        if(phase==25){
+            const double d=std::hypot(-3718-p->mPosX/4096.0,225-p->mPosZ/4096.0);
+            if(d>20)aim(-3718,225,10000);
+            else if(!p->mIsAirborne && p->mHorzSpeed==0){phase=26;launch=tick;event("maze-tier3-facing");}
+        }
+        if(phase==26){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0x8000)))<800){phase=27;launch=tick;}
+            else {sx=static_cast<int16_t>(std::sin(3.141592653589793-ca)*10000);sy=static_cast<int16_t>(-std::cos(3.141592653589793-ca)*10000);}
+        }
+        if(phase==27 && p->mHorzSpeed==0 && !p->mIsAirborne && tick-launch>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+        if(phase==27 && p->mState==&data_ov002_0211052c){phase=28;launch=tick;event("maze-tier3-backflip");}
+        if(phase==28){
+            const double x=p->mPosX/4096.0,z=p->mPosZ/4096.0;
+            // Reverse stick brakes much faster than a sideways turn. Finish
+            // with neutral so the next direction starts at zero speed.
+            const double speed=p->mHorzSpeed/4096.0;
+            if(tier3Leg==0){aim(-3718,400,32700);if(z>=320){tier3Leg=1;event("maze-tier3-brake-out");}}
+            if(tier3Leg==1){if(speed>3)aim(x,z-1000,32700);else if(speed==0){tier3Leg=2;event("maze-tier3-west");}}
+            if(tier3Leg==2){aim(-4110,z,32700);if(x<=-4055){tier3Leg=3;event("maze-tier3-brake-west");}}
+            if(tier3Leg==3){if(speed>3)aim(x+1000,z,32700);else if(speed==0){tier3Leg=4;event("maze-tier3-north");}}
+            if(tier3Leg==4){aim(-4110,150,32700);}
+            if(tick-launch<100)buttons=2;
+            if(!p->mIsAirborne && tick-launch>15 && std::abs(p->mPosY+141*4096)<40*4096 && x> -4222 && x< -4022 && z<264 && z> -336){phase=29;buttons=0;sx=sy=0;event("maze-tier3-landed");}
+        }
+        if(phase==29 && !p->mIsAirborne && p->mHorzSpeed==0){phase=30;event("maze-tier3-done");}
+        if(tick-transfer>1200 && phase!=30){phase=6;buttons=0;sx=sy=0;event("maze-tier3-timeout");}
+    }
+    if(phase==30 && tick>=8600){phase=31;transfer=tick;event("maze-tier3-recovery-walk");}
+    if(phase==31){
+        const double dx=-4110-p->mPosX/4096.0,dz=100-p->mPosZ/4096.0;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>20){sx=static_cast<int16_t>(std::sin(a)*10000);sy=static_cast<int16_t>(-std::cos(a)*10000);}
+        else if(!p->mIsAirborne && p->mHorzSpeed==0){phase=32;event("maze-tier3-recovered");}
+        if(tick-transfer>400 && phase!=32){phase=6;event("maze-tier3-recovery-timeout");}
+    }
     if(phase==0 || phase>=2 && phase<=4 || phase>=7 && phase<=9){
         // Aim before the destination center to account for measured long-jump
         // braking distance; this changes only ordinary QA stick input.
         const double dx=phase>=7?nextDisc->mPosX/4096.0+170-p->mPosX/4096.0:(phase==0?1000:disc->mPosX/4096.0+250-p->mPosX/4096.0);
-        const double dz=phase>=7?nextDisc->mPosZ/4096.0+184-p->mPosZ/4096.0:(phase==0?0:disc->mPosZ/4096.0-p->mPosZ/4096.0);
+        const double dz=phase>=7?nextDisc->mPosZ/4096.0+(westTransfer?-184:184)-p->mPosZ/4096.0:(phase==0?0:disc->mPosZ/4096.0-p->mPosZ/4096.0);
         const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         const double mag=phase==0?20000:32700;
         sx=static_cast<int16_t>(std::sin(angle)*mag);sy=static_cast<int16_t>(-std::cos(angle)*mag);
@@ -1011,7 +1119,7 @@ static bool replay_owl_ride(Player *p) {
     struct Pilot {
         uint64_t began=0,ride=0,jump_until=0,next_jump=0,recovered=0,flight=0;
         int recovered_x=0,recovered_z=0;
-        bool moved=false,released=false,done=false;
+        bool moved=false,released=false,done=false,landing_braked=false;
         unsigned uid=0;
     };
     static Pilot pilot;
@@ -1024,9 +1132,39 @@ static bool replay_owl_ride(Player *p) {
     const char *state=pc_player_state_name(p);
     const bool riding=!std::strcmp(state,"St_Owl_Main");
     auto controls=[](uint16_t buttons=0,int16_t x=0,int16_t y=0){ntr::input_test_controls(true,buttons,x,y);return true;};
+    int flight_target_x=2500,flight_target_z=4500;
+    if(const char *requested=std::getenv("SM64DS_PC_TEST_OWL_TARGET")) {
+        int x=0,z=0;
+        if(std::sscanf(requested,"%d:%d",&x,&z)==2 &&
+           x>=-20000 && x<=20000 && z>=-20000 && z<=20000) {
+            flight_target_x=x;flight_target_z=z;
+        }
+    }
+    if(std::getenv("SM64DS_PC_TEST_OWL_NATURAL_RELEASE")) {
+        static unsigned prev_rider=0,prev_held=0;
+        static bool prev_riding=false,prev_wall=false,trace_started=false;
+        const unsigned rider_id=owl->mRider?owl->mRider->uniqueID:0;
+        const unsigned held=static_cast<unsigned>(p->mHeldObj);
+        const bool wall=owl->mWithMeshClsn.IsOnWall()!=0;
+        if(!trace_started || rider_id!=prev_rider || held!=prev_held || riding!=prev_riding || wall!=prev_wall) {
+            std::fprintf(stderr,"[native owl transition] tick=%llu rider=%u held=%u riding=%u wall=%u contact=%u hit=%u owl_timer=%u player_step=%u player_timer=%u state=%s pos=%d,%d,%d\n",
+                static_cast<unsigned long long>(tick),rider_id,held,riding?1u:0u,wall?1u:0u,
+                owl->mdCcAcPos_c.otherOwner,owl->mdCcAcPos_c.hitFlags,
+                static_cast<unsigned short>(owl->mStateTimer),static_cast<unsigned>(p->mStateStep),
+                static_cast<unsigned>(p->mStateTimer),state,p->mPosX,p->mPosY,p->mPosZ);
+            prev_rider=rider_id;prev_held=held;prev_riding=riding;prev_wall=wall;trace_started=true;
+        }
+    }
     if(tick%30==0)std::fprintf(stderr,"[native owl ride] tick=%llu state=%s player=%d,%d,%d owl=%d,%d,%d rider=%u contact=%u hit=%u\n",
         static_cast<unsigned long long>(tick),state,p->mPosX,p->mPosY,p->mPosZ,owl->mPosX,owl->mPosY,owl->mPosZ,
         owl->mRider?owl->mRider->uniqueID:0,owl->mdCcAcPos_c.otherOwner,owl->mdCcAcPos_c.hitFlags);
+    if(std::getenv("SM64DS_PC_TEST_OWL_NATURAL_RELEASE") && tick%30==0)
+        std::fprintf(stderr,"[native owl natural] tick=%llu owl_timer=%u wall=%u rider=%u held=%u player_timer=%u step=%u state=%s\n",
+            static_cast<unsigned long long>(tick),static_cast<unsigned short>(owl->mStateTimer),
+            owl->mWithMeshClsn.IsOnWall()?1u:0u,owl->mRider?owl->mRider->uniqueID:0u,
+            static_cast<unsigned>(p->mHeldObj),static_cast<unsigned>(p->mStateTimer),
+            static_cast<unsigned>(p->mStateStep),state);
+    const bool observe_natural=std::getenv("SM64DS_PC_TEST_OWL_NATURAL_RELEASE")!=nullptr;
     if(riding && !ride){ride=tick;std::fprintf(stderr,"[native owl ride] attached tick=%llu\n",static_cast<unsigned long long>(tick));}
     if(ride){
         const char *full=std::getenv("SM64DS_PC_TEST_OWL_FLIGHT");
@@ -1043,18 +1181,18 @@ static bool replay_owl_ride(Player *p) {
             const unsigned long value=std::strtoul(requested,&end,10);
             if(end && *end==0 && value>=60 && value<=700)flight_steer_frames=value;
         }
-        int flight_target_x=2500,flight_target_z=4500;
-        if(const char *requested=std::getenv("SM64DS_PC_TEST_OWL_TARGET")) {
-            int x=0,z=0;
-            if(std::sscanf(requested,"%d:%d",&x,&z)==2 &&
-               x>=-20000 && x<=20000 && z>=-20000 && z<=20000) {
-                flight_target_x=x;flight_target_z=z;
-            }
-        }
         if(full_flight && riding && !flight && p->mStateStep==1){
             flight=tick;std::fprintf(stderr,"[native owl ride] flight-ready tick=%llu pos=%d,%d,%d\n",static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
             std::fprintf(stderr,"[native owl ride] requested-hold-frames=%llu\n",static_cast<unsigned long long>(flight_hold_frames));
             std::fprintf(stderr,"[native owl ride] requested-steer-frames=%llu target=%d:%d\n",static_cast<unsigned long long>(flight_steer_frames),flight_target_x,flight_target_z);
+        }
+        if(full_flight && riding && observe_natural && tick<ride+4000 && !released){
+            // Keep the carry input active while steering toward the configured
+            // aim point so character-specific routes can be tested against
+            // known safe floor locations.
+            const double dx=flight_target_x*4096.0-p->mPosX,dz=flight_target_z*4096.0-p->mPosZ;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            return controls(2,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
         }
         if(full_flight && riding && tick<ride+1000 && !released){
             if(!flight)return controls(2);
@@ -1080,6 +1218,14 @@ static bool replay_owl_ride(Player *p) {
         }
         if(!full_flight && tick<ride+80)return controls(2,tick>=ride+40 && tick<ride+70?12000:0);
         if(!released){released=true;std::fprintf(stderr,"[native owl ride] release-input tick=%llu\n",static_cast<unsigned long long>(tick));}
+        if(!riding && std::getenv("SM64DS_PC_TEST_OWL_LANDING_TARGET") &&
+           !std::strcmp(state,"St_LedgeHang_Main")){
+            // Original ledge controls require a fresh Jump press to climb.
+            // Pulse the button after the catch animation reaches its wait step.
+            const bool climb=p->mStateStep==1 && tick%30<2;
+            if(climb)std::fprintf(stderr,"[native owl ride] ledge-climb-input tick=%llu\n",static_cast<unsigned long long>(tick));
+            return controls(climb?2:0);
+        }
         // Optional input-only landing approach. Neutral air input otherwise
         // brakes outside the platform after an extended flight orbit.
         if(!riding && p->mIsAirborne && !std::strcmp(state,"St_Fall_Main")){
@@ -1087,8 +1233,19 @@ static bool replay_owl_ride(Player *p) {
                 int x=0,z=0;
                 if(std::sscanf(target,"%d:%d",&x,&z)==2 &&
                    x>=-20000 && x<=20000 && z>=-20000 && z<=20000){
+                    // Fall steering turns gradually while horizontal speed is
+                    // nonzero. Brake using neutral input before asking for a
+                    // heading change; a nearby target otherwise produces an
+                    // orbit that cannot converge before reaching the floor.
+                    if(!pilot.landing_braked){
+                        if(p->mHorzSpeed!=0)return controls();
+                        pilot.landing_braked=true;
+                        std::fprintf(stderr,"[native owl ride] landing-braked tick=%llu\n",static_cast<unsigned long long>(tick));
+                    }
                     const double dx=x*4096.0-p->mPosX,dz=z*4096.0-p->mPosZ;
-                    if(std::hypot(dx,dz)>120*4096.0){
+                    const double speed=p->mHorzSpeed/4096.0;
+                    const double stopping_distance=speed*speed+40.0; // neutral deceleration is 0.5 units/frame
+                    if(std::hypot(dx,dz)>stopping_distance*4096.0){
                         const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
                         return controls(0,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
                     }
