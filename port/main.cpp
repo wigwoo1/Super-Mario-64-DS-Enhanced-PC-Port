@@ -10,6 +10,7 @@
 #include "Player.h"
 #include "daTrs_c.h"
 #include "dBgPi.h"
+#include "dBgCh_Gnd.h"
 #include "daKrb_c.h"
 #include "daBombking_c.h"
 #include "daBmb_c.h"
@@ -29,6 +30,7 @@
 #include "daChair_c.h"
 #include "daUdlift_c.h"
 #include "daObjRcCarpet_c.h"
+#include "daObjRc_Tikuwa_c.h"
 #include "daEykn_c.h"
 #include "daTrsTrap_c.h"
 #include "daStarGate_c.h"
@@ -869,6 +871,10 @@ static bool replay_rainbow_disc() {
         if(a->mPosX>1500*4096 && a->mPosX<2000*4096 && std::abs(a->mPosZ)<100*4096){disc=a;break;}
     if(!p || !disc)return false;
     dActor_c *nextDisc=nullptr;
+    const bool southRoute=std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_SOUTH")!=nullptr;
+    if(southRoute)
+        for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
+            if(a->mPosZ>1000*4096 && a->mPosX>0 && a->mPosX<1000*4096){nextDisc=a;break;}
     if(std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_CHAIN"))
         for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
             if(a->mPosZ< -1000*4096 && a->mPosX>0 && a->mPosX<1000*4096){nextDisc=a;break;}
@@ -906,6 +912,229 @@ static bool replay_rainbow_disc() {
         else if(tick-launch>24){phase=6;event("failed-transfer-launch");}
     }
     if(phase==9 && !p->mIsAirborne && transferDistance<650){phase=10;event("transfer-landed-candidate");}
+    if(phase==10 && southRoute && nextDisc){
+        const double dx=nextDisc->mPosX/4096.0-p->mPosX/4096.0,dz=nextDisc->mPosZ/4096.0-p->mPosZ/4096.0;
+        if(std::hypot(dx,dz)>80){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*12000);sy=static_cast<int16_t>(-std::cos(a)*12000);}
+    }
+    if(phase==10 && southRoute && tick>=5000){phase=37;transfer=tick;event("south-bank-runway");}
+    if(phase>=37 && phase<=39){
+        const double a=std::atan2(650-p->mPosX/4096.0,2400-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        sx=static_cast<int16_t>(std::sin(a)*32700);sy=static_cast<int16_t>(-std::cos(a)*32700);
+        if(phase==37 && p->mPosZ>1450*4096 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=38;launch=tick;event("south-bank-crouch");}
+        if(phase==38){
+            if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+            else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+            if(!std::strcmp(state,"St_LongJump_Main")){phase=39;event("south-bank-longjump");}
+        }
+        if(phase==39 && !p->mIsAirborne && p->mPosZ>2000*4096 && std::abs(p->mPosY+1091*4096)<40*4096){phase=40;buttons=0;sx=sy=0;event("south-bank-landed");}
+        if(tick-transfer>700){phase=40;buttons=0;sx=sy=0;event("south-bank-timeout");}
+    }
+    if(phase==40 && southRoute && tick>=6000 && std::getenv("SM64DS_PC_TEST_RAINBOW_POLE")){
+        phase=56;transfer=tick;event("pole-approach");
+    }
+    if(phase>=56 && phase<=59){
+        static uint64_t poleJump=0,poleAttach=0;
+        if(phase==56){
+            const double dx=599-p->mPosX/4096.0,dz=3585-p->mPosZ/4096.0;
+            const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(a)*16000);sy=static_cast<int16_t>(-std::cos(a)*16000);
+            if(!poleJump && p->mPosZ>3100*4096 && !p->mIsAirborne){poleJump=tick;event("pole-fence-jump");}
+            if(poleJump && tick-poleJump<40)buttons=2;
+            if(!std::strcmp(state,"St_Climb_Main")){phase=57;poleAttach=tick;buttons=0;sx=sy=0;event("pole-attached");}
+        }
+        if(phase==57){sx=0;sy=tick-poleAttach<250?32767:0;
+            if(tick-poleAttach==200)event("pole-climb-sample");
+            if(tick-poleAttach>=300){phase=58;launch=tick;event("pole-release");}
+        }
+        if(phase==58){
+            if(tick-launch<12)buttons=2;
+            const double dx=650-p->mPosX/4096.0,dz=2900-p->mPosZ/4096.0;
+            const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            if(std::hypot(dx,dz)>60){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+            if(tick-launch>30 && !p->mIsAirborne && p->mPosZ<3300*4096 && p->mPosY> -1200*4096){phase=59;buttons=0;sx=sy=0;event("pole-landed-bank");}
+        }
+        if(phase==59){buttons=0;sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=60;event("pole-recovered-bank");}}
+        if(tick-transfer>1600){phase=60;buttons=0;sx=sy=0;event("pole-timeout");}
+    }
+    if(phase==40 && southRoute && tick>=6000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SOUTH_DESCENT")){
+        phase=41;transfer=tick;event("south-descent-start");
+    }
+    if(phase==41){
+        static uint64_t fenceJump=0;
+        const double x=p->mPosX/4096.0,z=p->mPosZ/4096.0;
+        if(!fenceJump && !p->mIsAirborne && z>3100){fenceJump=tick;event("south-fence-jump");}
+        if(fenceJump && tick-fenceJump<40)buttons=2;
+        // The south-bank descent uses the narrow pole opening. Aim for the
+        // pole itself before dropping through it; steering all the way to the
+        // lower-bank waypoint first can put Luigi on the outside railing.
+        const double targetX=599;
+        const double targetZ=3585;
+        const double dx=targetX-x,dz=targetZ-z;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>50){sx=static_cast<int16_t>(std::sin(a)*16000);sy=static_cast<int16_t>(-std::cos(a)*16000);}
+        if(!p->mIsAirborne && p->mGroundY< -2500*4096 && z>3300){phase=42;buttons=0;sx=sy=0;event("south-descent-landed");}
+        if(!fenceJump && z>3400){phase=60;buttons=0;sx=sy=0;event("south-gap-missed");}
+        // Climb down through the deck opening. Jumping from the upper part
+        // of this cylinder puts the player back on the surrounding railing.
+        if(!std::strcmp(state,"St_Climb_Main")){
+            static bool reported=false;if(!reported){reported=true;event("south-pole-descend");}
+            buttons=0;sx=0;sy=-32767;
+        }
+        if(tick-transfer>1800){phase=60;buttons=0;sx=sy=0;event("south-descent-timeout");}
+    }
+    if(phase==42 && southRoute && tick>=7000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SEESAW")){
+        phase=43;transfer=tick;event("seesaw-approach");
+    }
+    if(phase>=43 && phase<=51){
+        double tx=650,tz=6410;
+        if(phase==46)tx=1100;
+        if(phase==47)tx=100;
+        if(phase==48)tx=599;
+        if(phase>=49)tz=5650;
+        if(phase==43 && p->mPosZ>5800*4096 && !p->mIsAirborne){phase=44;launch=tick;event("seesaw-jump");}
+        if(phase==49 && p->mPosZ<6250*4096 && !p->mIsAirborne){phase=50;launch=tick;event("seesaw-return-jump");}
+        if((phase==44 || phase==50) && tick-launch<40)buttons=2;
+        if(phase==44 && tick-launch>30 && !p->mIsAirborne && p->mPosZ>6200*4096){phase=45;transfer=tick;event("seesaw-landed-candidate");}
+        if(phase==45 && tick-transfer>200){phase=46;transfer=tick;event("seesaw-east-walk");}
+        const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0;
+        if(phase!=45){
+            if(std::hypot(dx,dz)>50){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*14000);sy=static_cast<int16_t>(-std::cos(a)*14000);}
+            else if(!p->mIsAirborne && p->mHorzSpeed==0){
+                if(phase==46){phase=47;event("seesaw-west-walk");}
+                else if(phase==47){phase=std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_APPROACH")?53:48;transfer=tick;event(phase==53?"seesaw-left-shelf-facing":"seesaw-center-walk");}
+                else if(phase==48){phase=49;event("seesaw-return-approach");}
+                else if(phase==50){phase=52;event("seesaw-returned-bank");}
+            }
+        }
+        if(tick-transfer>2200){phase=52;buttons=0;sx=sy=0;event("seesaw-timeout");}
+    }
+    if(phase==53){
+        const int diff=static_cast<int16_t>(p->mAngleY-16384);
+        if(std::abs(diff)>800){const double a=1.5707963267948966-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*9000);sy=static_cast<int16_t>(-std::cos(a)*9000);}
+        else if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>30){buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;}
+        if(p->mState==&data_ov002_0211052c){phase=54;launch=tick;event("seesaw-left-shelf-backflip");}
+    }
+    if(phase==54){
+        const double dx=-500-p->mPosX/4096.0,dz=6410-p->mPosZ/4096.0;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>60){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+        if(tick-launch<100)buttons=2;
+        if(!p->mIsAirborne && tick-launch>20){phase=55;buttons=0;sx=sy=0;event(p->mPosX< -350*4096 && p->mPosY> -3000*4096?"seesaw-left-shelf-landed":"seesaw-left-shelf-missed");}
+    }
+    if((phase==53 || phase==54) && tick-transfer>700){phase=55;buttons=0;sx=sy=0;event("seesaw-left-shelf-timeout");}
+    if(phase==55 && tick>=8400 && std::getenv("SM64DS_PC_TEST_RAINBOW_SWING_APPROACH")){
+        phase=61;transfer=tick;event("swing-wait-window");
+    }
+    if(phase>=61 && phase<=64){
+        dActor_c *swing=nullptr;
+        for(auto *a=dActor_c::FindWithActorID(127,nullptr);a;a=dActor_c::FindWithActorID(127,a))if(a->mPosZ>5500*4096){swing=a;break;}
+        if(swing){
+            const double angle=swing->mAngleZ*6.283185307179586/65536.0;
+            const double tx=swing->mPosX/4096.0+900*std::sin(angle),tz=swing->mPosZ/4096.0+275;
+            if(phase==61 && swing->mAngleZ>7000){phase=62;event("swing-runway");}
+            if(phase==62 && p->mPosX< -850*4096 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=63;launch=tick;event("swing-crouch");}
+            if(phase==63){
+                if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+                else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+                if(!std::strcmp(state,"St_LongJump_Main")){phase=64;event("swing-longjump");}
+            }
+            if(phase>=62){
+                const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0;
+                if(std::hypot(dx,dz)>120){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+            }
+            if(phase==64 && tick-launch>30 && !p->mIsAirborne){phase=65;buttons=0;sx=sy=0;event(p->mPosX< -1300*4096 && p->mPosY> -3700*4096?"swing-landed-candidate":"swing-missed");}
+        }
+        if(tick-transfer>1100){phase=65;buttons=0;sx=sy=0;event("swing-timeout");}
+    }
+    if(phase==65 && tick>=9000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SWING_DISMOUNT")){
+        phase=66;transfer=tick;event("swing-exit-facing");
+    }
+    if(phase==66){
+        const int diff=static_cast<int16_t>(p->mAngleY-16384);
+        if(std::abs(diff)>800){const double a=1.5707963267948966-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*9000);sy=static_cast<int16_t>(-std::cos(a)*9000);}
+        else if(!p->mIsAirborne && p->mHorzSpeed==0){
+            buttons=0x100;
+            if(p->mPosX< -2750*4096 && p->mPosY> -3200*4096 && !std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+        }
+        if(p->mState==&data_ov002_0211052c){phase=67;launch=tick;event("swing-exit-backflip");}
+    }
+    if(phase==67){
+        const double dx=-3450-p->mPosX/4096.0,dz=6385-p->mPosZ/4096.0;
+        if(std::hypot(dx,dz)>60){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+        if(tick-launch<100)buttons=2;
+        if(p->mPosX< -3300*4096 && p->mGroundY> -3000*4096){phase=68;buttons=0;sx=sy=0;event("swing-exit-coast");}
+    }
+    if(phase==68){buttons=0;sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=69;event("swing-exit-landed");}}
+    if(phase>=66 && phase<=68 && tick-transfer>1300){phase=69;buttons=0;sx=sy=0;event("swing-exit-timeout");}
+    if(phase==69 && tick>=9500 && std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_FALL")){
+        phase=70;transfer=tick;event("donut-runway");
+    }
+    if(phase==70 || phase==71){
+        const double dx=-4373-p->mPosX/4096.0,dz=6410-p->mPosZ/4096.0;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>60){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+        if(phase==70 && p->mPosX< -3880*4096 && !p->mIsAirborne && p->mHorzSpeed>0xa000){phase=71;launch=tick;event("donut-jump");}
+        if(phase==71 && tick-launch<40)buttons=2;
+        if(phase==71 && tick-launch>30 && !p->mIsAirborne){phase=72;buttons=0;sx=sy=0;event(p->mPosX< -4200*4096 && p->mPosY> -2800*4096?"donut-landed-candidate":"donut-missed");}
+        if(tick-transfer>800){phase=72;buttons=0;sx=sy=0;event("donut-timeout");}
+    }
+    // Repeat the native block through ordinary controls. Phases 81..85 are
+    // distinct from the upper-maze pilot (76..79). Leave when the first fall
+    // commits, regain the bank, and walk outside the native 1000-unit reset
+    // radius before repeating the original jump.
+    static uint64_t donutReturnStart=0,donutReturnFlip=0;
+    daObjRc_Tikuwa_c *repeatBlock=nullptr;
+    if(std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_REARM")){
+        for(auto *a=dActor_c::FindWithActorID(126,nullptr);a;a=dActor_c::FindWithActorID(126,a))
+            if(a->uniqueID==32){repeatBlock=static_cast<daObjRc_Tikuwa_c *>(a);break;}
+        if(phase==72 && repeatBlock && repeatBlock->mState==1 && !p->mIsAirborne){
+            phase=81;donutReturnStart=tick;event("donut-return-jump");
+        }
+    }
+    if(phase>=81 && phase<=85){
+        buttons=0;sx=sy=0;
+        auto aim=[&](double tx,double tz,double magnitude){
+            const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0;
+            if(std::hypot(dx,dz)>45){
+                const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);
+            }
+        };
+        if(phase==81){
+            if(!donutReturnFlip){
+                buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+                if(p->mState==&data_ov002_0211052c){donutReturnFlip=tick;event("donut-return-backflip");}
+            }else{
+                aim(-3800,6410,26000);
+                if(tick-donutReturnFlip<100)buttons=2;
+            }
+            if(tick-donutReturnStart>20 && !p->mIsAirborne && p->mPosX> -4000*4096 && p->mPosY> -3000*4096){
+                phase=82;buttons=0;event("donut-return-ledged");
+            }else if(tick-donutReturnStart>250){phase=85;sx=sy=0;event("donut-return-missed");}
+        }
+        if(phase==82){
+            aim(-3450,6410,14000);
+            if(repeatBlock && repeatBlock->mState==0 && repeatBlock->mClsnTimer==0 &&
+               repeatBlock->mPosY==repeatBlock->mHomePosY && !p->mIsAirborne && p->mHorzSpeed==0 &&
+               p->mPosX> -3550*4096){
+                phase=83;transfer=tick;event("donut-reset-bank-ready");
+            }
+        }
+        if(phase==83){
+            aim(-4373,6410,26000);
+            if(p->mPosX< -3880*4096 && !p->mIsAirborne && p->mHorzSpeed>0xa000){
+                phase=84;launch=tick;event("donut-second-jump");
+            }
+        }
+        if(phase==84){
+            if(tick-launch<40)buttons=2;
+            if(p->mIsAirborne)aim(-4373,6410,26000);
+            if(repeatBlock && repeatBlock->mState==1){phase=85;buttons=0;sx=sy=0;event("donut-second-fall");}
+            else if(tick-launch>240){phase=85;buttons=0;sx=sy=0;event("donut-second-fall-missed");}
+        }
+        if(tick%10==0)event("donut-repeat-sample");
+        ntr::input_test_controls(true,buttons,sx,sy);return true;
+    }
     // Input-only approach to the authored static bank west of the discs.
     if(phase==10 && westTransfer && tick>=5800 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_APPROACH")){phase=11;transfer=tick;event("maze-runway");}
     if(phase>=11 && phase<=13 && tick-transfer>600){phase=6;event("maze-timeout");}
@@ -1006,11 +1235,122 @@ static bool replay_rainbow_disc() {
         else if(!p->mIsAirborne && p->mHorzSpeed==0){phase=32;event("maze-tier3-recovered");}
         if(tick-transfer>400 && phase!=32){phase=6;event("maze-tier3-recovery-timeout");}
     }
+    // Diagnostic extension: use a backflip to reach the next upper Rainbow
+    // Ride shelf.  The player must face away from the destination before
+    // launch; once airborne, steer camera-relative input toward its top.
+    static uint64_t nextShelfLaunch=0;
+    if(phase==32 && tick>=9000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_NEXT_SHELF")){
+        phase=33;transfer=tick;event("maze-next-shelf-facing");
+    }
+    static bool shelfScanDone=false;
+    if(phase==32 && tick>=8800 && !shelfScanDone && std::getenv("SM64DS_PC_TEST_RAINBOW_SHELF_SCAN")){
+        shelfScanDone=true;
+        unsigned hits=0;
+        for(int x=-4200;x<=-3820;x+=20)for(int z=-100;z<=200;z+=20){
+            Vector3 probe;probe.x=x*4096;probe.y=p->mPosY+500*4096;probe.z=z*4096;
+            dBgCh_Gnd ray;ray.SetObjAndPos(probe,nullptr);
+            if(!ray.DetectClsn() || ray.clsnY<=p->mPosY+50*4096)continue;
+            const auto *hit=static_cast<const dBgPi *>(&ray);
+            std::fprintf(stderr,"[rainbow shelf scan] x=%d z=%d floor_y=%.2f triangle=%u collider=%u owner=%d\n",
+                x,z,ray.clsnY/4096.0,unsigned(hit->triangleID),unsigned(hit->colliderIdx),hit->owner?int(hit->owner->actorID):-1);
+            ++hits;
+        }
+        std::fprintf(stderr,"[rainbow shelf scan] complete elevated_hits=%u\n",hits);
+    }
+    if(phase>=33 && phase<=36){
+        constexpr double targetX=-3950.0,targetZ=-60.0;
+        auto aim=[&](double x,double z,double magnitude){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);};
+        if(phase==33){
+            // Backflips travel opposite Luigi's facing.  Point the stick away
+            // from the destination while stationary, then launch only once
+            // the turn has settled.
+            const double awayX=p->mPosX/4096.0-targetX,awayZ=p->mPosZ/4096.0-targetZ;
+            const double a=std::atan2(awayX,awayZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int desired=static_cast<int16_t>(std::atan2(awayX,awayZ)*65536.0/(2.0*3.141592653589793));
+            const int diff=static_cast<int16_t>(p->mAngleY-desired);
+            if(std::abs(diff)<800){
+                if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>20){
+                    buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+                }
+                // Stop steering once facing is correct. Continuing to hold
+                // this vector walks Luigi off the narrow launch shelf.
+                sx=sy=0;
+            }else{sx=static_cast<int16_t>(std::sin(a)*9000);sy=static_cast<int16_t>(-std::cos(a)*9000);}
+            // The backflip state starts after the button update, so observe
+            // it outside the grounded-only launch condition above.
+            if(p->mState==&data_ov002_0211052c){phase=34;nextShelfLaunch=tick;event("maze-next-shelf-backflip");}
+        }
+        if(phase==34){
+            const double x=p->mPosX/4096.0,z=p->mPosZ/4096.0;
+            const bool overShelf=x>=-4020 && x<=-3820 && z>=-100 && z<=200 && p->mGroundY> -100*4096;
+            if(overShelf){phase=35;buttons=0;sx=sy=0;event("maze-next-shelf-coast");}
+            else{aim(targetX,targetZ,26000);if(tick-nextShelfLaunch<100)buttons=2;}
+            if(phase==34 && !p->mIsAirborne && tick-nextShelfLaunch>15){
+                if(p->mGroundY> -100*4096){phase=36;buttons=0;sx=sy=0;event("maze-next-shelf-landed");}
+                else if(p->mGroundY<=-140*4096){phase=36;buttons=0;sx=sy=0;event("maze-next-shelf-missed");}
+            }
+        }
+        if(phase==35){
+            // Once the ground ray confirms a point over the raised shelf,
+            // coast with neutral controls instead of steering back out of it.
+            buttons=0;sx=sy=0;
+            if(!p->mIsAirborne && tick-nextShelfLaunch>15){phase=36;buttons=0;sx=sy=0;
+                // The shelf is a narrow static collision surface. Treat the
+                // actual grounded contact height as authoritative: Luigi can
+                // safely settle just beyond the coarse scan grid's edge.
+                event(p->mGroundY> -100*4096?"maze-next-shelf-landed":"maze-next-shelf-missed");}
+        }
+        if(tick-transfer>900 && phase!=36){phase=36;buttons=0;sx=sy=0;event("maze-next-shelf-timeout");}
+    }
+    // Continue the measured backflip route from the fourth shelf to the
+    // adjacent sloped static ledge. This remains an opt-in input-only pilot:
+    // the destination is derived from original KCL, and landing is accepted
+    // only when the native ground result confirms the elevated ramp.
+    static uint64_t upperRampLaunch=0;
+    if(phase==36 && tick>=9300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_UPPER_RAMP")){
+        phase=76;transfer=tick;event("maze-upper-ramp-facing");
+    }
+    if(phase==76){
+        constexpr double tx=-3920.0,tz=0.0;
+        const double awayX=p->mPosX/4096.0-tx,awayZ=p->mPosZ/4096.0-tz;
+        const double a=std::atan2(awayX,awayZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        const int desired=static_cast<int>(std::atan2(awayX,awayZ)*65536.0/(2.0*3.141592653589793));
+        if(std::abs(static_cast<int16_t>(p->mAngleY-desired))<800){
+            sx=sy=0;
+            if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>20)
+                buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+        }else{
+            sx=static_cast<int16_t>(std::sin(a)*9000);
+            sy=static_cast<int16_t>(-std::cos(a)*9000);
+        }
+        if(p->mState==&data_ov002_0211052c){phase=77;upperRampLaunch=tick;event("maze-upper-ramp-backflip");}
+    }
+    if(phase==77){
+        constexpr double tx=-3920.0,tz=0.0;
+        const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>30){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+        else sx=sy=0;
+        if(tick-upperRampLaunch<100)buttons=2;
+        if(!p->mIsAirborne && tick-upperRampLaunch>15){
+            const double x=p->mPosX/4096.0,z=p->mPosZ/4096.0;
+            if(p->mGroundY>500*4096 && x>=-4322 && x<=-3721 && z>=-337 && z<=265){
+                phase=78;buttons=0;sx=sy=0;event("maze-upper-ramp-landed");
+            }else{
+                phase=79;buttons=0;sx=sy=0;event("maze-upper-ramp-missed");
+            }
+        }
+        if(tick-transfer>700 && phase==77){phase=79;buttons=0;sx=sy=0;event("maze-upper-ramp-timeout");}
+    }
+    if(phase==78){
+        buttons=0;sx=sy=0;
+        if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-upperRampLaunch>40){phase=79;event("maze-upper-ramp-stable");}
+    }
     if(phase==0 || phase>=2 && phase<=4 || phase>=7 && phase<=9){
         // Aim before the destination center to account for measured long-jump
         // braking distance; this changes only ordinary QA stick input.
         const double dx=phase>=7?nextDisc->mPosX/4096.0+170-p->mPosX/4096.0:(phase==0?1000:disc->mPosX/4096.0+250-p->mPosX/4096.0);
-        const double dz=phase>=7?nextDisc->mPosZ/4096.0+(westTransfer?-184:184)-p->mPosZ/4096.0:(phase==0?0:disc->mPosZ/4096.0-p->mPosZ/4096.0);
+        const double dz=phase>=7?nextDisc->mPosZ/4096.0+((westTransfer||southRoute)?-184:184)-p->mPosZ/4096.0:(phase==0?0:disc->mPosZ/4096.0-p->mPosZ/4096.0);
         const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         const double mag=phase==0?20000:32700;
         sx=static_cast<int16_t>(std::sin(angle)*mag);sy=static_cast<int16_t>(-std::cos(angle)*mag);

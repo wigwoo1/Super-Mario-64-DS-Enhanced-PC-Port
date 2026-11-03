@@ -1,0 +1,105 @@
+Native Rainbow Ride donut blocks (actor 126): PARTIALLY VERIFIED
+
+The original recovered daObjRc_Tikuwa_c is now included in the native source
+closure and registered using the exact ov036 profile metadata at 02113cd4.
+The host adaptation defers canonical model/collision handle initialization
+until InitResources, retaining original files 0x6af/0x6b0, behavior, collision
+callback and resource cleanup. Original recovered source and headers unchanged.
+Optional SM64DS_PC_DONUT_TRACE observes state/contact/timer/pose/collider only.
+The private muted runner exposes DonutTrace for subsequent route tests.
+
+Native build and check_native_actor_data.py pass, including exact donut profile
+metadata and native factory. Input/session smoke tests pass 3/3.
+Muted case rainbow-donut-spawn-r1-20261102 (private suffix 20261021) runs 5000
+frames through the existing Luigi carpet/disc route, normal exit 0, mixer
+errors 0 and submitted nonzero samples 0. Runtime trace records authored donut
+instances in original idle behavior. Screenshot 4200 confirms existing disc
+route visually; it does NOT establish visible donut pixels or rider contact.
+
+Remaining: derive ordinary-input route to a donut block; verify visible model,
+rider support, 15-contact-frame fall, poof/hidden state, respawn after moving
+away and course unload/re-entry. No F install, public export or stable promotion.
+Full project goal remains active.
+
+Route triage follow-up: runtime positions match all 31 authored placements.
+The lower row lies at z6369..6410, y-2040/-2390/-2840. Original static KCL
+sampling at (224,6410) yields floor -4490.94, so walking on that floor cannot
+establish donut contact. The authored route also contains missing actor127
+swinging platforms at (-3474,-790,4510),(-2161,-2522,6110) and missing actor128
+seesaws at (-5873,-2790,6410),(599,-3490,6410). Their original actor
+classes are recovered: daObjRcBuranko_c and daObjSeesaw_c. Restore these
+course mechanics before claiming the lower platform route is playable.
+Private collision query script: work/query-rainbow-donut-route-20261102.py.
+No new runtime test or source-build change during this static route triage.
+
+2026-11-03: Host contact callback fixed to use typed mHadClsn. The original
+raw DS store at +0x4e8 would write into native home-position storage: MSVC's
+retained base tail padding moves mHadClsn to +0x4ec. Compile-time offsetof
+assertion now verifies the native position. Original source untouched; host
+generation adapts the store. Native build1589AB9D5B8AB69A08C97292EF75155CF80ECC63BCD1D02ADB6A4F36AEB699AD
+and three input/session CTests/native profile audit pass. Those checks do NOT
+establish actual donor contact/fall/reset; that runtime test is still needed.
+
+Normal-input route extension RainbowDonutApproach crouch-jumps west from the
+raised left side of RC_SEESAW128 to static shelf(-500,-2890.92,6410). Earlier
+build300B915153843986CC308795FA6A9181AFD9E4376BCE144000478DA8F5CE517B
+muted10000-frame case rainbow-left-shelf-luigi-r1-20261103(private suffix20261021)
+faces7984,jumps8018,lands8156; final9500staticgroundWait/control at
+(-467.61,-2890.92,6409.2),exit0/audioerrors0/submitted0/savesunchanged.
+Screenshot9500 reviewed: Luigi standing safely on white shelf beside seesaw.
+This route replay predates the callback fix and must not be its acceptance.
+Next inspect authored staircase/platform geometry west of this shelf; continue
+ordinary route to donut blocks and verify contact counter/fall/poof/reset.
+
+2026-11-03 SELECTED CONTACT/FALL/HOME RESET VERIFIED ON NATIVE BUILD.
+Resolved pole/fence descent using original downward climb input through cylinder
+opening, rather than jumping back to upper railing or aiming at side railing.
+Failed descent timeout now halts instead of advancing to later platform tests.
+Native swing dismount crouch-jump lands on west stonebank; runway ordinary jump
+lands on lower donut UID32(actor126,placement-4573,-2840,6410,top-2690).
+Build3284D45F45D1E726F4041B36FF59DDEA838369D4332B333717AC5BA9163D4FC1
+and3focusedinput/sessionCTestsPASS. Muted12000-frame case
+rainbow-donut-fall-solhigh-r1-20261103(private suffix20261021):jump9566,
+land9628,80actualgroundedsupportsamplesUID32;contacttimer3/8/13 then15,
+state1fallobserved9665;falls>1500worldunits;exacthomeXYZ/state0/timer0reset
+observed10035 andretainedtoend. Luigi final11000/12000groundedstaticWait/control,
+exit0/audioerrors0/submitted0/savesunchanged. Strict private
+check-native-donut-fall-20261103.pyPASS. Screens9650(onblock),10000(falling)
+reviewed/shown. This verifies native+4eccontact-fieldfix in real gameplay and
+unchanged homeZ, previously vulnerable to original raw+4e8store.
+No poof visual capture, repeat activation/collider re-enable on reapproach,
+other blocks/characters or course-reentry acceptance. These remain open.
+Bounded repeated run can use work/run-rainbow-donut-verified-20261103.ps1;
+uses preserved accepted executable/hash and isolated synthetic seed. No F,
+public export or stable promotion. Full goal incomplete.
+
+Repeatability check 2026-11-03: fresh case
+rainbow-donut-repeat-luna-20261103-r1(private suffix20261021) replayed the
+same verified binary with a fresh copy of the isolated synthetic save. Strict
+checker passes again: 80 grounded support samples on native actor126 UID32,
+15-frame fall state first observed9665, exact home/state/timer reset10035,
+exit0, no audio errors, output muted with zero submitted samples, and save
+files byte-identical to the seed. Screenshots frame9650(on the block) and
+10000(reset block and Luigi on the stone floor) reviewed/shown. This is a
+repeat of one block's fall/reset cycle in a new session, not a second activation
+of that same block after approaching it again. Poof, collider re-enable after
+approach, other blocks/characters, and course re-entry remain unverified.
+
+2026-11-03 DONUT REARM PROBE STATUS: INCOMPLETE
+The earlier upper-ramp QA branch reused phases37-40, which are already used by the south-bank pilot and could override its controls. Changed that opt-in branch to phases76-79. The retail game behavior is untouched by this test-only fix.
+Added an opt-in input-only donut rearm probe. Replay r2 followed the verified south-bank/descent/seesaw/swing/donut route and reset UID32 to state0/home, but the probe started while Luigi was still in St_Fall_Main; its Jump input was therefore not a valid grounded retry. Trace then showed UID32 state0 with its collider still disabled. Updated the probe to wait for St_Wait_Main before jumping.
+Replay r3 did not reach the donut: the south descent timed out at tick7801 against an on-wall collision at world position about (687,-1091,3832). This is a route failure, not evidence about the rearm fix. Both r2 and r3 exited normally, audio device output remained muted with zero submitted samples/errors, and isolated saves were unchanged. Final build D9210B3069B007F78813FB195C0E90EF7ABFD0D0400407665042FC6BBBF8F05E and three focused CTests pass. Next analysis should determine a reproducible descent from the pole/wall before rerunning the rearm probe; avoid guessing timed jumps. No gameplay mechanic change, F installation or publication.
+
+R4 follow-up 2026-11-03: A collision-map-centered approach targeted x620/z3200, launched within x620..660, then steered to x650/z5650 and required the real lower ground probe. Luigi reached x646/z3008 at launch but momentum carried him to x599/z3832 and St_OnWall_Main at the wooden railing. Lower floor was not reached, so donut reactivation remains untested. Run muted, zero submitted samples/errors, isolated saves unchanged; build and3focused CTests pass. Screenshot frame9500 shows the route blocked. Stop further input guesses; next inspect exact KCL wall triangle/normal and original air-control code before revising the pilot. No production behavior changed.
+
+2026-11-03 same-block repeat acceptance:
+The Luigi pilot now backflips to the upper stone bank before falling to the
+lower floor, walks outside the native 1000-unit reset radius, and repeats the
+original approach onto UID32. Muted isolated case rainbow-donut-return-sol-r2
+records falls9775/10305 and exact home resets10145/10675. Strict checker
+work/check-native-donut-repeat-20261103.py passes actual support for both
+activations and grounded upper-bank recovery. Build5bdac59f27ae335cc30e673775050d09f144c9d82f49b7c38addd2e8bc6ee96b;
+three focused CTests pass. Separate QA phases81..85 avoid the maze pilot's
+76..79 phase collision. Ordinary jump r1 is diagnostic and falls short; the
+verified route uses the existing Luigi crouch/backflip. Original actor physics
+and collision code unchanged. Other blocks/characters/reentry/poof still open.

@@ -1,0 +1,85 @@
+Rainbow Ride swinging platforms127 and seesaws128: PARTIALLY VERIFIED
+
+Restored original native factories and complete profile metadata from ov036
+02113a74 and ov09502137468. Swinging-platform canonical model/KCL handles
+initialize lazily with original files1685/1686. Original recovered actor source
+and headers unchanged. Optional read-only pendulum observation accompanies
+DonutTrace. Its original UpdatePosWithTransform rider callback is retained.
+
+Actor128 is RC_SEESAW (daObjSeesaw_c), not the separately recovered actor132
+RC_GURUGURU. Earlier handoff's suggested Guruguru mapping was incorrect.
+Extended the existing Battlefield seesaw host adaptation to permit only the
+reviewed original variants1/6. Variant6 uses native canonical handles from
+original resource row021374e8 (files1709/1710, ov036CLPS02112ba8). Variant1
+retains files1445/1446 and ov014CLPS02114598. Cleanup selects the same row.
+
+Build AA6876C73899012B9EB8548865D85E4428C92794887F0A59812305DD577975E0
+links successfully. Native actor-data audit and three input/session CTests pass.
+5000-frame muted Luigi carpet/disc regression exits0, mixererrors0, submitted
+nonzerosamples0, both isolated saves unchanged. Two swinging actors observe
+682 intervals matching the exact original angular acceleration/integration;
+both cross the neutral angle. Private check-rainbow-swing-motion-20261102.py
+passes. Screenshot4200 confirms existing disc route, not nearby new-platform
+visual/rider support. Whole Rainbow Ride and lower donut path remain unverified.
+Next: nearby original-input route; visual/rider support; seesaw tilt/recovery;
+donut contact/fall/reset; course re-entry. No F/public/stable promotion.
+
+Additional muted2200-frame census run (rainbow-platform-census-r1-20261102,
+private suffix20261021) confirms two swinging actors UID45/46 and two seesaws
+UID47/48 alive at the authored positions at tick1900. Normalexit0/audioerrors0/
+submittednonzero0. This proves native spawn, not rider collision or visible pixels.
+
+Normal-input southern approach established on buildB56E3F8A925EFB49D887F6F1B9168C5AFCC8EC73E45B107D972BE427BB1B264C.
+Opt-in RainbowDiscSouth pilot selects authored southern disc then uses ordinary
+run/crouch/long-jump inputs toward static bank650:2400. Muted6200-frame Luigi
+case rainbow-south-bank-luigi-r1-20261102(private suffix20261021) transfers4306,
+jumps off5104, lands on original static bank5160, settles at632.62,-1090.94,
+2644.36; final6100normal groundedWait with controls enabled. Build and3focused
+input/session tests pass; runtimeexit0/audioerrors0/submitted0/savesunchanged.
+Screenshot6100 reviewed: Luigi on static white walkway, descending route nearby.
+Continue south along measured static platforms before new seesaw/donut contact.
+
+2026-11-03 lower descent verified on23B3EC9BAD1C5593F77D8F26FF8CCA2D2FE672A9A1A174E75FE28E407BE2E182.
+Corrected southern transfer aiming offset to brake before centre; neutral-speed
+camera-relative stick recentres rider before exit. Added optional input-only
+RainbowSouthDescent; ordinary walking and one held Jump cross the actual wooden
+fence near z3232. R1 slipped off disc; R2 hit fence; both diagnostic failures.
+R3 muted8000-frame replay clears fence6202 and reaches lower static platform
+6892, final groundedWait/control at650.87,-3190.92,5638.76. Normalexit0/audio
+errors0/submitted0/savesunchanged; native build and3focusedinputtests pass.
+Screenshot7600 visually confirms safe landing. New actor rider support and
+donut fall/reset remain open. Next cross to adjacent RC_SEESAW128.
+
+2026-11-03 SELECTED RAINBOW SEESAW GAMEPLAY VERIFIED.
+Build14e9a281d20c734e7879f7d8f5e3f2ba4dd723f31f1ed96a8b64e53a990e01bd
+passes3input/sessiontests. Opt-in ordinary-input RainbowSeesaw pilot boards
+UID48(128), walks east/west/centre, then jumps back to lower static ledge.
+Muted10000-frame Luigi case rainbow-seesaw-luigi-r1-20261103(private suffix20261021)
+lands7136;226 sampled grounded contacts name original actor128 UID48. Both
+positive and negative ground-normal X observed; original pitch spans -533..5005
+and settles to absolute pitch<100 after9000. Eastwalk7337,west7532,centre7982,
+returnjump8260,staticbankWait8422. Final9500normal groundedWait/control enabled.
+Normalexit0/audioerrors0/submitted0/savesunchanged; strict private checker
+check-rainbow-seesaw-gameplay-20261103.py PASS. Screenshots7500 and9500 reviewed
+show Luigi on native seesaw and safely returned. Other seesaw/characters,
+course reload and donut contact/fall/reset remain unverified. No F/public
+promotion from this bounded test. Full project goal active.
+
+2026-11-03 SELECTED SWINGING PLATFORM RIDER VERIFIED.
+Original rc_buranko collision has deck at localY-900, X-497.5..502.5,
+Z-25..575; its small top surface atY100 is the pivot, not the main deck.
+Original donut top is localY150 (placement height is not its surface height).
+RainbowSwingApproach gated pilot waits positive swing window, ordinary
+longjumps from accepted west shelf toward original moving deck centre.
+Restored pole on earlier descent is dismounted using normal Jump, preserving
+original collision behavior. No forced actor/player state/pose/physics writes.
+BuildBABEF8A64CE2B9FCF80048D5C9B324B472285C30DEA55157705FB8E86C2F8BAB
+passes native compile and3focusedinputtests. Muted10400frame Luigi replay
+rainbow-swing-ride-luigi-r1-20261103(private suffix20261021):west shelf8428,
+runway8702,jump8760,land8842;312actualgrounded support samples name actor127
+UID46 from8845..10400. Under neutral input, rider moves horizontally>500units
+and vertically>100units with platform, finalnormalWait/control. Strict private
+check-rainbow-swing-rider-20261103.pyPASS. Exit0/audioerrors0/submitted0/saves
+unchanged. Screenshot9600 visually confirms Luigi on swinging metal deck.
+Next measured jump to west static bank near-3500:6385, then lower donut row.
+Dismount, other platform, reload and donut fall/reset still open. Goal active.

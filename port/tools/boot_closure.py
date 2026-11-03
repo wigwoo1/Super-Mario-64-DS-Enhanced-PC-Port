@@ -24,8 +24,10 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daObjFl_London_c_classInit",
-                 "daObjFl_Seesaw_c_classInit",
+                 "daObjFl_Seesaw_c_classInit", "daObjRc_Tikuwa_c_classInit", "daObjRcBuranko_c_classInit",
                  "daObjSeesaw_c_classInit_BOMB_SEESAW",
+                 "daObjSeesaw_c_classInit_RC_SEESAW",
+                 "daBar_c_classInit",
                  "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
@@ -541,6 +543,14 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import carpet_host
                     transformed=carpet_host.transform(root,transformed,path.name)
                     rewrites+=1
+                if path.name == 'daObjRc_Tikuwa_c.cpp':
+                    import rainbow_donut_host
+                    transformed=rainbow_donut_host.transform(transformed)
+                    rewrites += 1
+                if path.name == 'd_a_obj_rc_buranko.cpp':
+                    import rainbow_swing_host
+                    transformed=rainbow_swing_host.transform(transformed)
+                    rewrites += 1
                 if path.name in ('d_a_obj_rc_kaitendai.cpp','daObjKaitendai_c.cpp'):
                     import rainbow_disc_host
                     transformed=rainbow_disc_host.transform(root,transformed,path.name)

@@ -329,6 +329,11 @@ extern "C" void *daBook_c_classInit_KILLER_BOOK(), *daBookGen_c_classInit();
 extern "C" void *daChair_c_classInit(), *daPiano_c_classInit();
 extern "C" unsigned char g_profile_RC_CARPET[];
 extern "C" void *daObjRc_Kaitendai_c_classInit();
+extern "C" void *daObjRc_Tikuwa_c_classInit();
+extern "C" unsigned char g_profile_BAR[];
+extern "C" void *daObjRcBuranko_c_classInit();
+static PcNativeActorProfile pc_rainbow_swing_profile = {(void *)&daObjRcBuranko_c_classInit,127,257,2,0,16777216,33554432,0};
+static PcNativeActorProfile pc_rainbow_donut_profile = {(void *)&daObjRc_Tikuwa_c_classInit,126,256,33554438,307200,2048000,32768000,3276800};
 extern "C" void *daIbl_c_classInit();
 extern "C" void *daOwl_c_classInit();
 static PcNativeActorProfile pc_owl_profile = {(void *)&daOwl_c_classInit,234,89,0,409600,819200,16777216,16777216};
@@ -449,6 +454,8 @@ static PcNativeActorProfile pc_koopa_flag_profile = {
 };
 extern "C" void *daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT();
 extern "C" void *daObjSeesaw_c_classInit_BOMB_SEESAW();
+extern "C" void *daObjSeesaw_c_classInit_RC_SEESAW();
+static PcNativeActorProfile pc_rainbow_seesaw_profile = {(void *)&daObjSeesaw_c_classInit_RC_SEESAW,128,258,2,0,4194304,16777216,0};
 extern "C" void *daObjBSwdoor_c_classInit();
 // Original ov091/095/014 descriptors; only the constructor pointer is rebased.
 static PcNativeActorProfile pc_updown_lift_profile = {
@@ -677,6 +684,10 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[131] = &pc_rainbow_lift_profile;
     data_020a4bb8_storage[130] = g_profile_RC_CARPET;
     data_020a4bb8_storage[129] = &pc_rainbow_disc_profile;
+    data_020a4bb8_storage[126] = &pc_rainbow_donut_profile;
+    data_020a4bb8_storage[127] = &pc_rainbow_swing_profile;
+    data_020a4bb8_storage[287] = g_profile_BAR;
+    data_020a4bb8_storage[128] = &pc_rainbow_seesaw_profile;
     data_020a4bb8_storage[220] = &pc_ironball_profile;
     data_020a4bb8_storage[234] = &pc_owl_profile;
     data_020a4bb8_storage[64] = &pc_casket_profile;

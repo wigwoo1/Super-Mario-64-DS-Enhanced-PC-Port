@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "2e20259914721dad949030001b4dde83b47663f61622a48eea8935505a91e4bf",
-      "bytes": 89012
+      "sha256": "a473f957d1ca2faa694e9a85d790ca63218b11541cbb21f1262835aa6f6fe2fc",
+      "bytes": 89340
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6709,6 +6709,11 @@
       "bytes": 4085
     },
     {
+      "path": "port/docs/native-climbable-poles-2026-11-03.txt",
+      "sha256": "bf1e990d56564d8f3fa5e87985ffb0e5fb975c920a3d5d6ac80dddc1ce12205b",
+      "bytes": 2924
+    },
+    {
       "path": "port/docs/native-clock-and-koopa-gates-2026-10-24.txt",
       "sha256": "9ea0520aa3898a17b75c381547f7bce1065db4b9832277f77e536aed5f27b364",
       "bytes": 5200
@@ -7120,8 +7125,18 @@
     },
     {
       "path": "port/docs/native-rainbow-disc-2026-10-31.txt",
-      "sha256": "a7fdee8d97f59541369e414ca0ed215ca75f0b74a010c01747d228bf8c6de5e3",
-      "bytes": 11424
+      "sha256": "8a553808c42aeb2a026898c1553140375ef1d83a41b711972306c30c22b2189a",
+      "bytes": 12626
+    },
+    {
+      "path": "port/docs/native-rainbow-donut-2026-11-02.txt",
+      "sha256": "3e0a909cac08c66733ba5866a33fe4f2665c0068d930b3dde6ed45805b55eddc",
+      "bytes": 8659
+    },
+    {
+      "path": "port/docs/native-rainbow-platforms-2026-11-02.txt",
+      "sha256": "6b9c59bbe1bdea6478885abdac84cb7fe5cb0ef8e140d66ac21c086ce01675e4",
+      "bytes": 5918
     },
     {
       "path": "port/docs/native-rebinding-verified-2026-10-22.txt",
@@ -7585,8 +7600,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "c051dcef7c593745961c819f7479fe046635b5c7f9a3e85eae9ac0aa593457ad",
-      "bytes": 50087
+      "sha256": "49c798e68e5e3b565d13d6930ec54f6d49444a035e5f57afa187717d57baddc7",
+      "bytes": 50908
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8055,8 +8070,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "23154acfaddccd6a6b96cb91a49f2e85ac78092bd7271f44557dc525bec59c65",
-      "bytes": 266959
+      "sha256": "d29a9ee0ade25754f895013ba3c8aace81a4505269b5cd051111b8d4f9860eee",
+      "bytes": 288730
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9005,8 +9020,8 @@
     },
     {
       "path": "port/tools/battlefield_platform_host.py",
-      "sha256": "9fe2b85c498f0457af6d9c1d3b6836ccff6802da07af9bb16c48218b49c46dd1",
-      "bytes": 10587
+      "sha256": "214854c603a10ceefdc469c4ea33b621c4e1f2db77cbd8d459f49830ce7e911a",
+      "bytes": 11010
     },
     {
       "path": "port/tools/bird_host.py",
@@ -9035,8 +9050,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "30dfa9c31a4b6f3361bca38dd9625be1a1f547f1b83131c100bb8397123c0c8a",
-      "bytes": 50488
+      "sha256": "0cc3a399de49f6a5940e821e8ce4c8c85cfe142d6d7186afa5a678ab407edd07",
+      "bytes": 51062
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9185,8 +9200,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "365e49225aa78485c3157345dea72a4559d24cc9673d435059460e11b5b81544",
-      "bytes": 56766
+      "sha256": "2f03d17eea8296f13e6c6d35bad0a90bbf4937aee34cd3753a91c5e01a20fd0d",
+      "bytes": 57093
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9612,6 +9627,16 @@
       "path": "port/tools/rainbow_disc_host.py",
       "sha256": "21c6640e586c63e5ea29085e0baa2d5c02a37043c7232ac9d220c8676cafd29d",
       "bytes": 3058
+    },
+    {
+      "path": "port/tools/rainbow_donut_host.py",
+      "sha256": "5267a9d44d9f8fa53224ea73132f51b1ff80d3a775a4727a9bef7281dc601b64",
+      "bytes": 2236
+    },
+    {
+      "path": "port/tools/rainbow_swing_host.py",
+      "sha256": "b4663093f705e9214dff848f7100a44d047edf64267a938d6bbf45f5697941f3",
+      "bytes": 1772
     },
     {
       "path": "port/tools/rec_room_touch_fixture.py",

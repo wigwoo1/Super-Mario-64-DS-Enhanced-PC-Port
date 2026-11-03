@@ -65,3 +65,20 @@ Original solid-ray direction left too little room; torso-only framing did not fi
 
 2026-11-02 Luigi third shelf steering verified.
 Original air control func_ov002_020e28d4 rotates moving travel yaw by ApproachAngle divisor16; a sideways target preserves forward momentum. Opposite stick beyond0x6000 requests negative speed and brakes; neutral finishes at zero before retargeting so the original function can snap travel yaw. New opt-in RainbowMazeTier3 input-only pilot approaches front edge225, backflips outward, brakes then steers west, brakes then steers north onto original shelf y-140.9. No original player/actor/physics/collision changes. R1 lands8368/stops8374. Final R2 retains both earlier shelf ascents; lands8368/stops8374, walks8600..8706 for120.80units,253 later static-supported samples, final Luigi Wait/control at(-4111.20,-140.92,106.49). Muted10000frames exit0/audioerrors0/submitted0, both isolated synthetic saves unchanged. Build/eight focused CTests pass. EXE CF8CA7D40A2560CD843FFBD6A3BB2A5BBB5109BB7461718B67E809EBF522AAB7. Private case native-muted-audio-walk-rainbow-maze-tier3-brake-recovery-solhigh-r2-20261102-20261021, strict work/check-rainbow-tier3-20261102.py generates tier3-acceptance.json. Screenshot9000 clearly shows Luigi on higher shelf after walking. Upper maze/lift131 still unfinished; no F install/publication.
+
+FOURTH MAZE SHELF BACKFLIP/STEERING VERIFIED 2026-11-03
+The existing opt-in RainbowMazeNextShelf pilot continues the accepted Luigi
+prefix through shelves1-3, faces away from the destination, launches native
+St_SideFlip_Main (BackFlip), steers toward the raised static shelf, and coasts
+once its original floor ray confirms entry. Muted12000-frame case
+rainbow-next-shelf-backflip-solhigh-r1-20261103 (suffix20261021) lands by9070
+at approximately(-3907.70,109.09,-105.55), then remains normally grounded on
+static geometry for581 recorded samples through12000. Final state is
+St_Wait_Main with movement enabled and zero horizontal speed. Earlier accepted
+shelf1/2/3 route events are retained. Build hash3284D45F...; 3 focused input,
+session and input-state CTests pass. Audio errors0, submitted output samples0,
+exit0, and isolated Luigi test saves match the synthetic seed. Strict checker
+work/check-rainbow-next-shelf-20261103.py writes next-shelf-acceptance.json.
+Screenshots9120/9200 show Luigi standing on the new upper shelf. No game source
+change was necessary; this run verifies the existing input-only steering.
+Wider upper maze and lift131 remain unverified; no F installation/publication.

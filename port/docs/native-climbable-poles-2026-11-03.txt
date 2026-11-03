@@ -1,0 +1,43 @@
+Native climbable poles (BAR287): PARTIALLY VERIFIED
+
+Registered recovered g_profile_BAR and included original daBar_c_classInit in
+the native boot closure. Original source/headers unchanged. The actor builds
+the original climb cylinder from placement parameters, ticks its native
+collision and has no model. Static pole artwork alone cannot establish grab
+behavior. Profile metadata/factory matches ov0020210845c via native actor audit.
+
+Build40A290FA29A3110E3BF2E2D81A27751782C16FFB17FA4735EC0EC57BB1C64758,
+three focused input/session CTests and native actor-data audit pass. Muted2200
+frame case rainbow-pole-census-r1-20261103(private suffix20261021) exits0,
+audioerrors0,submittednonzero0,bothisolatedsavesunchanged. Original mission1
+level28 census1900 observes all six authored poles UID52..57, alive, with
+original params/positions. Screenshot2000 shows level/carpet regression;
+invisible grab cylinders have no artwork to verify from this screenshot.
+
+Next test grabbing/climbing/dismount/recovery and course unload/re-entry.
+Accessible pole:599,-2790,3585,param455,UID53 in this case. Its original
+cylinder reaches to-900. Current south-bank pilot lands around650,-1091,2640;
+adapt fence-jump approach toward599:3585 and observe actual St_Climb_Main.
+Restoring poles may change old input routes near their cylinders; do not force
+climb/state/pose writes to keep an old route passing. Full campaign, donut
+contact/fall/reset and broader pole coverage remain unverified. No F/public
+promotion from this bounded integration. Goal active.
+
+SELECTED LUIGI GRAB/CLIMB/DISMOUNT VERIFIED:
+Currentbuild795bc1b4bc21845aab98372a0d30b7b34bd24ff000f0056c67699ca4a86539dd
+adds opt-in ordinary-input RainbowPole pilot from accepted southern-bank route.
+Fence jump approaches original cylinder599:3585; after observed St_Climb_Main
+it uses normal climb input, rests, jumps off and guides back to upper stonebank.
+No forced player state/pose, cylinder position or physics changes.
+Muted7400-frame rainbow-pole-climb-luigi-r2-20261103(private suffix20261021):
+attach6262,climbsample6462 at top-900,release6562,land6616,recovery6622;
+final7300/7400normalgroundedWait/control on original static bank. Sixty sampled
+St_Climb_Main records at original pole position,282unit measured ascent.
+Strict private check-native-pole-climb-20261103.py PASS. Normalexit0/audioerrors0/
+submittednonzero0/bothcopiedsavesunchanged. Nativebuild and3focusedinputtests pass.
+Screens6500(actualcling/top),7300(returnbank)reviewed. R1 demonstrated climb but
+its exact-point return controller kept circling and timed out; R2 stops ordinary
+inputs once actual bank landing is detected and lets original braking finish.
+Other poles, characters, handstand and reload remain unverified. Donut callback
+field fix is included but no real donutfall/reset proof yet. No F/public/stable
+promotion. Full project goal active; keep Sol Medium for remaining new routes.
