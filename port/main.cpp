@@ -985,6 +985,7 @@ static bool replay_rainbow_disc() {
     if(phase==42 && southRoute && tick>=7000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SEESAW")){
         phase=43;transfer=tick;event("seesaw-approach");
     }
+    const bool marioShelf = p->mCharacter==0 && std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_APPROACH");
     if(phase>=43 && phase<=51){
         double tx=650,tz=6410;
         if(phase==46)tx=1100;
@@ -995,10 +996,15 @@ static bool replay_rainbow_disc() {
         if(phase==49 && p->mPosZ<6250*4096 && !p->mIsAirborne){phase=50;launch=tick;event("seesaw-return-jump");}
         if((phase==44 || phase==50) && tick-launch<40)buttons=2;
         if(phase==44 && tick-launch>30 && !p->mIsAirborne && p->mPosZ>6200*4096){phase=45;transfer=tick;event("seesaw-landed-candidate");}
+        if(phase==45 && marioShelf){phase=47;transfer=tick;}
+        if(phase==47 && marioShelf){
+            tx=-340;
+            if(p->mPosX < -65*4096){phase=53;transfer=tick;}
+        }
         if(phase==45 && tick-transfer>200){phase=46;transfer=tick;event("seesaw-east-walk");}
         const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0;
-        if(phase!=45){
-            if(std::hypot(dx,dz)>50){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*14000);sy=static_cast<int16_t>(-std::cos(a)*14000);}
+        if(phase!=45 && phase!=53){
+            if(std::hypot(dx,dz)>50){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*(marioShelf && phase==47 ? 26000 : 14000));sy=static_cast<int16_t>(-std::cos(a)*(marioShelf && phase==47 ? 26000 : 14000));}
             else if(!p->mIsAirborne && p->mHorzSpeed==0){
                 if(phase==46){phase=47;event("seesaw-west-walk");}
                 else if(phase==47){phase=std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_APPROACH")?53:48;transfer=tick;event(phase==53?"seesaw-left-shelf-facing":"seesaw-center-walk");}
@@ -1009,9 +1015,11 @@ static bool replay_rainbow_disc() {
         if(tick-transfer>2200){phase=52;buttons=0;sx=sy=0;event("seesaw-timeout");}
     }
     if(phase==53){
+        const auto *floor = p->mMeshClsn.IsOnGround() ? static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()) : nullptr;
+        const bool supported = floor && floor->colliderIdx<24 && floor->owner && floor->owner->actorID==128;
         const int diff=static_cast<int16_t>(p->mAngleY-16384);
         if(std::abs(diff)>800){const double a=1.5707963267948966-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*9000);sy=static_cast<int16_t>(-std::cos(a)*9000);}
-        else if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>30){buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;}
+        else if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>30 && (!marioShelf || supported)){buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;}
         if(p->mState==&data_ov002_0211052c){phase=54;launch=tick;event("seesaw-left-shelf-backflip");}
     }
     if(phase==54){
@@ -1073,7 +1081,7 @@ static bool replay_rainbow_disc() {
         const double dx=-4373-p->mPosX/4096.0,dz=6410-p->mPosZ/4096.0;
         const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         if(std::hypot(dx,dz)>60){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
-        if(phase==70 && p->mPosX< -3880*4096 && !p->mIsAirborne && p->mHorzSpeed>0xa000){phase=71;launch=tick;event("donut-jump");}
+        if(phase==70 && p->mPosX< (marioShelf ? -3750 : -3880)*4096 && !p->mIsAirborne && p->mHorzSpeed>0xa000){phase=71;launch=tick;event("donut-jump");}
         if(phase==71 && tick-launch<40)buttons=2;
         if(phase==71 && tick-launch>30 && !p->mIsAirborne){phase=72;buttons=0;sx=sy=0;event(p->mPosX< -4200*4096 && p->mPosY> -2800*4096?"donut-landed-candidate":"donut-missed");}
         if(tick-transfer>800){phase=72;buttons=0;sx=sy=0;event("donut-timeout");}
