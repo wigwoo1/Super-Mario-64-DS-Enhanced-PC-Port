@@ -11,11 +11,18 @@ The HMC QA jump windows are restricted to level 13 so reused castle-route
 waypoint indices do not trigger unintended jumps on the return route.
 
 Rainbow Ride's opt-in maze approach and lift descent were verified for Luigi.
-The new SM64DS_PC_TEST_RAINBOW_LIFT_RETURN pilot remains DIAGNOSTIC AND FAILING:
-a neutral jump edge produces a real jump but does not reach the intended west
-bank. Return ascent, reboarding and course re-entry are unverified. The pilot
-reports a timeout and must not be treated as gameplay acceptance. No game
-physics were adjusted to make this route pass.
+The SM64DS_PC_TEST_RAINBOW_LIFT_RETURN pilot now passes one selected Luigi
+route: neutral jump edge, held jump and air steering reach the west stone bank;
+a fresh jump after landing recovery reboards the rising original lift. The
+acceptance check requires sustained floor support and actual top arrival,
+rejecting an earlier false-positive event caused by brief ledge contact.
+The original lift then descends again; the tested route ends at the bottom
+with normal control. Original entry, re-entry and a repeat ride were later
+verified for Luigi; see native-rainbow-original-entry-2026-11-04.txt. Other
+characters remain unverified on this Rainbow route.
+The published 2026-11-04 diagnostic kit predates this pilot correction and
+truthfully retains its earlier failing-pilot limitation. No game physics
+were adjusted to make the route pass.
 
 The native target builds and six focused input/session/camera tests pass.
 Runtime checks were muted with isolated saves. No stable build promotion is

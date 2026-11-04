@@ -7134,6 +7134,11 @@
       "bytes": 8659
     },
     {
+      "path": "port/docs/native-rainbow-original-entry-2026-11-04.txt",
+      "sha256": "9174842407d010a93ea848c6aaa5c0f511debb10eb8a8d117cbd854fd47ae2a2",
+      "bytes": 5950
+    },
+    {
       "path": "port/docs/native-rainbow-platforms-2026-11-02.txt",
       "sha256": "6b9c59bbe1bdea6478885abdac84cb7fe5cb0ef8e140d66ac21c086ce01675e4",
       "bytes": 5918
@@ -7340,8 +7345,8 @@
     },
     {
       "path": "port/docs/native-vertical-lift-camera-2026-11-04.txt",
-      "sha256": "5bd4412862fb4a3498ff148097e49e5a1879ee4ae1259fc9ee6d21fb9ba53567",
-      "bytes": 1320
+      "sha256": "50e336fab2a61dbb3160f833d65254001ed18fc8ade16df21d86df7746b67762",
+      "bytes": 1803
     },
     {
       "path": "port/docs/native-wario-crate-carry-throw-verified-2026-10-26.txt",
@@ -8075,8 +8080,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "8417f4fc869a85650d2284369d4d9e66c19a512ce346cfe92fde2822ae5ade49",
-      "bytes": 294990
+      "sha256": "2c4b6f723846012a2936c211409d9fb7917fd5b66f8dfb808ad052e5203a8f03",
+      "bytes": 303537
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9065,8 +9070,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "4b41337043f345efe8c34e6317a1d377ab0fec4c8be86283e15d66c7203fd868",
-      "bytes": 28887
+      "sha256": "22c2d175b837e54df359d8e4f5b576853e1c01ea62b75d917e040a9e03d3257b",
+      "bytes": 29062
     },
     {
       "path": "port/tools/cannon_host.py",

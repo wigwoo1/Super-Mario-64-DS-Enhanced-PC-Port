@@ -359,7 +359,9 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
     Vec3 start = {view[3],view[4],view[5]}, end;
     const double dx=double(start.x)-view[0],dy=double(start.y)-view[1],dz=double(start.z)-view[2];
     const double current_distance=std::sqrt(dx*dx+dy*dy+dz*dz);
-    const double distance=distance_floor*4.0/denominator[settings.camera_zoom];
+    // The idle-distance floor is a minimum. Preserve authored wider views
+    // (such as Rainbow Ride's entrance) instead of pulling them inward.
+    const double distance=std::max(distance_floor,current_distance)*4.0/denominator[settings.camera_zoom];
     if(current_distance<1 || distance<1) return;
     end={view[0]+static_cast<int>(dx*distance/current_distance),
          view[1]+static_cast<int>(dy*distance/current_distance),

@@ -229,6 +229,13 @@ static bool replay_lava_bridge_reentered;
 static bool replay_course_route_complete;
 static bool replay_book_puzzle_complete;
 static bool replay_udlift_return_complete;
+static bool replay_rainbow_lift_return_complete;
+static uint64_t replay_rainbow_course_ready;
+// Preserve the accepted picker replay's timing, relative to normal player
+// control at course entry. This clock is used only by the opt-in entry replay.
+static uint64_t replay_rainbow_course_tick() {
+    return replay_rainbow_course_ready ? ntr::rt_frame()-replay_rainbow_course_ready+1683 : ntr::rt_frame();
+}
 static bool replay_furniture_complete;
 static unsigned replay_course_route_waypoint=0;
 // Observes original contact/state and supplies normal input only. Never
@@ -826,13 +833,22 @@ static bool replay_udlift_return() {
 // catch the moving carpet after climbing the authored stone obstacle.
 static bool replay_carpet_reboard() {
     if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !std::getenv("SM64DS_PC_TEST_CARPET_REBOARD") ||
-       !replay_course_route_complete || data_0209f2f8!=28 || ntr::rt_frame()<2400)return false;
+       !replay_course_route_complete || data_0209f2f8!=28)return false;
+    const auto courseTick=replay_rainbow_course_tick();
+    if(courseTick<2400){
+        if(!replay_rainbow_course_ready)return false;
+        // Retain the accepted ordinary jump edges onto the stone obstacle.
+        const bool jump=courseTick==2290 || (courseTick>=2350 && courseTick<=2375 && courseTick%5==0);
+        ntr::input_test_controls(true,jump?2:0,0,0);return true;
+    }
     auto *p=static_cast<Player *>(data_0209f394[0]);
     daObjRcCarpet_c *carpet=nullptr;
     for(auto *a=dActor_c::FindWithActorID(130,nullptr);a;a=dActor_c::FindWithActorID(130,a))
         if(a->param1==1536){carpet=static_cast<daObjRcCarpet_c *>(a);break;}
     if(!p || !carpet)return false;
     static unsigned phase=0;static uint64_t began=0,launch=0;
+    static unsigned carpetUid=0;
+    if(carpetUid!=carpet->uniqueID){carpetUid=carpet->uniqueID;phase=0;began=launch=0;}
     const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
     if(!began)began=tick;
     uint16_t buttons=0;int16_t sx=0,sy=0;
@@ -865,14 +881,87 @@ static bool replay_carpet_reboard() {
     if(tick%20==0)event("sample");
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
+// Ordinary-input QA for the original upper-castle course entrance.
+static bool replay_rainbow_castle_entry() {
+    if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !std::getenv("SM64DS_PC_TEST_RAINBOW_CASTLE_ENTRY"))return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    static unsigned phase=0;static uint64_t began=0,launch=0,rimJump=0;
+    const auto tick=ntr::rt_frame();const char *state=p?pc_player_state_name(p):"none";
+    auto event=[&](const char *name){std::fprintf(stderr,"[rainbow castle entry] %s tick=%llu phase=%u level=%d player=%s pos=%d,%d,%d\n",name,static_cast<unsigned long long>(tick),phase,int(data_0209f2f8),state,p->mPosX,p->mPosY,p->mPosZ);};
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    auto controls=[&](){ntr::input_test_controls(true,buttons,sx,sy);return true;};
+    unsigned selected=0,selectionPhase=0,mode=0,confirmed=0,ready=0;
+    if(phase && pc_star_select_status(&selected,&selectionPhase,&mode,&confirmed,&ready)){
+        static bool seen=false;if(!seen){seen=true;std::fprintf(stderr,"[rainbow castle entry] original-selector tick=%llu\n",static_cast<unsigned long long>(tick));}
+        if(ready && !confirmed && tick%20<3)buttons=selected==0 && (selectionPhase==2 || mode==2)?1:0x20;
+        return controls();
+    }
+    if(!p)return false;
+    if(phase && data_0209f2f8==28){
+        const char *courseRoute=std::getenv("SM64DS_PC_TEST_RAINBOW_ENTRY_COURSE_ROUTE");
+        if(phase!=3 && !p->mIsNoControl && !p->mIsControlDisabled){
+            phase=3;event("original-course-entered");
+            if(courseRoute && *courseRoute){
+                replay_rainbow_course_ready=tick;
+                replay_course_route_waypoint=0;replay_course_route_complete=false;
+            }
+        }
+        return phase==3 && courseRoute && *courseRoute ? false : controls();
+    }
+    if(data_0209f2f8!=5 || !replay_course_route_complete)return false;
+    if(phase==3){phase=0;began=launch=rimJump=0;} // Fresh original entrance after Exit Course.
+    if(!began){began=tick;event("approach-ready");}
+    auto aim=[&](double x,double z,int magnitude){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);};
+    if(phase==0){
+        const double dx=p->mPosX/4096.0+2800,dz=p->mPosZ/4096.0-1850;
+        const int heading=static_cast<int>(std::atan2(dx,dz)*65536.0/6.283185307179586);
+        if(std::abs(static_cast<int16_t>(p->mAngleY-heading))>800)aim(p->mPosX/4096.0+dx,p->mPosZ/4096.0+dz,9000);
+        else if(!p->mIsAirborne && p->mHorzSpeed==0)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+        if(p->mState==&data_ov002_0211052c){phase=1;launch=tick;event("ledge-backflip");}
+    }
+    if(phase==1){buttons=2;if(std::hypot(-2800-p->mPosX/4096.0,1850-p->mPosZ/4096.0)>35)aim(-2800,1850,26000);
+        if(tick-launch>20 && !p->mIsAirborne){phase=p->mGroundY>2800*4096?2:4;buttons=0;sx=sy=0;event(phase==2?"ledge-landed":"ledge-missed");}}
+    if(phase==2){aim(-3350,1850,16000);
+        if(!std::strcmp(state,"St_OnWall_Main") && std::hypot(-3350-p->mPosX/4096.0,1850-p->mPosZ/4096.0)<300){phase=5;sx=sy=0;event("rim-braking");}}
+    if(phase==5 && !std::strcmp(state,"St_Wait_Main") && p->mHorzSpeed==0){phase=6;rimJump=tick;event("rim-jump");}
+    // The EXIT placement lies on the rim; original KCL's pit floor is
+    // inside it at x=-3300,z=1700, two hundred units below the rim.
+    if(phase==6){if(tick-rimJump<40)buttons=2;if(p->mIsAirborne)aim(-3300,1700,16000);}
+    if(tick-began>1500 && phase!=3 && phase!=4){phase=4;buttons=0;sx=sy=0;event("timeout");}
+    return controls();
+}
 // Ordinary-input QA for the disc adjacent to the accepted carpet landing.
 static bool replay_rainbow_disc() {
     if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") || !std::getenv("SM64DS_PC_TEST_RAINBOW_DISC") ||
-       data_0209f2f8!=28 || ntr::rt_frame()<3600 || !replay_course_route_complete)return false;
+       data_0209f2f8!=28 || replay_rainbow_course_tick()<3600 || !replay_course_route_complete)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);dActor_c *disc=nullptr;
     for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
         if(a->mPosX>1500*4096 && a->mPosX<2000*4096 && std::abs(a->mPosZ)<100*4096){disc=a;break;}
     if(!p || !disc)return false;
+    struct ReplayState { unsigned uid=0; unsigned phase=0; bool westTransfer=false; uint64_t began=0; uint64_t launch=0; uint64_t transfer=0; uint64_t poleJump=0; uint64_t poleAttach=0; uint64_t fenceJump=0; bool reported=false; uint64_t donutReturnStart=0; uint64_t donutReturnFlip=0; bool shelfFacing=false; int tier3Leg=0; uint64_t nextShelfLaunch=0; bool shelfScanDone=false; uint64_t upperRampLaunch=0; uint64_t mazeTopLaunch=0; uint64_t bottomReady=0; uint64_t offJump=0; uint64_t bankReady=0; uint64_t backJump=0; };
+    static ReplayState replay;
+    if(replay.uid!=disc->uniqueID){replay=ReplayState{};replay.uid=disc->uniqueID;replay_rainbow_lift_return_complete=false;}
+    auto &phase=replay.phase;
+    auto &westTransfer=replay.westTransfer;
+    auto &began=replay.began;
+    auto &launch=replay.launch;
+    auto &transfer=replay.transfer;
+    auto &poleJump=replay.poleJump;
+    auto &poleAttach=replay.poleAttach;
+    auto &fenceJump=replay.fenceJump;
+    auto &reported=replay.reported;
+    auto &donutReturnStart=replay.donutReturnStart;
+    auto &donutReturnFlip=replay.donutReturnFlip;
+    auto &shelfFacing=replay.shelfFacing;
+    auto &tier3Leg=replay.tier3Leg;
+    auto &nextShelfLaunch=replay.nextShelfLaunch;
+    auto &shelfScanDone=replay.shelfScanDone;
+    auto &upperRampLaunch=replay.upperRampLaunch;
+    auto &mazeTopLaunch=replay.mazeTopLaunch;
+    auto &bottomReady=replay.bottomReady;
+    auto &offJump=replay.offJump;
+    auto &bankReady=replay.bankReady;
+    auto &backJump=replay.backJump;
     dActor_c *nextDisc=nullptr;
     const bool southRoute=std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_SOUTH")!=nullptr;
     if(southRoute)
@@ -881,10 +970,10 @@ static bool replay_rainbow_disc() {
     if(std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_CHAIN"))
         for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
             if(a->mPosZ< -1000*4096 && a->mPosX>0 && a->mPosX<1000*4096){nextDisc=a;break;}
-    static unsigned phase=0;static bool westTransfer=false;static uint64_t began=0,launch=0,transfer=0;
+    
     if(westTransfer) for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
         if(a->mPosX<0 && std::abs(a->mPosZ)<100*4096){nextDisc=a;break;}
-    const auto tick=ntr::rt_frame();const char *state=pc_player_state_name(p);
+    const auto tick=ntr::rt_frame(),courseTick=replay_rainbow_course_tick();const char *state=pc_player_state_name(p);
     if(!began)began=tick;
     uint16_t buttons=0;int16_t sx=0,sy=0;
     auto event=[&](const char *name){std::fprintf(stderr,"[rainbow disc] %s tick=%llu phase=%u uid=%u player=%s pos=%d,%d,%d speed=%d\n",name,static_cast<unsigned long long>(tick),phase,disc->uniqueID,state,p->mPosX,p->mPosY,p->mPosZ,p->mHorzSpeed);};
@@ -899,8 +988,8 @@ static bool replay_rainbow_disc() {
         else if(tick-launch>24){phase=6;event("failed-launch");}
     }
     if(phase==4 && !p->mIsAirborne && p->mPosX<2200*4096){phase=5;event("landed-candidate");}
-    if(phase==5 && nextDisc && tick>=4200){phase=7;transfer=tick;event("transfer-runway");}
-    if(phase==10 && !westTransfer && tick>=5000 && std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_WEST")){
+    if(phase==5 && nextDisc && courseTick>=4200){phase=7;transfer=tick;event("transfer-runway");}
+    if(phase==10 && !westTransfer && courseTick>=5000 && std::getenv("SM64DS_PC_TEST_RAINBOW_DISC_WEST")){
         westTransfer=true;phase=7;transfer=tick;event("west-transfer-runway");
         for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
             if(a->mPosX<0 && std::abs(a->mPosZ)<100*4096){nextDisc=a;break;}
@@ -919,7 +1008,7 @@ static bool replay_rainbow_disc() {
         const double dx=nextDisc->mPosX/4096.0-p->mPosX/4096.0,dz=nextDisc->mPosZ/4096.0-p->mPosZ/4096.0;
         if(std::hypot(dx,dz)>80){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*12000);sy=static_cast<int16_t>(-std::cos(a)*12000);}
     }
-    if(phase==10 && southRoute && tick>=5000){phase=37;transfer=tick;event("south-bank-runway");}
+    if(phase==10 && southRoute && courseTick>=5000){phase=37;transfer=tick;event("south-bank-runway");}
     if(phase>=37 && phase<=39){
         const double a=std::atan2(650-p->mPosX/4096.0,2400-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         sx=static_cast<int16_t>(std::sin(a)*32700);sy=static_cast<int16_t>(-std::cos(a)*32700);
@@ -932,11 +1021,11 @@ static bool replay_rainbow_disc() {
         if(phase==39 && !p->mIsAirborne && p->mPosZ>2000*4096 && std::abs(p->mPosY+1091*4096)<40*4096){phase=40;buttons=0;sx=sy=0;event("south-bank-landed");}
         if(tick-transfer>700){phase=40;buttons=0;sx=sy=0;event("south-bank-timeout");}
     }
-    if(phase==40 && southRoute && tick>=6000 && std::getenv("SM64DS_PC_TEST_RAINBOW_POLE")){
+    if(phase==40 && southRoute && courseTick>=6000 && std::getenv("SM64DS_PC_TEST_RAINBOW_POLE")){
         phase=56;transfer=tick;event("pole-approach");
     }
     if(phase>=56 && phase<=59){
-        static uint64_t poleJump=0,poleAttach=0;
+        
         if(phase==56){
             const double dx=599-p->mPosX/4096.0,dz=3585-p->mPosZ/4096.0;
             const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
@@ -959,11 +1048,11 @@ static bool replay_rainbow_disc() {
         if(phase==59){buttons=0;sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=60;event("pole-recovered-bank");}}
         if(tick-transfer>1600){phase=60;buttons=0;sx=sy=0;event("pole-timeout");}
     }
-    if(phase==40 && southRoute && tick>=6000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SOUTH_DESCENT")){
+    if(phase==40 && southRoute && courseTick>=6000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SOUTH_DESCENT")){
         phase=41;transfer=tick;event("south-descent-start");
     }
     if(phase==41){
-        static uint64_t fenceJump=0;
+        
         const double x=p->mPosX/4096.0,z=p->mPosZ/4096.0;
         if(!fenceJump && !p->mIsAirborne && z>3100){fenceJump=tick;event("south-fence-jump");}
         if(fenceJump && tick-fenceJump<40)buttons=2;
@@ -980,12 +1069,12 @@ static bool replay_rainbow_disc() {
         // Climb down through the deck opening. Jumping from the upper part
         // of this cylinder puts the player back on the surrounding railing.
         if(!std::strcmp(state,"St_Climb_Main")){
-            static bool reported=false;if(!reported){reported=true;event("south-pole-descend");}
+            if(!reported){reported=true;event("south-pole-descend");}
             buttons=0;sx=0;sy=-32767;
         }
         if(tick-transfer>1800){phase=60;buttons=0;sx=sy=0;event("south-descent-timeout");}
     }
-    if(phase==42 && southRoute && tick>=7000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SEESAW")){
+    if(phase==42 && southRoute && courseTick>=7000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SEESAW")){
         phase=43;transfer=tick;event("seesaw-approach");
     }
     const bool marioShelf = p->mCharacter==0 && std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_APPROACH");
@@ -1033,7 +1122,7 @@ static bool replay_rainbow_disc() {
         if(!p->mIsAirborne && tick-launch>20){phase=55;buttons=0;sx=sy=0;event(p->mPosX< -350*4096 && p->mPosY> -3000*4096?"seesaw-left-shelf-landed":"seesaw-left-shelf-missed");}
     }
     if((phase==53 || phase==54) && tick-transfer>700){phase=55;buttons=0;sx=sy=0;event("seesaw-left-shelf-timeout");}
-    if(phase==55 && tick>=8400 && std::getenv("SM64DS_PC_TEST_RAINBOW_SWING_APPROACH")){
+    if(phase==55 && courseTick>=8400 && std::getenv("SM64DS_PC_TEST_RAINBOW_SWING_APPROACH")){
         phase=61;transfer=tick;event("swing-wait-window");
     }
     if(phase>=61 && phase<=64){
@@ -1057,7 +1146,7 @@ static bool replay_rainbow_disc() {
         }
         if(tick-transfer>1100){phase=65;buttons=0;sx=sy=0;event("swing-timeout");}
     }
-    if(phase==65 && tick>=9000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SWING_DISMOUNT")){
+    if(phase==65 && courseTick>=9000 && std::getenv("SM64DS_PC_TEST_RAINBOW_SWING_DISMOUNT")){
         phase=66;transfer=tick;event("swing-exit-facing");
     }
     if(phase==66){
@@ -1077,7 +1166,7 @@ static bool replay_rainbow_disc() {
     }
     if(phase==68){buttons=0;sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=69;event("swing-exit-landed");}}
     if(phase>=66 && phase<=68 && tick-transfer>1300){phase=69;buttons=0;sx=sy=0;event("swing-exit-timeout");}
-    if(phase==69 && tick>=9500 && std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_FALL")){
+    if(phase==69 && courseTick>=9500 && std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_FALL")){
         phase=70;transfer=tick;event("donut-runway");
     }
     if(phase==70 || phase==71){
@@ -1093,7 +1182,7 @@ static bool replay_rainbow_disc() {
     // distinct from the upper-maze pilot (76..79). Leave when the first fall
     // commits, regain the bank, and walk outside the native 1000-unit reset
     // radius before repeating the original jump.
-    static uint64_t donutReturnStart=0,donutReturnFlip=0;
+    
     daObjRc_Tikuwa_c *repeatBlock=nullptr;
     if(std::getenv("SM64DS_PC_TEST_RAINBOW_DONUT_REARM")){
         for(auto *a=dActor_c::FindWithActorID(126,nullptr);a;a=dActor_c::FindWithActorID(126,a))
@@ -1147,7 +1236,7 @@ static bool replay_rainbow_disc() {
         ntr::input_test_controls(true,buttons,sx,sy);return true;
     }
     // Input-only approach to the authored static bank west of the discs.
-    if(phase==10 && westTransfer && tick>=5800 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_APPROACH")){phase=11;transfer=tick;event("maze-runway");}
+    if(phase==10 && westTransfer && courseTick>=5800 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_APPROACH")){phase=11;transfer=tick;event("maze-runway");}
     if(phase>=11 && phase<=13 && tick-transfer>600){phase=6;event("maze-timeout");}
     if(phase==11 && p->mPosX< -700*4096 && p->mHorzSpeed>0xa000 && !p->mIsAirborne){phase=12;launch=tick;event("maze-crouch");}
     if(phase==12){
@@ -1161,13 +1250,13 @@ static bool replay_rainbow_disc() {
         const double angle=std::atan2(-1300*4096.0-p->mPosX,-35*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         sx=static_cast<int16_t>(std::sin(angle)*32700);sy=static_cast<int16_t>(-std::cos(angle)*32700);
     }
-    if(phase==14 && tick>=6300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_FLOOR")){phase=15;transfer=tick;event("maze-floor-approach");}
+    if(phase==14 && courseTick>=6300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_FLOOR")){phase=15;transfer=tick;event("maze-floor-approach");}
     if(phase>=15 && phase<=18){
         const double tx=-3300, tz=phase<=16?600:0;
         const double distance=std::hypot(tx-p->mPosX/4096.0,tz-p->mPosZ/4096.0);
         if(phase==15 && distance<45 && !p->mIsAirborne && std::abs(p->mPosY+1741*4096)<40*4096){phase=16;launch=tick;event("maze-floor-reached");}
         const bool shelfBackflip=std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_BACKFLIP")!=nullptr;
-        static bool shelfFacing=false;
+        
         if(phase==16 && shelfBackflip && !shelfFacing){
             if(std::abs(int(static_cast<int16_t>(p->mAngleY)))<800)shelfFacing=true;
             else {const double a=-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*11000);sy=static_cast<int16_t>(-std::cos(a)*11000);}
@@ -1187,7 +1276,7 @@ static bool replay_rainbow_disc() {
         }
         if(tick-transfer>1400 && phase!=19){phase=6;buttons=0;sx=sy=0;event("maze-floor-timeout");}
     }
-    if(phase==19 && tick>=7100 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_CLIMB")){phase=20;transfer=tick;event("maze-tier2-facing");}
+    if(phase==19 && courseTick>=7100 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_CLIMB")){phase=20;transfer=tick;event("maze-tier2-facing");}
     if(phase>=20 && phase<=23){
         const double cameraAngle=GetAngleToCamera(0)*6.283185307179586/65536.0;
         if(phase==20){
@@ -1206,8 +1295,8 @@ static bool replay_rainbow_disc() {
         if(phase==23 && !p->mIsAirborne && p->mHorzSpeed==0){phase=24;event("maze-tier2-done");}
         if(tick-transfer>900 && phase!=24){phase=6;buttons=0;sx=sy=0;event("maze-tier2-timeout");}
     }
-    static int tier3Leg=0;
-    if(phase==24 && tick>=8000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TIER3")){phase=25;transfer=tick;event("maze-tier3-corner");}
+    
+    if(phase==24 && courseTick>=8000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TIER3")){phase=25;transfer=tick;event("maze-tier3-corner");}
     if(phase>=25 && phase<=29){
         const double ca=GetAngleToCamera(0)*6.283185307179586/65536.0;
         auto aim=[&](double x,double z,double magnitude){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-ca;sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);};
@@ -1238,7 +1327,7 @@ static bool replay_rainbow_disc() {
         if(phase==29 && !p->mIsAirborne && p->mHorzSpeed==0){phase=30;event("maze-tier3-done");}
         if(tick-transfer>1200 && phase!=30){phase=6;buttons=0;sx=sy=0;event("maze-tier3-timeout");}
     }
-    if(phase==30 && tick>=8600){phase=31;transfer=tick;event("maze-tier3-recovery-walk");}
+    if(phase==30 && courseTick>=8600){phase=31;transfer=tick;event("maze-tier3-recovery-walk");}
     if(phase==31){
         const double dx=-4110-p->mPosX/4096.0,dz=100-p->mPosZ/4096.0;
         const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
@@ -1249,12 +1338,12 @@ static bool replay_rainbow_disc() {
     // Diagnostic extension: use a backflip to reach the next upper Rainbow
     // Ride shelf.  The player must face away from the destination before
     // launch; once airborne, steer camera-relative input toward its top.
-    static uint64_t nextShelfLaunch=0;
-    if(phase==32 && tick>=9000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_NEXT_SHELF")){
+    
+    if(phase==32 && courseTick>=9000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_NEXT_SHELF")){
         phase=33;transfer=tick;event("maze-next-shelf-facing");
     }
-    static bool shelfScanDone=false;
-    if(phase==32 && tick>=8800 && !shelfScanDone && std::getenv("SM64DS_PC_TEST_RAINBOW_SHELF_SCAN")){
+    
+    if(phase==32 && courseTick>=8800 && !shelfScanDone && std::getenv("SM64DS_PC_TEST_RAINBOW_SHELF_SCAN")){
         shelfScanDone=true;
         unsigned hits=0;
         for(int x=-4200;x<=-3820;x+=20)for(int z=-100;z<=200;z+=20){
@@ -1317,8 +1406,8 @@ static bool replay_rainbow_disc() {
     // adjacent sloped static ledge. This remains an opt-in input-only pilot:
     // the destination is derived from original KCL, and landing is accepted
     // only when the native ground result confirms the elevated ramp.
-    static uint64_t upperRampLaunch=0;
-    if(phase==36 && tick>=9300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_UPPER_RAMP")){
+    
+    if(phase==36 && courseTick>=9300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_UPPER_RAMP")){
         phase=86;transfer=tick;event("maze-upper-ramp-edge-approach");
     }
     if(phase==86){
@@ -1369,8 +1458,8 @@ static bool replay_rainbow_disc() {
         if(std::hypot(dx,dz)>25){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
         else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0 && !std::strcmp(state,"St_Wait_Main") && p->mGroundY>950*4096){phase=79;event("maze-upper-ramp-stable");}}
     }
-    static uint64_t mazeTopLaunch=0;
-    if(phase==79 && tick>=10600 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TOP")){
+    
+    if(phase==79 && courseTick>=10600 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TOP")){
         phase=90;event("maze-top-front-approach");
     }
     if(phase>=90 && phase<=94){
@@ -1394,7 +1483,7 @@ static bool replay_rainbow_disc() {
         }
         if(tick-transfer>900 && phase>=91 && phase<=94){phase=95;sx=sy=0;buttons=0;event("maze-top-timeout");}
     }
-    if(phase==95 && tick>=12000 && std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RIDE")){phase=96;event("rainbow-lift-approach");}
+    if(phase==95 && courseTick>=12000 && std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RIDE")){phase=96;event("rainbow-lift-approach");}
     if(phase==96){
         auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(131,nullptr));
         buttons=0;
@@ -1410,27 +1499,50 @@ static bool replay_rainbow_disc() {
         if(lift && lift->mState==4 && !p->mIsAirborne){phase=98;event("rainbow-lift-bottom");}
     }
     if(phase>=98 && phase<=102 && std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RETURN")){
-        static uint64_t bottomReady=0,offJump=0,backJump=0;
+        
         auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(131,nullptr));
         buttons=0;sx=sy=0;
         auto aim=[&](double x,double z){
-            const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-            sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);
+            const double dx=x-p->mPosX/4096.0,dz=z-p->mPosZ/4096.0;
+            const double distance=std::hypot(dx,dz);
+            if(distance<20)return;
+            const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const double magnitude=distance>120?32700:10000;
+            sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);
         };
         if(lift && phase==98){
-            if(!bottomReady)bottomReady=tick;
+            // Normalize the launch point with ordinary walking. A small
+            // incoming rider offset shifts the later bank jump into the
+            // static wall at its apex, cancelling horizontal velocity.
+            if(!bottomReady){
+                // One walking pulse, then let native friction fully stop us.
+                // Continuous steering circles a target smaller than the turn radius.
+                if(p->mHorzSpeed!=0){ntr::input_test_controls(true,0,0,0);return true;}
+                const double dx=-2663.6-p->mPosX/4096.0,dz=-32.1-p->mPosZ/4096.0;
+                if(std::hypot(dx,dz)>3){
+                    const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    sx=static_cast<int16_t>(std::sin(a)*9000);sy=static_cast<int16_t>(-std::cos(a)*9000);
+                    ntr::input_test_controls(true,0,sx,sy);return true;
+                }
+                if(p->mHorzSpeed!=0){ntr::input_test_controls(true,0,0,0);return true;}
+                bottomReady=tick;
+            }
             if(!offJump && tick-bottomReady>=30){offJump=tick;event("rainbow-lift-jump-off");}
             // Give Wait a neutral jump edge before applying air steering.
-            if(offJump && tick-offJump<18)buttons=2;
+            if(offJump && tick-offJump<80)buttons=2;
             if(offJump && p->mIsAirborne)aim(-3140,-35);
-            if(offJump && tick-offJump>20 && !p->mIsAirborne && !lift->mRider && lift->mIsArmed && p->mPosX< -3000*4096 && std::abs(p->mPosY-309*4096)<20*4096){phase=99;sx=sy=0;event("rainbow-lift-rearmed");}
+            if(offJump && tick-offJump>20 && !p->mIsAirborne && !lift->mRider && lift->mIsArmed && p->mPosX< -3000*4096 && std::abs(p->mPosY-309*4096)<20*4096){phase=99;bankReady=tick;buttons=0;sx=sy=0;event("rainbow-lift-rearmed");}
         }
-        if(lift && phase==99 && !std::strcmp(state,"St_Wait_Main")){phase=100;backJump=tick;event("rainbow-lift-jump-back");}
+        if(lift && phase==99 && tick-bankReady>=6 &&
+           (!std::strcmp(state,"St_Wait_Main") || (!std::strcmp(state,"St_Land_Main") && p->mStateTimer==0))){phase=100;backJump=tick;event("rainbow-lift-jump-back");}
+        const bool standing=lift && lift->mRider==p && pc_camera_on_vertical_lift(p) &&
+            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Land_Main"));
         if(lift && phase==100){
-            if(p->mIsAirborne)aim(lift->mPosX/4096.0,lift->mPosZ/4096.0);if(tick-backJump<18)buttons=2;
-            if(lift->mRider==p && !p->mIsAirborne && lift->mState==1){phase=101;buttons=0;sx=sy=0;event("rainbow-lift-reboarded-up");}
+            if(p->mIsAirborne || !std::strcmp(state,"St_LedgeHang_Main") || !std::strcmp(state,"St_LedgeGrab_Main"))aim(lift->mPosX/4096.0,lift->mPosZ/4096.0);if(tick-backJump<80)buttons=2;
+            if(standing && lift->mState==1){phase=101;buttons=0;sx=sy=0;event("rainbow-lift-reboarded-up");}
         }
-        if(lift && phase==101 && lift->mState==3 && !p->mIsAirborne){phase=102;event("rainbow-lift-returned-top");}
+        if(lift && phase==101 && !standing){phase=100;event("rainbow-lift-support-lost");}
+        if(lift && phase==101 && standing && lift->mState==3 && std::abs(p->mPosY-lift->mTopY-100*4096)<4*4096){phase=102;replay_rainbow_lift_return_complete=true;event("rainbow-lift-returned-top");}
         if(offJump && tick-offJump>1000 && phase<102){phase=103;buttons=0;sx=sy=0;event("rainbow-lift-return-timeout");}
     }
     if(phase==0 || phase>=2 && phase<=4 || phase>=7 && phase<=9){
@@ -1708,6 +1820,8 @@ static bool replay_owl_ride(Player *p) {
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
+    if(!route_override && replay_rainbow_course_ready && data_0209f2f8==28)
+        route=std::getenv("SM64DS_PC_TEST_RAINBOW_ENTRY_COURSE_ROUTE");
     if(!route_override && replay_lava_bridge_reentered) {
         if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
     }
@@ -1884,7 +1998,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
         level==6 && chomp_pass && !std::strcmp(chomp_pass,"1") &&
         has_y && y==750 && x>=-1750 && x<=1775 && z>=1525 && z<=4150;
     const bool evading=passing_chomp || (!route_override && ntr::rt_frame()<replay_reentry_goomba_run_until);
-    const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course && !evading);
+    const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course && !evading &&
+        !(replay_rainbow_course_ready && level==28));
     const char *uphill_push=std::getenv("SM64DS_PC_TEST_ROUTE_UPHILL_PUSH");
     const double approach_dx=x*4096.0-player->mPosX;
     const double approach_dz=z*4096.0-player->mPosZ;
@@ -2428,10 +2543,14 @@ static bool replay_lava_bridge_lifecycle() {
     static int phase=0;static uint64_t began=0,jumpUntil=0,nextJump=0;
     const auto tick=ntr::rt_frame();
     auto event=[&](const char *name){std::fprintf(stderr,"[native lava bridge lifecycle] %s tick=%llu level=%d phase=%d\n",name,static_cast<unsigned long long>(tick),int(data_0209f2f8),phase);};
-    if(phase>=4)return false;
+    if(phase>=4){
+        if(course_level==28 && std::getenv("SM64DS_PC_TEST_RAINBOW_REENTRY_READY") && !std::getenv("SM64DS_PC_TEST_RAINBOW_REPEAT_RIDE")){ntr::input_test_controls(true,0,0,0);return true;}
+        return false;
+    }
     if(!phase) {
         if(!replay_course_route_complete)return false;
         if(std::getenv("SM64DS_PC_TEST_UDLIFT_RETURN") && !replay_udlift_return_complete)return false;
+        if(std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RETURN") && !replay_rainbow_lift_return_complete)return false;
         // For bookshelf reset tests, don't leave until the original shelf has
         // completed its native slide and cleanup after all three book hits.
         if(std::getenv("SM64DS_PC_TEST_BOOK_PUZZLE") && !replay_book_puzzle_complete)return false;
@@ -2464,6 +2583,7 @@ static bool replay_lava_bridge_lifecycle() {
     if(phase==2) {
         unsigned selected=0,selectionPhase=0,selectionMode=0,confirmed=0,selectionReady=0;
         if(pc_star_select_status(&selected,&selectionPhase,&selectionMode,&confirmed,&selectionReady)) {
+            if(course_level==28 && std::getenv("SM64DS_PC_TEST_RAINBOW_CASTLE_ENTRY"))return replay_rainbow_castle_entry();
             const unsigned target=std::getenv("SM64DS_PC_TEST_OWL_CYCLE") ? unsigned(pc_test_mission()-1):0;
             if(selectionReady && !confirmed && selectionMode==0 && tick%20<3)
                 buttons=selected==target && selectionPhase==2?1:0x20;
@@ -2474,6 +2594,7 @@ static bool replay_lava_bridge_lifecycle() {
         }
         if(data_0209f2f8==course_level && ready) {
             phase=3;began=tick;event("original-course-reentry");
+            if(course_level==28 && std::getenv("SM64DS_PC_TEST_RAINBOW_REENTRY_READY") && !std::getenv("SM64DS_PC_TEST_RAINBOW_REPEAT_RIDE")){phase=4;return controls();}
             if(course_level==12) {
                 auto *shelf=static_cast<daTrsTrap_c *>(dActor_c::FindWithActorID(158,nullptr));
                 std::fprintf(stderr,"[bookshelf lifecycle] event=reentry-entry tick=%llu shelf=%s state=%u flags=%02x index=%d\n",
@@ -2514,6 +2635,7 @@ static bool replay_lava_bridge_lifecycle() {
                 event("painting-approach");
             }
         }
+        if(course_level==28 && replay_course_route_complete && replay_rainbow_castle_entry())return true;
         if(replay_course_route_complete && replay_courtyard_boo(p))return true;
         if(course_level!=14 || data_0209f2f8!=4 || !ready)return controls();
         if(data_0209d660){if(tick%45<3)buttons=1;return controls();}
@@ -3993,7 +4115,7 @@ static bool trace_script_progress(uint64_t frame)
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())
-        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);

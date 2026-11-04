@@ -1,0 +1,93 @@
+Selected original Rainbow Ride entry: VERIFIED
+
+An isolated Luigi save with prepared Star/key prerequisites and a previously
+unlocked 50-Star gate traverses the original title/file/castle route, upstairs
+spiral and Star door. A normal backflip reaches the raised entrance ledge.
+A neutral jump over the brick rim aims at the pit floor near (-3300,1700).
+The EXIT placement (-3350,2800,1850) is on the rim, not the pit interior.
+
+The opt-in RainbowCastleEntry QA pilot handles the original Star selector
+before requiring a player actor, since that actor is absent in the menu.
+It confirms the first mission normally. No level, actor pose, physics or
+progress flags are forced by this pilot.
+
+A muted 20000-frame test passes the selected route, original selector and
+actual level28 entry. Native lift131 initializes at its authored top position
+with no rider and its trigger armed. Luigi recovers normal grounded Wait.
+The process exits normally with zero audio errors and copied saves unchanged.
+The native target and six focused input/session/camera tests pass.
+
+Limitations: prepared prerequisites do not prove earned campaign progression.
+Exit, original re-entry and repeat-ride results are documented below. The original-preset
+course-start camera crop is corrected by preserving authored wider camera
+distances. A fresh original-entry replay keeps Luigi fully visible; 166
+stationary trace samples preserve the authored 1735.89-unit distance. A
+haunted-house lift round-trip regression also passes on this camera build.
+Other zoom settings/free-camera runtime were not repeated here. Earlier
+public kits predate this test pilot correction. Full gameplay remains incomplete.
+
+Original entry through the selected lift round trip: VERIFIED
+
+The optional SM64DS_PC_TEST_RAINBOW_ENTRY_COURSE_ROUTE releases the entry
+pilot after normal player control returns. It starts the accepted course
+approach with its own route cursor and a clock relative to that entry.
+The historical picker replay remains unchanged when this option is absent.
+Castle waypoints retain precise settling; the carpet approach keeps its
+accepted continuous input. Ordinary jump edges climb the stone obstacle.
+No gameplay position, actor state, physics or progression flags are written.
+
+A fresh muted 28000-frame replay traverses original title/file/castle menus,
+the upper-castle hole and original mission selector, then the carpet, discs,
+maze shelves and native lift131. Luigi descends, jumps to the real west bank,
+rearms the lift, reboards its ascent and returns to its authored top. Forty-two
+continuous supported contact samples span over 1029 units of upward travel.
+The original lift then makes another descent with its rider. Final player
+control and bottom stop are normal; process exit is zero, audio errors are
+zero and both isolated save files are unchanged. Screenshots show the whole
+character at the carpet approach and during the supported lift ascent.
+The explicit native build and six focused input/session/camera tests pass.
+
+This verifies one original entrance and one selected Luigi round trip using
+prepared prerequisites. Exit, original re-entry and fresh actor reset are verified below. Repeat-ride verification follows below; other character variants remain open.
+The new changes are test-pilot support; the existing private camera preview
+already contains the production camera correction. No stable promotion is made.
+
+Original exit and course re-entry: VERIFIED on the selected Luigi route.
+
+The input-only pilot now settles at a consistent lift departure point using
+short walking pulses separated by a full stop. Previously, a roughly 14-unit
+rider offset shifted the bank jump into a static wall near its apex, cancelling
+horizontal speed before the lift. Continuous steering around a tiny alignment
+target was replaced by stop-and-step inputs. Gameplay physics are unchanged.
+
+A fresh 45000-frame muted replay verifies supported reboarding and ascent,
+original Exit Course, castle traversal, the original entrance and mission
+selection, then normal player control after re-entry. The old native lift is
+cleaned up and a distinct new instance starts at its authored top, armed and
+without a rider. Continuous floor-contact samples independently validate the
+first ascent. Native build and six focused tests pass; runtime exit is zero,
+audio reports zero errors, and both isolated saves remain unchanged.
+Screenshots show Luigi on the ascending lift and at the reloaded course start.
+
+That 45000-frame case holds neutral on the second visit. The later repeat-ride
+case below extends it; other characters remain unverified. Prepared prerequisites do not establish
+earned campaign progression. No stable promotion follows from this QA result.
+
+Repeat ride after original course re-entry: VERIFIED for the selected Luigi route.
+
+Carpet replay progress resets when its actor identity changes. The disc/maze
+pilot groups its phases and timers into one state record, reset on a fresh
+disc identity. An opt-in repeat mode resumes the course-relative approach
+after original re-entry instead of holding neutral at the starting platform.
+Normal actor behavior, movement physics and collision remain unchanged.
+
+A fresh muted 53000-frame replay completes two supported lift round trips,
+with original Exit Course/castle traversal/mission selection between them.
+The second native lift has a distinct identity, resets to its authored top,
+then descends, rearms, accepts Luigi's reboard and returns to the top. Forty-two
+continuous grounded contact samples verify its ascent over 1029 units.
+Both carpet transfers pass, final player control is normal, runtime exit is
+zero, audio errors are zero and both isolated saves remain unchanged.
+Screenshots show the full character on both ascending lifts. The native build
+and six focused input/session/camera tests pass. Other characters and earned
+campaign prerequisites remain unverified by this selected replay.
