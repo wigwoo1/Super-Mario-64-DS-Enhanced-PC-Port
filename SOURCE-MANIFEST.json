@@ -7144,6 +7144,11 @@
       "bytes": 5918
     },
     {
+      "path": "port/docs/native-rainbow-wario-entry-diagnostic-2026-11-04.txt",
+      "sha256": "231fd355a89f9496ebfd7e1d5b433e487aae6c0470eb70aaa460bb3b3d9ddb6a",
+      "bytes": 1954
+    },
+    {
       "path": "port/docs/native-rebinding-verified-2026-10-22.txt",
       "sha256": "3941425468aa5c686e2bcde85ca58a0c445937dc18122aebdc4e4aac209620b3",
       "bytes": 4482
@@ -8080,8 +8085,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "2c4b6f723846012a2936c211409d9fb7917fd5b66f8dfb808ad052e5203a8f03",
-      "bytes": 303537
+      "sha256": "4ef98c33b73ed4ec4a73e768892f2a4026147e184d1c075928ac40020277331b",
+      "bytes": 305088
     },
     {
       "path": "port/ntr/audio.cpp",

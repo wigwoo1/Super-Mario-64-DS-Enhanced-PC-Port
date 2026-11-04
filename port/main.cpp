@@ -912,6 +912,42 @@ static bool replay_rainbow_castle_entry() {
     if(phase==3){phase=0;began=launch=rimJump=0;} // Fresh original entrance after Exit Course.
     if(!began){began=tick;event("approach-ready");}
     auto aim=[&](double x,double z,int magnitude){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);};
+    // Wario cannot use Luigi's higher backflip. This opt-in pilot uses only
+    // ordinary jump edges and steering; the retail combo rules decide the move.
+    if(phase==0 && p->mCharacter==2 && std::getenv("SM64DS_PC_TEST_RAINBOW_WARIO_TRIPLE")){
+        phase=10;event("wario-combo-ready");
+    }
+    if(phase==10 && !p->mIsAirborne && p->mHorzSpeed==0){
+        buttons=2;phase=11;launch=tick;event("wario-first-jump");
+        return controls();
+    }
+    if(phase==11){
+        buttons=p->mVertSpeed>=0?2:0;
+        if(tick-launch>10 && !p->mIsAirborne){phase=12;launch=tick;buttons=0;event("wario-first-land");return controls();}
+    }
+    if(phase==12){
+        buttons=tick-launch>=4?2:0;
+        if(p->mIsAirborne){phase=13;launch=tick;event("wario-second-jump");}
+    }
+    if(phase==13){
+        buttons=p->mVertSpeed>=0?2:0;
+        aim(p->mVertSpeed>=0?-1600:-2800,1850,30000);
+        if(tick-launch>10 && !p->mIsAirborne){phase=14;launch=tick;buttons=0;event("wario-second-land");return controls();}
+    }
+    if(phase==14){
+        aim(-2800,1850,30000);buttons=tick-launch>=4?2:0;
+        if(p->mIsAirborne){
+            phase=p->mJumpComboStage==2?15:4;launch=tick;
+            event(phase==15?"wario-triple-jump":"wario-combo-rejected");
+        }
+    }
+    if(phase==15){
+        buttons=p->mVertSpeed>=0?2:0;aim(-2800,1850,30000);
+        if(tick-launch>10 && !p->mIsAirborne){
+            phase=p->mGroundY>2800*4096?2:4;buttons=0;sx=sy=0;
+            event(phase==2?"wario-ledge-landed":"wario-ledge-missed");
+        }
+    }
     if(phase==0){
         const double dx=p->mPosX/4096.0+2800,dz=p->mPosZ/4096.0-1850;
         const int heading=static_cast<int>(std::atan2(dx,dz)*65536.0/6.283185307179586);

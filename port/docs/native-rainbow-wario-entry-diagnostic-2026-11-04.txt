@@ -1,0 +1,32 @@
+Rainbow Ride Wario entrance pilot: diagnostic, not accepted
+=========================================================
+
+The accepted Luigi original-entry and repeated lift route remains documented
+separately. Wario has not entered Rainbow Ride or ridden its lift in this replay.
+
+The original BackFlip Init gives Luigi a vertical launch of 0x4c000 and other
+characters 0x3e000. The shared aerial state also gives Luigi a descending spin.
+Copying the accepted Luigi backflip approach therefore does not establish a
+usable Wario route. The sampled Wario feet peak was approximately 2746, below
+the entrance ledge at 2900. This is not evidence of a port physics defect.
+
+An opt-in ordinary-input QA pilot is gated by AUTOMATION_ONLY, the existing
+Rainbow castle-entry flag and SM64DS_PC_TEST_RAINBOW_WARIO_TRIPLE. It attempts
+two setup jumps and requires the actual original jump-combo stage to equal 2
+before accepting a third jump. It never changes player pose, physics or state.
+The established Luigi route is unchanged when the new option is absent.
+
+Two muted isolated-save attempts failed to establish a valid triple jump.
+The first lost jump button edges. The second added landing release intervals,
+but its initial press still ended before the game consumed it; the subsequent
+landing also had insufficient running speed. No valid triple-jump reach,
+Wario course entry or Wario lift acceptance is claimed. The native build and
+six focused input/session/camera tests passed, which does not qualify this route.
+
+Next work: synchronize each press with actual game input consumption, observe
+airborne state before labeling a jump, and plan a continuous-speed combo path
+using original collision geometry. Preserve original jump speeds, combo rules,
+the accepted Luigi route and strict supported-landing checks.
+
+This change adds diagnostic QA only. It does not supersede the previously
+verified Luigi build kit or justify a new verified runtime release.
