@@ -348,6 +348,14 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
     }
     if (settings.camera_zoom>3) return;
     const int denominator[] = {4,3,2,1};
+    if(pc_camera_on_vertical_lift(player)) {
+        // Authored shaft tracking can retain a large sideways look offset.
+        // Recenter the temporary render pose on the supported player's torso
+        // before applying the existing solid-surface camera rays below.
+        const auto *position=reinterpret_cast<const s32 *>(player+0x5c);
+        const s32 centered[3]={position[0],position[1]+100*4096,position[2]};
+        for(int i=0;i<3;++i){view[i+3]+=centered[i]-view[i];view[i]=centered[i];}
+    }
     Vec3 start = {view[3],view[4],view[5]}, end;
     const double dx=double(start.x)-view[0],dy=double(start.y)-view[1],dz=double(start.z)-view[2];
     const double current_distance=std::sqrt(dx*dx+dy*dy+dz*dz);

@@ -7339,6 +7339,11 @@
       "bytes": 3714
     },
     {
+      "path": "port/docs/native-vertical-lift-camera-2026-11-04.txt",
+      "sha256": "5bd4412862fb4a3498ff148097e49e5a1879ee4ae1259fc9ee6d21fb9ba53567",
+      "bytes": 1320
+    },
+    {
       "path": "port/docs/native-wario-crate-carry-throw-verified-2026-10-26.txt",
       "sha256": "75ecd9474c83bc1c9b1af1a3d7fb1a4cb70b367805560d691690d5f5894d64d8",
       "bytes": 1005
@@ -8070,8 +8075,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "d806a5dd624290240664ab2475151b2299340c8de57a6282042ecab34469e196",
-      "bytes": 289388
+      "sha256": "8417f4fc869a85650d2284369d4d9e66c19a512ce346cfe92fde2822ae5ade49",
+      "bytes": 294990
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9060,8 +9065,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "0e69f9837f0a9d6bacf0649d0f3e72be435e174c7f5db3aa961a6aac3db2ea95",
-      "bytes": 28376
+      "sha256": "4b41337043f345efe8c34e6317a1d377ab0fec4c8be86283e15d66c7203fd868",
+      "bytes": 28887
     },
     {
       "path": "port/tools/cannon_host.py",

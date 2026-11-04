@@ -450,6 +450,9 @@ static bool replay_pillar_controls() {
     return false;
 }
 static uint16_t replay_route_window_buttons(unsigned waypoint,bool settling=false) {
+    // HMC's pole-release pulses belong to its course route. Castle return
+    // waypoints reuse these indices and must retain their authored controls.
+    if(std::getenv("SM64DS_PC_TEST_HMC_LIFT_RETURN") && data_0209f2f8!=13)return 0;
     uint16_t buttons=0;
     // Opt-in QA clocks repeat a combat input phase on each visit, regardless
     // of time spent in original menus, doors and course transitions. Existing
@@ -1316,10 +1319,16 @@ static bool replay_rainbow_disc() {
     // only when the native ground result confirms the elevated ramp.
     static uint64_t upperRampLaunch=0;
     if(phase==36 && tick>=9300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_UPPER_RAMP")){
-        phase=76;transfer=tick;event("maze-upper-ramp-facing");
+        phase=86;transfer=tick;event("maze-upper-ramp-edge-approach");
+    }
+    if(phase==86){
+        const double dx=-3555.0-p->mPosX/4096.0,dz=-60.0-p->mPosZ/4096.0;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>25){sx=static_cast<int16_t>(std::sin(a)*14000);sy=static_cast<int16_t>(-std::cos(a)*14000);}
+        else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=76;transfer=tick;event("maze-upper-ramp-edge-ready");}}
     }
     if(phase==76){
-        constexpr double tx=-3920.0,tz=0.0;
+        constexpr double tx=-4080.0,tz=-60.0;
         const double awayX=p->mPosX/4096.0-tx,awayZ=p->mPosZ/4096.0-tz;
         const double a=std::atan2(awayX,awayZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         const int desired=static_cast<int>(std::atan2(awayX,awayZ)*65536.0/(2.0*3.141592653589793));
@@ -1334,7 +1343,7 @@ static bool replay_rainbow_disc() {
         if(p->mState==&data_ov002_0211052c){phase=77;upperRampLaunch=tick;event("maze-upper-ramp-backflip");}
     }
     if(phase==77){
-        constexpr double tx=-3920.0,tz=0.0;
+        constexpr double tx=-4080.0,tz=-60.0;
         const double dx=tx-p->mPosX/4096.0,dz=tz-p->mPosZ/4096.0;
         const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         if(std::hypot(dx,dz)>30){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
@@ -1351,8 +1360,78 @@ static bool replay_rainbow_disc() {
         if(tick-transfer>700 && phase==77){phase=79;buttons=0;sx=sy=0;event("maze-upper-ramp-timeout");}
     }
     if(phase==78){
+        // The authored ramp rises west to the flat y959 shelf. Keep normal
+        // uphill stick input through landing instead of letting slope gravity
+        // reverse speed while Luigi is still facing east after his backflip.
+        buttons=0;
+        const double dx=-4220.0-p->mPosX/4096.0,dz=-60.0-p->mPosZ/4096.0;
+        const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        if(std::hypot(dx,dz)>25){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+        else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0 && !std::strcmp(state,"St_Wait_Main") && p->mGroundY>950*4096){phase=79;event("maze-upper-ramp-stable");}}
+    }
+    static uint64_t mazeTopLaunch=0;
+    if(phase==79 && tick>=10600 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TOP")){
+        phase=90;event("maze-top-front-approach");
+    }
+    if(phase>=90 && phase<=94){
+        auto aimTop=[&](double x,double z,double mag){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*mag);sy=static_cast<int16_t>(-std::cos(a)*mag);};
+        buttons=0;
+        if(phase==90){
+            if(std::hypot(-4220-p->mPosX/4096.0,240-p->mPosZ/4096.0)>10)aimTop(-4220,240,10000);
+            else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=91;transfer=tick;event("maze-top-facing");}}
+        }
+        if(phase==91){
+            const int delta=static_cast<int16_t>(p->mAngleY-32768);
+            if(std::abs(delta)>800)aimTop(p->mPosX/4096.0,p->mPosZ/4096.0-100,9000);
+            else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;}
+            if(p->mState==&data_ov002_0211052c){phase=92;mazeTopLaunch=tick;event("maze-top-backflip");}
+        }
+        if(phase==92){aimTop(-4220,700,26000);buttons=2;if(tick-mazeTopLaunch>=18){phase=93;event("maze-top-braking");}}
+        if(phase==93){aimTop(-4220,-300,32700);buttons=2;if(p->mHorzSpeed<=0){phase=94;event("maze-top-return");}}
+        if(phase==94){
+            aimTop(-4220,170,26000);
+            if(!p->mIsAirborne && tick-mazeTopLaunch>25){phase=95;sx=sy=0;buttons=0;event(p->mGroundY>1600*4096?"maze-top-landed":"maze-top-missed");}
+        }
+        if(tick-transfer>900 && phase>=91 && phase<=94){phase=95;sx=sy=0;buttons=0;event("maze-top-timeout");}
+    }
+    if(phase==95 && tick>=12000 && std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RIDE")){phase=96;event("rainbow-lift-approach");}
+    if(phase==96){
+        auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(131,nullptr));
+        buttons=0;
+        if(lift){
+            const double a=std::atan2(lift->mPosX/4096.0-p->mPosX/4096.0,lift->mPosZ/4096.0-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(a)*22000);sy=static_cast<int16_t>(-std::cos(a)*22000);
+            if(lift->mRider==p && lift->mState==2){phase=97;sx=sy=0;event("rainbow-lift-boarded");}
+        }
+    }
+    if(phase==97){
         buttons=0;sx=sy=0;
-        if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-upperRampLaunch>40){phase=79;event("maze-upper-ramp-stable");}
+        auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(131,nullptr));
+        if(lift && lift->mState==4 && !p->mIsAirborne){phase=98;event("rainbow-lift-bottom");}
+    }
+    if(phase>=98 && phase<=102 && std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RETURN")){
+        static uint64_t bottomReady=0,offJump=0,backJump=0;
+        auto *lift=static_cast<daUdlift_c *>(dActor_c::FindWithActorID(131,nullptr));
+        buttons=0;sx=sy=0;
+        auto aim=[&](double x,double z){
+            const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);
+        };
+        if(lift && phase==98){
+            if(!bottomReady)bottomReady=tick;
+            if(!offJump && tick-bottomReady>=30){offJump=tick;event("rainbow-lift-jump-off");}
+            // Give Wait a neutral jump edge before applying air steering.
+            if(offJump && tick-offJump<18)buttons=2;
+            if(offJump && p->mIsAirborne)aim(-3140,-35);
+            if(offJump && tick-offJump>20 && !p->mIsAirborne && !lift->mRider && lift->mIsArmed && p->mPosX< -3000*4096 && std::abs(p->mPosY-309*4096)<20*4096){phase=99;sx=sy=0;event("rainbow-lift-rearmed");}
+        }
+        if(lift && phase==99 && !std::strcmp(state,"St_Wait_Main")){phase=100;backJump=tick;event("rainbow-lift-jump-back");}
+        if(lift && phase==100){
+            if(p->mIsAirborne)aim(lift->mPosX/4096.0,lift->mPosZ/4096.0);if(tick-backJump<18)buttons=2;
+            if(lift->mRider==p && !p->mIsAirborne && lift->mState==1){phase=101;buttons=0;sx=sy=0;event("rainbow-lift-reboarded-up");}
+        }
+        if(lift && phase==101 && lift->mState==3 && !p->mIsAirborne){phase=102;event("rainbow-lift-returned-top");}
+        if(offJump && tick-offJump>1000 && phase<102){phase=103;buttons=0;sx=sy=0;event("rainbow-lift-return-timeout");}
     }
     if(phase==0 || phase>=2 && phase<=4 || phase>=7 && phase<=9){
         // Aim before the destination center to account for measured long-jump
