@@ -1018,6 +1018,7 @@ endif()
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/boot_closure.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/dark_world_wheel_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/bowser_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/buddy_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/tree_host.py"
@@ -1098,6 +1099,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_LIST_FILE}" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR NOT EXISTS "${PORT_REPO_ROOT_ABS}/build/pc-game-link-history.log"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/boot_closure.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/dark_world_wheel_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/bowser_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/buddy_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/tree_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"

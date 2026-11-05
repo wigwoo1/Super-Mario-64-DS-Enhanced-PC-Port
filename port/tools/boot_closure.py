@@ -29,7 +29,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjSeesaw_c_classInit_BOMB_SEESAW",
                  "daObjSeesaw_c_classInit_RC_SEESAW",
                  "daBar_c_classInit",
-                 "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit",
+                 "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
@@ -442,6 +442,11 @@ def main() -> int:
                                  '_ZN10dScStage_c13InitResourcesEv.cpp','_ZN10dScStage_c14GraphCallback1Ev.cpp'):
                     import particle_host
                     transformed=particle_host.transform(transformed,path.name)
+                    cpp_marker=True
+                    rewrites+=1
+                if path.name in ('d_a_obj_km1_kuruma.cpp','d_a_obj_km1_kurumajiku.cpp','daObjKurumajiku_c.cpp','daObjKuruma_c.cpp','func_ov002_020b6c54.c'):
+                    import dark_world_wheel_host
+                    transformed=dark_world_wheel_host.transform(root,transformed,path.name)
                     cpp_marker=True
                     rewrites+=1
                 if path.name in ('d_a_obj_km1_ukishima.cpp','daObjSeesaw_c.cpp','daObjRotateUpdownLift_c.cpp',

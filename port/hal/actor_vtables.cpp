@@ -461,6 +461,7 @@ static PcNativeActorProfile pc_koopa_flag_profile = {
 };
 extern "C" void *daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT();
 extern "C" void *daObjKm1_Ukishima_c_classInit();
+extern "C" unsigned char g_profile_KM1_KURUMA[],g_profile_KM1_KURUMAJIKU[];
 // Original ov043 KM1_UKISHIMA descriptor, constructor rebased to native code.
 static PcNativeActorProfile pc_dark_world_island_profile = {
     (void *)&daObjKm1_Ukishima_c_classInit,135,176,2,0,0x300000,0x1000000,0
@@ -725,6 +726,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[12] = &pc_star_switch_profile;
     data_020a4bb8_storage[29] = &pc_updown_lift_profile;
     data_020a4bb8_storage[135] = &pc_dark_world_island_profile;
+    data_020a4bb8_storage[136] = g_profile_KM1_KURUMA;
+    data_020a4bb8_storage[137] = g_profile_KM1_KURUMAJIKU;
     data_020a4bb8_storage[39] = &pc_battlefield_seesaw_profile;
     data_020a4bb8_storage[40] = &pc_battlefield_gate_profile;
     data_020a4bb8_storage[188] = &pc_koopa_race_profile;

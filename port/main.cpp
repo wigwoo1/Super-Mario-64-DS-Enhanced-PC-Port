@@ -2613,6 +2613,12 @@ static bool replay_course_route(const char *route_override=nullptr) {
             jump_until=tick+12;next_jump=tick+75;
         }
         if(tick<jump_until || (evading && tick<replay_reentry_jump_held_until))buttons|=2;
+        // Only the optional post-diamond QA route: release through the native
+        // slide landing lock, then request the original sliding jump uphill.
+        if(route_override && level==35 && dy>0 && std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE")) {
+            if((!std::strcmp(state,"St_ButtSlide_Main") && player->mStateWaitTimer==0) ||
+               !std::strcmp(state,"St_Jump_Main"))buttons|=2;
+        }
         // Height-aware route points represent walkable floor positions, not
         // transient jump arcs. Only advance after the player has landed at
         // the requested height; otherwise an overhead stair edge can make
@@ -3976,6 +3982,23 @@ static bool replay_dark_world_island_hold() {
             const int magnitude=std::hypot(dx,dz)>60*4096.0?22000:0;
             ntr::input_test_controls(true,tick-dismount_at<12?2:0,
                 static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));return true;
+        }
+    }
+    if(landed && !p->mHorzSpeed && !std::strcmp(pc_player_state_name(p),"St_Wait_Main")) {
+        if(const char *route=std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE")) {
+            static bool continued=false;
+            if(!continued) {
+                continued=true;replay_course_route_waypoint=0;replay_course_route_complete=false;
+                std::fprintf(stderr,"[native diamond ride] continue-route tick=%llu\n",static_cast<unsigned long long>(ntr::rt_frame()));
+            }
+        }
+    }
+    if(landed) {
+        if(const char *route=std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE")) {
+            // The QA route starts only after a confirmed, settled static landing.
+            static bool began=false;
+            if(!began && !p->mHorzSpeed && !std::strcmp(pc_player_state_name(p),"St_Wait_Main"))began=true;
+            if(began) {if(!replay_course_route(route))ntr::input_test_controls(true,0,0,0);return true;}
         }
     }
     ntr::input_test_controls(true,0,0,0);return true;

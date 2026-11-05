@@ -25,8 +25,22 @@ Tested executable SHA256:
 These routes use synthetic prerequisite saves; they do not prove earned
 campaign progression. Private saves, screenshots, ROM data and full game
 executables are excluded from public source and build kits. The remaining
-course has missing actors, including the rotating wheel and its four mounted
-carts. Original traversal from this far bank to the boss arena is unverified.
+course still has missing actors; the wheel integration is described below.
+Original traversal from this far bank to the boss arena is unverified.
 Do not describe the full course, full game or stable installation as accepted.
 The optional Wario route also has selected checks documented separately.
-The gameplay goal is paused for a model switch; publication does not resume it.
+Publication does not resume gameplay debugging or change the goal status.
+
+Later local integration: the wheel axle and its four carts now spawn and
+rotate with native mounted actor IDs. The recovered Vector3 initializer runs
+on a complete native array rather than an uninitialized 12-byte BSS label.
+A muted original-entry replay checks 1444 cart samples, all at the original
+400-unit radius and 300-unit depth offset. The previous diamond crossing
+regression also passes. Near-wheel rendering/collision and riding a cart have
+not yet been accepted; do not describe the complete wheel as playable.
+
+Post-diamond approach remains diagnostic: two ordinary-input QA variants did
+not reach the uphill crest. The trace enters St_StomachSlide_Main while the
+scoped optional jump helper checks St_ButtSlide_Main. No gameplay physics
+change or successful wheel approach is claimed. The QA continuation is opt-in
+via SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE; it is disabled for normal play.

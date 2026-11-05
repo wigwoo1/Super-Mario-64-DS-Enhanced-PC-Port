@@ -3250,3 +3250,5 @@ unresolved external symbol ?data_ov060_0211a7ac@@3P8dActor_c@@AEXXZQ1@
 unresolved external symbol _data_ov060_0211934c
 unresolved external symbol _data_ov060_02119358
 unresolved external symbol _data_ov060_02119364
+unresolved external symbol _data_ov043_02111b80
+unresolved external symbol _data_ov043_02111bc0
