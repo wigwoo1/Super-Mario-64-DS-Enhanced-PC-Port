@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "96da05dec10e04d4bc3ac624dbf3521b8c856cee6445dbfe69aed1cae2006430",
-      "bytes": 456896
+      "sha256": "229708fbeb37c169cdb79a0d61bbd7cf4314a0ebf88d8654e7d3e0707f79ff79",
+      "bytes": 458282
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "1dedc16efd0ba273e73029410eef3b9efab6c2d8eb6fdfe9f55dd2c84816ad2d",
-      "bytes": 252358
+      "sha256": "50f892003d458cc34aab1cb45e0901809c4db4d3a4d379f52cd17978c73391b2",
+      "bytes": 253706
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "a473f957d1ca2faa694e9a85d790ca63218b11541cbb21f1262835aa6f6fe2fc",
-      "bytes": 89340
+      "sha256": "a8658b6b54579e0f29ee7f80743e60dc7f442ac049548b63f1224edd0fa3e1d1",
+      "bytes": 89490
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6607,6 +6607,11 @@
       "path": "port/docs/native-bookshelf-wrong-hit-2026-10-29.txt",
       "sha256": "1081d81e638b49dcaa0bac2a0e6d524c715cbe972020eefb241e50992f46adc7",
       "bytes": 1683
+    },
+    {
+      "path": "port/docs/native-bowser-dark-world-2026-11-05.txt",
+      "sha256": "4b3b494d56b84d09f0b138d919b070bf7abe1160c563360aa54df7cc0cf63662",
+      "bytes": 2100
     },
     {
       "path": "port/docs/native-brick-character-rules-verified-2026-10-25.txt",
@@ -7145,8 +7150,8 @@
     },
     {
       "path": "port/docs/native-rainbow-wario-entry-diagnostic-2026-11-04.txt",
-      "sha256": "231fd355a89f9496ebfd7e1d5b433e487aae6c0470eb70aaa460bb3b3d9ddb6a",
-      "bytes": 1954
+      "sha256": "3c61f35a2d21deffe206535ad7aa8b5a532f7fc274a884cd5b50ba9f3a61f7a5",
+      "bytes": 10184
     },
     {
       "path": "port/docs/native-rebinding-verified-2026-10-22.txt",
@@ -7615,8 +7620,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "49c798e68e5e3b565d13d6930ec54f6d49444a035e5f57afa187717d57baddc7",
-      "bytes": 50908
+      "sha256": "f38dbbcd756fbdc6eea53adb3a41992f271688924dc24a0ca548726cb63a1913",
+      "bytes": 52471
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8085,8 +8090,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "4ef98c33b73ed4ec4a73e768892f2a4026147e184d1c075928ac40020277331b",
-      "bytes": 305088
+      "sha256": "edaaec8973e18374ac9dab56739197afb204ae79f870fc82196ac4afbc033b16",
+      "bytes": 333927
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9035,8 +9040,8 @@
     },
     {
       "path": "port/tools/battlefield_platform_host.py",
-      "sha256": "214854c603a10ceefdc469c4ea33b621c4e1f2db77cbd8d459f49830ce7e911a",
-      "bytes": 11010
+      "sha256": "8737641d16d3d9d3d1ab1d880434df0c9618d3a3e0e6c9d8c133a422ee7cae7e",
+      "bytes": 11867
     },
     {
       "path": "port/tools/bird_host.py",
@@ -9065,8 +9070,13 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "0cc3a399de49f6a5940e821e8ce4c8c85cfe142d6d7186afa5a678ab407edd07",
-      "bytes": 51062
+      "sha256": "56922e86509c706e70db7fdcb95f314df8343cef4021525814e60437abfa67de",
+      "bytes": 52048
+    },
+    {
+      "path": "port/tools/bowser_host.py",
+      "sha256": "cc94e5b6b7c6199e3bc6203934ef5cb9560d8866c91c56f80fedf6cbd91de4b0",
+      "bytes": 11011
     },
     {
       "path": "port/tools/buddy_host.py",

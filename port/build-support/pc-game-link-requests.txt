@@ -3230,3 +3230,23 @@ unresolved external symbol _data_ov036_02112bc8
 unresolved external symbol _data_ov036_02113b18
 unresolved external symbol _data_ov036_02113b1c
 unresolved external symbol _data_ov094_02136a1c
+unresolved external symbol _data_ov043_02111c00 referenced in function daObjKm1_Ukishima_c::InitResources
+unresolved external symbol ?data_ov060_0211a734@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a73c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a744@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a74c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a754@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a75c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a764@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a76c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a774@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a77c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a784@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a78c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a794@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a79c@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a7a4@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol ?data_ov060_0211a7ac@@3P8dActor_c@@AEXXZQ1@
+unresolved external symbol _data_ov060_0211934c
+unresolved external symbol _data_ov060_02119358
+unresolved external symbol _data_ov060_02119364

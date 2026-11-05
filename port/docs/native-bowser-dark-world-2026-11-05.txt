@@ -1,0 +1,32 @@
+Native Bowser and Dark World: selected diagnostic checks, unfinished game
+
+Native Bowser, his tail, fire, spike bombs and key remain behind the
+SM64DS_PC_BOWSER_PREVIEW environment option. Selected isolated tests verify
+Mario grabbing and spinning the tail, an ordinary throw into a native bomb,
+defeat, key pickup, original Save & Continue and restored castle control.
+A fresh-process repeat verifies another key pickup without duplicate saved
+credit. The saved key opens the original basement door; saving and reloading
+preserves that door's unlocked flag. Fire with Mario unlocked drops his cap;
+an empty eligible-character mask uses the existing coin branch instead of
+entering an unbounded cap-selection loop.
+
+Six native diamond platforms (KM1_UKISHIMA, actor 135) now spawn in course 35.
+Their original square paths, resources and velocity-based rider collision are
+connected. An ordinary-input test enters through the original castle's
+12-star Mario gate and trapdoor, dismisses the course intro, traverses the
+opening path, activates the timed switch, lands on its temporary brick and
+returns safely before expiry. Mario then boards a moving diamond, rides a
+full cycle and jumps onto the far bank. The final selected muted run has 504
+grounded static-floor samples after that landing, no deaths, no audio errors
+and unchanged isolated save files. Six focused input/session/camera tests pass.
+Tested executable SHA256:
+47103871263A53FCE26B0454DEA5F48F7CEFB18D49C468DC5B5E1C0D068E8842
+
+These routes use synthetic prerequisite saves; they do not prove earned
+campaign progression. Private saves, screenshots, ROM data and full game
+executables are excluded from public source and build kits. The remaining
+course has missing actors, including the rotating wheel and its four mounted
+carts. Original traversal from this far bank to the boss arena is unverified.
+Do not describe the full course, full game or stable installation as accepted.
+The optional Wario route also has selected checks documented separately.
+The gameplay goal is paused for a model switch; publication does not resume it.

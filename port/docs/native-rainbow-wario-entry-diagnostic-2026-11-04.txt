@@ -1,8 +1,44 @@
-Rainbow Ride Wario entrance pilot: diagnostic, not accepted
-=========================================================
+Rainbow Ride Wario entrance: selected entry verified, course route diagnostic
+===========================================================================
+
+Latest follow-up: Wario's carpet exit is also verified. His QA steering target
+is x=3300 instead of x=3100, braking earlier through original air controls.
+Other characters keep the original test target; no production physics changed.
+The 28000-frame muted replay repeats the original Wario entrance, jumps off
+the carpet at 16322 and has 44 grounded state samples plus 44 static-floor
+support samples on the stone platform before the next jump at 16626.
+A screenshot shows Wario standing on the platform. The native build and six
+focused tests pass; runtime exits normally with zero audio errors, zero audible
+output, no deaths and both isolated saves unchanged. The later maze-floor pilot
+times out at 20614, so the Wario lift route remains unverified. The carpet
+failure below describes the preceding run, not this latest follow-up.
+
+Latest selected replay: normal original castle entry is verified for Wario.
+The pilot waits for actual airborne state before releasing a jump request,
+faces Wario toward his travel direction before starting, and begins on clear
+floor at x=-1750, z=1850. The second jump keeps moving toward the ledge.
+No original character physics, state, pose or collision rules were changed.
+
+The original Player reports jump stages 0, 1 and 2 at ticks 13830, 13872 and
+13926. Wario lands on the raised floor at 14034, with 45 grounded samples
+before the rim jump. The original selector appears at 14379 and original
+course 28 starts at 14596 with character ID 2 and normal player control.
+The 28000-frame muted run exits normally, reports zero audio errors and
+zero audible samples, and leaves both isolated synthetic saves unchanged.
+Native build and six focused input/session/camera tests pass. A screenshot
+shows Wario standing on the native moving carpet after original entry.
+
+Acceptance ends at entry. Wario misses the later carpet exit long jump and
+dies at 16580; the copied Luigi course route has not qualified his lift ride.
+The QA entry helper also attempts another entrance after that death; that
+attempt is not accepted. Future lifecycle testing should distinguish death
+from an intentional Exit Course before restarting the castle route.
+Synthetic prerequisites do not establish earned campaign progression.
+
+Earlier failed variants (historical diagnostic evidence):
 
 The accepted Luigi original-entry and repeated lift route remains documented
-separately. Wario has not entered Rainbow Ride or ridden its lift in this replay.
+separately. The following early Wario variants did not establish course entry.
 
 The original BackFlip Init gives Luigi a vertical launch of 0x4c000 and other
 characters 0x3e000. The shared aerial state also gives Luigi a descending spin.
@@ -28,5 +64,84 @@ airborne state before labeling a jump, and plan a continuous-speed combo path
 using original collision geometry. Preserve original jump speeds, combo rules,
 the accepted Luigi route and strict supported-landing checks.
 
-This change adds diagnostic QA only. It does not supersede the previously
-verified Luigi build kit or justify a new verified runtime release.
+This change adds QA only. It does not supersede the previously verified Luigi
+build kit or qualify the unfinished Wario course route for a verified release.
+
+Later bounded acceptance: Wario's first two maze shelves (November 4).
+
+Two third-jump target variants produced essentially the same failed trajectory.
+The original air-control worker calls ApproachAngle with divisor 16 and a
+256-angle-unit step cap. Actual position traces confirmed the same saturated
+turn rate. Beginning the turn during the second jump allowed the subsequent
+triple jump to reach the first shelf without changing original physics.
+
+The next shelf exposed a QA false positive: the ledge-hang state can report
+not airborne at shelf height. The pilot now requires normal Walk or Wait
+before declaring landing and keeps ordinary inward input during the climb.
+A negative regression check rejects the earlier ledge-hang acceptance.
+
+The corrected 28,000-frame muted run exited normally. The first shelf had
+eight paired standing/static-floor samples; the second had twelve. Original
+castle entry also passed, isolated saves were unchanged and audio errors were
+zero. Build SHA256:
+5BEEA7387DE2E08C79EF80266EE008227FA59DE92EEF6A17F6D2BADD77851B8B
+The reviewed screenshot shows the second-shelf pull-up animation; the later
+standing proof comes from state and collision records.
+
+This is not whole-maze or lift acceptance. The later Luigi-style backflip
+route fails for Wario. His next triple-jump route is currently diagnostic,
+and none of this evidence establishes earned campaign prerequisites.
+
+2026-11-05 bounded Wario ramp verification
+The opt-in input pilot now waits for the original landing state to yield
+to walking before requesting jump three, while the native combo timer remains
+active. It releases movement when actual ground contact reaches the flat
+ramp top. A muted 24,000-frame replay verified the original castle entrance,
+first maze shelves, upper pillar and central crossing, followed by supported
+ramp ascent and 278 consecutive stationary samples on the flat top.
+Executable SHA256: D267042BC1C0B369F14A60D41139A5D6EC918F57642B168AE41E35B1BB02A5A1
+Original movement physics are unchanged. This is test-route work.
+The subsequent jump to the higher shelf missed; the remaining maze route,
+Wario lift ride and course re-entry are not verified by this replay.
+Synthetic campaign prerequisites were used; this is not earned progression.
+
+2026-11-05 Wario higher shelf verification
+The optional Wario pilot brakes its backflip immediately and keeps inward
+controls through the original ledge climb. A muted 26,000-frame replay
+confirmed standing at the original 1609.08-height shelf, with 184 continuous
+stationary static-floor samples before deliberate onward travel.
+Executable SHA256: 4E6AF8B8DF9B2B452FCBEB305D8E4D4C7E768102DA55B37896837386C80C3231
+Earlier castle entrance, maze shelves and ramp ascent/stopping checks passed.
+This changes test inputs, not original movement physics. The subsequent lift
+reboarding route ends in a ledge hang; a full Wario lift cycle and original
+course re-entry remain unverified. Synthetic campaign prerequisites were used.
+
+2026-11-05 Wario lift return verified
+A muted 28,000-frame replay entered Rainbow Ride through the original castle
+route, rode the lift down, landed on the bank, jumped back onto the rising
+lift, reached its top, and remained aboard for its subsequent descent.
+The pilot uses a low long jump with early opposite-stick braking to reach
+the bank, then simultaneous crouch+jump while running back. Original Crouch
+Init accepts that jump before resetting travel yaw to the lagging body yaw.
+These are test-input changes; original character physics are unchanged.
+Executable SHA256: CC8DD13764D9D048D89F32B12DB462268D8BFBB5D09423D77E77281E60D2670B
+Reboarding tick 25600; top tick 25814. All 42 sampled ascent contacts remained
+supported by the same lift, covering 1030 vertical units. No damage or deaths;
+audio output muted; isolated saves unchanged. Native build and six focused
+input/session/camera tests passed. Earlier route checks also passed.
+Runtime screenshots reviewed. Course re-entry and earned campaign progression
+remain unverified: this test used synthetic campaign prerequisites.
+
+2026-11-05 Wario original course re-entry verified
+A muted 48,000-frame replay repeated the lift return, exited through the
+original pause menu, traversed the castle, and re-entered Rainbow Ride through
+the original entrance and selector. Both Wario triple jumps and supported
+castle-ledge landings were checked. The old lift was cleaned up and a fresh
+lift spawned at its original position/state. Wario remained controllable,
+with no damage/deaths and unchanged isolated saves. Screenshots reviewed.
+Executable SHA256 remains CC8DD13764D9D048D89F32B12DB462268D8BFBB5D09423D77E77281E60D2670B.
+The second visit held neutral at spawn; riding the fresh lift remains untested.
+Synthetic prerequisites remain a limitation; this is not earned progression.
+
+2026-11-05 Wario fresh-lift repeat after original re-entry verified
+A muted 55,000-frame diagnostic replay repeated Wario's lift cycle, original course exit, castle traversal and original Rainbow Ride entry. Old lift UID192 was cleaned up; fresh UID502 spawned at the same position, armed and rider-free. On the second visit Wario boarded at48212, rode down to48472, landed on the bank/rearmed at48652, jumped back at48668, reboarded at48702 and reached the top at48914. The checker confirmed 41 supported contacts over 1000 vertical units on that return ascent, plus the second descent, grounded bank landing, clean bottom stop, muted output, unchanged isolated saves, no damage/deaths and exit0. The in-game screenshot at frame49100 was reviewed; Wario is visible at the bank after reboarding. Executable SHA256 CC8DD13764D9D048D89F32B12DB462268D8BFBB5D09423D77E77281E60D2670B. This selected Wario route uses synthetic prerequisites and does not establish earned campaign progression or other character routes. Game remains unfinished.

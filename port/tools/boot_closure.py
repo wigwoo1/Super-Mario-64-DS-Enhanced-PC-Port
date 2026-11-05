@@ -14,6 +14,7 @@ import sys
 
 
 DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
+                 "daKpa_c_classInit", "daKpaTail_c_classInit", "daKpaFire_c_classInit", "daKirai_c_classInit", "daObjKey_c_classInit_OBJ_KEY",
                  "_ZN10dScStage_c14GraphCallback1Ev",
                  "func_0204c194", "func_0204c0a8", "func_0204c0e8",
                  "daKinopio_c_classInit", "_ZN11daKinopio_cD1Ev",
@@ -28,7 +29,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjSeesaw_c_classInit_BOMB_SEESAW",
                  "daObjSeesaw_c_classInit_RC_SEESAW",
                  "daBar_c_classInit",
-                 "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT",
+                 "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
@@ -443,7 +444,7 @@ def main() -> int:
                     transformed=particle_host.transform(transformed,path.name)
                     cpp_marker=True
                     rewrites+=1
-                if path.name in ('daObjSeesaw_c.cpp','daObjRotateUpdownLift_c.cpp',
+                if path.name in ('d_a_obj_km1_ukishima.cpp','daObjSeesaw_c.cpp','daObjRotateUpdownLift_c.cpp',
                                  'd_a_obj_b_swdoor.cpp','daObjSwdoor_c.cpp'):
                     import battlefield_platform_host
                     transformed=battlefield_platform_host.transform(transformed,path.name)
@@ -558,6 +559,22 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daIbl_c.cpp':
                     import ironball_host
                     transformed=ironball_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daKpaFire_c.cpp':
+                    import bowser_host
+                    transformed=bowser_host.transform_fire(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjKey_c.cpp':
+                    import bowser_host
+                    transformed=bowser_host.transform_key(root,transformed)
+                    rewrites+=1
+                if path.name == 'daKirai_c.cpp':
+                    import bowser_host
+                    transformed=bowser_host.transform_mine(root,transformed)
+                    rewrites+=1
+                if path.name == 'daKpa_c.cpp':
+                    import bowser_host
+                    transformed=bowser_host.transform(root,transformed)
                     rewrites+=1
                 if path.name == 'daOwl_c.cpp':
                     import owl_host

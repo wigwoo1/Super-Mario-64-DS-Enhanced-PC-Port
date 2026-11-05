@@ -13,6 +13,9 @@
 #include "dBgCh_Gnd.h"
 #include "daKrb_c.h"
 #include "daBombking_c.h"
+#include "daKpa_c.h"
+#include "daKpaTail_c.h"
+#include "daKirai_c.h"
 #include "daBmb_c.h"
 #include "daOwl_c.h"
 #include "hal/pc_session.h"
@@ -313,13 +316,16 @@ static bool replay_toad_controls() {
     if(tick%120==0)event("observe");
     ntr::input_test_controls(true,buttons,0,0);return true;
 }
-// Opt-in isolated save-flow replay for the natural basement drainage event.
+// Opt-in isolated save-flow replay after basement drainage or key-door unlock.
 // This presses the same Start/D-pad/A/shoulder inputs a player uses; it never
 // calls SaveCurrentFile directly and never edits the save flags.
 static bool replay_drain_save_controls() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *enabled=std::getenv("SM64DS_PC_TEST_DRAIN_SAVE");
-    if(!automation || std::strcmp(automation,"1") || !enabled || std::strcmp(enabled,"1"))return false;
+    const char *door_mode=std::getenv("SM64DS_PC_TEST_BASEMENT_DOOR_SAVE");
+    const bool door_save=door_mode && !std::strcmp(door_mode,"1");
+    if(!automation || std::strcmp(automation,"1") ||
+       (!door_save && (!enabled || std::strcmp(enabled,"1"))))return false;
     static unsigned phase=0;
     static uint64_t pulse_until=0,next_action=0;
     const auto tick=ntr::rt_frame();
@@ -334,14 +340,16 @@ static bool replay_drain_save_controls() {
     if(phase==0) {
         if(data_0209f2f8!=4 || !player || player->aliveState!=1 || player->mIsAirborne ||
            std::strcmp(pc_player_state_name(player),"St_Wait_Main") ||
-           !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2&0x80000u))return false;
+           (door_save ? (!replay_course_route_complete ||
+                         !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags1&0x100u)) :
+                        !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2&0x80000u)))return false;
         bool first=false,second=false;
         for(auto *a=dActor_c::FindWithActorID(34,nullptr);a;a=dActor_c::FindWithActorID(34,a)) {
             auto *pillar=static_cast<daObjC0_Switch_c *>(a);
             if(a->aliveState!=1 || !pillar->mPressed)continue;
             if(a->mPosZ < -500*4096)first=true;else second=true;
         }
-        if(!first || !second)return false;
+        if(!door_save && (!first || !second))return false;
         phase=1;pulse_until=tick+3;buttons=8;event("open-pause");
         ntr::input_test_controls(true,buttons,0,0);return true;
     }
@@ -873,7 +881,10 @@ static bool replay_carpet_reboard() {
     }
     if(phase==8 && !p->mIsAirborne && p->mPosY< -1000*4096 && std::abs(p->mPosX-3100*4096)<350*4096){phase=9;event("landed-platform");}
     if(phase>=1 && phase<=3 || phase>=6 && phase<=8){
-        const double dx=phase>=6?3100-p->mPosX/4096.0:(phase==1?1000:carpet->mPosX/4096.0-p->mPosX/4096.0);
+        // Wario retains westward speed longer on this transfer. Aim farther
+        // inside the bank so ordinary air steering brakes before its far edge.
+        const double exitX=p->mCharacter==2?3300:3100;
+        const double dx=phase>=6?exitX-p->mPosX/4096.0:(phase==1?1000:carpet->mPosX/4096.0-p->mPosX/4096.0);
         const double dz=phase>=6?-36-p->mPosZ/4096.0:(phase==1?0:carpet->mPosZ/4096.0-p->mPosZ/4096.0);
         const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         sx=static_cast<int16_t>(std::sin(angle)*32700);sy=static_cast<int16_t>(-std::cos(angle)*32700);
@@ -917,35 +928,44 @@ static bool replay_rainbow_castle_entry() {
     if(phase==0 && p->mCharacter==2 && std::getenv("SM64DS_PC_TEST_RAINBOW_WARIO_TRIPLE")){
         phase=10;event("wario-combo-ready");
     }
-    if(phase==10 && !p->mIsAirborne && p->mHorzSpeed==0){
-        buttons=2;phase=11;launch=tick;event("wario-first-jump");
-        return controls();
+    auto warioEvent=[&](const char *name){event(name);std::fprintf(stderr,
+        "[wario jump input] tick=%llu phase=%u combo=%u timer=%u speed=%d vertical=%d airborne=%u\n",
+        static_cast<unsigned long long>(tick),phase,unsigned(p->mJumpComboStage),
+        unsigned(p->mJumpComboTimer),p->mHorzSpeed,p->mVertSpeed,unsigned(p->mIsAirborne));};
+    // Trigger phases keep the button held until the original Player reports
+    // airborne. A render frame is not proof that a game input tick consumed it.
+    if(phase==10 && !p->mIsAirborne){
+        const int heading=static_cast<int>(std::atan2(-2800-p->mPosX/4096.0,1850-p->mPosZ/4096.0)*65536.0/6.283185307179586);
+        if(std::abs(static_cast<int16_t>(p->mAngleY-heading))>800)aim(-2800,1850,9000);
+        else if(p->mHorzSpeed==0){phase=11;launch=tick;warioEvent("wario-first-request");}
     }
     if(phase==11){
+        buttons=2;
+        if(p->mIsAirborne){phase=12;launch=tick;warioEvent("wario-first-airborne");}
+    }else if(phase==12){
         buttons=p->mVertSpeed>=0?2:0;
-        if(tick-launch>10 && !p->mIsAirborne){phase=12;launch=tick;buttons=0;event("wario-first-land");return controls();}
-    }
-    if(phase==12){
-        buttons=tick-launch>=4?2:0;
-        if(p->mIsAirborne){phase=13;launch=tick;event("wario-second-jump");}
-    }
-    if(phase==13){
-        buttons=p->mVertSpeed>=0?2:0;
-        aim(p->mVertSpeed>=0?-1600:-2800,1850,30000);
-        if(tick-launch>10 && !p->mIsAirborne){phase=14;launch=tick;buttons=0;event("wario-second-land");return controls();}
-    }
-    if(phase==14){
+        if(!p->mIsAirborne){phase=13;launch=tick;buttons=0;warioEvent("wario-first-land");}
+    }else if(phase==13){
+        aim(-2800,1850,30000);buttons=tick-launch>=4?2:0;
+        if(p->mIsAirborne){phase=14;launch=tick;warioEvent("wario-second-airborne");}
+    }else if(phase==14){
+        // Keep running toward the ledge through the whole second jump. The
+        // previous midair reversal discarded the speed required for stage 2.
+        aim(-2800,1850,30000);buttons=p->mVertSpeed>=0?2:0;
+        if(!p->mIsAirborne){phase=15;launch=tick;buttons=0;warioEvent("wario-second-land");}
+    }else if(phase==15){
         aim(-2800,1850,30000);buttons=tick-launch>=4?2:0;
         if(p->mIsAirborne){
-            phase=p->mJumpComboStage==2?15:4;launch=tick;
-            event(phase==15?"wario-triple-jump":"wario-combo-rejected");
+            phase=p->mJumpComboStage==2?16:4;launch=tick;
+            warioEvent(phase==16?"wario-triple-jump":"wario-combo-rejected");
         }
-    }
-    if(phase==15){
-        buttons=p->mVertSpeed>=0?2:0;aim(-2800,1850,30000);
-        if(tick-launch>10 && !p->mIsAirborne){
+    }else if(phase==16){
+        buttons=p->mVertSpeed>=0?2:0;
+        if(std::hypot(-2800-p->mPosX/4096.0,1850-p->mPosZ/4096.0)>35)aim(-2800,1850,30000);
+        const bool ledge=!std::strcmp(state,"St_LedgeGrab_Main") || !std::strcmp(state,"St_LedgeHang_Main");
+        if(!p->mIsAirborne && !ledge){
             phase=p->mGroundY>2800*4096?2:4;buttons=0;sx=sy=0;
-            event(phase==2?"wario-ledge-landed":"wario-ledge-missed");
+            warioEvent(phase==2?"wario-ledge-landed":"wario-ledge-missed");
         }
     }
     if(phase==0){
@@ -974,7 +994,7 @@ static bool replay_rainbow_disc() {
     for(auto *a=dActor_c::FindWithActorID(129,nullptr);a;a=dActor_c::FindWithActorID(129,a))
         if(a->mPosX>1500*4096 && a->mPosX<2000*4096 && std::abs(a->mPosZ)<100*4096){disc=a;break;}
     if(!p || !disc)return false;
-    struct ReplayState { unsigned uid=0; unsigned phase=0; bool westTransfer=false; uint64_t began=0; uint64_t launch=0; uint64_t transfer=0; uint64_t poleJump=0; uint64_t poleAttach=0; uint64_t fenceJump=0; bool reported=false; uint64_t donutReturnStart=0; uint64_t donutReturnFlip=0; bool shelfFacing=false; int tier3Leg=0; uint64_t nextShelfLaunch=0; bool shelfScanDone=false; uint64_t upperRampLaunch=0; uint64_t mazeTopLaunch=0; uint64_t bottomReady=0; uint64_t offJump=0; uint64_t bankReady=0; uint64_t backJump=0; };
+    struct ReplayState { unsigned uid=0; unsigned phase=0; bool westTransfer=false; uint64_t began=0; uint64_t launch=0; uint64_t transfer=0; uint64_t poleJump=0; uint64_t poleAttach=0; uint64_t fenceJump=0; bool reported=false; uint64_t donutReturnStart=0; uint64_t donutReturnFlip=0; bool shelfFacing=false; int tier3Leg=0; uint64_t nextShelfLaunch=0; bool shelfScanDone=false; uint64_t upperRampLaunch=0; uint64_t mazeTopLaunch=0; uint64_t bottomReady=0; uint64_t offJump=0; unsigned bankBrake=0; uint64_t bankReady=0; uint64_t backJump=0; };
     static ReplayState replay;
     if(replay.uid!=disc->uniqueID){replay=ReplayState{};replay.uid=disc->uniqueID;replay_rainbow_lift_return_complete=false;}
     auto &phase=replay.phase;
@@ -1287,6 +1307,8 @@ static bool replay_rainbow_disc() {
         sx=static_cast<int16_t>(std::sin(angle)*32700);sy=static_cast<int16_t>(-std::cos(angle)*32700);
     }
     if(phase==14 && courseTick>=6300 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_FLOOR")){phase=15;transfer=tick;event("maze-floor-approach");}
+    const bool warioMaze=p->mCharacter==2 && std::getenv("SM64DS_PC_TEST_RAINBOW_WARIO_TRIPLE");
+    if(phase==16 && warioMaze){phase=160;launch=tick;event("wario-maze-runway");}
     if(phase>=15 && phase<=18){
         const double tx=-3300, tz=phase<=16?600:0;
         const double distance=std::hypot(tx-p->mPosX/4096.0,tz-p->mPosZ/4096.0);
@@ -1312,6 +1334,43 @@ static bool replay_rainbow_disc() {
         }
         if(tick-transfer>1400 && phase!=19){phase=6;buttons=0;sx=sy=0;event("maze-floor-timeout");}
     }
+    if(phase>=160 && phase<=169){
+        auto aimMaze=[&](double x,double z,int magnitude){
+            const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);
+        };
+        if(phase==160){
+            const double distance=std::hypot(-3800-p->mPosX/4096.0,650-p->mPosZ/4096.0);
+            if(distance>60)aimMaze(-3800,650,9000);
+            else if(p->mHorzSpeed!=0){sx=sy=0;}
+            else if(distance>25)aimMaze(-3800,650,9000);
+            else {phase=161;event("wario-maze-positioned");}
+        }else if(phase==161){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0x4000)))>800)aimMaze(p->mPosX/4096.0+500,650,9000);
+            else if(p->mHorzSpeed==0){phase=162;buttons=2;event("wario-maze-first-request");}
+        }else if(phase==162){
+            buttons=2;
+            if(p->mIsAirborne){phase=163;event("wario-maze-first-airborne");}
+        }else if(phase==163){
+            buttons=p->mVertSpeed>=0?2:0;
+            if(!p->mIsAirborne){phase=164;launch=tick;buttons=0;event("wario-maze-first-land");}
+        }else if(phase==164){
+            aimMaze(-2800,650,30000);buttons=tick-launch>=4?2:0;
+            if(p->mIsAirborne){phase=165;event("wario-maze-second-airborne");}
+        }else if(phase==165){
+            // Turn during jump two; native air yaw is capped at 256 units per update.
+            aimMaze(-3400,-500,30000);buttons=p->mVertSpeed>=0?2:0;
+            if(!p->mIsAirborne){phase=166;launch=tick;buttons=0;event("wario-maze-second-land");}
+        }else if(phase==166){
+            aimMaze(-3400,-500,30000);buttons=tick-launch>=4?2:0;
+            if(p->mIsAirborne){phase=p->mJumpComboStage==2?167:169;event(phase==167?"wario-maze-triple":"wario-maze-combo-rejected");}
+        }else if(phase==167){
+            aimMaze(-3400,-500,30000);buttons=p->mVertSpeed>=0?2:0;
+            const bool ledge=!std::strcmp(state,"St_LedgeGrab_Main") || !std::strcmp(state,"St_LedgeHang_Main");
+            if(!p->mIsAirborne && !ledge){phase=std::abs(p->mPosY+1091*4096)<40*4096?18:169;buttons=0;sx=sy=0;event(phase==18?"wario-maze-shelf-landed":"wario-maze-shelf-missed");}
+        }
+        if(tick-transfer>1400 && phase>=160 && phase<169){phase=169;buttons=0;sx=sy=0;event("wario-maze-timeout");}
+    }
     if(phase==19 && courseTick>=7100 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_CLIMB")){phase=20;transfer=tick;event("maze-tier2-facing");}
     if(phase>=20 && phase<=23){
         const double cameraAngle=GetAngleToCamera(0)*6.283185307179586/65536.0;
@@ -1326,13 +1385,72 @@ static bool replay_rainbow_disc() {
             const double a=std::atan2(dx,dz)-cameraAngle,mag=std::hypot(dx,dz)<30?0:22000;
             sx=static_cast<int16_t>(std::sin(a)*mag);sy=static_cast<int16_t>(-std::cos(a)*mag);
             if(tick-launch<100)buttons=2;
-            if(!p->mIsAirborne && tick-launch>15 && std::abs(p->mPosY+691*4096)<40*4096 && p->mPosX> -3822*4096 && p->mPosX< -3522*4096){phase=23;buttons=0;sx=sy=0;event("maze-tier2-landed");}
+            if(!p->mIsAirborne && (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main")) && tick-launch>15 && std::abs(p->mPosY+691*4096)<40*4096 && p->mPosX> -3822*4096 && p->mPosX< -3522*4096){phase=23;buttons=0;sx=sy=0;event("maze-tier2-landed");}
         }
-        if(phase==23 && !p->mIsAirborne && p->mHorzSpeed==0){phase=24;event("maze-tier2-done");}
+        if(phase==23 && !p->mIsAirborne && p->mHorzSpeed==0 && (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"))){phase=24;event("maze-tier2-done");}
         if(tick-transfer>900 && phase!=24){phase=6;buttons=0;sx=sy=0;event("maze-tier2-timeout");}
     }
     
     if(phase==24 && courseTick>=8000 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TIER3")){phase=25;transfer=tick;event("maze-tier3-corner");}
+    // Wario uses the eastern 400-unit step instead of Luigi's western detour.
+    if(phase==25 && warioMaze){phase=170;event("wario-east-step-approach");}
+    if(phase>=170 && phase<=184){
+        auto aim=[&](double x,double z,int mag){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*mag);sy=static_cast<int16_t>(-std::cos(a)*mag);};
+        if(phase==170){
+            const double d=std::hypot(-3610-p->mPosX/4096.0,170-p->mPosZ/4096.0);
+            if(d>60)aim(-3610,170,9000);
+            else if(p->mHorzSpeed!=0){sx=sy=0;}
+            else if(d>15)aim(-3610,170,9000);
+            else {phase=171;event("wario-east-step-positioned");}
+        }else if(phase==171){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0xc000)))>800)aim(p->mPosX/4096.0-500,170,9000);
+            else if(p->mHorzSpeed==0){phase=172;launch=tick;}
+        }else if(phase==172){
+            if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-launch>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+            if(p->mState==&data_ov002_0211052c){phase=173;launch=tick;event("wario-east-step-backflip");}
+        }else if(phase==173){
+            aim(-3380,170,22000);if(tick-launch<100)buttons=2;
+            if(!p->mIsAirborne && (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"))
+                && std::abs(p->mPosY+291*4096)<40*4096 && p->mPosX>-3522*4096 && p->mPosX<-3222*4096){
+                phase=174;launch=tick;buttons=0;sx=sy=0;event("wario-east-step-landed");
+            }
+        }else if(phase==174 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_NEXT_SHELF") && tick-launch>90){
+            phase=175;transfer=tick;event("wario-east-upper-facing");
+        }else if(phase==175){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0xc000)))>800)aim(p->mPosX/4096.0-500,170,9000);
+            else if(p->mHorzSpeed==0){phase=176;launch=tick;}
+        }else if(phase==176){
+            if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-launch>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+            if(p->mState==&data_ov002_0211052c){phase=177;launch=tick;event("wario-east-upper-backflip");}
+        }else if(phase==177){
+            aim(-3120,170,22000);if(tick-launch<100)buttons=2;
+            if(!p->mIsAirborne && (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"))
+                && std::abs(p->mPosY-309*4096)<40*4096 && p->mPosX>-3222*4096 && p->mPosX<-3022*4096){
+                phase=178;launch=tick;buttons=0;sx=sy=0;event("wario-east-upper-landed");
+            }
+        }else if(phase==178 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_UPPER_RAMP") && tick-launch>90){
+            phase=179;transfer=tick;event("wario-central-facing");
+        }else if(phase==179){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0x4000)))>800)aim(p->mPosX/4096.0+500,170,9000);
+            else if(p->mHorzSpeed==0){phase=180;launch=tick;}
+        }else if(phase==180){
+            if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-launch>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;
+            if(p->mState==&data_ov002_0211052c){phase=181;launch=tick;event("wario-central-backflip");}
+        }else if(phase==181){
+            aim(-3620,170,22000);if(tick-launch<100)buttons=2;
+            if(p->mPosX<=-3450*4096){phase=182;buttons=0;sx=sy=0;event("wario-central-coast");}
+        }else if(phase==182){
+            if(!p->mIsAirborne && (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"))){
+                const bool landed=std::abs(p->mPosY-109*4096)<40*4096 && p->mPosX<-3522*4096;
+                phase=landed?184:183;launch=tick;event(landed?"wario-central-landed":"wario-central-missed");
+            }
+        }else if(phase==184 && tick-launch>90 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_UPPER_RAMP")){
+            phase=86;transfer=tick;event("wario-central-ramp-connect");
+        }
+        if(tick-transfer>1200 && phase<174){phase=183;buttons=0;sx=sy=0;event("wario-east-step-timeout");}
+        if(tick-transfer>900 && phase>=175 && phase<178){phase=183;buttons=0;sx=sy=0;event("wario-east-upper-timeout");}
+        if(tick-transfer>900 && phase>=179 && phase<183){phase=183;buttons=0;sx=sy=0;event("wario-central-timeout");}
+    }
     if(phase>=25 && phase<=29){
         const double ca=GetAngleToCamera(0)*6.283185307179586/65536.0;
         auto aim=[&](double x,double z,double magnitude){const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-ca;sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);};
@@ -1447,10 +1565,56 @@ static bool replay_rainbow_disc() {
         phase=86;transfer=tick;event("maze-upper-ramp-edge-approach");
     }
     if(phase==86){
-        const double dx=-3555.0-p->mPosX/4096.0,dz=-60.0-p->mPosZ/4096.0;
+        const double dx=-3555.0-p->mPosX/4096.0,dz=(warioMaze?170.0:-60.0)-p->mPosZ/4096.0;
         const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
         if(std::hypot(dx,dz)>25){sx=static_cast<int16_t>(std::sin(a)*14000);sy=static_cast<int16_t>(-std::cos(a)*14000);}
-        else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=76;transfer=tick;event("maze-upper-ramp-edge-ready");}}
+        else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0){phase=warioMaze?185:76;transfer=tick;event("maze-upper-ramp-edge-ready");}}
+    }
+    if(warioMaze && phase>=185 && phase<=191){
+        buttons=0;sx=sy=0;
+        auto aimRamp=[&](double x,double z,int magnitude){
+            const double a=std::atan2(x-p->mPosX/4096.0,z-p->mPosZ/4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(a)*magnitude);sy=static_cast<int16_t>(-std::cos(a)*magnitude);
+        };
+        if(phase==185){
+            if(std::abs(int(static_cast<int16_t>(p->mAngleY-0x8000)))>800)aimRamp(p->mPosX/4096.0,-1000,9000);
+            else if(p->mHorzSpeed==0){phase=186;buttons=2;event("wario-ramp-first-request");}
+        }else if(phase==186){
+            buttons=2;
+            if(p->mIsAirborne){phase=187;event("wario-ramp-first-airborne");}
+        }else if(phase==187){
+            buttons=p->mVertSpeed>=0?2:0;
+            if(!p->mIsAirborne){phase=188;launch=tick;buttons=0;event("wario-ramp-first-land");}
+        }else if(phase==188){
+            aimRamp(p->mPosX/4096.0,-1000,30000);buttons=tick-launch>=4?2:0;
+            if(p->mIsAirborne){phase=189;event("wario-ramp-second-airborne");}
+        }else if(phase==189){
+            // Preserve the exposed eastern runway through jump two. Turning west
+            // in the air moved the third takeoff beneath the ramp's low underside.
+            aimRamp(-3555,-1000,30000);buttons=p->mVertSpeed>=0?2:0;
+            if(!p->mIsAirborne){phase=190;launch=tick;buttons=0;event("wario-ramp-second-land");}
+        }else if(phase==190){
+            aimRamp(-4500,-200,30000);
+            // Land accepts buffered jumps before ordinary ground steering. Wait
+            // for an observed westward travel heading, within the original combo window.
+            const bool walking=!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main");
+            const bool westward=std::abs(int(static_cast<int16_t>(p->mPrevAngleY-0xc000)))<0x2000;
+            if(tick-launch>=4 && walking && westward && p->mJumpComboTimer>1)buttons=2;
+            if(p->mIsAirborne){phase=p->mJumpComboStage==2?191:183;upperRampLaunch=tick;event(phase==191?"wario-ramp-triple":"wario-ramp-combo-rejected");}
+            else if(tick-launch>4 && p->mJumpComboTimer<=1){phase=183;buttons=0;sx=sy=0;event("wario-ramp-turn-window-expired");}
+        }else if(phase==191){
+            aimRamp(-4220,-200,30000);buttons=p->mVertSpeed>=0?2:0;
+            const bool ledge=!std::strcmp(state,"St_LedgeGrab_Main") || !std::strcmp(state,"St_LedgeHang_Main");
+            if(!p->mIsAirborne && !ledge){
+                const bool ramp=p->mGroundY>500*4096 && p->mPosX>=-4322*4096 && p->mPosX<=-3721*4096;
+                phase=ramp?78:183;buttons=0;sx=sy=0;event(ramp?"wario-ramp-forward-contact":"wario-ramp-triple-missed");
+            }
+        }
+        if(phase>=188 && phase<=191 && tick%2==0)
+            std::fprintf(stderr,"[wario ramp trajectory] tick=%llu phase=%u x=%d y=%d z=%d vy=%d speed=%d facing=%d sphere=%u combo=%u travel=%d combo_timer=%u state=%s\n",
+                static_cast<unsigned long long>(tick),phase,p->mPosX,p->mPosY,p->mPosZ,p->mVertSpeed,p->mHorzSpeed,int(p->mAngleY),
+                unsigned(p->mMeshClsn.mSphereClsn.flags),unsigned(p->mJumpComboStage),int(p->mPrevAngleY),unsigned(p->mJumpComboTimer),state);
+        if(tick-transfer>900 && phase>=185 && phase<=191){phase=183;buttons=0;sx=sy=0;event("wario-ramp-combo-timeout");}
     }
     if(phase==76){
         constexpr double tx=-4080.0,tz=-60.0;
@@ -1474,7 +1638,8 @@ static bool replay_rainbow_disc() {
         if(std::hypot(dx,dz)>30){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
         else sx=sy=0;
         if(tick-upperRampLaunch<100)buttons=2;
-        if(!p->mIsAirborne && tick-upperRampLaunch>15){
+        if(!p->mIsAirborne && tick-upperRampLaunch>15 &&
+           (!warioMaze || (std::strcmp(state,"St_LedgeGrab_Main") && std::strcmp(state,"St_LedgeHang_Main")))){
             const double x=p->mPosX/4096.0,z=p->mPosZ/4096.0;
             if(p->mGroundY>500*4096 && x>=-4322 && x<=-3721 && z>=-337 && z<=265){
                 phase=78;buttons=0;sx=sy=0;event("maze-upper-ramp-landed");
@@ -1489,13 +1654,30 @@ static bool replay_rainbow_disc() {
         // uphill stick input through landing instead of letting slope gravity
         // reverse speed while Luigi is still facing east after his backflip.
         buttons=0;
+        // data_0209f49e is the pressed-edge word, not held keys. Release during
+        // the six-update landing lock so a fresh edge reaches ButtSlide after it.
+        if(warioMaze && ((!std::strcmp(state,"St_ButtSlide_Main") && p->mStateWaitTimer==0) || !std::strcmp(state,"St_Jump_Main")))buttons=2;
+        if(warioMaze && !std::strcmp(state,"St_ButtSlide_Main") && tick%2==0)
+            std::fprintf(stderr,"[wario ramp jump gate] tick=%llu wait=%u phase=%u airborne=%u request=%u\n",
+                static_cast<unsigned long long>(tick),unsigned(p->mStateWaitTimer),unsigned(p->mStatePhase),unsigned(p->mIsAirborne),unsigned(buttons));
         const double dx=-4220.0-p->mPosX/4096.0,dz=-60.0-p->mPosZ/4096.0;
         const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-        if(std::hypot(dx,dz)>25){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
+        const bool warioOnTop=warioMaze && !p->mIsAirborne && p->mGroundY>950*4096 &&
+            p->mPosX>=-4322*4096 && p->mPosX<=-4120*4096;
+        // The flat top is the destination. Release controls on first confirmed
+        // contact so running speed cannot circle the small point target forever.
+        if(warioOnTop){
+            sx=sy=0;buttons=0;
+            if(p->mHorzSpeed==0 && !std::strcmp(state,"St_Wait_Main")){phase=79;event("maze-upper-ramp-stable");}
+        }else if(std::hypot(dx,dz)>25){sx=static_cast<int16_t>(std::sin(a)*26000);sy=static_cast<int16_t>(-std::cos(a)*26000);}
         else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0 && !std::strcmp(state,"St_Wait_Main") && p->mGroundY>950*4096){phase=79;event("maze-upper-ramp-stable");}}
+        if(warioMaze && (p->mPosY<450*4096 || tick-upperRampLaunch>900)){
+            phase=183;buttons=0;sx=sy=0;event("wario-ramp-recovery-failed");
+        }
     }
     
-    if(phase==79 && courseTick>=10600 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TOP")){
+    if(phase==79 && courseTick>=10600 && std::getenv("SM64DS_PC_TEST_RAINBOW_MAZE_TOP") &&
+       (!warioMaze || (!p->mIsAirborne && p->mGroundY>950*4096 && !std::strcmp(state,"St_Wait_Main")))){
         phase=90;event("maze-top-front-approach");
     }
     if(phase>=90 && phase<=94){
@@ -1511,13 +1693,18 @@ static bool replay_rainbow_disc() {
             else{sx=sy=0;if(!p->mIsAirborne && p->mHorzSpeed==0 && tick-transfer>20)buttons=!std::strcmp(state,"St_Crouch_Main")?0x102:0x100;}
             if(p->mState==&data_ov002_0211052c){phase=92;mazeTopLaunch=tick;event("maze-top-backflip");}
         }
-        if(phase==92){aimTop(-4220,700,26000);buttons=2;if(tick-mazeTopLaunch>=18){phase=93;event("maze-top-braking");}}
+        if(phase==92){aimTop(-4220,700,26000);buttons=2;if(tick-mazeTopLaunch>=(warioMaze?0u:18u)){phase=93;event("maze-top-braking");}}
         if(phase==93){aimTop(-4220,-300,32700);buttons=2;if(p->mHorzSpeed<=0){phase=94;event("maze-top-return");}}
         if(phase==94){
             aimTop(-4220,170,26000);
-            if(!p->mIsAirborne && tick-mazeTopLaunch>25){phase=95;sx=sy=0;buttons=0;event(p->mGroundY>1600*4096?"maze-top-landed":"maze-top-missed");}
+            const bool ledge=!std::strcmp(state,"St_LedgeGrab_Main") || !std::strcmp(state,"St_LedgeHang_Main");
+            if(warioMaze && ledge)buttons=0; // Keep inward stick for the native climb.
+            if(!p->mIsAirborne && tick-mazeTopLaunch>25 && (!warioMaze || !ledge)){
+                const bool landed=p->mGroundY>1600*4096 && (!warioMaze || !std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"));
+                phase=(!warioMaze || landed)?95:183;sx=sy=0;buttons=0;event(landed?"maze-top-landed":"maze-top-missed");
+            }
         }
-        if(tick-transfer>900 && phase>=91 && phase<=94){phase=95;sx=sy=0;buttons=0;event("maze-top-timeout");}
+        if(tick-transfer>900 && phase>=91 && phase<=94){phase=warioMaze?183:95;sx=sy=0;buttons=0;event("maze-top-timeout");}
     }
     if(phase==95 && courseTick>=12000 && std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RIDE")){phase=96;event("rainbow-lift-approach");}
     if(phase==96){
@@ -1563,14 +1750,48 @@ static bool replay_rainbow_disc() {
                 if(p->mHorzSpeed!=0){ntr::input_test_controls(true,0,0,0);return true;}
                 bottomReady=tick;
             }
-            if(!offJump && tick-bottomReady>=30){offJump=tick;event("rainbow-lift-jump-off");}
+            if(!offJump && tick-bottomReady>=30){
+                if(warioMaze){
+                    // The tall backflip hits the static overhang at y=709.
+                    // Run west and use the original low-arc long jump underneath it.
+                    aim(-3140,-35);
+                    if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+                    else if(!std::strcmp(state,"St_Walk_Main") && p->mPosX< -2700*4096 && p->mHorzSpeed>0xa000)buttons=0x100;
+                    if(!std::strcmp(state,"St_LongJump_Main")){offJump=tick;event("rainbow-lift-jump-off");}
+                }else{offJump=tick;event("rainbow-lift-jump-off");}
+            }
             // Give Wait a neutral jump edge before applying air steering.
             if(offJump && tick-offJump<80)buttons=2;
-            if(offJump && p->mIsAirborne)aim(-3140,-35);
-            if(offJump && tick-offJump>20 && !p->mIsAirborne && !lift->mRider && lift->mIsArmed && p->mPosX< -3000*4096 && std::abs(p->mPosY-309*4096)<20*4096){phase=99;bankReady=tick;buttons=0;sx=sy=0;event("rainbow-lift-rearmed");}
+            const bool bankLedge=!std::strcmp(state,"St_LedgeHang_Main") || !std::strcmp(state,"St_LedgeGrab_Main");
+            if(offJump && (p->mIsAirborne || (warioMaze && bankLedge && p->mPosX< -3000*4096)))aim(-3140,-35);
+            if(warioMaze && offJump && !std::strcmp(state,"St_LongJump_Main")){
+                // Original long-jump opposite-stick deceleration is 1.5 units/update.
+                // Brake before the narrow bank, then release before reversing.
+                const double v=p->mHorzSpeed/4096.0;
+                // Combined crouch+jump permits returning from the nearer verified landing.
+                const double remaining=p->mPosX/4096.0+3120.0;
+                if(!replay.bankBrake && remaining<=v*v/3.0+v){replay.bankBrake=1;event("rainbow-lift-bank-brake");}
+                if(replay.bankBrake==1 && v<=1.5){replay.bankBrake=2;event("rainbow-lift-bank-coast");}
+                if(replay.bankBrake==1)aim(p->mPosX/4096.0+500,p->mPosZ/4096.0);
+                if(replay.bankBrake==2)sx=sy=0;
+            }
+            if(warioMaze && bankLedge && p->mPosX< -3000*4096)buttons=0; // Let the original inward-stick climb finish.
+            const bool bankStanding=!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") ||
+                (!std::strcmp(state,"St_Land_Main") && p->mStateTimer==0);
+            if(offJump && tick-offJump>20 && !p->mIsAirborne && (!warioMaze || bankStanding) && !lift->mRider && lift->mIsArmed && p->mPosX< -3000*4096 && std::abs(p->mPosY-309*4096)<20*4096){phase=99;bankReady=tick;buttons=0;sx=sy=0;event("rainbow-lift-rearmed");}
         }
-        if(lift && phase==99 && tick-bankReady>=6 &&
-           (!std::strcmp(state,"St_Wait_Main") || (!std::strcmp(state,"St_Land_Main") && p->mStateTimer==0))){phase=100;backJump=tick;event("rainbow-lift-jump-back");}
+        if(lift && phase==99){
+            if(warioMaze){
+                // Check travel yaw: the visible body turns later than ground movement.
+                // Crouch Init accepts a simultaneous jump before resetting travel yaw to body yaw.
+                aim(lift->mPosX/4096.0,lift->mPosZ/4096.0);
+                if(!std::strcmp(state,"St_Walk_Main") && p->mHorzSpeed>0xa000 &&
+                   std::abs(int(static_cast<int16_t>(p->mPrevAngleY-0x4000)))<0x2000 && !p->mIsAirborne)buttons=0x102;
+                else if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+                if(!std::strcmp(state,"St_LongJump_Main")){phase=100;backJump=tick;event("rainbow-lift-jump-back");}
+            }else if(tick-bankReady>=6 &&
+                (!std::strcmp(state,"St_Wait_Main") || (!std::strcmp(state,"St_Land_Main") && p->mStateTimer==0))){phase=100;backJump=tick;event("rainbow-lift-jump-back");}
+        }
         const bool standing=lift && lift->mRider==p && pc_camera_on_vertical_lift(p) &&
             (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Land_Main"));
         if(lift && phase==100){
@@ -3681,6 +3902,169 @@ static bool replay_buddy_controls() {
     return true;
 }
 
+// Opt-in QA pilot: observe the native tail, move around Bowser, and use only
+// normal stick/crouch/attack input. Never move actors or set collision results.
+// Once the ordinary route actually lands on a diamond island, release all
+// controls to observe its original rider-carry behavior without steering.
+static bool replay_dark_world_island_hold() {
+    if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") ||
+       !std::getenv("SM64DS_PC_TEST_DIAMOND_RIDE") || data_0209f2f8!=35)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p || p->aliveState!=1)return false;
+    static unsigned boarded=0;
+    static uint64_t launch=0;
+    static uint64_t boarded_at=0,dismount_at=0;
+    static bool landed=false;
+    const auto *hit=p->mMeshClsn.IsOnGround() && !p->mIsAirborne?
+        static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+    const auto *owner=hit && hit->colliderIdx<24?hit->owner:nullptr;
+    if(!boarded && owner && owner->actorID==135) {
+        boarded=owner->uniqueID;
+        boarded_at=ntr::rt_frame();
+        std::fprintf(stderr,"[native diamond ride] boarded tick=%llu uid=%u pos=%d,%d,%d\n",
+            static_cast<unsigned long long>(ntr::rt_frame()),boarded,p->mPosX,p->mPosY,p->mPosZ);
+    }
+    if(!boarded) {
+        if(!replay_course_route_complete)return false;
+        const auto tick=ntr::rt_frame();
+        if(!launch && !std::strcmp(pc_player_state_name(p),"St_Wait_Main") && !p->mHorzSpeed) {
+            for(auto *a=dActor_c::FindWithActorID(135,nullptr);a;a=dActor_c::FindWithActorID(135,a)) {
+                if(a->mPosY < -3000*4096 && a->mPosX < -1850*4096 &&
+                   a->mPosZ >= 3480*4096 && a->mPosZ <= 3600*4096 && a->mPrevAngleY==0) {
+                    launch=tick;
+                    std::fprintf(stderr,"[native diamond ride] jump tick=%llu target=%u pos=%d,%d,%d\n",
+                        static_cast<unsigned long long>(tick),a->uniqueID,a->mPosX,a->mPosY,a->mPosZ);
+                    break;
+                }
+            }
+        }
+        if(launch && tick-launch<120) {
+            const double dx=-1920*4096.0-p->mPosX,dz=3800*4096.0-p->mPosZ;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int magnitude=std::hypot(dx,dz)>60*4096.0?22000:0;
+            ntr::input_test_controls(true,tick-launch<8?2:0,
+                static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+        } else ntr::input_test_controls(true,0,0,0);
+        return true;
+    }
+    if(std::getenv("SM64DS_PC_TEST_DIAMOND_DISMOUNT") && ntr::rt_frame()>boarded_at+480 && !landed) {
+        const auto tick=ntr::rt_frame();
+        auto *island=dActor_c::FindWithID(boarded);
+        if(dismount_at && hit && !owner && p->mPosX>-1050*4096 && !p->mIsAirborne) {
+            landed=true;
+            std::fprintf(stderr,"[native diamond ride] far-bank-landed tick=%llu pos=%d,%d,%d\n",
+                static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+        } else if(!dismount_at && island && owner && owner->actorID==135) {
+            const double dx=double(island->mPosX)-p->mPosX;
+            if(std::abs(dx)>25*4096.0) {
+                const double angle=std::atan2(dx,0.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*9000),
+                    static_cast<int16_t>(-std::cos(angle)*9000));return true;
+            }
+            if(!p->mHorzSpeed && !std::strcmp(pc_player_state_name(p),"St_Wait_Main") &&
+               island->mPosX>-1400*4096 && island->mPrevAngleY==-32768 &&
+               p->mPosZ>3600*4096 && p->mPosZ<3950*4096) {
+                dismount_at=tick;
+                std::fprintf(stderr,"[native diamond ride] dismount-jump tick=%llu pos=%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+            }
+        }
+        if(dismount_at && !landed && tick-dismount_at<120) {
+            const double dx=-800*4096.0-p->mPosX,dz=3800*4096.0-p->mPosZ;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int magnitude=std::hypot(dx,dz)>60*4096.0?22000:0;
+            ntr::input_test_controls(true,tick-dismount_at<12?2:0,
+                static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));return true;
+        }
+    }
+    ntr::input_test_controls(true,0,0,0);return true;
+}
+static bool replay_bowser_tail_controls() {
+    const char *enabled=std::getenv("SM64DS_PC_TEST_BOWSER_TAIL");
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1") ||
+       data_0209f2f8!=36 || ntr::rt_frame()<1700)return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    auto *b=static_cast<daKpa_c *>(dActor_c::FindWithActorID(279,nullptr));
+    auto *a=b?dActor_c::FindWithID(b->mTailUniqueID):nullptr;
+    if(!p || !b || !a || a->actorID!=278)return false;
+    auto *tail=static_cast<daKpaTail_c *>(a);
+    const auto tick=ntr::rt_frame();
+    uint16_t buttons=0;int16_t sx=0,sy=0;
+    static uint64_t heldSince=0,releasedAt=0;
+    if(releasedAt) {
+        buttons=tick<releasedAt+3?1:0;
+        if(data_0209d660)buttons=tick%45<3?1:0;
+        else if(b->mState==4 && !p->mIsNoControl && !p->mIsControlDisabled) {
+            auto *key=dActor_c::FindWithActorID(282,nullptr);
+            const double gx=key?key->mPosX:b->mPosX,gz=key?key->mPosZ:b->mPosZ;
+            const double dx=gx-p->mPosX,dz=gz-p->mPosZ;
+            if(std::hypot(dx,dz)>(key?25:220)*4096.0) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*18000);sy=static_cast<int16_t>(-std::cos(angle)*18000);
+            }
+        }
+        ntr::input_test_controls(true,buttons,sx,sy);
+        return true;
+    }
+    if(data_0209d660)buttons=tick%45<3?1:0;
+    else if(!p->mIsNoControl && !p->mIsControlDisabled) {
+        const double px=p->mPosX/4096.0,pz=p->mPosZ/4096.0;
+        const double bx=b->mPosX/4096.0,bz=b->mPosZ/4096.0;
+        const double tx=tail->mPosX/4096.0,tz=tail->mPosZ/4096.0;
+        const double distance=std::hypot(tx-px,tz-pz);
+        double gx=tx,gz=tz;
+        const double pa=std::atan2(px-bx,pz-bz),ta=std::atan2(tx-bx,tz-bz);
+        const double delta=std::remainder(ta-pa,6.283185307179586);
+        const bool orbit=std::abs(delta)>0.45;
+        if(orbit) {
+            const double step=(delta < -0.55 ? -0.55 : delta > 0.55 ? 0.55 : delta);
+            gx=bx+std::sin(pa+step)*500;gz=bz+std::cos(pa+step)*500;
+        }
+        if(tail->mState==2) {
+            // Keep turning through the normal stick path; holding is accepted
+            // only from the original tail callback and its recorded Player.
+            sx=static_cast<int16_t>(std::sin(tick*0.055)*32767);
+            sy=static_cast<int16_t>(-std::cos(tick*0.055)*32767);
+            if(!heldSince)heldSince=tick;
+            if(std::getenv("SM64DS_PC_TEST_BOWSER_THROW") && tick>heldSince+180 &&
+               p->mStateStep==1 && std::abs(int(p->mAngleYSpeed))>=0xf00) {
+                // Input is consumed on the next original simulation update.
+                // Lead that update's yaw; select an armed, naturally spawned mine.
+                daKirai_c *nearest=nullptr; double best=1e100;
+                for(auto *actor=dActor_c::FindWithActorID(284,nullptr);actor;actor=dActor_c::FindWithActorID(284,actor)) {
+                    auto *candidate=static_cast<daKirai_c *>(actor);
+                    const double distance=std::hypot(double(actor->mPosX)-p->mPosX,double(actor->mPosZ)-p->mPosZ);
+                    if(actor->aliveState==1 && candidate->mStateIndex==0 && distance<best){best=distance;nearest=candidate;}
+                }
+                if(auto *mine=nearest) {
+                    const auto desired=static_cast<int16_t>(std::lround(std::atan2(double(mine->mPosX)-p->mPosX,double(mine->mPosZ)-p->mPosZ)*65536.0/6.283185307179586));
+                    const auto error=static_cast<int16_t>(desired-p->mAngleY-p->mAngleYSpeed);
+                    if(std::abs(int(error))<800) {
+                        buttons=1;releasedAt=tick;
+                        std::fprintf(stderr,"[native Bowser throw pilot] release tick=%llu mine=%u target=%d,%d,%d heading=%d speed=%d error=%d\n",
+                            static_cast<unsigned long long>(tick),mine->uniqueID,mine->mPosX,mine->mPosY,mine->mPosZ,p->mAngleY,p->mAngleYSpeed,int(error));
+                    }
+                }
+            }
+
+        } else {
+            if(orbit || distance>65) {
+                const double angle=std::atan2(gx-px,gz-pz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const double speed=orbit || distance>180?32767:14000;
+                sx=static_cast<int16_t>(std::sin(angle)*speed);
+                sy=static_cast<int16_t>(-std::cos(angle)*speed);
+            }
+            if(!orbit && distance<190)buttons=(tick%24<4)?1:0;
+        }
+        if(tick%60==0)std::fprintf(stderr,"[native Bowser tail pilot] tick=%llu character=%u distance=%.2f orbit=%d tail=%d player=%s buttons=%u\n",
+            static_cast<unsigned long long>(tick),p->mCharacter,distance,orbit?1:0,tail->mState,pc_player_state_name(p),buttons);
+    }
+    ntr::input_test_controls(true,buttons,sx,sy);
+    return true;
+}
+
 static void replay_boss_controls() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *bot=std::getenv("SM64DS_PC_TEST_BOSS_BOT");
@@ -4151,37 +4535,54 @@ static bool trace_script_progress(uint64_t frame)
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())
-        if(!pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_dark_world_island_hold() && !replay_bowser_tail_controls() && !pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+    }
+
+    if(std::getenv("SM64DS_PC_KEY_TRACE") && data_0209f2f8==2 && ntr::rt_frame()%60==0) {
+        auto *p=static_cast<Player *>(data_0209f394[0]);
+        if(p && p->aliveState==1){
+            const auto id=p->GetBodyModelID(p->param1&255,false);auto *anim=id<4?p->mBodyModels[id]:nullptr;
+            if(anim)std::fprintf(stderr,"[native key return trace] tick=%llu state=%s step=%u work=%u arg=%u anim=%p frame=%d countflags=%08x speed=%d finished=%d\n",static_cast<unsigned long long>(ntr::rt_frame()),pc_player_state_name(p),p->mStateStep,p->mStateWork,p->mStateArg,anim->file,anim->currFrame,anim->numFramesAndFlags,anim->speed,p->FinishedAnim());
+        }
     }
     if(const char *path=std::getenv("SM64DS_PC_BOSS_CAPTURE")) {
         static FILE *file=std::fopen(path,"w");static uint64_t last=~uint64_t(0);
         const auto tick=ntr::rt_frame();
         if(file && tick>=600 && last!=tick) {
-            if(last==~uint64_t(0))std::fputs("tick,id,kind,param,alive,x,y,z,state,health,action,held,spawn0,spawn1,hit,other,hit2,other2,fuse,mouth,egg,player_state,player_x,player_y,player_z,player_heading,player_no_control,player_health,message_active,power_star_total\n",file);
+            if(last==~uint64_t(0))std::fputs("tick,id,kind,param,alive,x,y,z,state,health,action,held,spawn0,spawn1,hit,other,hit2,other2,fuse,mouth,egg,player_state,player_x,player_y,player_z,player_heading,player_no_control,player_health,message_active,power_star_total,tail_id,hold_state,grabbed_player,tail_state,tail_timer,tail_flags,tail_other,tail_x,tail_y,tail_z,tail_radius,tail_height,tail_held_player,tail_hold_countdown,talk_step,player_talk_state\n",file);
             last=tick;
             auto *player=static_cast<Player *>(data_0209f394[0]);
             unsigned count=0;
             for(auto *a=dActor_c::Next(nullptr);a && count++<4096;a=dActor_c::Next(a)) {
-                if(a->actorID!=189 && a->actorID!=206)continue;
+                if(a->actorID!=189 && a->actorID!=206 && a->actorID!=279)continue;
                 unsigned state=0,hit=0,other=0,hit2=0,other2=0,held=0,spawn0=0,spawn1=0,fuse=0;int health=0,action=0;
+                unsigned tailId=0,holdState=0,grabbed=0,tailState=0,tailTimer=0,tailFlags=0,tailOther=0,tailHeldPlayer=0,tailHoldCountdown=0,talkStep=0;int tailX=0,tailY=0,tailZ=0,tailRadius=0,tailHeight=0,playerTalk=999;
                 if(a->actorID==189) {
                     auto *b=static_cast<daBombking_c *>(a);
                     state=observed_boss_state(b);health=b->mHealth;action=b->mActionStep;
                     held=b->mHeldActor?b->mHeldActor->uniqueID:0;spawn0=b->mSpawnedId[0];spawn1=b->mSpawnedId[1];
                     hit=b->mdCcAcPos_c.hitFlags;other=b->mdCcAcPos_c.otherOwner;
                     hit2=b->mdCcAcPos_c2.hitFlags;other2=b->mdCcAcPos_c2.otherOwner;
-                }else {
+                }else if(a->actorID==206) {
                     auto *b=static_cast<daBmb_c *>(a);state=b->mState;fuse=b->mFuse;action=b->mVariant;
                     hit=b->mdCc_c.hitFlags;other=b->mdCc_c.otherOwner;
+                }else {
+                    auto *b=static_cast<daKpa_c *>(a);state=b->mState;health=b->mHealth;action=b->mStep;
+                    hit=b->mdCcAcPos_c.hitFlags;other=b->mdCcAcPos_c.otherOwner;
+                    tailId=static_cast<unsigned>(b->mTailUniqueID);holdState=static_cast<unsigned>(b->mHoldState);
+                    talkStep=b->mTalkStep;playerTalk=player?player->GetTalkState():999;
+                    grabbed=b->mGrabbedPlayer?b->mGrabbedPlayer->uniqueID:0;
+                    auto *tail=dActor_c::FindWithID(tailId);
+                    if(tail && tail->actorID==278){auto *t=static_cast<daKpaTail_c *>(tail);tailState=static_cast<unsigned>(t->mState);tailTimer=t->mTimer;tailFlags=t->mdCcAc_c.hitFlags;tailOther=t->mdCcAc_c.otherOwner;tailX=t->mPosX;tailY=t->mPosY;tailZ=t->mPosZ;tailRadius=t->mdCcAc_c.radius;tailHeight=t->mdCcAc_c.height;tailHeldPlayer=t->mHeldPlayer?t->mHeldPlayer->uniqueID:0;tailHoldCountdown=t->mHoldCountdown;}
                 }
                 auto *egg=dActor_c::FindWithActorID(9,nullptr);
                 auto *mouth=player?reinterpret_cast<dActor_c *>(player->mObjInMouth):nullptr;
-                std::fprintf(file,"%llu,%u,%u,%u,%u,%d,%d,%d,%u,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%s,%d,%d,%d,%d,%u,%d,%u,%u\n",
+                std::fprintf(file,"%llu,%u,%u,%u,%u,%d,%d,%d,%u,%d,%d,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%s,%d,%d,%d,%d,%u,%d,%u,%u,%u,%u,%u,%u,%u,%d,%d,%d,%d,%d,%u,%u,%u,%d,%u,%d\n",
                     static_cast<unsigned long long>(tick),a->uniqueID,a->actorID,a->param1,a->aliveState,
                     a->mPosX,a->mPosY,a->mPosZ,state,health,action,held,spawn0,spawn1,hit,other,hit2,other2,fuse,
                     mouth?mouth->uniqueID:0,egg?egg->uniqueID:0,pc_player_state_name(player),
                     player?player->mPosX:0,player?player->mPosY:0,player?player->mPosZ:0,player?player->mAngleY:0,
-                    player?player->mIsNoControl:0,player?player->GetHealth():0,data_0209d660,observed_power_star_total());
+                    player?player->mIsNoControl:0,player?player->GetHealth():0,data_0209d660,observed_power_star_total(),tailId,holdState,grabbed,tailState,tailTimer,tailFlags,tailOther,tailX,tailY,tailZ,tailRadius,tailHeight,tailHeldPlayer,tailHoldCountdown,talkStep,playerTalk);
             }
             std::fflush(file);
         }

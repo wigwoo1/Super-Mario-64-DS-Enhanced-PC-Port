@@ -48,6 +48,23 @@ def observe(text, cls, fields, values):
 
 
 def transform(text, name):
+    if name == 'd_a_obj_km1_ukishima.cpp':
+        text=lazy_handles(text,('Km1UkishimaModelFilePtr','Km1UkishimaClsnFilePtr'))
+        anchor='s32 daObjKm1_Ukishima_c::InitResources()\n{'
+        assert text.count(anchor)==1
+        text=text.replace(anchor,'extern "C" void pc_dark_world_island_resources();\n'+anchor+'\n    pc_dark_world_island_resources();',1)
+        text+='''
+extern "C" void pc_dark_world_island_resources() {
+    static bool ready=false;if(ready)return;
+    data_ov043_021125e8.Construct(1625);
+    data_ov043_021125e0.Construct(1626);
+    ready=true;
+}
+'''
+        text=text.replace('s32 daObjKm1_Ukishima_c::',
+                          'int daObjKm1_Ukishima_c::')
+        return observe(text,'daObjKm1_Ukishima_c','turn_timer,move_heading,speed',
+                       ['int(mTurnTimer)','int(mPrevAngleY)','int(mHorzSpeed)'])
     if name == 'daObjSeesaw_c.cpp':
         text = lazy_handles(text, ('SeesawModelFilePtr','SeesawCollisionFilePtr'))
         # These three labels are parallel columns of one 12-byte-stride guest
