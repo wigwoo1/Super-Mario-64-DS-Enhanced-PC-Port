@@ -29,7 +29,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjSeesaw_c_classInit_BOMB_SEESAW",
                  "daObjSeesaw_c_classInit_RC_SEESAW",
                  "daBar_c_classInit",
-                 "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
+                 "daObjSimpleLift_c_classInit_KM1_DERU", "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
@@ -584,6 +584,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daOwl_c.cpp':
                     import owl_host
                     transformed=owl_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjSimpleLift_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform(root,transformed)
                     rewrites+=1
                 if path.name == 'daUdlift_c.cpp':
                     import udlift_host

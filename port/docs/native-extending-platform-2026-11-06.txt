@@ -1,0 +1,44 @@
+Native Dark World extending platform (actor138 / KM1_DERU) - 2026-11-06
+
+Connected the recovered daObjSimpleLift_c factory through its original actor
+profile. Only the Dark World variant0 is registered. The shared class's six
+other variants require separate resource/placement reviews. The original
+actor source/header, movement, scale, timers and rider callback are retained.
+Host generation defers resource initialization until the game heap is ready,
+uses the two canonical eight-byte model/collision handles, and binds the
+reviewed Dark World CLPS directly. The normal model renderer and moving-mesh
+updates execute as recovered native C++.
+
+Build and six focused clock/input/rebinding/camera tests pass. The full native
+actor-data audit now checks this profile/factory, all seven original travel
+and heading entries, and the complete16-byte surface table. Four reviewed
+symbol-only metadata aliases were added (including a prior wheel BSS name);
+no existing binding changed. Fresh local generation from those metadata files
+matches the linked private data source exactly. No ROM payload is in metadata.
+
+A selected original-castle-entry test with synthetic12-Star Mario prerequisites
+reaches the accepted upper bank. An initial cautious walking pilot misses the
+retracting platform and falls; it is not accepted. The corrected input pilot
+makes a running hop onto the extended platform, walks on it and jumps to the
+far block. It never writes actor/player positions or collision results.
+
+Final native executable SHA256:
+4250ba516e278a0bbb82e89aca3cb7992579b2fa730908e03f8b445fee9bf6be
+
+The final muted23000-frame replay boards native actor138/UID138 at19870,
+jumps off19884 and lands on the far static block19924. Three actual grounded
+moving-floor records span10 presentation frames while the player advances
+over100 units and the native platform moves50 units. The observer's alternate
+frame cadence brackets those contacts. The platform completes its original
+680-unit range (69 timer updates, with68 movement updates) and pauses/reverses.
+The far block retains596 consecutive grounded support samples after settling;
+Mario returns to normal neutral Wait/control. No damage, ledge grab or death
+occurs during this crossing. Earlier route damage remains outside this scope.
+The run exits0; audio errors and audible device samples are zero; both isolated
+synthetic saves remain byte-identical. Screenshots were reviewed in the chat.
+
+Repeat crossings, course unload/re-entry, other characters/variants and the
+remaining course/boss entrance are unverified. This is a selected gameplay
+check, not full-game or stable-install acceptance. No F installation or new
+ROM-free kit has been made. A kit refresh must export reviewed source, locally
+regenerate all omitted data, and repeat a muted reconstruction runtime check.

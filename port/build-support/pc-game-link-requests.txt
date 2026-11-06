@@ -3252,3 +3252,7 @@ unresolved external symbol _data_ov060_02119358
 unresolved external symbol _data_ov060_02119364
 unresolved external symbol _data_ov043_02111b80
 unresolved external symbol _data_ov043_02111bc0
+unresolved external symbol _data_ov002_0210ddd0
+unresolved external symbol _data_ov043_02111be0
+unresolved external symbol _data_ov091_02134504
+unresolved external symbol _data_ov091_02134514

@@ -4135,6 +4135,51 @@ static void replay_dark_world_wheel_board(Player *player) {
     ntr::input_test_controls(true, 0, 0, 0);
 }
 
+static bool replay_dark_world_extending_cross(Player *p) {
+    if (!std::getenv("SM64DS_PC_TEST_EXTENDING_CROSS")) return false;
+    enum Phase { Approach, Wait, Cross, BoardFlight, Flight, Landed, Failed };
+    static Phase phase=Approach;
+    static uint64_t began=ntr::rt_frame(),jump_until=0;
+    static unsigned boarded=0;
+    const auto tick=ntr::rt_frame();
+    const char *state=pc_player_state_name(p);
+    const auto *hit=p->mMeshClsn.IsOnGround() && !p->mIsAirborne ? static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+    const auto *owner=hit && hit->colliderIdx<24?hit->owner:nullptr;
+    auto event=[&](const char *name){std::fprintf(stderr,"[native extending cross] %s tick=%llu uid=%u pos=%d,%d,%d state=%s\n",name,static_cast<unsigned long long>(tick),boarded,p->mPosX,p->mPosY,p->mPosZ,state);};
+    auto steer=[&](int x,int magnitude,uint16_t buttons=0){
+        const double angle=std::atan2(x*4096.0-p->mPosX,-2101*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        ntr::input_test_controls(true,buttons,static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));
+    };
+    if(owner && owner->actorID==138 && !boarded){boarded=owner->uniqueID;event("boarded");}
+    if(tick-began>1600 && phase!=Landed && phase!=Failed){phase=Failed;event("timeout");}
+    if(phase==Approach){
+        if(std::abs(p->mPosX+6130*4096)<20*4096){phase=Wait;event("bank-edge");}
+        else {steer(-6130,9000);return true;}
+    }
+    if(phase==Wait && !p->mHorzSpeed && !std::strcmp(state,"St_Wait_Main")){
+        auto *lift=dActor_c::FindWithActorID(138,nullptr);
+        if(lift && lift->mPosX<-5500*4096 && lift->mPrevAngleY==-16384){phase=Cross;event("walk");}
+    }
+    if(phase==BoardFlight){
+        if(boarded){phase=Cross;}
+        else {steer(-5000,22000,tick<jump_until?2:0);return true;}
+    }
+    if(phase==Cross){
+        if(!boarded && p->mPosX>-6070*4096 && p->mHorzSpeed>8*4096 && !std::strcmp(state,"St_Walk_Main")){
+            phase=BoardFlight;jump_until=tick+12;event("bank-hop");
+            steer(-5000,22000,2);return true;
+        }
+        if(boarded && owner && owner->actorID==138 && p->mPosX>-5530*4096 && p->mHorzSpeed>8*4096 && !std::strcmp(state,"St_Walk_Main")){
+            phase=Flight;jump_until=tick+12;event("jump");
+        } else {steer(-5000,22000);return true;}
+    }
+    if(phase==Flight){
+        if(hit && !owner && !p->mIsAirborne && p->mPosX>-5200*4096 && p->mPosY>1180*4096){phase=Landed;event("landed");}
+        else if(p->mPosX<-5050*4096){steer(-5000,16000,tick<jump_until?2:0);return true;}
+    }
+    ntr::input_test_controls(true,0,0,0);return true;
+}
+
 static bool replay_dark_world_island_hold() {
     if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") ||
        !std::getenv("SM64DS_PC_TEST_DIAMOND_RIDE") || data_0209f2f8!=35)return false;
@@ -4149,7 +4194,7 @@ static bool replay_dark_world_island_hold() {
                     std::fprintf(stderr, "[native wheel ride] main-rise-complete tick=%llu pos=%d,%d,%d\n",
                         static_cast<unsigned long long>(ntr::rt_frame()), p->mPosX, p->mPosY, p->mPosZ);
                 }
-                ntr::input_test_controls(true, 0, 0, 0);
+                if (!replay_dark_world_extending_cross(p)) ntr::input_test_controls(true, 0, 0, 0);
             }
             return true;
         }

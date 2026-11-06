@@ -56,6 +56,25 @@ def main():
         base = int(re.search(r'\.text\s+start:0x([\da-f]+)', text)[1], 16)
         return base, (ROOT / f'extracted/overlays/overlay_{number:04d}.bin').read_bytes()
 
+    # Reviewed Dark World row of the shared native sliding-platform class.
+    lift_base,lift_rom=overlay(91)
+    expected=struct.unpack_from('<IHHIiiii',lift_rom,0x02134f60-lift_base)
+    actual=struct.unpack('<IHHIiiii',pe_bytes(args.exe,named('pc_dark_world_extending_profile'),28))
+    if actual[0]!=named('daObjSimpleLift_c_classInit_KM1_DERU') or actual[1:]!=expected[1:]:
+        raise ValueError('Dark World extending platform profile/factory differs from original')
+    for label in ('02134504','02134514'):
+        address=int(label,16)
+        if pe_bytes(args.exe,named('data_ov091_'+label),14)!=lift_rom[address-lift_base:address-lift_base+14]:
+            raise ValueError('Original simple-platform travel timers/headings changed')
+    clps_base,clps_rom=overlay(43)
+    offset=0x02111be0-clps_base
+    magic,stride,count=struct.unpack_from('<4sHH',clps_rom,offset)
+    if magic!=b'CLPS' or stride!=8 or count!=1:
+        raise ValueError('Unexpected extending-platform surface table')
+    if pe_bytes(args.exe,named('data_ov043_02111be0'),16)!=clps_rom[offset:offset+16]:
+        raise ValueError('Incomplete original extending-platform collision properties')
+    print('PASS: native extending-platform profile/factory, original travel tables and complete CLPS')
+
     # The original common-model BSS cache occupies 0x0209cefc..0x0209d3ac:
     # 100 twelve-byte entries. A legacy 64-entry host buffer placed its count
     # inside that span, so registering more models corrupted adjacent state.

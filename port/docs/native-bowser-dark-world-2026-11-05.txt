@@ -83,7 +83,8 @@ The native build and six focused clock/input/camera tests pass.
 Private static KCL analysis finds a continuous rising walk from this landing
 around the left side toward x-6000/y999/z-2100. That walk is not yet runtime
 verified. The lower right bank is a separate branch and does not establish
-boss access. The extending bridge138, seesaws133 and drifting stairs134
+boss access. The extending platform138 now has a selected native crossing check in
+native-extending-platform-2026-11-06.txt. The seesaws133 and drifting stairs134
 farther along the upper course still need native integration/acceptance.
 The boss entrance and complete course remain unverified.
 
@@ -99,3 +100,21 @@ a route-complete log is not evidence of safe final support. Both runs exit0
 with muted device output, zero audio errors and unchanged isolated saves.
 The main-course walk, missing platform crossing and boss entrance remain
 unverified. These opt-in QA additions do not change ordinary game physics.
+
+2026-11-06 final-bank input correction VERIFIED. The earlier endpoint was
+on the cliff at x-6000, so Mario coasted beyond it after the route marker
+accepted his position. The corrected private input route preserves its first
+109 markers and replaces the final two with an interior stop at
+x-6300/y966/z-2100 on the same bank. No game-code or physics change was needed.
+A fresh muted21500-frame replay on the same executable completes all110
+markers, then records369 consecutive grounded samples and normal neutral
+Wait/control. Mario settles near x-6228/y974/z-2102, about228 units inside
+the edge. Original KCL confirms a100-unit supported neighborhood around the
+actual stopping point. The final approach has no damage/fall/ledge hang.
+The process exits0, audio errors and audible submitted samples are zero,
+and both isolated synthetic saves are byte-identical. Build is up to date
+and six focused clock/input/camera checks pass. The old ledge-hanging case
+fails the same physical stop checks.
+This accepts the final approach only. The preserved earlier route still
+includes an enemy hit and brief earlier ledge grab. Full clean traversal,
+the missing moving platforms and boss entrance remain unverified.
