@@ -36,11 +36,23 @@ rotate with native mounted actor IDs. The recovered Vector3 initializer runs
 on a complete native array rather than an uninitialized 12-byte BSS label.
 A muted original-entry replay checks 1444 cart samples, all at the original
 400-unit radius and 300-unit depth offset. The previous diamond crossing
-regression also passes. Near-wheel rendering/collision and riding a cart have
-not yet been accepted; do not describe the complete wheel as playable.
+regression also passes. A subsequent muted replay verified the approach, boarding and rider carry on
+one Dark World wheel cart. The pilot uses a running slope jump and a dive to
+reach the flat ledge, then a long jump to the cart. The build generator now
+reads the wheel and axle surface table lengths from their local CLPS headers.
+The cart table had contained only its header; floor queries also require the
+following surface-property entry. The final build recorded 434 consecutive
+grounded samples on the same cart, spanning 800 units horizontally and
+vertically with neutral controls after landing. This selected replay uses
+synthetic prerequisites.
 
-Post-diamond approach remains diagnostic: two ordinary-input QA variants did
-not reach the uphill crest. The trace enters St_StomachSlide_Main while the
-scoped optional jump helper checks St_ButtSlide_Main. No gameplay physics
-change or successful wheel approach is claimed. The QA continuation is opt-in
-via SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE; it is disabled for normal play.
+A subsequent muted replay verifies a direct long jump from that cart onto
+the raised gray stone ledge. The input pilot centres Mario on the cart,
+builds the original required running speed, waits for the original crouch
+state, then jumps with a consistent heading. Air braking uses the original
+1.5-unit speed change per simulation update. The final replay records 83
+consecutive static-floor samples on the upper ledge at its original -1980
+height, followed by normal idle control, zero audio errors and unchanged
+isolated saves. The overshooting earlier replay fails the same acceptance
+checker. These changes correct QA inputs; the original player physics are
+preserved. Later course traversal and a fresh ROM-free kit remain open.

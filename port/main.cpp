@@ -2613,12 +2613,22 @@ static bool replay_course_route(const char *route_override=nullptr) {
             jump_until=tick+12;next_jump=tick+75;
         }
         if(tick<jump_until || (evading && tick<replay_reentry_jump_held_until))buttons|=2;
-        // Only the optional post-diamond QA route: release through the native
-        // slide landing lock, then request the original sliding jump uphill.
-        if(route_override && level==35 && dy>0 && std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE")) {
-            if((!std::strcmp(state,"St_ButtSlide_Main") && player->mStateWaitTimer==0) ||
-               !std::strcmp(state,"St_Jump_Main"))buttons|=2;
+        // The optional post-diamond pilot requests the original belly-slide
+        // recovery with a fresh input edge. Its eligibility differs from the
+        // seated sliding jump; do not change either gameplay state's physics.
+        if(route_override && level==35 && dy>0 && std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE") &&
+           !std::strcmp(state,"St_StomachSlide_Main") && player->mStatePhase==0 &&
+           !(player->mStateFlags&1) && tick>=next_jump) {
+            jump_until=tick+8;next_jump=tick+60;buttons|=2;
+            std::fprintf(stderr,"[native diamond rise] belly-recover tick=%llu phase=%u flags=%u air=%u\n",
+                static_cast<unsigned long long>(tick),unsigned(player->mStatePhase),unsigned(player->mStateFlags),unsigned(player->mIsAirborne));
         }
+        // A near-apex attack in a slope jump requests Mario's original dive.
+        if (route_override && level == 35 && jump == 1 && dy > 0 &&
+            std::getenv("SM64DS_PC_TEST_DIAMOND_SLOPE_DIVE") &&
+            !std::strcmp(state, "St_SlopeJump_Main") && player->mIsAirborne &&
+            player->mHorzSpeed > 0 && player->mVertSpeed <= 10 * 4096 && player->mVertSpeed > 0)
+            buttons |= 1;
         // Height-aware route points represent walkable floor positions, not
         // transient jump arcs. Only advance after the player has landed at
         // the requested height; otherwise an overhead stair edge can make
@@ -2658,6 +2668,10 @@ static bool replay_course_route(const char *route_override=nullptr) {
                player->mFloorNormalY<0x0f00 && player->mFloorClass>=2 &&
                player->mFloorClass<5 && horizontal>radius*4096.0)
                 magnitude=32767;
+            // The isolated post-diamond comparison must reach full stick
+            // travel even when the surface-class filter above does not match.
+            if(route_override && level==35 && dy>0 && full_uphill && !std::strcmp(full_uphill,"1") &&
+               std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE"))magnitude=32767;
             if(jump==3 || passing_chomp)magnitude=32767;
             sx=static_cast<int16_t>(std::sin(angle)*magnitude);
             sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
@@ -3912,6 +3926,182 @@ static bool replay_buddy_controls() {
 // normal stick/crouch/attack input. Never move actors or set collision results.
 // Once the ordinary route actually lands on a diamond island, release all
 // controls to observe its original rider-carry behavior without steering.
+static void replay_dark_world_wheel_board(Player *player) {
+    static unsigned phase = 0, target = 0, boarded = 0;
+    static bool braking = false;
+    static uint64_t began = 0;
+    static unsigned cart_ids[4] = {};
+    static int cart_y[4] = {};
+    const auto tick = ntr::rt_frame();
+    const char *state = pc_player_state_name(player);
+    const auto *hit = player->mMeshClsn.IsOnGround() && !player->mIsAirborne
+        ? static_cast<dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+    const auto *owner = hit && hit->colliderIdx < 24 ? hit->owner : nullptr;
+    auto event = [&](const char *name) {
+        std::fprintf(stderr, "[native wheel ride] %s tick=%llu uid=%u state=%s pos=%d,%d,%d speed=%d\n",
+            name, static_cast<unsigned long long>(tick), target, state,
+            player->mPosX, player->mPosY, player->mPosZ, player->mHorzSpeed);
+    };
+    if (!boarded && owner && owner->actorID == 136) {
+        boarded = owner->uniqueID;
+        target = boarded;
+        event("boarded");
+    }
+    if (boarded) {
+        if (!std::getenv("SM64DS_PC_TEST_DIAMOND_WHEEL_DISMOUNT")) {
+            ntr::input_test_controls(true, 0, 0, 0);
+            return;
+        }
+        // QA inputs only. Centre on the original moving cart, build running
+        // speed and let the real crouch state select the long jump (>0xa000).
+        // Keep the same world heading through takeoff to avoid an airborne turn.
+        enum class Dismount { Centre, Settle, Window, Run, Crouch, Flight, Landed, Failed };
+        static Dismount dismount = Dismount::Centre;
+        static uint64_t dismount_began = tick;
+        static bool brake = false;
+        auto steer = [&](int direction, int magnitude, uint16_t buttons = 0) {
+            const double angle = direction * 1.570796326794897 -
+                GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+            ntr::input_test_controls(true, buttons,
+                static_cast<int16_t>(std::sin(angle) * magnitude),
+                static_cast<int16_t>(-std::cos(angle) * magnitude));
+        };
+        auto *cart = dActor_c::FindWithID(boarded);
+        const bool on_cart = hit && owner && owner->actorID == 136 && owner->uniqueID == boarded;
+        const bool walking = !std::strcmp(state, "St_Walk_Main");
+        const bool waiting = !std::strcmp(state, "St_Wait_Main");
+        if (dismount == Dismount::Centre) {
+            if (!cart || !on_cart || tick - dismount_began > 1024) {
+                dismount = Dismount::Failed;
+                event("direct-cart-centre-failed");
+            } else if (walking || waiting) {
+                const int dx = cart->mPosX - player->mPosX;
+                if (std::abs(dx) <= 20 * 4096) {
+                    dismount = Dismount::Settle;
+                    event("direct-cart-centred");
+                } else {
+                    steer(dx > 0 ? 1 : -1, 9000);
+                    return;
+                }
+            }
+        }
+        if (dismount == Dismount::Settle && waiting && !player->mHorzSpeed && on_cart) {
+            if (std::abs(cart->mPosX - player->mPosX) > 70 * 4096)
+                dismount = Dismount::Centre;
+            else dismount = Dismount::Window;
+        }
+        if (dismount == Dismount::Window && on_cart && cart && waiting &&
+            cart->mPosX > 60 * 4096 && cart->mPosY > -1700 * 4096) {
+            dismount = Dismount::Run;
+            dismount_began = tick;
+            event("direct-cart-runway");
+        }
+        if (dismount == Dismount::Run) {
+            if (!on_cart || tick - dismount_began > 90) {
+                dismount = Dismount::Failed;
+                event("direct-cart-runway-failed");
+            } else if (walking && player->mHorzSpeed > 0xa000) {
+                dismount = Dismount::Crouch;
+                event("direct-cart-crouch");
+            } else {
+                steer(1, 32767);
+                return;
+            }
+        }
+        if (dismount == Dismount::Crouch) {
+            if (!std::strcmp(state, "St_LongJump_Main")) {
+                dismount = Dismount::Flight;
+                dismount_began = tick;
+                event("direct-cart-long-jump");
+            } else if (!on_cart || tick - dismount_began > 90) {
+                dismount = Dismount::Failed;
+                event("direct-cart-takeoff-failed");
+            } else {
+                steer(1, 32767, !std::strcmp(state, "St_Crouch_Main") ? 0x102 : 0x100);
+                return;
+            }
+        }
+        if (dismount == Dismount::Flight) {
+            if (hit && !owner && !player->mIsAirborne &&
+                player->mPosX >= 780 * 4096 && player->mPosX <= 1320 * 4096 &&
+                player->mPosY >= -2020 * 4096 && player->mPosY <= -1940 * 4096 &&
+                player->mPosZ >= 3350 * 4096 && player->mPosZ <= 3850 * 4096) {
+                dismount = Dismount::Landed;
+                event("direct-cart-landed-upper-platform");
+            } else if (tick - dismount_began > 240) {
+                dismount = Dismount::Failed;
+                event("direct-cart-flight-failed");
+            } else {
+                // Original LongJump air control changes speed by 1.5 units per
+                // simulation update. Include one update of margin so landing
+                // stays inside the x800..1320 raised stone surface.
+                const double speed = (std::max)(0.0, player->mHorzSpeed / 4096.0);
+                if (!brake && player->mPosX / 4096.0 + speed * speed / 3.0 + speed >= 1050.0) {
+                    brake = true;
+                    event("direct-cart-air-brake");
+                }
+                if (!brake || player->mHorzSpeed > 0) {
+                    steer(brake ? -1 : 1, 32767);
+                    return;
+                }
+            }
+        }
+        ntr::input_test_controls(true, 0, 0, 0);
+        return;
+    }
+    unsigned index = 0;
+    for (auto *cart = dActor_c::FindWithActorID(136, nullptr); cart && index < 4;
+         cart = dActor_c::FindWithActorID(136, cart), ++index) {
+        const bool rising = cart_ids[index] == cart->uniqueID && cart->mPosY > cart_y[index];
+        if (phase == 0 && rising && cart->mPosX > -120 * 4096 && cart->mPosX < -60 * 4096 &&
+            cart->mPosY < -2240 * 4096 &&
+            !player->mIsAirborne && !player->mHorzSpeed) {
+            phase = 1;
+            target = cart->uniqueID;
+            began = tick;
+            event("runway");
+        }
+        cart_ids[index] = cart->uniqueID;
+        cart_y[index] = cart->mPosY;
+    }
+    if (phase > 0 && phase < 4 && tick - began > 240) {
+        phase = 4;
+        event("timeout");
+    }
+    if (phase == 1 && !player->mIsAirborne && player->mPosX < 645 * 4096 &&
+        player->mHorzSpeed > 10 * 4096) {
+        phase = 2;
+        event("crouch");
+    }
+    uint16_t buttons = 0;
+    if (phase == 2) {
+        if (!std::strcmp(state, "St_Walk_Main")) buttons = 0x100;
+        else if (!std::strcmp(state, "St_Crouch_Main")) buttons = 0x102;
+        if (!std::strcmp(state, "St_LongJump_Main")) {
+            phase = 3;
+            event("long-jump");
+        }
+    }
+    if (phase == 1 || phase == 2 || phase == 3) {
+        auto *cart = dActor_c::FindWithID(target);
+        if (phase == 3 && player->mPosX < 500 * 4096) braking = true;
+        if (braking && player->mHorzSpeed <= 0) {
+            ntr::input_test_controls(true, 0, 0, 0);
+            return;
+        }
+        const double target_x = braking ? double(player->mPosX) + 1000 * 4096
+            : phase == 3 && cart ? double(cart->mPosX) : -50.0 * 4096;
+        const double target_z = braking ? double(player->mPosZ) : 3602.0 * 4096;
+        const double angle = std::atan2(target_x - player->mPosX,
+            target_z - player->mPosZ) - GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+        ntr::input_test_controls(true, buttons,
+            static_cast<int16_t>(std::sin(angle) * 32767),
+            static_cast<int16_t>(-std::cos(angle) * 32767));
+        return;
+    }
+    ntr::input_test_controls(true, 0, 0, 0);
+}
+
 static bool replay_dark_world_island_hold() {
     if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") ||
        !std::getenv("SM64DS_PC_TEST_DIAMOND_RIDE") || data_0209f2f8!=35)return false;
@@ -3998,7 +4188,14 @@ static bool replay_dark_world_island_hold() {
             // The QA route starts only after a confirmed, settled static landing.
             static bool began=false;
             if(!began && !p->mHorzSpeed && !std::strcmp(pc_player_state_name(p),"St_Wait_Main"))began=true;
-            if(began) {if(!replay_course_route(route))ntr::input_test_controls(true,0,0,0);return true;}
+            if (began) {
+                if (!replay_course_route(route)) {
+                    if (std::getenv("SM64DS_PC_TEST_DIAMOND_WHEEL_BOARD"))
+                        replay_dark_world_wheel_board(p);
+                    else ntr::input_test_controls(true, 0, 0, 0);
+                }
+                return true;
+            }
         }
     }
     ntr::input_test_controls(true,0,0,0);return true;

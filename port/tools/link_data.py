@@ -194,6 +194,18 @@ def records(root: pathlib.Path):
             following = next((item["address"] for item in group[index + 1:]
                               if item["address"] > row["address"]), row["segment_end"])
             row["size"] = max(4, min(following - row["address"], 0x100000))
+            if module == "ov043" and row["address"] in (0x02111b80, 0x02111bc0):
+                # The wheel's surface entries have their own labels immediately
+                # after the header. Collision lookup indexes through the header.
+                overlay = (root / "extracted/overlays/overlay_0043.bin").read_bytes()
+                offset = row["address"] - row["segment_start"]
+                magic, stride, count = struct.unpack_from("<4sHH", overlay, offset)
+                if magic != b"CLPS" or stride != 8 or not count:
+                    raise ValueError("unexpected Dark World wheel surface table header")
+                span = 8 + stride * count
+                if offset + span > len(overlay):
+                    raise ValueError("Dark World wheel surface table exceeds overlay")
+                row["size"] = max(row["size"], span)
             if module == "ov002" and row["address"] in (0x020ff0d4,0x020ff0d8,0x020ff0dc):
                 # Signpost carrying offsets are two XYZ rows (12-byte stride).
                 # The three coordinate labels must each retain the second pose.
