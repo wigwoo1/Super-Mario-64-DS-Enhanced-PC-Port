@@ -3926,6 +3926,7 @@ static bool replay_buddy_controls() {
 // normal stick/crouch/attack input. Never move actors or set collision results.
 // Once the ordinary route actually lands on a diamond island, release all
 // controls to observe its original rider-carry behavior without steering.
+static bool replay_wheel_main_route_ready = false;
 static void replay_dark_world_wheel_board(Player *player) {
     static unsigned phase = 0, target = 0, boarded = 0;
     static bool braking = false;
@@ -3956,8 +3957,10 @@ static void replay_dark_world_wheel_board(Player *player) {
         // speed and let the real crouch state select the long jump (>0xa000).
         // Keep the same world heading through takeoff to avoid an airborne turn.
         enum class Dismount { Centre, Settle, Window, Run, Crouch, Flight, Landed, Failed };
+        const bool main_ledge = std::getenv("SM64DS_PC_TEST_WHEEL_MAIN_LEDGE") != nullptr;
+        const int launch_direction = main_ledge ? -1 : 1;
         static Dismount dismount = Dismount::Centre;
-        static uint64_t dismount_began = tick;
+        static uint64_t dismount_began = tick, main_landed_at = 0;
         static bool brake = false;
         auto steer = [&](int direction, int magnitude, uint16_t buttons = 0) {
             const double angle = direction * 1.570796326794897 -
@@ -4004,7 +4007,7 @@ static void replay_dark_world_wheel_board(Player *player) {
                 dismount = Dismount::Crouch;
                 event("direct-cart-crouch");
             } else {
-                steer(1, 32767);
+                steer(launch_direction, 32767);
                 return;
             }
         }
@@ -4017,17 +4020,20 @@ static void replay_dark_world_wheel_board(Player *player) {
                 dismount = Dismount::Failed;
                 event("direct-cart-takeoff-failed");
             } else {
-                steer(1, 32767, !std::strcmp(state, "St_Crouch_Main") ? 0x102 : 0x100);
+                steer(launch_direction, 32767, !std::strcmp(state, "St_Crouch_Main") ? 0x102 : 0x100);
                 return;
             }
         }
         if (dismount == Dismount::Flight) {
             if (hit && !owner && !player->mIsAirborne &&
-                player->mPosX >= 780 * 4096 && player->mPosX <= 1320 * 4096 &&
-                player->mPosY >= -2020 * 4096 && player->mPosY <= -1940 * 4096 &&
+                (main_ledge ? (player->mPosX >= -1300 * 4096 && player->mPosX <= -900 * 4096 &&
+                    player->mPosY >= -1620 * 4096 && player->mPosY <= -1600 * 4096) :
+                    (player->mPosX >= 780 * 4096 && player->mPosX <= 1320 * 4096 &&
+                    player->mPosY >= -2020 * 4096 && player->mPosY <= -1940 * 4096)) &&
                 player->mPosZ >= 3350 * 4096 && player->mPosZ <= 3850 * 4096) {
                 dismount = Dismount::Landed;
-                event("direct-cart-landed-upper-platform");
+                if (main_ledge) main_landed_at = tick;
+                event(main_ledge ? "direct-cart-landed-main-platform" : "direct-cart-landed-upper-platform");
             } else if (tick - dismount_began > 240) {
                 dismount = Dismount::Failed;
                 event("direct-cart-flight-failed");
@@ -4036,14 +4042,41 @@ static void replay_dark_world_wheel_board(Player *player) {
                 // simulation update. Include one update of margin so landing
                 // stays inside the x800..1320 raised stone surface.
                 const double speed = (std::max)(0.0, player->mHorzSpeed / 4096.0);
-                if (!brake && player->mPosX / 4096.0 + speed * speed / 3.0 + speed >= 1050.0) {
+                if (!brake && launch_direction * player->mPosX / 4096.0 + speed * speed / 3.0 + speed >= (main_ledge ? 1100.0 : 1050.0)) {
                     brake = true;
                     event("direct-cart-air-brake");
                 }
                 if (!brake || player->mHorzSpeed > 0) {
-                    steer(brake ? -1 : 1, 32767);
+                    steer(brake ? -launch_direction : launch_direction, 32767);
                     return;
                 }
+            }
+        }
+        if (dismount == Dismount::Landed && main_ledge && main_landed_at &&
+            tick >= main_landed_at + 100 && waiting && !player->mHorzSpeed &&
+            std::getenv("SM64DS_PC_TEST_WHEEL_MAIN_ROUTE") && !replay_wheel_main_route_ready) {
+            replay_wheel_main_route_ready = true;
+            replay_course_route_waypoint = 0;
+            replay_course_route_complete = false;
+            event("main-rise-route");
+        }
+        if (dismount == Dismount::Landed && std::getenv("SM64DS_PC_TEST_WHEEL_UPPER_BANK")) {
+            static bool arrived = false;
+            const double dx = 2400 * 4096.0 - player->mPosX;
+            const double dz = 3800 * 4096.0 - player->mPosZ;
+            const double distance = std::hypot(dx, dz) / 4096.0;
+            if (!arrived && waiting && !player->mHorzSpeed && tick > dismount_began + 240)
+                event("upper-bank-walk");
+            if (!arrived && distance < 45 && hit && !owner && !player->mIsAirborne) {
+                arrived = true;
+                event("upper-bank-arrived");
+            }
+            if (!arrived) {
+                const double angle = std::atan2(dx, dz) - GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+                const int magnitude = distance < 200 ? 9000 : 12000;
+                ntr::input_test_controls(true, 0, static_cast<int16_t>(std::sin(angle) * magnitude),
+                    static_cast<int16_t>(-std::cos(angle) * magnitude));
+                return;
             }
         }
         ntr::input_test_controls(true, 0, 0, 0);
@@ -4107,6 +4140,20 @@ static bool replay_dark_world_island_hold() {
        !std::getenv("SM64DS_PC_TEST_DIAMOND_RIDE") || data_0209f2f8!=35)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);
     if(!p || p->aliveState!=1)return false;
+    if (replay_wheel_main_route_ready) {
+        if (const char *route = std::getenv("SM64DS_PC_TEST_WHEEL_MAIN_ROUTE")) {
+            if (!replay_course_route(route)) {
+                static bool logged = false;
+                if (!logged) {
+                    logged = true;
+                    std::fprintf(stderr, "[native wheel ride] main-rise-complete tick=%llu pos=%d,%d,%d\n",
+                        static_cast<unsigned long long>(ntr::rt_frame()), p->mPosX, p->mPosY, p->mPosZ);
+                }
+                ntr::input_test_controls(true, 0, 0, 0);
+            }
+            return true;
+        }
+    }
     static unsigned boarded=0;
     static uint64_t launch=0;
     static uint64_t boarded_at=0,dismount_at=0;

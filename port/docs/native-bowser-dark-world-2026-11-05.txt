@@ -56,3 +56,46 @@ height, followed by normal idle control, zero audio errors and unchanged
 isolated saves. The overshooting earlier replay fails the same acceptance
 checker. These changes correct QA inputs; the original player physics are
 preserved. Later course traversal and a fresh ROM-free kit remain open.
+
+2026-11-06 additional selected route: the optional
+SM64DS_PC_TEST_WHEEL_UPPER_BANK input pilot walks from the accepted wheel ledge
+down the original coin ramp to the stone bank around x2400/y-2480/z3800.
+A muted 16000-frame test reaches the bank at14936, records193 sustained
+static grounded contacts after settling, returns to normal Wait with neutral
+input, exits0 and preserves both isolated save files. Audio errors and audible
+submitted samples are zero. Build and six focused clock/input/camera tests pass.
+This adds QA inputs only; it does not change ordinary movement or course data.
+The original exit to level36 is near x6655/y2850/z93; traversal from the bank
+to that exit remains unverified. Do not equate this bank with the boss entrance.
+The prior wheel/upper-ledge ROM-free kit has now been reconstructed and
+published at source7fb66f4; this new optional bank pilot is not yet in that kit.
+
+Further selected wheel route: the optional SM64DS_PC_TEST_WHEEL_MAIN_LEDGE
+pilot mirrors the cart long jump toward the higher landing on the left,
+where original static KCL is flat near x-1100/y-1612.56/z3688. The normal
+rightward dismount remains the default for the earlier opt-in dismount test.
+A 15000-frame muted replay boards cart137 at13332, launches13994 and lands
+on the higher surface14064. It records186 consecutive grounded samples and
+normal neutral Wait/control afterward. Audio errors/audible submitted samples
+are zero, exit is0, and both isolated synthetic saves are byte-identical.
+The native build and six focused clock/input/camera tests pass.
+
+Private static KCL analysis finds a continuous rising walk from this landing
+around the left side toward x-6000/y999/z-2100. That walk is not yet runtime
+verified. The lower right bank is a separate branch and does not establish
+boss access. The extending bridge138, seesaws133 and drifting stairs134
+farther along the upper course still need native integration/acceptance.
+The boss entrance and complete course remain unverified.
+
+Experimental uphill continuation (not gameplay accepted): the optional
+SM64DS_PC_TEST_WHEEL_MAIN_ROUTE starts only after a settled main-ledge landing
+and drives a supplied normal-input route. Six focused tests and the native
+build pass. The first static-grid route fell at a diagonal ramp turn and
+returned to the castle. A second route uses finer collision samples with
+45-unit clearance, passes all111 markers and reaches the upper left bank,
+but ends hanging from its edge instead of standing safely. It also has an
+earlier enemy-damage state. The strict gameplay checker rejects both runs;
+a route-complete log is not evidence of safe final support. Both runs exit0
+with muted device output, zero audio errors and unchanged isolated saves.
+The main-course walk, missing platform crossing and boss entrance remain
+unverified. These opt-in QA additions do not change ordinary game physics.
