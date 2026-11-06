@@ -6610,8 +6610,8 @@
     },
     {
       "path": "port/docs/native-bowser-dark-world-2026-11-05.txt",
-      "sha256": "ab8c4b21f759dd469211b51f5a7e28272c6d6cfae83bdf84da80576fcd36d74e",
-      "bytes": 2990
+      "sha256": "27ca5687309be9dfa620c84fbe8814d1db8cc56443d8d171bfc072c3dd8f8b4a",
+      "bytes": 3850
     },
     {
       "path": "port/docs/native-brick-character-rules-verified-2026-10-25.txt",
@@ -8090,8 +8090,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "a47a489b1cdfdcd95c2d087980529b50541cdc3d8283f29f3e095fdb42da0c5d",
-      "bytes": 335315
+      "sha256": "932d9d16ceac7b3fbe58cd6e74d95d288cf54fd28cd9a99700bde863d8afc175",
+      "bytes": 344733
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9530,8 +9530,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "ac8eb93922fbf72095cc7317917c99c0ed9a0140507fc6e68d73ec13c400cd8b",
-      "bytes": 28313
+      "sha256": "0e5e065c51caaa2d98f91e638dfc6dc6cd75e642feabafe3ebb34e2773e9411e",
+      "bytes": 29173
     },
     {
       "path": "port/tools/linkage.py",
