@@ -24,6 +24,46 @@ NO_CONTROL_FREE = {0x020c9de4,0x020c9b7c,0x020c9998,0x020c990c}
 
 
 def transform(text):
+    if 's32 daSCoin_c::InitResources()' in text:
+        anchor = 's32 daSCoin_c::InitResources()\n{'
+        text = text.replace(anchor, anchor + '\n    pc_init_number_resources();')
+        return ('#include <stddef.h>\nextern "C" void pc_init_number_resources();\n' + text +
+                '\nstatic_assert(sizeof(daSCoin_c)==0x114 && offsetof(daSCoin_c,mCollectedCount)==0x110);\n')
+    if 's32 daObjNumber_c::InitResources()' in text:
+        anchor = 's32 daObjNumber_c::InitResources()\n{'
+        text = text.replace(anchor, anchor + '\n    pc_init_number_resources();')
+        # Overlay 2's original number resource handles.
+        text += """
+extern "C" void pc_init_number_resources() {
+    static const bool initialized = [] {
+        data_ov002_0210d9a8.Construct(0x8009);
+        data_ov002_0210d9e8.Construct(0x800a);
+        data_ov002_0210da28.Construct(0x800b);
+        data_ov002_0210da08.Construct(0x453);
+        return true;
+    }();
+    (void)initialized;
+}
+static_assert(sizeof(daObjNumber_c)==0x150 && offsetof(daObjNumber_c,mDelay)==0x14c);
+"""
+        return '#include <stddef.h>\nextern "C" void pc_init_number_resources();\n' + text
+    if 'int daObjPushblock_c::InitResources()' in text:
+        anchor = 'int daObjPushblock_c::InitResources()\n{'
+        text = text.replace(anchor, anchor + """
+    static const bool initialized = [] {
+        data_ov002_0210df9c.Construct(0x486);
+        data_ov002_0210df94.Construct(0x487);
+        return true;
+    }();
+    (void)initialized;
+""")
+        return ('#include <stddef.h>\n' + text +
+                '\nstatic_assert(sizeof(daObjPushblock_c)==0x4f4 && offsetof(daObjPushblock_c,mLinkedActor)==0x4f0);\n')
+    if 'dActor_c *dActor_c::SpawnNumber(' in text:
+        text = text.replace('dActor_c *func_ov002_020f0918(dActor_c *number, dActor_c *owner);',
+                            'void func_ov002_020f0918(dActor_c *number, dActor_c *owner);')
+        text = text.replace('    return func_ov002_020f0918(number, owner);',
+                            '    func_ov002_020f0918(number, owner);\n    return number;')
     if 'int Player::func_ov002_020c4188()' in text:
         old='if (obj[0x35] == 0x2a)'
         guarded='if (obj && obj[0x35] == 0x2a)'

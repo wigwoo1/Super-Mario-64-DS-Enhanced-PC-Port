@@ -37,6 +37,8 @@ def main():
             for item in metadata.get('prebuilt', [])
             if item.get('path', '').endswith('.obj')
         }
+        object_origins.update({item['object']: pathlib.PurePosixPath(item['source']).name + '.obj'
+                               for item in metadata['local_objects']})
 
     def owner_is(line, expected_object):
         owner = line.rsplit(maxsplit=1)[-1]
@@ -56,6 +58,48 @@ def main():
         base = int(re.search(r'\.text\s+start:0x([\da-f]+)', text)[1], 16)
         return base, (ROOT / f'extracted/overlays/overlay_{number:04d}.bin').read_bytes()
 
+    bowser_base, bowser_rom = overlay(60)
+    tilt = bowser_rom[0x02119294-bowser_base:0x021192dc-bowser_base]
+    if len(tilt) != 72 or tilt[-2:] != b'\0\0' or pe_bytes(
+            args.exe, named('data_ov060_02119294'), len(tilt)) != tilt:
+        raise ValueError('Fire Sea Bowser tilt table differs from the original')
+    print('PASS: complete original Fire Sea Bowser tilt table')
+
+    pipe_base, pipe_rom = overlay(102)
+    expected = struct.unpack_from('<IHHIiiii', pipe_rom, 0x0214e134 - pipe_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_warp_pipe_profile'), 28))
+    if actual[0] != named('daObjSimpleBg_c_classInit_DOKAN') or actual[1:] != expected[1:]:
+        raise ValueError('Warp pipe profile/factory differs from the original')
+    surface_base, surface_rom = overlay(2)
+    for profile, factory, address in (
+        ('g_profile_SECRET_COIN', 'daSCoin_c_classInit', 0x0210b00c),
+        ('pc_push_block_profile', 'daObjPushblock_c_classInit', 0x0210968c),
+        ('pc_number_profile', 'daObjNumber_c_classInit', 0x0210b0c8),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', surface_rom, address - surface_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{profile}: secret mission profile/factory differs from the original')
+    print('PASS: original secret trigger, push block and number popup profiles and native factories')
+    offset = 0x0210d814 - surface_base
+    if struct.unpack_from('<4sHH', surface_rom, offset) != (b'CLPS', 8, 1):
+        raise ValueError('Unexpected original warp pipe surface table')
+    if pe_bytes(args.exe, named('data_ov002_0210d814'), 16) != surface_rom[offset:offset+16]:
+        raise ValueError('Warp pipe surface table differs from the original')
+    print('PASS: native DOKAN warp pipe profile/factory and complete original CLPS')
+
+    docks_base, docks_rom = overlay(26)
+    expected = struct.unpack_from('<IHHIiiii', docks_rom, 0x02113c48 - docks_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_docks_submarine_profile'), 28))
+    if actual[0] != named('daObjWlSubmarine_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Dire Dire Docks submarine profile/factory differs from the original')
+    offset = 0x02112fd4 - docks_base
+    if struct.unpack_from('<4sHH', docks_rom, offset) != (b'CLPS', 8, 4):
+        raise ValueError('Unexpected original submarine surface table')
+    if pe_bytes(args.exe, named('data_ov026_02112fd4'), 40) != docks_rom[offset:offset+40]:
+        raise ValueError('Submarine surface table differs from the original')
+    print('PASS: native Dire Dire Docks submarine profile/factory and all four original CLPS rows')
+
     # Reviewed Dark World row of the shared native sliding-platform class.
     lift_base,lift_rom=overlay(91)
     expected=struct.unpack_from('<IHHIiiii',lift_rom,0x02134f60-lift_base)
@@ -74,6 +118,134 @@ def main():
     if pe_bytes(args.exe,named('data_ov043_02111be0'),16)!=clps_rom[offset:offset+16]:
         raise ValueError('Incomplete original extending-platform collision properties')
     print('PASS: native extending-platform profile/factory, original travel tables and complete CLPS')
+
+    expected = struct.unpack_from('<IHHIiiii', lift_rom, 0x02134fd0 - lift_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_firesea_sliding_profile'), 28))
+    if actual[0] != named('daObjSimpleLift_c_classInit_KM2_RIFUT01') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea sliding lift profile/factory differs from the original')
+    print('PASS: native Fire Sea sliding lift profile and original movement tables')
+
+    expected = struct.unpack_from('<IHHIiiii', lift_rom, 0x02134e9c - lift_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_firesea_path_lift_profile'), 28))
+    if actual[0] != named('daLinelift2_c_classInit_KM2_SUSUMU') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea path-lift profile/factory differs from original')
+    callbacks = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov091_021354e0'), 12))
+    targets = tuple(next(addr for name, addr in symbols.items()
+                         if name.startswith(f'?func_ov091_{method}@daLinelift2_c@@'))
+                    for method in ('02132000', '02131f9c', '02131ef0'))
+    if callbacks != targets:
+        raise ValueError('Fire Sea path lift does not dispatch to its three original native states')
+    print('PASS: native Fire Sea path-lift profile, factory and three state callbacks')
+
+    gura_base, gura_rom = overlay(45)
+    expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112ffc - gura_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_GURA'), 28))
+    if actual[0] != named('daObjKm2_Gura_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea tilting-platform profile/factory differs from the original')
+    descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov045_02112fdc'), 12))
+    if descriptor != (named('data_ov045_02113220'), named('data_ov045_02113228'), 0):
+        raise ValueError('Fire Sea tilting-platform descriptor has incorrect native resource pointers')
+    print('PASS: native Fire Sea tilting-platform profile, factory and resource descriptor')
+
+    expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112d98 - gura_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_AMI_BOU'), 28))
+    if actual[0] != named('daObjKm2_Ami_Bou_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea net-pole profile/factory differs from the original')
+    for handle, file_id in (('data_ov045_021131b0', 1629), ('data_ov045_021131a8', 1630)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Fire Sea net-pole resource differs from the original')
+    print('PASS: native Fire Sea net-pole profile, factory and original resource handles')
+
+    expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112cd0 - gura_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_AGARU'), 28))
+    if actual[0] != named('daObjKm2_Agaru_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea rising-lift profile/factory differs from the original')
+    for handle, file_id in (('data_ov045_02113188', 1627), ('data_ov045_02113180', 1628)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Fire Sea rising-lift resource differs from the original')
+    print('PASS: native Fire Sea rising-lift profile, factory and original resource handles')
+
+    expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112e5c - gura_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_firesea_stretch_profile'), 28))
+    if actual[0] != named('daObjKm2_Nobiru_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea stretching platform profile/factory differs from the original')
+    print('PASS: native Fire Sea stretching platform profile and factory')
+
+    wdw_base, wdw_rom = overlay(29)
+    expected = struct.unpack_from('<IHHIiiii', wdw_rom, 0x02113e50 - wdw_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_wdw_cage_lift_profile'), 28))
+    if actual[0] != named('daObjWc_Obj05_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Wet-Dry World cage lift profile/factory differs from the original')
+    print('PASS: Wet-Dry World cage lift profile and native factory')
+    expected = struct.unpack_from('<IHHIiiii', wdw_rom, 0x02113ccc - wdw_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_wdw_arrow_lift_profile'), 28))
+    if actual[0] != named('daObjWc_Obj02_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Wet-Dry World arrow lift profile/factory differs from the original')
+    for handle, literal in (('data_ov029_02114250', 0x02112bf4), ('data_ov029_02114248', 0x02112c04)):
+        file_id = struct.unpack_from('<I', wdw_rom, literal - wdw_base)[0]
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Wet-Dry World arrow lift resource differs from the original')
+    print('PASS: native Wet-Dry World arrow lift profile, factory and original resource handles')
+
+    for profile, factory, address in (
+        ('pc_wdw_crystal_profile', 'daObjWc_Obj03_c_classInit', 0x02113d90),
+        ('pc_wdw_water_profile', 'daObjWc_Mizu_c_classInit', 0x021140b8),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', wdw_rom, address - wdw_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{profile}: Wet-Dry World profile/factory differs from the original')
+    for handle, file_id in (
+        ('data_ov029_02114270', 1744),
+        ('daObjWc_Obj07_c_ModelFile', 1738),
+        ('daObjWc_Obj07_c_ClsnFile', 1739),
+    ):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Wet-Dry World water/crystal resource differs from the original')
+    print('PASS: native Wet-Dry World water and crystal profiles, factories and resource handles')
+
+    for profile, factory, address in (
+        ('pc_wdw_square_board_profile', 'daObjWcObj01_c_classInit', 0x02113c08),
+        ('pc_wdw_long_board_profile', 'daObjWcObj06_c_classInit', 0x02113f20),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', wdw_rom, address - wdw_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{profile}: Wet-Dry World floating board profile differs from the original')
+    for handle, file_id in (
+        ('data_ov029_02114220', 1740), ('data_ov029_02114228', 1741),
+        ('data_ov029_021142ac', 1749), ('data_ov029_021142b4', 1750),
+    ):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Wet-Dry World floating board resource differs from the original')
+    print('PASS: native Wet-Dry World floating board profiles, factories and resource handles')
+
+    amp_base, amp_rom = overlay(70)
+    expected = struct.unpack_from('<IHHIiiii', amp_rom, 0x02123254 - amp_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_BIRIKYU'), 28))
+    if actual[0] != named('daBrq_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Amp profile/factory differs from the original')
+    print('PASS: native Amp profile and factory')
+
+    expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112f2c - gura_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_UKISHIMA'), 28))
+    if actual[0] != named('daObjKm2_Ukishima_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fire Sea bobbing-platform profile/factory differs from the original')
+    descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov045_02112f08'), 12))
+    if descriptor != (named('data_ov045_02113200'), named('data_ov045_021131f8'), 0):
+        raise ValueError('Fire Sea bobbing-platform descriptor has incorrect native resource pointers')
+    print('PASS: native Fire Sea bobbing-platform profile, factory and resource descriptor')
+
+    bully_base, bully_rom = overlay(64)
+    expected = struct.unpack_from('<IHHIiiii', bully_rom, 0x0211b818 - bully_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_small_bully_profile'), 28))
+    if actual[0] != named('daDonketu_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Small Bully profile/factory differs from the original')
+    expected = struct.unpack_from('<13I', bully_rom, 0x0211b834 - bully_base)
+    actual = struct.unpack('<13I', pe_bytes(args.exe, named('pc_small_bully_config'), 52))
+    if actual != tuple(named(f'data_ov064_{address:08x}') for address in expected[:5]) + expected[5:]:
+        raise ValueError('Small Bully model/animation handles or behavior constants differ from the original')
+    print('PASS: native small Bully profile/factory and all five original resource handles')
 
     # The original common-model BSS cache occupies 0x0209cefc..0x0209d3ac:
     # 100 twelve-byte entries. A legacy 64-entry host buffer placed its count
@@ -119,6 +291,12 @@ def main():
 
     for name, factory, module, guest in (
             ('pc_exit_profile', 'daChScene_c_classInit', 2, 0x02108690),
+            ('g_profile_CH_ROOM', 'daChRoom_c_classInit', 2, 0x021085d4),
+            ('pc_bowser_profile', 'daKpa_c_classInit', 60, 0x0211a5f4),
+            ('pc_bowser_tail_profile', 'daKpaTail_c_classInit', 60, 0x0211a610),
+            ('pc_bowser_fire_profile', 'daKpaFire_c_classInit', 60, 0x0211a7d0),
+            ('pc_bowser_mine_profile', 'daKirai_c_classInit', 60, 0x0211aa68),
+            ('pc_bowser_key_profile', 'daObjKey_c_classInit_OBJ_KEY', 89, 0x02132b68),
             ('pc_picture_gate_profile', 'daPicGate_c_classInit', 80, 0x02128290),
             ('pc_player_profile', 'daPly_c_classInit', 2, 0x0210a704),
             ('pc_warp_profile', 'daWarpkun_c_classInit', 2, 0x0210ac98),
@@ -141,6 +319,9 @@ def main():
             ('pc_star_switch_profile', 'daObjSwitch_c_classInit_STAR_SWITCH', 2, 0x0210991c),
             ('pc_updown_lift_profile', 'daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT',91,0x02134bf8),
             ('pc_battlefield_seesaw_profile','daObjSeesaw_c_classInit_BOMB_SEESAW',95,0x02137484),
+            ('pc_dark_world_seesaw_profile','daObjSeesaw_c_classInit_KM1_SEESAW',95,0x021373f8),
+            ('pc_fire_sea_seesaw_profile','daObjSeesaw_c_classInit_KM2_YOKOSEESAW',95,0x02137414),
+            ('g_profile_KM1_DORIFU','daObjKm1_Dorifu_c_classInit',43,0x021124fc),
             ('pc_battlefield_gate_profile','daObjBSwdoor_c_classInit',14,0x021145e4),
             ('pc_koopa_race_profile','daRNk_c_classInit',62,0x0211db78),
             ('pc_koopa_flag_profile','daRFlag_c_classInit',62,0x0211dc30),
@@ -155,6 +336,8 @@ def main():
             ('pc_arrow_left_profile','daObjYajirusi_c_classInit_YAJIRUSI_L',98,0x0213c398),
             ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
             ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
+            ('pc_firesea_fall_block_profile','daObjKm2_Fall_Block_c_classInit',45,0x021130d0),
+            ('pc_firesea_arena_profile','daKpa2Bg_c_classInit',60,0x0211a88c),
             ('pc_kaidan_profile','daTrsTrap_c_classInit_KAIDAN',63,0x0211ea10),
             ('pc_boo_profile','daTrs_c_classInit_TERESA',63,0x0211e770),
             ('pc_big_boo_profile','daTrs_c_classInit_BOSS_TERESA',63,0x0211e78c),
@@ -173,6 +356,7 @@ def main():
             ('pc_hmc_lift_profile','daUdlift_c_classInit_UDLIFT',95,0x021375e8),
             ('pc_rainbow_lift_profile','daUdlift_c_classInit_RC_RIFT02',95,0x02137604),
             ('g_profile_RC_CARPET','daObjRcCarpet_c_classInit',36,0x02113f78),
+            ('pc_wdw_disc_profile','daObjWc_Obj07_c_classInit',29,0x02113ff4),
             ('pc_rainbow_disc_profile','daObjRc_Kaitendai_c_classInit',36,0x02113b50),
             ('pc_rainbow_donut_profile','daObjRc_Tikuwa_c_classInit',36,0x02113cd4),
             ('pc_rainbow_swing_profile','daObjRcBuranko_c_classInit',36,0x02113a74),
@@ -197,6 +381,56 @@ def main():
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
     print('PASS: original KAIDAN65 native factory and full profile descriptor match overlay 63')
+    # Dark World's KM1_SEESAW is variant2 of the recovered shared seesaw.
+    # Keep its model/collision handles and complete CLPS surface row tied to
+    # the original profile/resource tables, without enabling other variants.
+    seesaw_base,seesaw_rom=overlay(95)
+    model_handle=named('data_ov095_02137798')
+    collision_handle=named('data_ov095_021377e0')
+    if struct.unpack('<II',pe_bytes(args.exe,model_handle,8))!=(1623,0):
+        raise ValueError('Dark World seesaw model handle does not use original KM1_SHISO BMD')
+    if struct.unpack('<II',pe_bytes(args.exe,collision_handle,8))!=(1624,0):
+        raise ValueError('Dark World seesaw collision handle does not use original KM1_SHISO KCL')
+    clps_base,clps_rom=overlay(43)
+    clps_offset=0x02111c20-clps_base
+    magic,stride,count=struct.unpack_from('<4sHH',clps_rom,clps_offset)
+    if magic!=b'CLPS' or stride!=8 or count!=1:
+        raise ValueError('Unexpected original Dark World seesaw collision-property table')
+    if pe_bytes(args.exe,named('data_ov043_02111c20'),16)!=clps_rom[clps_offset:clps_offset+16]:
+        raise ValueError('Dark World seesaw collision properties differ from original CLPS row')
+    print('PASS: native Dark World KM1_SEESAW profile, original model/collision handles and complete CLPS row')
+    if struct.unpack_from('<3I', seesaw_rom, 0x021374c4-seesaw_base) != (
+            0x021377b0, 0x021377d0, 0x02112570):
+        raise ValueError('Unexpected original Fire Sea seesaw resource row')
+    for handle, file_id in (('data_ov095_021377b0', 1645), ('data_ov095_021377d0', 1646)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Fire Sea seesaw resource ID differs from the original')
+    if struct.unpack_from('<4sHH', gura_rom, 0x02112570-gura_base) != (b'CLPS', 8, 2):
+        raise ValueError('Unexpected original Fire Sea seesaw collision-property table')
+    print('PASS: native Fire Sea KM2_YOKOSEESAW profile, model/collision handles and original CLPS layout')
+    # Dark World's five drifting stairs are one native actor with five original
+    # model/collision/surface rows. Keep the factory/profile exact and ensure
+    # the compiled resource table points at native handles and complete CLPS.
+    dorifu_base,dorifu_rom=overlay(43)
+    resource_rows=struct.unpack('<15I',pe_bytes(args.exe,named('data_ov043_02112518'),60))
+    model_names=('data_ov043_021126a0','data_ov043_02112680','data_ov043_02112668',
+                 'data_ov043_02112688','data_ov043_02112690')
+    collision_names=('data_ov043_02112678','data_ov043_02112658','data_ov043_02112670',
+                     'data_ov043_02112698','data_ov043_02112660')
+    clps_names=('data_ov043_02111c40','data_ov043_02111b60','data_ov043_02111ba0',
+                'data_ov043_02111c80','data_ov043_02111c60')
+    for i,(model,collision,clps) in enumerate(zip(model_names,collision_names,clps_names)):
+        if resource_rows[i*3:i*3+3]!=(named(model),named(collision),named(clps)):
+            raise ValueError(f'Dark World drifting-stairs resource row {i} is not native/rebased')
+        clps_address=int(clps.rsplit('_',1)[1],16)
+        clps_offset=clps_address-dorifu_base
+        magic,stride,count=struct.unpack_from('<4sHH',dorifu_rom,clps_offset)
+        if magic!=b'CLPS' or stride!=8 or count!=2:
+            raise ValueError(f'Unexpected Dark World drifting-stairs CLPS row {i}')
+        span=8+stride*count
+        if pe_bytes(args.exe,named(clps),span)!=dorifu_rom[clps_offset:clps_offset+span]:
+            raise ValueError(f'Incomplete original Dark World drifting-stairs CLPS row {i}')
+    print('PASS: native Dark World KM1_DORIFU profile, five rebased resource rows and complete CLPS tables')
     for suffix in ('edc4','edcc','edd4','eddc','ede4','edec','edf4'):
         label='data_ov063_0211'+suffix
         named(label)
@@ -340,6 +574,17 @@ def main():
         if pe_bytes(args.exe,named(label),size)!=raw[address-base:address-base+size]:
             raise ValueError('Rainbow disc original collision/rotation data differs: '+label)
     print('PASS: original rotating-disc profile, resources, collision data, rotation increments and native virtual callbacks')
+    wdw_disc_vtable = struct.unpack('<17I', pe_bytes(args.exe, arrow_method('??_7daObjWc_Obj07_c@@'), 68))
+    for slot, method, owner in (
+        (0, 'InitResources', 'daObjWc_Obj07_c'), (3, 'CleanupResources', 'daObjWc_Obj07_c'),
+        (6, 'Behavior', 'daObjKaitendai_c'), (9, 'Render', 'daObjKaitendai_c'),
+    ):
+        if wdw_disc_vtable[slot] != arrow_method('?' + method + '@' + owner + '@@'):
+            raise ValueError('Wet-Dry World disc callback is not native: ' + method)
+    for handle, file_id in (('data_ov029_021142dc', 1751), ('data_ov029_021142d4', 1752)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError('Wet-Dry World disc resource differs: ' + handle)
+    print('PASS: original Wet-Dry World rotating-disc profile, resources and native callbacks')
     iron_vtable=struct.unpack('<17I',pe_bytes(args.exe,arrow_method('??_7daIbl_c@@'),68))
     for slot,method in ((0,'InitResources'),(3,'CleanupResources'),(6,'Behavior'),(9,'Render')):
         if iron_vtable[slot]!=arrow_method('?'+method+'@daIbl_c@@'):

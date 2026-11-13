@@ -246,6 +246,7 @@ struct PcActorProfile {
 };
 #if defined(SM64DS_GAME_TARGET)
 extern "C" void *daChScene_c_classInit(void);
+extern "C" unsigned char g_profile_CH_ROOM[];
 extern "C" void *daDoor_c_classInit(void);
 extern "C" unsigned char g_profile_STAR_GATE[];
 extern "C" void *dMap_c_classInit(void);
@@ -306,6 +307,7 @@ extern "C" void *daObjC1Hikari_c_classInit();
 extern "C" void *daSetSE_c_classInit();
 extern "C" void *daObjHeart_c_classInit();
 extern "C" void *daObjTh_Fall_Block_c_classInit();
+extern "C" void *daObjKm2_Fall_Block_c_classInit();
 extern "C" void *daTrsTrap_c_classInit_KAIDAN();
 extern "C" void *daTrs_c_classInit_TERESA();
 extern "C" void *daTrs_c_classInit_BOSS_TERESA();
@@ -338,6 +340,10 @@ extern "C" void *daIbl_c_classInit();
 extern "C" void *daKpa_c_classInit(), *daKpaTail_c_classInit(), *daKpaFire_c_classInit(), *daKirai_c_classInit(), *daObjKey_c_classInit_OBJ_KEY();
 // Cartridge ov060 profiles. Preview remains opt-in until boss runtime acceptance.
 static PcNativeActorProfile pc_bowser_profile = {(void *)&daKpa_c_classInit,279,143,67108864,409600,409600,16777216,16777216};
+extern "C" void *daKpa2Bg_c_classInit();
+static PcNativeActorProfile pc_firesea_arena_profile = {
+    (void *)&daKpa2Bg_c_classInit,166,145,0,0,0x1388000,0x1388000,0x1388000
+};
 static PcNativeActorProfile pc_bowser_tail_profile = {(void *)&daKpaTail_c_classInit,278,142,128,409600,409600,16777216,16777216};
 static PcNativeActorProfile pc_bowser_fire_profile = {(void *)&daKpaFire_c_classInit,280,144,2,327680,327680,16777216,8388608};
 static PcNativeActorProfile pc_bowser_mine_profile = {(void *)&daKirai_c_classInit,284,147,2,0,1638400,98304000,0};
@@ -359,6 +365,21 @@ static PcNativeActorProfile pc_hmc_lift_profile = {
     (void *)&daUdlift_c_classInit_UDLIFT,33,301,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
 };
 static PcNativeActorProfile pc_ironball_profile = {(void *)&daIbl_c_classInit,220,69,2,409600,8192000,25165824,25165824};
+extern "C" unsigned char g_profile_SECRET_COIN[];
+extern "C" void *daObjPushblock_c_classInit();
+extern "C" void *daObjNumber_c_classInit();
+static PcNativeActorProfile pc_push_block_profile = {
+    (void *)&daObjPushblock_c_classInit,192,31,2,0x96000,0x12c000,0x1000000,0
+};
+static PcNativeActorProfile pc_number_profile = {
+    (void *)&daObjNumber_c_classInit,330,332,0x4800000,0,0xa000,0,0
+};
+extern "C" void *daObjWc_Obj05_c_classInit();
+static PcNativeActorProfile pc_wdw_cage_lift_profile = {
+    (void *)&daObjWc_Obj05_c_classInit,99,275,2,0,0x250000,0x2000000,0x2000000
+};
+extern "C" void *daObjWc_Obj07_c_classInit();
+static PcNativeActorProfile pc_wdw_disc_profile = {(void *)&daObjWc_Obj07_c_classInit,94,270,2,0,0x110000,0x1c20000,0x640000};
 static PcNativeActorProfile pc_rainbow_disc_profile = {(void *)&daObjRc_Kaitendai_c_classInit,129,259,2,409600,4096000,29491200,6553600};
 static PcNativeActorProfile pc_rainbow_lift_profile = {
     (void *)&daUdlift_c_classInit_RC_RIFT02,131,261,0x1000002,0,0x1f4000,0xaf0000,0x4b0000
@@ -397,6 +418,9 @@ static PcNativeActorProfile pc_merry_go_round_profile = {
 };
 static PcNativeActorProfile pc_th_fall_block_profile = {
     (void *)&daObjTh_Fall_Block_c_classInit,66,209,2,0,0x80000,0x1000000,0
+};
+static PcNativeActorProfile pc_firesea_fall_block_profile = {
+    (void *)&daObjKm2_Fall_Block_c_classInit,139,210,2,0x60000,0x150000,0x1000000,0
 };
 extern "C" void *daObjYajirusi_c_classInit_YAJIRUSI_L(),*daObjYajirusi_c_classInit_YAJIRUSI_R();
 static PcNativeActorProfile pc_arrow_left_profile = {
@@ -462,7 +486,44 @@ static PcNativeActorProfile pc_koopa_flag_profile = {
 extern "C" void *daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT();
 extern "C" void *daObjKm1_Ukishima_c_classInit();
 extern "C" void *daObjSimpleLift_c_classInit_KM1_DERU();
+extern "C" void *daObjSimpleLift_c_classInit_KM2_RIFUT01();
+static PcNativeActorProfile pc_firesea_sliding_profile = {
+    (void *)&daObjSimpleLift_c_classInit_KM2_RIFUT01,147,218,2,0,0x350000,0x1000000,0
+};
+extern "C" void *daObjWc_Obj02_c_classInit();
+extern "C" void *daObjWc_Obj03_c_classInit(), *daObjWc_Mizu_c_classInit();
+static PcNativeActorProfile pc_wdw_crystal_profile = {(void *)&daObjWc_Obj03_c_classInit,97,273,2,0,0x40000,0x1000000,0};
+static PcNativeActorProfile pc_wdw_water_profile = {(void *)&daObjWc_Mizu_c_classInit,101,277,0,0x96000,0x96000,0xfa0000,0xfa0000};
+extern "C" void *daObjWcObj01_c_classInit(), *daObjWcObj06_c_classInit();
+static PcNativeActorProfile pc_wdw_square_board_profile = {(void *)&daObjWcObj01_c_classInit,95,271,2,0x60000,0x300000,0x2000000,0};
+static PcNativeActorProfile pc_wdw_long_board_profile = {(void *)&daObjWcObj06_c_classInit,100,276,2,0x60000,0x300000,0x2000000,0};
+static PcNativeActorProfile pc_wdw_arrow_lift_profile = {(void *)&daObjWc_Obj02_c_classInit,96,272,2,0,0x100000,0x1000000,0x1000000};
 static PcNativeActorProfile pc_dark_world_extending_profile = {(void *)&daObjSimpleLift_c_classInit_KM1_DERU,138,179,2,0,0x400000,0x2000000,0};
+extern "C" void *daLinelift2_c_classInit_KM2_SUSUMU();
+extern "C" unsigned char g_profile_KM2_GURA[];
+extern "C" unsigned char g_profile_KM2_AMI_BOU[];
+extern "C" void *daObjKm2_Nobiru_c_classInit();
+static PcNativeActorProfile pc_firesea_stretch_profile = {
+    (void *)&daObjKm2_Nobiru_c_classInit,148,219,7,0x3e8000,0x7d0000,0x3e80000,0x50000
+};
+extern "C" unsigned char g_profile_KM2_AGARU[];
+extern "C" unsigned char g_profile_BIRIKYU[];
+extern "C" unsigned char g_profile_KM2_UKISHIMA[];
+extern "C" void *daDonketu_c_classInit();
+static PcNativeActorProfile pc_small_bully_profile = {
+    (void *)&daDonketu_c_classInit, 215, 59, 0x10000006, 0x64000, 0x64000, 0x1000000, 0x1000000
+};
+static PcNativeActorProfile pc_firesea_path_lift_profile = {
+    (void *)&daLinelift2_c_classInit_KM2_SUSUMU,144,215,2,0x100000,0x300000,0x1000000,0
+};
+extern "C" void *daObjSimpleBg_c_classInit_DOKAN();
+static PcNativeActorProfile pc_warp_pipe_profile = {
+    (void *)&daObjSimpleBg_c_classInit_DOKAN, 298, 187, 2, 0, 0x200000, 0x1000000, 0
+};
+extern "C" void *daObjWlSubmarine_c_classInit();
+static PcNativeActorProfile pc_docks_submarine_profile = {
+    (void *)&daObjWlSubmarine_c_classInit, 90, 251, 0, 0, 0x1000000, 0, 0
+};
 extern "C" unsigned char g_profile_KM1_KURUMA[],g_profile_KM1_KURUMAJIKU[];
 // Original ov043 KM1_UKISHIMA descriptor, constructor rebased to native code.
 static PcNativeActorProfile pc_dark_world_island_profile = {
@@ -470,6 +531,15 @@ static PcNativeActorProfile pc_dark_world_island_profile = {
 };
 extern "C" void *daObjSeesaw_c_classInit_BOMB_SEESAW();
 extern "C" void *daObjSeesaw_c_classInit_RC_SEESAW();
+extern "C" void *daObjSeesaw_c_classInit_KM1_SEESAW();
+extern "C" void *daObjSeesaw_c_classInit_KM2_YOKOSEESAW();
+extern "C" unsigned char g_profile_KM1_DORIFU[];
+static PcNativeActorProfile pc_dark_world_seesaw_profile = {
+    (void *)&daObjSeesaw_c_classInit_KM1_SEESAW,133,174,2,0,0x400000,0x1000000,0
+};
+static PcNativeActorProfile pc_fire_sea_seesaw_profile = {
+    (void *)&daObjSeesaw_c_classInit_KM2_YOKOSEESAW,143,214,2,0,0x400000,0x1000000,0
+};
 static PcNativeActorProfile pc_rainbow_seesaw_profile = {(void *)&daObjSeesaw_c_classInit_RC_SEESAW,128,258,2,0,4194304,16777216,0};
 extern "C" void *daObjBSwdoor_c_classInit();
 // Original ov091/095/014 descriptors; only the constructor pointer is rebased.
@@ -682,6 +752,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[299] = &pc_arrow_left_profile;
     data_020a4bb8_storage[300] = &pc_arrow_right_profile;
     data_020a4bb8_storage[66] = &pc_th_fall_block_profile;
+    data_020a4bb8_storage[139] = &pc_firesea_fall_block_profile;
     data_020a4bb8_storage[65] = &pc_kaidan_profile;
     data_020a4bb8_storage[209] = &pc_boo_profile;
     data_020a4bb8_storage[210] = &pc_big_boo_profile;
@@ -698,6 +769,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[33] = &pc_hmc_lift_profile;
     data_020a4bb8_storage[131] = &pc_rainbow_lift_profile;
     data_020a4bb8_storage[130] = g_profile_RC_CARPET;
+    data_020a4bb8_storage[94] = &pc_wdw_disc_profile;
     data_020a4bb8_storage[129] = &pc_rainbow_disc_profile;
     data_020a4bb8_storage[126] = &pc_rainbow_donut_profile;
     data_020a4bb8_storage[127] = &pc_rainbow_swing_profile;
@@ -705,13 +777,12 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[128] = &pc_rainbow_seesaw_profile;
     data_020a4bb8_storage[220] = &pc_ironball_profile;
     data_020a4bb8_storage[234] = &pc_owl_profile;
-    if(getenv("SM64DS_PC_BOWSER_PREVIEW")) {
-        data_020a4bb8_storage[279] = &pc_bowser_profile;
-        data_020a4bb8_storage[278] = &pc_bowser_tail_profile;
-        data_020a4bb8_storage[280] = &pc_bowser_fire_profile;
-        data_020a4bb8_storage[284] = &pc_bowser_mine_profile;
-        data_020a4bb8_storage[282] = &pc_bowser_key_profile;
-    }
+    data_020a4bb8_storage[279] = &pc_bowser_profile;
+    data_020a4bb8_storage[166] = &pc_firesea_arena_profile;
+    data_020a4bb8_storage[278] = &pc_bowser_tail_profile;
+    data_020a4bb8_storage[280] = &pc_bowser_fire_profile;
+    data_020a4bb8_storage[284] = &pc_bowser_mine_profile;
+    data_020a4bb8_storage[282] = &pc_bowser_key_profile;
     data_020a4bb8_storage[64] = &pc_casket_profile;
     data_020a4bb8_storage[262] = &pc_mri_profile;
     data_020a4bb8_storage[263] = &pc_big_mri_profile;
@@ -730,7 +801,27 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[135] = &pc_dark_world_island_profile;
     data_020a4bb8_storage[136] = g_profile_KM1_KURUMA;
     data_020a4bb8_storage[137] = g_profile_KM1_KURUMAJIKU;
+    data_020a4bb8_storage[95] = &pc_wdw_square_board_profile;
+    data_020a4bb8_storage[99] = &pc_wdw_cage_lift_profile;
+    data_020a4bb8_storage[100] = &pc_wdw_long_board_profile;
+    data_020a4bb8_storage[96] = &pc_wdw_arrow_lift_profile;
+    data_020a4bb8_storage[97] = &pc_wdw_crystal_profile;
+    data_020a4bb8_storage[101] = &pc_wdw_water_profile;
     data_020a4bb8_storage[138] = &pc_dark_world_extending_profile;
+    data_020a4bb8_storage[147] = &pc_firesea_sliding_profile;
+    data_020a4bb8_storage[148] = &pc_firesea_stretch_profile;
+    data_020a4bb8_storage[141] = g_profile_KM2_GURA;
+    data_020a4bb8_storage[140] = g_profile_KM2_AGARU;
+    data_020a4bb8_storage[142] = g_profile_KM2_AMI_BOU;
+    data_020a4bb8_storage[266] = g_profile_BIRIKYU;
+    data_020a4bb8_storage[145] = g_profile_KM2_UKISHIMA;
+    data_020a4bb8_storage[215] = &pc_small_bully_profile;
+    data_020a4bb8_storage[144] = &pc_firesea_path_lift_profile;
+    data_020a4bb8_storage[298] = &pc_warp_pipe_profile;
+    data_020a4bb8_storage[90] = &pc_docks_submarine_profile;
+    data_020a4bb8_storage[133] = &pc_dark_world_seesaw_profile;
+    data_020a4bb8_storage[143] = &pc_fire_sea_seesaw_profile;
+    data_020a4bb8_storage[134] = g_profile_KM1_DORIFU;
     data_020a4bb8_storage[39] = &pc_battlefield_seesaw_profile;
     data_020a4bb8_storage[40] = &pc_battlefield_gate_profile;
     data_020a4bb8_storage[188] = &pc_koopa_race_profile;
@@ -774,6 +865,9 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[178] = &pc_power_star_profile;
     data_020a4bb8_storage[179] = &pc_silver_star_profile;
     data_020a4bb8_storage[180] = &pc_star_marker_profile;
+    data_020a4bb8_storage[192] = &pc_push_block_profile;
+    data_020a4bb8_storage[329] = g_profile_SECRET_COIN;
+    data_020a4bb8_storage[330] = &pc_number_profile;
     data_020a4bb8_storage[269] = &pc_cap_reward_profile;
     pc_goomba_init_resources();
     pc_bombking_init_resources();
@@ -782,6 +876,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[189] = g_profile_BOMBKING;
     data_020a4bb8_storage[206] = g_profile_BOMBHEI;
     data_020a4bb8_storage[349] = &pc_exit_profile;
+    data_020a4bb8_storage[348] = g_profile_CH_ROOM;
     data_020a4bb8_storage[335] = &pc_map_profile;
     data_020a4bb8_storage[352] = &pc_demo_profile;
     data_020a4bb8_storage[353] = &pc_door_profile;

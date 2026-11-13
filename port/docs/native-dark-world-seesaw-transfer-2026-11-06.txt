@@ -1,0 +1,16 @@
+Dark World: traversing the two native seesaws
+
+Both seesaws use the original KM1_SEESAW profile and their original
+model, collision, tilt and rider behavior. The opt-in
+SM64DS_PC_TEST_DARK_WORLD_SEESAW_TRANSFER replay continues the regular
+seesaw test after Mario boards the lower plank. It uses the raised end
+of that plank to jump onto the second and continues across it.
+
+The jump off the second plank can reach the upper stone platform with
+the original ledge grab. Holding forward through the climb moves Mario
+clear of the lip before releasing input. The replay recognizes supported
+landings on either stone surface and makes no changes to gameplay rules,
+actor placement, player position or save data.
+
+Scope: Mario crossing these two seesaws in Dark World. The nearby
+floor switch, moving stairs traversal, and boss entry are separate tests.

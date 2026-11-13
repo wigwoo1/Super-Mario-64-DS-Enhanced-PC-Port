@@ -93,6 +93,7 @@ def main():
         else:
             command = ['cl', '/nologo', '/c', '/TC' if source.suffix == '.c' else '/TP',
                        '/MD', '/O2', '/Ob2', '/DNDEBUG', '/Gy', '/EHsc', '/std:c++17',
+                       '/DWIN32', '/D_WINDOWS', '/Oy-', '/wd4311', '/wd4312', '/wd4068', '/wd4716',
                        '/DSM64DS_PLATFORM_PC', '/DSM64DS_GAME_TARGET',
                        '/I' + str(build / 'pc-host-include'), '/I' + str(ROOT / 'port'),
                        '/I' + str(ROOT / 'include'), '/I' + str(ROOT / 'port/ntr/include'),

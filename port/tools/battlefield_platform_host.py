@@ -1,7 +1,7 @@
 """Native startup/layout adapters for Battlefield's original moving scenery.
 
-Only profiles 29/39/40 are enrolled here. The shared cartridge classes also
-have other course variants; enrolling those requires reviewing their resources.
+Only explicitly reviewed native profiles/variants are enrolled here. The shared
+cartridge classes also have other course variants; each needs resource review.
 """
 import re
 
@@ -18,10 +18,10 @@ def lazy_handles(text, kinds):
     return text
 
 
-def observe(text, cls, fields, values):
+def observe(text, cls, fields, values, return_type='int'):
     # Read-only diagnostics, after original behavior has run. Do not force the
     # range check or collider on: distant disabled collision is intentional.
-    start = text.index(f'int {cls}::Behavior()')
+    start = text.index(f'{return_type} {cls}::Behavior()')
     end = text.find('// @symbol', start)
     if end < 0:
         end = len(text)
@@ -40,7 +40,7 @@ def observe(text, cls, fields, values):
     }}
 '''
     text = text[:start] + chunk[:last] + trace + chunk[last:] + text[end:]
-    render = f'int {cls}::Render()\n{{'
+    render = f'{return_type} {cls}::Render()\n{{'
     assert text.count(render) == 1
     text = text.replace(render, render+'\n    pc_render_probe::Scope probe(this,0,&mModel.mat4x3);',1)
     return ('#include <cstdio>\n#include <cstdlib>\n#include <cassert>\n'
@@ -72,27 +72,52 @@ extern "C" void pc_dark_world_island_resources() {
         # Rebase that reviewed row rather than dereferencing cartridge pointers.
         declaration = '''extern SeesawModelFilePtr data_ov095_02137780;
 extern SeesawCollisionFilePtr data_ov095_021377a0;
+extern SeesawModelFilePtr data_ov095_02137798;
+extern SeesawCollisionFilePtr data_ov095_021377e0;
+extern SeesawModelFilePtr data_ov095_021377b0;
+extern SeesawCollisionFilePtr data_ov095_021377d0;
 extern SeesawModelFilePtr data_ov095_021377b8;
 extern SeesawCollisionFilePtr data_ov095_021377c0;
 extern "C" unsigned char data_ov036_02112ba8[];
 extern "C" unsigned char data_ov014_02114598[];
+extern "C" unsigned char data_ov043_02111c20[];
 '''
         anchor = 'extern "C" {\nextern int data_ov095_02136f58[];'
         assert text.count(anchor) == 1
-        text = text.replace(anchor,declaration+'\n'+anchor,1)
+        text = text.replace(anchor,'#include "hal/level_overlay.h"\n'+declaration+'\n'+anchor,1)
         for symbol,handle in [('021374a0','02137780'),('021374a4','021377a0')]:
             pattern = rf'\*\(SharedFilePtr \*\*\)\(data_ov095_{symbol} \+ (?:mVariant|idx|i) \* kFileStride\)'
             rainbow_handle = '021377b8' if symbol=='021374a0' else '021377c0'
-            text, count = re.subn(pattern,'(mVariant==6?&data_ov095_'+rainbow_handle+':&data_ov095_'+handle+')',text)
+            dark_world_handle = '02137798' if symbol=='021374a0' else '021377e0'
+            fire_sea_handle = '021377b0' if symbol=='021374a0' else '021377d0'
+            replacement = ('(mVariant==6?&data_ov095_'+rainbow_handle+
+                           ':(mVariant==3?&data_ov095_'+fire_sea_handle+
+                           ':(mVariant==2?&data_ov095_'+dark_world_handle+
+                           ':&data_ov095_'+handle+')))')
+            text, count = re.subn(pattern,replacement,text)
             assert count == 2, symbol
         old = '*(void **)(data_ov095_021374a8 + i * kFileStride)'
         assert text.count(old) == 1
-        text = text.replace(old,'(mVariant==6?data_ov036_02112ba8:data_ov014_02114598)',1)
+        text = text.replace(old,
+            '(mVariant==6?data_ov036_02112ba8:'
+            '(mVariant==3?fire_sea_surface:'
+            '(mVariant==2?data_ov043_02111c20:data_ov014_02114598)))',1)
         anchor = '    idx = mVariant;'
         assert text.count(anchor) == 1
-        text = text.replace(anchor,'''    assert((actorID==ACTOR_BOMB_SEESAW && mVariant==1)||(actorID==ACTOR_RC_SEESAW && mVariant==6));
+        text = text.replace(anchor,'''    assert((actorID==ACTOR_BOMB_SEESAW && mVariant==1)||
+           (actorID==ACTOR_KM1_SEESAW && mVariant==2)||
+           (actorID==ACTOR_KM2_YOKOSEESAW && mVariant==3)||
+           (actorID==ACTOR_RC_SEESAW && mVariant==6));
+    void *fire_sea_surface = nullptr;
+    if (mVariant == 3) {
+        fire_sea_surface = pc_level_overlay_address(37, 0x02112570);
+        if (!fire_sea_surface) return 0;
+    }
     static bool ready=false;
-    if(!ready){data_ov095_02137780.Construct(1445);data_ov095_021377a0.Construct(1446);data_ov095_021377b8.Construct(1709);data_ov095_021377c0.Construct(1710);ready=true;}
+    if(!ready){data_ov095_02137780.Construct(1445);data_ov095_021377a0.Construct(1446);
+        data_ov095_02137798.Construct(1623);data_ov095_021377e0.Construct(1624);
+        data_ov095_021377b0.Construct(1645);data_ov095_021377d0.Construct(1646);
+        data_ov095_021377b8.Construct(1709);data_ov095_021377c0.Construct(1710);ready=true;}
 '''+anchor,1)
         return observe(text,'daObjSeesaw_c','variant,speed,pounded',
                        ['int(mVariant)','int(mAngleXSpeed)','int(mPoundedThisFrame)'])

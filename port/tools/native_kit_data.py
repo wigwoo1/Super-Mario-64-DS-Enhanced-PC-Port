@@ -16,6 +16,13 @@ BOOT_DATA = frozenset({
 DATA_SOURCES = frozenset({'build/port/host-src/'+p for p in HOST_DATA} |
                          {'build/port/pc-boot-src/'+p for p in BOOT_DATA})
 SOURCE_ADAPTERS = frozenset({'pc_boot_dsmt.cpp', 'pc_title_session.cpp', 'player_render.cpp'})
+ROM_ACTOR_SOURCES = (
+    ('src/actors/daBrq_c.cpp', 'amp_host', 'transform'),
+    ('src/actors/daOts_c.cpp', 'bully_host', 'transform_base'),
+    ('src/game/actors/d_a_obj_km2_agaru.cpp', 'simple_lift_host', 'transform_firesea_rising_lift'),
+)
+DATA_SOURCES |= frozenset('build/port/pc-boot-src/' + rel
+                          for rel, _, _ in ROM_ACTOR_SOURCES)
 
 
 def local_source(original):
@@ -71,14 +78,29 @@ def validate_manifest(metadata):
 
 
 def generate(root):
+    from importlib import import_module
+    import boot_closure, hostgen
     import camera_host,minigame_host,minigame_data,sound_host
     directory=root/'build/port/pc-boot-src'
     paths=camera_host.write_sources(root,directory/'camera')
     paths+=minigame_host.write_sources(root,directory/'minigame')
     paths+=minigame_data.write_sources(root,directory/'minigame')
     paths+=sound_host.write_sources(root,directory/'sound')
+    # These host adapters embed original tables in their native translation
+    # units. Compile the complete units locally and keep their objects private.
+    for relative, module, function in ROM_ACTOR_SOURCES:
+        text = (root / relative).read_text(encoding='utf-8')
+        text = re.sub(r'\A//cpp[^\n]*\n', '', text)
+        transformed, _ = hostgen.transform(text)
+        transform = getattr(import_module(module), function)
+        transformed, _ = boot_closure.add_free_function_aliases(transform(root, transformed))
+        path = directory / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f'// Generated from {relative}; do not edit.\n'
+                        '#include "ntr/mmio.h"\n' + transformed, encoding='utf-8')
+        paths.append(path)
     relative={Path(p).relative_to(root).as_posix() for p in paths}
-    expected={'build/port/pc-boot-src/'+p for p in BOOT_DATA}
+    expected=DATA_SOURCES - {'build/port/host-src/'+p for p in HOST_DATA}
     if relative!=expected:
         raise ValueError('Reviewed native data output roster changed')
     return sorted(relative)

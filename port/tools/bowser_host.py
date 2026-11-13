@@ -1,6 +1,32 @@
 """Defer Bowser resource construction until the native runtime is ready."""
 import re
 
+from battlefield_platform_host import lazy_handles
+
+
+def transform_firesea_arena(root, text):
+    import struct
+    raw = (root / 'extracted/overlays/overlay_0060.bin').read_bytes()
+    assert struct.unpack_from('<IHHIiiii', raw, 0x0211a88c-0x02111900) == (
+        0x02117cdc, 166, 145, 0, 0, 0x1388000, 0x1388000, 0x1388000)
+    arena = (root / 'extracted/overlays/overlay_0046.bin').read_bytes()
+    assert struct.unpack_from('<4sHH', arena, 0x021115bc-0x021111a0)[:2] == (b'CLPS', 8)
+    text = lazy_handles(text, ('Kpa2BgModelFilePtr', 'Kpa2BgCollisionFilePtr'))
+    anchor = 'int daKpa2Bg_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, anchor + '''
+    auto *surface = pc_level_overlay_address(38, 0x021115bc);
+    if (!surface) return 0;
+    static const bool ready = [] {
+        daKpa2Bg_c_ModelFile.Construct(1571);
+        daKpa2Bg_c_ClsnFile.Construct(1572);
+        return true;
+    }();
+    (void)ready;''', 1)
+    assert text.count('&data_ov046_021115bc') == 1
+    text = text.replace('&data_ov046_021115bc', 'surface', 1)
+    return '#include "hal/level_overlay.h"\n' + text
+
 def transform(root,text):
     handles=re.findall(r'(KpaModelFilePtr|KpaAnimationFileHandle|KpaTexSequenceFilePtr) (data_ov060_[0-9a-f]+)\((0x[0-9a-f]+)\);',text)
     assert len(handles)==35, len(handles)
@@ -14,6 +40,10 @@ def transform(root,text):
     old='int a;  /* deliberately never assigned: it is animFlags, still in r2 (see above) */'
     assert text.count(old)==1
     text=text.replace(old,'int a = animFlags; // ARM register carry becomes an explicit native argument.')
+    for symbol, column in (('02119296', 1), ('02119298', 2)):
+        old = f'(char*)data_ov060_{symbol} + off'
+        assert text.count(old) == column
+        text = text.replace(old, f'(char*)(data_ov060_02119294 + {column}) + off')
     initializer='\nstatic void pc_bowser_files() {\n    static bool ready=false;if(ready)return;\n'
     for kind,name,fid in handles:
         initializer+=f'    pc_sharedfile_handle_construct(&{name}, {fid});\n'

@@ -1,0 +1,31 @@
+Native Dark World upper diamond boarding/carry - 2026-11-06
+
+Added optional SM64DS_PC_TEST_UPPER_DIAMOND / private runner -UpperDiamond.
+After the previously verified next stone landing it approaches x-3450/z-2101,
+settles, resolves an upper actor135 by its actual height/position/heading,
+and requests entry when its western edge passes the bank. The test uses only
+controller input. Original actor movement and collision code are unchanged.
+
+Fresh 26,000-frame muted run, current native EXE SHA256:
+2AB05F6757C8DBE67052D9C0A20F671174CA35FA4F8A49D1AD70F78C2C8CEC47
+Build, full native actor-data audit and six focused clock/input/rebinding/
+camera checks pass. Native platform138 crossing and next stone landing retain
+their original accepted event times. Bank approach20260, settled20321,
+entry request20398, actual upper diamond135 UID134 contact20448.
+
+Important observed distinction: the log event named 'jump' is an input request.
+State samples show St_Walk_Main throughout this approach, no airborne jump.
+The original wait/steering transition consumes that request, and Mario walks
+onto the diamond as its collision surface passes the bank. Acceptance therefore
+checks walking boarding only, not successful jumping. Future transfer tests
+must establish walking state, release jump, then issue a fresh jump edge if a
+real jump is required. Do not change original player physics to fix a pilot.
+
+Independent private acceptance checker confirms 1,091 later grounded samples
+on the same native actor135 UID134, native 600-unit X and Z travel, neutral
+controller inputs and player control enabled. Runtime exit0, output muted with
+zero submitted audible samples and audio errors0. Both isolated synthetic saves
+are byte-identical to seed. Screenshot frame22000 reviewed: Mario stands on
+the moving metal diamond. Other upper platform transfers, dismount, seesaws,
+stairs switch/animation/crossing and course re-entry remain unverified.
+No F install or public release performed for this QA-only route addition.

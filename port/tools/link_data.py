@@ -194,14 +194,18 @@ def records(root: pathlib.Path):
             following = next((item["address"] for item in group[index + 1:]
                               if item["address"] > row["address"]), row["segment_end"])
             row["size"] = max(4, min(following - row["address"], 0x100000))
-            if module == "ov043" and row["address"] in (0x02111b80, 0x02111bc0):
+            if module == "ov043" and row["address"] in (
+                    0x02111b60, 0x02111b80, 0x02111ba0, 0x02111bc0,
+                    0x02111c20, 0x02111c40, 0x02111c60, 0x02111c80):
                 # The wheel's surface entries have their own labels immediately
-                # after the header. Collision lookup indexes through the header.
+                # after the header. The five drifting stairs surfaces use the
+                # same complete-header format. Collision lookup starts at the
+                # header, so an interior neighboring label cannot truncate it.
                 overlay = (root / "extracted/overlays/overlay_0043.bin").read_bytes()
                 offset = row["address"] - row["segment_start"]
                 magic, stride, count = struct.unpack_from("<4sHH", overlay, offset)
                 if magic != b"CLPS" or stride != 8 or not count:
-                    raise ValueError("unexpected Dark World wheel surface table header")
+                    raise ValueError("unexpected Dark World wheel/stairs surface table header")
                 span = 8 + stride * count
                 if offset + span > len(overlay):
                     raise ValueError("Dark World wheel surface table exceeds overlay")
@@ -214,6 +218,10 @@ def records(root: pathlib.Path):
                 # Crate carry offsets: four XYZ rows. Coordinate labels are
                 # interior views, including the two original Wario poses.
                 row["size"] = 0x0213bf90 - row["address"]
+            if module == "ov060" and row["address"] == 0x02119294:
+                # Three halfwords per Fire Sea tilt phase, including the terminator.
+                # The labels at +2/+4 identify columns within the same table.
+                row["size"] = 0x021192dc - row["address"]
             if module == "ov091" and row["address"] == 0x02134cdc:
                 # Three ten-node paths. Interior coordinate labels do not end
                 # the array; the native lift also reads node5.y from this span.

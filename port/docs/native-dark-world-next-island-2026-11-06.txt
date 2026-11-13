@@ -1,0 +1,33 @@
+Native Dark World next stone-island route - 2026-11-06
+
+Added SM64DS_PC_TEST_EXTENDING_NEXT_ISLAND, an opt-in continuation after the
+accepted native actor138 crossing. The test waits for Mario to settle on the
+far block, runs along world +X, uses the original crouch/long-jump transition,
+and brakes in flight using the original 1.5-unit speed change. It changes only
+automated controller input. Normal game physics and level data are unchanged.
+The private runner records -ExtendingNextIsland in test-config.json.
+
+Current executable SHA256:
+D1117875755CD77545099D98ECD8CEF0D8D9219884922C615F2C277F5A27604B
+Build succeeds; six focused game-clock/input/rebinding/camera/scene-clock/
+camera-matrix CTests and the full native actor-data audit pass.
+
+Fresh muted 23,500-frame run: extending platform boarding tick19870, jump19884,
+far-block landing19924, next-island run20025, crouch20068, actual LongJump20072,
+air brake20096, next stone-island landing20140. The independent private checker
+accepts 652 later grounded samples on the original y1000 island, with neutral
+input and player control enabled. Runtime exit0, audio errors0 and audible
+submitted samples0. Both isolated synthetic saves match the seed exactly.
+Screenshot frame20400 shows Mario standing on the stone island beside the
+upper diamond moving platforms. The first launch was stopped before reaching
+the target because its replay configuration omitted DiamondDismount; it is not
+acceptance evidence. The corrected fresh run preserves the accepted prefix.
+
+The prior static component analysis excluded jumps and moving platforms.
+A disconnected static component does not establish an unreachable route.
+The far block ends around x-4700 and the next island begins around x-3900:
+the demonstrated ordinary long jump bridges this gap. Next: traverse the upper
+actor135 island groups toward the central platform and native seesaws, then
+reach the event-bit0 switch and test the Dorifu stairs. This result does not
+accept those later encounters, stairs, course re-entry, or full Dark World.
+No F installation or public release was performed for this QA-only change.

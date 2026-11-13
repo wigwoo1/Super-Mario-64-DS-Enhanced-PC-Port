@@ -67,6 +67,7 @@
 #include <cstring>
 #include <cstddef>
 #include <cmath>
+#include <algorithm>
 
 static_assert(offsetof(dActor_c,mPosX)==0x5c,"Position telemetry must read the native actor position");
 static_assert(offsetof(Player,mState)==0x370,"Player state telemetry offset");
@@ -230,6 +231,7 @@ static bool replay_lava_bridge_reentered;
 #include "hal/ironball_replay.h"
 #include "hal/ironball_encounter_state.h"
 static bool replay_course_route_complete;
+static bool replay_dark_world_extending_cross_settled;
 static bool replay_book_puzzle_complete;
 static bool replay_udlift_return_complete;
 static bool replay_rainbow_lift_return_complete;
@@ -323,7 +325,8 @@ static bool replay_drain_save_controls() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *enabled=std::getenv("SM64DS_PC_TEST_DRAIN_SAVE");
     const char *door_mode=std::getenv("SM64DS_PC_TEST_BASEMENT_DOOR_SAVE");
-    const bool door_save=door_mode && !std::strcmp(door_mode,"1");
+    const bool upper_door_save=std::getenv("SM64DS_PC_TEST_UPPER_CASTLE_DOOR_SAVE")!=nullptr;
+    const bool door_save=upper_door_save || (door_mode && !std::strcmp(door_mode,"1"));
     if(!automation || std::strcmp(automation,"1") ||
        (!door_save && (!enabled || std::strcmp(enabled,"1"))))return false;
     static unsigned phase=0;
@@ -338,10 +341,10 @@ static bool replay_drain_save_controls() {
             pc_pause_save_status(),unsigned(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2));
     };
     if(phase==0) {
-        if(data_0209f2f8!=4 || !player || player->aliveState!=1 || player->mIsAirborne ||
+        if(data_0209f2f8!=(upper_door_save?5:4) || !player || player->aliveState!=1 || player->mIsAirborne ||
            std::strcmp(pc_player_state_name(player),"St_Wait_Main") ||
            (door_save ? (!replay_course_route_complete ||
-                         !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags1&0x100u)) :
+                         !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags1&(upper_door_save?0x200u:0x100u))) :
                         !(reinterpret_cast<const SaveData *>(data_0209caa0)->flags2&0x80000u)))return false;
         bool first=false,second=false;
         for(auto *a=dActor_c::FindWithActorID(34,nullptr);a;a=dActor_c::FindWithActorID(34,a)) {
@@ -2340,6 +2343,127 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // test the block's ground-pound callback. This only injects input
         // under automation; it never edits actor, player, collision or save
         // state.
+        // Wait for each original arrow lift to bring Mario within jumping
+        // distance of the next target. Only replay input is generated here.
+        if(level==21 && std::getenv("SM64DS_PC_TEST_WDW_ARROW_TRANSFER")) {
+            struct Transfer { int x,z,wait_x,wait_z; };
+            static constexpr Transfer transfers[] = {
+                {-940,3063,-945,2938}, {-1065,3438,-940,3443},
+                {-1440,3313,-1445,3438}, {-1565,2938,-1440,2933},
+                {-2075,2938,-1945,2938},
+            };
+            static unsigned airborne_waypoint=~0u;
+            for(const auto &target:transfers) {
+                if(x!=target.x || z!=target.z || airborne_waypoint==waypoint) continue;
+                if(!player->mIsAirborne) {
+                    const bool ready=std::abs(player->mPosX-target.wait_x*4096)<55*4096 &&
+                        std::abs(player->mPosZ-target.wait_z*4096)<65*4096;
+                    ntr::input_test_controls(true,ready ? 2 : 0,0,0);
+                    return true;
+                }
+                airborne_waypoint=waypoint;
+                std::fprintf(stderr,"[native WDW arrow transfer] tick=%llu pos=%d,%d,%d target=%d,%d\n",
+                    static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ,x,z);
+            }
+        }
+        // Jump from the floating board to the first stone shelf using the
+        // same crouch/backflip controls as the high painting entry.
+        if(level==21 && x==-750 && z==2120 &&
+           std::getenv("SM64DS_PC_TEST_WDW_BOARD_JUMP")) {
+            static bool launched=false;
+            if(player->mState==&data_ov002_0211052c) {
+                if(!launched) {
+                    launched=true;
+                    std::fprintf(stderr,"[native WDW board flip] tick=%llu pos=%d,%d,%d heading=%d\n",
+                        static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ,
+                        int(player->mPrevAngleY));
+                }
+                const double angle=-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const int speed=player->mPosZ<2030*4096 ? 20000 : 0;
+                ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*speed),
+                                         static_cast<int16_t>(-std::cos(angle)*speed));
+                return true;
+            }
+            if(!launched) {
+                const bool ready=player->mHorzSpeed==0 && !player->mIsAirborne;
+                const uint16_t input=!ready ? 0 : !std::strcmp(state,"St_Crouch_Main") ? 0x102 :
+                    !std::strcmp(state,"St_Wait_Main") ? 0x100 : 0;
+                ntr::input_test_controls(true,input,0,0);
+                return true;
+            }
+            if(player->mPosY<2050*4096) {
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+        }
+        // The Top o' the Town step is taller than a standing jump. Wait for
+        // Mario to stop facing away, then use his ordinary backflip and steer
+        // onto the middle of the raised walkway.
+        if(level==21 && ((x==-2200 && z==-2160) || (x==1110 && z==800) || (x==-3540 && z==4000) || (x==890 && z==3370) || (x==625 && (z==3370 || z==3625))) &&
+           std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP")) {
+            static unsigned launched_waypoint=~0u;
+            const bool launched=launched_waypoint==waypoint;
+            if(player->mState==&data_ov002_0211052c) {
+                if(!launched) {
+                    launched_waypoint=waypoint;
+                    std::fprintf(stderr,"[native WDW walkway flip] tick=%llu heading=%d\n",
+                        static_cast<unsigned long long>(tick),int(player->mPrevAngleY));
+                }
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const int magnitude=horizontal>75*4096.0 ? 14000 : 0;
+                ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*magnitude),
+                                         static_cast<int16_t>(-std::cos(angle)*magnitude));
+                return true;
+            }
+            if(!launched) {
+                const bool ready=player->mHorzSpeed==0 && !player->mIsAirborne;
+                const uint16_t input=!ready ? 0 : !std::strcmp(state,"St_Crouch_Main") ? 0x102 :
+                    !std::strcmp(state,"St_Wait_Main") ? 0x100 : 0;
+                ntr::input_test_controls(true,input,0,0);
+                return true;
+            }
+        }
+        // Start running while the disc is still bringing Mario around the
+        // near side, so the jump leaves its far edge with forward momentum.
+        if(level==21 && x==1300 && z==82 &&
+           std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP")) {
+            static bool running=false,launched=false;
+            if(!launched && player->mIsAirborne) {
+                launched=true;
+                std::fprintf(stderr,"[native WDW Star ledge jump] tick=%llu pos=%d,%d,%d speed=%d\n",
+                    static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ,
+                    player->mHorzSpeed);
+            }
+            if(!running) {
+                running=player->mGroundY>3850*4096 && player->mPosX>=855*4096 &&
+                    player->mPosZ>=-60*4096 && player->mPosZ<=0 && !std::strcmp(state,"St_Wait_Main");
+            }
+            if(!launched || player->mIsAirborne) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const int magnitude=running && horizontal>55*4096.0 ? 32767 : 0;
+                const bool jumpFromEdge=running && player->mPosX>=915*4096 &&
+                    !std::strcmp(state,"St_Walk_Main");
+                ntr::input_test_controls(true,(launched || jumpFromEdge) ? 2 : 0,
+                    static_cast<int16_t>(std::sin(angle)*magnitude),
+                    static_cast<int16_t>(-std::cos(angle)*magnitude));
+                return true;
+            }
+        }
+        // Opt-in input replay for the painting's high entrance band.
+        if(level==5 && x==-644 && z==-4400 &&
+           std::getenv("SM64DS_PC_TEST_WDW_HIGH_ENTRY")) {
+            if(player->mState==&data_ov002_0211052c) {
+                ntr::input_test_controls(true,0,0,0);
+            } else if(!std::strcmp(state,"St_Crouch_Main") && player->mHorzSpeed==0) {
+                ntr::input_test_controls(true,0x102,0,0);
+            } else if(!player->mIsAirborne && player->mHorzSpeed==0 &&
+                      !std::strcmp(state,"St_Wait_Main")) {
+                ntr::input_test_controls(true,0x100,0,0);
+            } else {
+                ntr::input_test_controls(true,0,0,0);
+            }
+            return true;
+        }
         // Original swimming steers heading/pitch directly. Opt-in QA routes
         // use ordinary D-pad/stroke buttons; never write pose or player state.
         const char *swim_route=std::getenv("SM64DS_PC_TEST_SWIM_ROUTE");
@@ -2487,6 +2611,23 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 ntr::input_test_controls(true,buttons,sx,sy);return true;
             }
         }
+        // End each push waypoint once the original block has travelled far
+        // enough to release its linked secret. The target lies behind the block.
+        if(level==21 && std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP") &&
+           ((x==-2150 && z==735) || (x==-3600 && (z==3535 || z==4140)))) {
+            const int homeZ=x==-2150 ? 1100 : 3150;
+            const int direction=x==-2150 ? -1 : 1;
+            for(auto *a=dActor_c::FindWithActorID(192,nullptr);a;a=dActor_c::FindWithActorID(192,a)) {
+                if(a->mPosX!=x*4096 || a->mPosY!=y*4096)continue;
+                if(direction*(a->mPosZ-homeZ*4096)<(z==4140 ? 850 : 300)*4096)continue;
+                std::fprintf(stderr,"[native WDW push waypoint] tick=%llu waypoint=%u uid=%u\n",
+                    static_cast<unsigned long long>(tick),waypoint,a->uniqueID);
+                ++waypoint;
+                settle_until=tick+20;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+        }
         const bool horizontal_reached=horizontal<=radius*4096.0;
         // A Goomba dodge must not reverse in midair to land on a marker
         // already crossed. Opt in only for the measured re-entry floor route,
@@ -2515,8 +2656,14 @@ static bool replay_course_route(const char *route_override=nullptr) {
         static uint64_t route3_launch=0;
         static bool route3_jump_command=false,route3_long_jump=false;
         if(jump==3) {
-            if(horizontal<1600*4096.0 && !player->mIsAirborne &&
-               !std::strcmp(state,"St_Walk_Main") && player->mHorzSpeed>0x18000 && tick>=next_jump) {
+            const bool wdw_gap=level==21 && x==-1550 && z==-3550 &&
+                std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP");
+            const bool runway=wdw_gap ?
+                player->mPosX<=-405*4096 && player->mPosY>=3490*4096 &&
+                player->mHorzSpeed>0xb000 :
+                horizontal<1600*4096.0 && player->mHorzSpeed>0x18000;
+            if(runway && !player->mIsAirborne &&
+               !std::strcmp(state,"St_Walk_Main") && (wdw_gap ? !route3_launch : tick>=next_jump)) {
                 route3_launch=tick;next_jump=tick+100;
                 route3_jump_command=false;route3_long_jump=false;
                 std::fprintf(stderr,"[native trapdoor replay] runway tick=%llu speed=%d\n",
@@ -2806,8 +2953,8 @@ static bool replay_courtyard_boo(Player *p) {
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
 
-// Input-only lava-bridge lifecycle QA: use the original Exit Course menu,
-// basement painting and mission selector, then repeat the same walking route.
+// Input-only course lifecycle QA: use the original Exit Course menu and
+// entrance. The Dark World check observes a fresh platform cycle at re-entry.
 static bool replay_lava_bridge_lifecycle() {
     const char *mode=std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -2821,11 +2968,13 @@ static bool replay_lava_bridge_lifecycle() {
     const auto tick=ntr::rt_frame();
     auto event=[&](const char *name){std::fprintf(stderr,"[native lava bridge lifecycle] %s tick=%llu level=%d phase=%d\n",name,static_cast<unsigned long long>(tick),int(data_0209f2f8),phase);};
     if(phase>=4){
+        if(course_level==35 && replay_lava_bridge_reentered){ntr::input_test_controls(true,0,0,0);return true;}
         if(course_level==28 && std::getenv("SM64DS_PC_TEST_RAINBOW_REENTRY_READY") && !std::getenv("SM64DS_PC_TEST_RAINBOW_REPEAT_RIDE")){ntr::input_test_controls(true,0,0,0);return true;}
         return false;
     }
     if(!phase) {
         if(!replay_course_route_complete)return false;
+        if(course_level==35 && !replay_dark_world_extending_cross_settled)return false;
         if(std::getenv("SM64DS_PC_TEST_UDLIFT_RETURN") && !replay_udlift_return_complete)return false;
         if(std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RETURN") && !replay_rainbow_lift_return_complete)return false;
         // For bookshelf reset tests, don't leave until the original shelf has
@@ -2871,6 +3020,7 @@ static bool replay_lava_bridge_lifecycle() {
         }
         if(data_0209f2f8==course_level && ready) {
             phase=3;began=tick;event("original-course-reentry");
+            if(course_level==35){replay_lava_bridge_reentered=true;phase=4;return controls();}
             if(course_level==28 && std::getenv("SM64DS_PC_TEST_RAINBOW_REENTRY_READY") && !std::getenv("SM64DS_PC_TEST_RAINBOW_REPEAT_RIDE")){phase=4;return controls();}
             if(course_level==12) {
                 auto *shelf=static_cast<daTrsTrap_c *>(dActor_c::FindWithActorID(158,nullptr));
@@ -4135,11 +4285,336 @@ static void replay_dark_world_wheel_board(Player *player) {
     ntr::input_test_controls(true, 0, 0, 0);
 }
 
+// Optional QA continuation through the upper red switch and its timer.
+static void replay_dark_world_stairs_switch(Player *p) {
+    enum Phase { Settle, Align, AlignWait, Run, Crouch, Flight, Shelf, AimWait,
+                 Press, SwitchHop, SwitchBrake, StepAside, StairApproach,
+                 StairJump, StairExit, PipeRun, PipeJump, Done, Fail };
+    static Phase phase=Settle;
+    static uint64_t start=ntr::rt_frame(), jumped=0;
+    static bool braking=false;
+    static bool switchActivated=false;
+    static unsigned tread=0;
+    static const bool climb=std::getenv("SM64DS_PC_TEST_DARK_WORLD_STAIRS_CLIMB")!=nullptr;
+    static const bool enterPipe=std::getenv("SM64DS_PC_TEST_DARK_WORLD_ARENA_PIPE")!=nullptr;
+    static bool pipeBraking=false;
+    const auto tick=ntr::rt_frame();
+    const char *state=pc_player_state_name(p);
+    const bool idle=!p->mHorzSpeed&&!std::strcmp(state,"St_Wait_Main");
+    const auto *hit=p->mMeshClsn.IsOnGround()&&!p->mIsAirborne?
+        static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+    const auto *owner=hit&&hit->colliderIdx<24?hit->owner:nullptr;
+    auto event=[&](const char *name){
+        std::fprintf(stderr,"[native dark world stairs] %s tick=%llu pos=%d,%d,%d state=%s\n",
+            name,static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ,state);
+    };
+    auto steer=[&](int x,int z,int magnitude,uint16_t buttons=0){
+        const double angle=std::atan2(x*4096.0-p->mPosX,z*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        ntr::input_test_controls(true,buttons,static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));
+    };
+    if(tick-start>(climb?1800:1400)&&phase!=Done&&phase!=Fail){phase=Fail;event("timeout");}
+    if(phase==Settle&&tick>start+115&&idle&&hit&&!owner&&p->mPosY>1750*4096){
+        phase=Align;event("roof-align");
+    }
+    if(phase==Align){
+        if(p->mPosZ<375*4096)phase=AlignWait;
+        else {steer(2728,340,14000);return;}
+    }
+    if(phase==AlignWait&&idle){phase=Run;event("roof-run");}
+    if(phase==Run){
+        if(hit&&!owner&&p->mPosX>2850*4096&&p->mHorzSpeed>12*4096&&!std::strcmp(state,"St_Walk_Main")){
+            phase=Crouch;event("roof-crouch");
+        } else {steer(3700,355,32767);return;}
+    }
+    if(phase==Crouch){
+        if(!std::strcmp(state,"St_LongJump_Main")){phase=Flight;jumped=tick;event("roof-long-jump");}
+        else {steer(3700,355,32767,!std::strcmp(state,"St_Crouch_Main")?0x102:0x100);return;}
+    }
+    if(phase==Flight){
+        if(hit&&!owner&&p->mPosX>3560*4096&&p->mPosX<3860*4096&&
+           p->mPosZ>298*4096&&p->mPosZ<540*4096&&p->mPosY>1590*4096){
+            phase=Shelf;jumped=tick;event("shelf-landed");
+        } else if(tick-jumped>160){phase=Fail;event("shelf-missed");}
+        else {
+            const double speed=(std::max)(0.0,p->mHorzSpeed/4096.0);
+            if(!braking&&p->mPosX/4096.0+speed*speed/3.0+speed>=3705){
+                braking=true;event("roof-brake");
+            }
+            if(!braking||p->mHorzSpeed>0){steer(braking?2400:3700,355,32767);return;}
+        }
+    }
+    if(phase==Shelf&&tick>jumped+70){
+        if(std::abs(p->mPosX-3850*4096)<25*4096&&std::abs(p->mPosZ-425*4096)<25*4096){
+            phase=AimWait;event("switch-align");
+        } else {steer(3850,425,13500);return;}
+    }
+    if(phase==AimWait&&idle){phase=Press;event("switch-walk");}
+    if(phase==Press){
+        // The slope ends at a lip that Mario cannot walk over.
+        if(p->mPosZ>350*4096){steer(3855,-6,32767);return;}
+        phase=SwitchHop;
+        jumped=tick;
+        event("switch-hop");
+    }
+    if(phase==SwitchHop){
+        if(owner&&owner->actorID==11&&p->mPosZ<135*4096){
+            phase=SwitchBrake;
+            event("switch-brake");
+        } else {
+            steer(3855,-6,32767,tick<jumped+14?2:0);
+            return;
+        }
+    }
+    if(phase==SwitchBrake){
+        if(!switchActivated&&Event::GetBit(0)){
+            switchActivated=true;
+            event("switch-event-on");
+        }
+        if(switchActivated&&idle&&hit)phase=StepAside;
+    }
+    if(phase==StepAside){
+        // Leave the trigger radius before its timer expires, but stay on
+        // the switch platform to observe the stairs returning to the ramp.
+        if(hit&&p->mPosX>4015*4096&&p->mPosY>1650*4096&&std::abs(p->mPosZ)<240*4096){
+            phase=climb?StairApproach:Done;event("switch-clear");
+        } else {steer(4040,75,14500);return;}
+    }
+    if((phase==StairApproach||phase==StairJump||phase==StairExit)&&!Event::GetBit(0)){
+        phase=Fail;
+        event("stairs-expired-before-exit");
+    }
+    if(phase==StairApproach){
+        const int edge=4155+300*tread;
+        const int floor=1700+250*tread;
+        if(owner&&owner->actorID==134&&std::abs(p->mPosY-floor*4096)<12*4096&&
+           p->mPosX>=(edge-95)*4096&&p->mHorzSpeed>=5*4096){
+            phase=StairJump;
+            jumped=tick;
+            event("stair-jump");
+        } else {
+            steer(edge+130,75,17800);
+            return;
+        }
+    }
+    if(phase==StairJump){
+        const int edge=4155+300*tread;
+        const int floor=1950+250*tread;
+        if(owner&&owner->actorID==134&&std::abs(p->mPosY-floor*4096)<12*4096&&p->mPosX>=edge*4096){
+            event("stair-landed");
+            ++tread;
+            phase=tread==4?StairExit:StairApproach;
+        } else if(tick-jumped>95){
+            phase=Fail;
+            event("stair-jump-missed");
+        } else {
+            steer(edge+220,75,17800,tick<jumped+36?2:0);
+            return;
+        }
+    }
+    if(phase==StairExit){
+        if(hit&&!owner&&p->mPosX>=5500*4096&&std::abs(p->mPosY-2700*4096)<12*4096){
+            phase=enterPipe?PipeRun:Done;
+            event("stairs-exit-landed");
+        } else {
+            steer(5550,75,17800);
+            return;
+        }
+    }
+    if(phase==PipeRun){
+        if(hit&&!owner&&p->mPosX>=6375*4096&&std::abs(p->mPosZ+6*4096)<65*4096){
+            phase=PipeJump;
+            jumped=tick;
+            event("arena-pipe-jump");
+        } else {
+            steer(6655,-6,17800);
+            return;
+        }
+    }
+    if(phase==PipeJump&&tick-jumped<140){
+        const uint16_t buttons=tick<jumped+36?2:0;
+        const double speed=(std::max)(0.0,p->mHorzSpeed/4096.0);
+        // Normal jumps brake by 0xd00 fixed-point units per game step.
+        // Wait for the original jump state before reversing the stick.
+        const double stopDistance=speed*speed/(2.0*0xd00/4096.0)-speed/2.0;
+        if(!pipeBraking&&!std::strcmp(state,"St_Jump_Main")&&
+           p->mPosX/4096.0+stopDistance>=6655){
+            pipeBraking=true;
+            event("arena-pipe-brake");
+        }
+        if(!pipeBraking||p->mHorzSpeed>0){
+            steer(pipeBraking?6000:6800,-6,pipeBraking?32767:17800,buttons);
+        } else {
+            ntr::input_test_controls(true,buttons,0,0);
+        }
+        return;
+    }
+    if(phase==PipeJump&&tick-jumped>=140){
+        phase=Fail;
+        event("arena-pipe-missed");
+    }
+    ntr::input_test_controls(true,0,0,0);
+}
+
+// Optional QA continuation: ordinary jump onto the upper native diamond loop.
+static void replay_dark_world_upper_diamond(Player *p) {
+    enum Phase { Align, Settle, Wait, Jump, Ride, Center, CenterWait, Window, RunUp, TransferCrouch, Flight, Transferred, BankRun, BankFlight, BankLanded, Failed };
+    static Phase phase=Align;
+    static uint64_t began=ntr::rt_frame(),jumped=0,ride_at=0,transfer_at=0;
+    static unsigned target=0;
+    static bool transfer_brake=false;
+    const auto tick=ntr::rt_frame();
+    const char *state=pc_player_state_name(p);
+    const auto *hit=p->mMeshClsn.IsOnGround()&&!p->mIsAirborne?static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+    const auto *owner=hit&&hit->colliderIdx<24?hit->owner:nullptr;
+    auto event=[&](const char *name){std::fprintf(stderr,"[native upper diamond] %s tick=%llu uid=%u pos=%d,%d,%d state=%s\n",name,static_cast<unsigned long long>(tick),target,p->mPosX,p->mPosY,p->mPosZ,state);};
+    auto steer=[&](int x,int z,int magnitude,uint16_t buttons=0){
+        const double angle=std::atan2(x*4096.0-p->mPosX,z*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        ntr::input_test_controls(true,buttons,static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));
+    };
+    if(tick-began>6000&&phase!=Ride&&phase!=Transferred&&phase!=BankLanded&&phase!=Failed){phase=Failed;event("timeout");}
+    if(phase==Align){
+        if(std::abs(p->mPosX+3450*4096)<20*4096){phase=Settle;began=tick;event("bank-edge");}
+        else {steer(-3450,-2101,9000);return;}
+    }
+    if(phase==Settle&&tick>began+60&&!p->mHorzSpeed&&!std::strcmp(state,"St_Wait_Main")){phase=Wait;began=tick;event("waiting");}
+    if(phase==Wait){
+        for(auto *a=dActor_c::FindWithActorID(135,nullptr);a;a=dActor_c::FindWithActorID(135,a)) {
+            if(a->mPosY>980*4096&&a->mPosY<1010*4096&&a->mPosX<-2850*4096&&a->mPosZ<-2250*4096&&a->mPrevAngleY==0){
+                target=a->uniqueID;phase=Jump;jumped=tick;event("jump");break;
+            }
+        }
+    }
+    if(phase==Jump){
+        if(owner&&owner->actorID==135){target=owner->uniqueID;phase=Ride;ride_at=tick;event("boarded");}
+        else {steer(-2894,-2101,22000,tick<jumped+12?2:0);return;}
+    }
+    if(std::getenv("SM64DS_PC_TEST_UPPER_DIAMOND_TRANSFER")) {
+        auto *source=dActor_c::FindWithID(target);
+        if(phase==Ride&&tick>ride_at+480){phase=Center;event("transfer-center");}
+        if(phase==Center&&source){
+            if(std::hypot(double(p->mPosX-source->mPosX),double(p->mPosZ-source->mPosZ))<20*4096){phase=CenterWait;transfer_at=tick;event("transfer-centered");}
+            else {steer(source->mPosX/4096,source->mPosZ/4096,9000);return;}
+        }
+        if(phase==CenterWait&&tick>transfer_at+60&&!p->mHorzSpeed&&!std::strcmp(state,"St_Wait_Main")){phase=Window;event("transfer-wait");}
+        if(phase==Window&&source&&source->mPosZ>-1850*4096&&source->mPrevAngleY==16384&&source->mPosX>-2630*4096&&source->mPosX<-2530*4096){phase=RunUp;transfer_at=tick;event("transfer-run");}
+        if(phase==RunUp&&source){
+            if(owner&&owner->uniqueID==target&&p->mPosZ-source->mPosZ>100*4096&&p->mHorzSpeed>10*4096&&!std::strcmp(state,"St_Walk_Main")){phase=TransferCrouch;transfer_at=tick;event("transfer-crouch");}
+            else {steer(source->mPosX/4096,source->mPosZ/4096+400,22000);return;}
+        }
+        if(phase==TransferCrouch){
+            if(!std::strcmp(state,"St_LongJump_Main")){phase=Flight;transfer_at=tick;event("transfer-jump-request");}
+            else {steer(-2304,-950,22000,!std::strcmp(state,"St_Crouch_Main")?0x102:0x100);return;}
+        }
+        if(phase==Flight){
+            if(owner&&owner->actorID==135&&owner->uniqueID!=target&&owner->mPosZ>-1300*4096){target=owner->uniqueID;phase=Transferred;transfer_at=tick;event("transfer-landed");}
+            else if(tick-transfer_at>200){phase=Failed;event("transfer-flight-failed");}
+            else {
+                const double speed=(std::max)(0.0,p->mHorzSpeed/4096.0);
+                if(!transfer_brake&&p->mPosZ/4096.0+speed*speed/3.0+speed>=-950){transfer_brake=true;event("transfer-brake");}
+                if(!transfer_brake||p->mHorzSpeed>0){steer(-2304,transfer_brake?-3500:-950,32767);return;}
+            }
+        }
+    }
+    if(std::getenv("SM64DS_PC_TEST_UPPER_DIAMOND_DISMOUNT")) {
+        const auto *island=owner&&owner->uniqueID==target?owner:nullptr;
+        // Wait for the eastbound pass along the side closest to the bank.
+        if(phase==Transferred&&tick>transfer_at+90&&island&&island->mPosZ>-650*4096&&
+           island->mPosX>-1900*4096&&island->mPosX<-1840*4096&&island->mPrevAngleY==16384&&
+           !p->mHorzSpeed&&!std::strcmp(state,"St_Wait_Main")){
+            phase=BankRun;event("bank-run");
+        }
+        if(phase==BankRun){
+            if(!island){phase=Failed;event("bank-run-lost-floor");}
+            else if(p->mPosZ-island->mPosZ>25*4096&&p->mHorzSpeed>12*4096&&!std::strcmp(state,"St_Walk_Main")){
+                phase=BankFlight;transfer_at=tick;event("bank-jump");
+            } else {steer(p->mPosX/4096,-100,32767);return;}
+        }
+        if(phase==BankFlight){
+            if(hit&&!owner&&p->mPosZ>-375*4096&&p->mPosX>-1980*4096&&
+               std::abs(p->mPosY-1000*4096)<5*4096){
+                phase=BankLanded;transfer_at=tick;event("bank-landed");
+            } else if(tick-transfer_at>150){phase=Failed;event("bank-flight-failed");}
+            else if(p->mPosZ<-130*4096){steer(-1700,-80,32767,tick<transfer_at+12?2:0);return;}
+        }
+    }
+    if(phase==BankLanded&&std::getenv("SM64DS_PC_TEST_DARK_WORLD_SEESAW")) {
+        enum See { Rest, Run, Hop, Cross, FirstLaunch, Transfer, SecondCross, SecondLaunch, Exit, Stop, Fail };
+        static See step=Rest;
+        static uint64_t jump_at=0;
+        static unsigned seesaw_uid=0, second_uid=0;
+        const bool transfer=std::getenv("SM64DS_PC_TEST_DARK_WORLD_SEESAW_TRANSFER")!=nullptr;
+        auto trace=[&](const char *name){
+            std::fprintf(stderr,"[native dark world seesaw] %s tick=%llu uid=%u pos=%d,%d,%d state=%s\n",
+                name,static_cast<unsigned long long>(tick),second_uid?second_uid:seesaw_uid,p->mPosX,p->mPosY,p->mPosZ,state);
+        };
+        if(tick-transfer_at>1000&&step!=Stop&&step!=Fail){step=Fail;trace("timeout");}
+        if(step==Rest&&tick-transfer_at>75&&!p->mHorzSpeed&&!std::strcmp(state,"St_Wait_Main")){
+            step=Run;trace("run");
+        }
+        if(step==Run){
+            if(hit&&!owner&&p->mPosX>-1345*4096&&p->mPosZ>220*4096&&
+               p->mHorzSpeed>12*4096&&!std::strcmp(state,"St_Walk_Main")){
+                step=Hop;jump_at=tick;trace("jump");
+            } else {steer(-1250,315,32767);return;}
+        }
+        if(step==Hop){
+            if(owner&&owner->actorID==133&&owner->mPosY<1000*4096){
+                seesaw_uid=owner->uniqueID;step=Cross;trace("boarded");
+            } else if(tick-jump_at>110){step=Fail;trace("missed");}
+            else {steer(-320,470,32767,tick<jump_at+12?2:0);return;}
+        }
+        if(step==Cross){
+            if(!owner||owner->uniqueID!=seesaw_uid){step=Fail;trace("lost-floor");}
+            else if(transfer&&p->mPosX>-120*4096){step=FirstLaunch;trace("transfer-run");}
+            else if(p->mPosX>220*4096){step=Stop;trace("crossed-center");}
+            else {steer(400,500,17000);return;}
+        }
+        if(step==FirstLaunch){
+            if(!owner||owner->uniqueID!=seesaw_uid){step=Fail;trace("transfer-lost-floor");}
+            else if(p->mPosX>445*4096&&p->mPosY>1100*4096&&owner->mAngleX<-1500&&
+                    p->mHorzSpeed>12*4096&&!std::strcmp(state,"St_Walk_Main")){
+                step=Transfer;jump_at=tick;trace("transfer-jump");
+            } else if(p->mPosX>535*4096){step=Fail;trace("transfer-no-window");}
+            else {steer(950,500,32767);return;}
+        }
+        if(step==Transfer){
+            if(owner&&owner->actorID==133&&owner->uniqueID!=seesaw_uid&&owner->mPosY>1200*4096){
+                second_uid=owner->uniqueID;step=SecondCross;trace("transfer-landed");
+            } else if(tick-jump_at>130){step=Fail;trace("transfer-missed");}
+            else {steer(1750,500,32767,tick<jump_at+12?2:0);return;}
+        }
+        if(step==SecondCross){
+            if(!owner||owner->uniqueID!=second_uid){step=Fail;trace("second-lost-floor");}
+            else if(p->mPosX>1700*4096){step=SecondLaunch;trace("exit-run");}
+            else {steer(2400,500,32767);return;}
+        }
+        if(step==SecondLaunch){
+            if(!owner||owner->uniqueID!=second_uid){step=Fail;trace("second-lost-floor");}
+            else if(p->mPosX>1950*4096&&p->mHorzSpeed>12*4096&&!std::strcmp(state,"St_Walk_Main")){
+                step=Exit;jump_at=tick;trace("exit-jump");
+            } else {steer(2650,500,32767);return;}
+        }
+        if(step==Exit){
+            // The original ledge climb can put Mario on the upper stone
+            // platform. Keep steering until he is clear of its lip.
+            if(hit&&!owner&&p->mPosX>=2600*4096&&
+               (std::abs(p->mPosY-1800*4096)<5*4096||std::abs(p->mPosY-1000*4096)<5*4096)){
+                step=Stop;trace(p->mPosY>1500*4096?"exit-upper-landed":"exit-landed");
+            } else if(tick-jump_at>150){step=Fail;trace("exit-missed");}
+            else if(p->mPosX<2600*4096){steer(2750,500,32767,tick<jump_at+12?2:0);return;}
+        }
+        if(step==Stop&&std::getenv("SM64DS_PC_TEST_DARK_WORLD_STAIRS_SWITCH")){
+            replay_dark_world_stairs_switch(p);return;
+        }
+    }
+    ntr::input_test_controls(true,0,0,0);
+}
+
 static bool replay_dark_world_extending_cross(Player *p) {
     if (!std::getenv("SM64DS_PC_TEST_EXTENDING_CROSS")) return false;
     enum Phase { Approach, Wait, Cross, BoardFlight, Flight, Landed, Failed };
     static Phase phase=Approach;
-    static uint64_t began=ntr::rt_frame(),jump_until=0;
+    static uint64_t began=ntr::rt_frame(),jump_until=0,landed_at=0;
     static unsigned boarded=0;
     const auto tick=ntr::rt_frame();
     const char *state=pc_player_state_name(p);
@@ -4174,15 +4649,1602 @@ static bool replay_dark_world_extending_cross(Player *p) {
         } else {steer(-5000,22000);return true;}
     }
     if(phase==Flight){
-        if(hit && !owner && !p->mIsAirborne && p->mPosX>-5200*4096 && p->mPosY>1180*4096){phase=Landed;event("landed");}
+        if(hit && !owner && !p->mIsAirborne && p->mPosX>-5200*4096 && p->mPosY>1180*4096){phase=Landed;landed_at=tick;event("landed");}
         else if(p->mPosX<-5050*4096){steer(-5000,16000,tick<jump_until?2:0);return true;}
     }
+    if(phase==Landed && std::getenv("SM64DS_PC_TEST_EXTENDING_NEXT_ISLAND")) {
+        enum Next { Settle, Run, Crouch, Air, Done, Fail };
+        static Next next=Settle;
+        static uint64_t started=0;
+        static bool brake=false;
+        if(!started)started=tick;
+        if(tick-started>1000 && next!=Done && next!=Fail){next=Fail;event("next-island-timeout");}
+        if(next==Settle && tick>started+100 && !p->mHorzSpeed && !std::strcmp(state,"St_Wait_Main")){next=Run;event("next-island-run");}
+        if(next==Run){
+            if(p->mPosX>-4950*4096 && p->mHorzSpeed>0xa000){next=Crouch;event("next-island-crouch");}
+            else {steer(-3600,32767);return true;}
+        }
+        if(next==Crouch){
+            if(!std::strcmp(state,"St_LongJump_Main")){next=Air;event("next-island-jump");}
+            else {steer(-3600,32767,!std::strcmp(state,"St_Crouch_Main")?0x102:0x100);return true;}
+        }
+        if(next==Air){
+            if(hit && !owner && !p->mIsAirborne && p->mPosX>-3950*4096 && p->mPosX<-3250*4096 && std::abs(p->mPosY-1000*4096)<5*4096){next=Done;event("next-island-landed");}
+            else {
+                const double speed=(std::max)(0.0,p->mHorzSpeed/4096.0);
+                if(!brake && p->mPosX/4096.0+speed*speed/3.0+speed>=-3600){brake=true;event("next-island-brake");}
+                if(!brake || p->mHorzSpeed>0){steer(brake?-6000:-3600,32767);return true;}
+            }
+        }
+        if(next==Done && std::getenv("SM64DS_PC_TEST_UPPER_DIAMOND")){
+            replay_dark_world_upper_diamond(p);return true;
+        }
+    }
+    if(phase==Landed && hit && !owner && tick>=landed_at+340 &&
+       !std::strcmp(state,"St_Wait_Main"))replay_dark_world_extending_cross_settled=true;
     ntr::input_test_controls(true,0,0,0);return true;
+}
+
+// Input-only Fire Sea route continuation after reaching the first path lift.
+static bool replay_firesea_first_platform() {
+    if (data_0209f2f8 != 37 || !replay_course_route_complete ||
+        !std::getenv("SM64DS_PC_AUTOMATION_ONLY") ||
+        !std::getenv("SM64DS_PC_TEST_FIRESEA_PATH_LIFT")) return false;
+    auto *p = static_cast<Player *>(data_0209f394[0]);
+    if (!p || p->aliveState != 1) return false;
+    const auto *hit = p->mMeshClsn.IsOnGround() && !p->mIsAirborne
+        ? static_cast<dBgPi *>(p->mMeshClsn.GetFloorResult()) : nullptr;
+    const auto *owner = hit && hit->colliderIdx < 24 ? hit->owner : nullptr;
+    const auto tick = ntr::rt_frame();
+    const char *state = pc_player_state_name(p);
+    const double x = p->mPosX / 4096.0;
+    const double z = p->mPosZ / 4096.0;
+    enum Phase {
+        Ride, Run, Jump, Landed, CrossBlock, ReboardJump, Reboarded,
+        GuraRun, GuraJump, GuraLanded, SecondRun, SecondJump, SecondLanded,
+        ReturnRun, ReturnJump, Returned, BankRun, BankJump, BankLanded,
+        IslandLineUp, IslandBrake, IslandRun, IslandJump, IslandLanded,
+        RidgeRun, RidgeJump, EastBankLanded, BullyApproach, BullyHit, BullyAim, BullyStrike,
+        GrateCross, GreenBank, SeesawApproach, SeesawView, RunwayTravel, RunwayEnd,
+        PoleRun, PoleJump, PoleClimb, PoleHold, PoleTip, PoleTipRelease,
+        PoleHeadstand, PoleExitJump, PoleBrake, PoleDrop, PoleShelf,
+        AmpContact, AmpRetreat, AmpRetreatJump, AmpRetreatHold,
+        RisingLiftRamp, RisingLiftView, RisingLiftJump, RisingLiftHold,
+        LiftPoleCombo, LiftPoleFlight, LiftPoleLedge, LiftPoleClimb, LiftPoleHold, LiftBankWest, LiftBankLineUp, LiftBankSettle, LiftBankRun, LiftBankJump, LiftBankRide, LiftTopWalk, LiftTopHold, LiftGapRun, LiftGapCrouch, LiftGapAir, LiftGapBrake, LiftGapHold, UpperBlueRamp, UpperBlueCrest, UpperYellowLine, UpperYellowSettle, UpperYellowClimb, UpperYellowEvade, UpperYellowHold, UpperSilverInward, UpperSilverDrop, UpperSilverHold, SilverDirectLaunch, SilverDirectAir, SilverDirectBrake, SilverDirectLand, SilverWestDrop, SilverWestHold, SlideNearJump, SlideNearRide, SlideFarJump, SlideFarRide, SlideBankJump, SlideBankHold, SlideBullyRun, SlideBullyJump, SlideBullyWest, SlideBullyHold, StretchRampClimb, StretchRampHold, StretchSecondLine, StretchSecondSettle, StretchSecondClimb, StretchSecondHold, StretchThirdLine, StretchThirdSettle, StretchThirdClimb, StretchThirdHold, StretchFourthLine, StretchFourthSettle, StretchFourthClimb, StretchFourthHold, StretchShelfLineX, StretchShelfLineZ, StretchShelfWait, StretchShelfWalk, StretchShelfHold, FixedRampLine, FixedRampUp, FixedRampTurn, FixedUpperRun, FixedUpperHold, FixedBlockLine, FixedBlockSettle, FixedBlockJump, UpperBridgeLine, UpperBridgeRun, UpperBridgeJump, UpperBridgeHold, UpperIslandRun, UpperIslandJump, UpperIslandHold, UpperDeckRun, UpperDeckCrouch, UpperDeckRidgeJump, UpperDeckRidgeBrake, UpperDeckRidgeRun, UpperDeckJump, UpperDeckHold, UpperPoleRun, UpperPoleJump, UpperPoleRejump, UpperPoleClimb, UpperPoleHold, UpperPoleTip, UpperPoleTipRelease, UpperPoleHeadstand, UpperPoleExit, UpperPoleExitBrake, UpperPoleShelf
+    };
+    static Phase phase = Ride;
+    static uint64_t launched = 0, landed = 0, reboard_launch = 0, gura_launch = 0;
+    static unsigned lift_uid = 0;
+    static unsigned first_gura_uid = 0;
+    static uint64_t gura_landed = 0, second_launch = 0, return_launch = 0, bank_launch = 0;
+    static uint64_t bank_landed = 0, island_launch = 0;
+    static uint64_t ridge_landed = 0, ridge_launch = 0;
+    static unsigned island_uid = 0, ridge_hop = 0;
+    static unsigned bully_uid = 0;
+    static uint64_t bully_strike = 0;
+    static uint64_t green_bank_tick = 0;
+    static uint64_t runway_end_tick = 0, pole_launch = 0;
+    static uint64_t pole_climbed = 0, pole_tip_release = 0, pole_exit_launch = 0;
+    static uint64_t amp_retreat_launch = 0;
+    static uint64_t lift_view_depart = 0, lift_view_jump = 0;
+    static uint64_t lift_combo_launch = 0, lift_pole_jump = 0, lift_ledge_jump = 0;
+    static uint64_t lift_bank_jump = 0, upper_bank_jump = 0;
+    static uint64_t slide_jump = 0, slide_bully_jump = 0;
+    static int slide_board_z = 0;
+    static uint64_t fixed_block_jump = 0, upper_bridge_jump = 0, upper_island_jump = 0, upper_deck_jump = 0;
+    static uint64_t upper_pole_jump = 0, upper_tip_release = 0, upper_pole_exit = 0;
+    static uint64_t upper_shelf_tick = 0, second_pole_jump = 0;
+    static uint64_t second_pole_grab = 0, second_tip_release = 0, second_exit = 0;
+    static bool second_brake = false, second_settled = false;
+    static uint64_t underpass_tick = 0, third_pole_jump = 0;
+    static bool third_pole_run = false, third_pole_hop = false, third_pole_held = false;
+    static uint64_t third_pole_grab = 0, third_tip_release = 0, third_exit = 0;
+    static bool third_brake = false;
+    static uint64_t third_shelf_tick = 0;
+    static unsigned second_pole_uid = 0;
+    static unsigned lift_combo_count = 0;
+    static unsigned lift_combo_requested = 0;
+    static unsigned pole_uid = 0;
+    uint16_t buttons = 0;
+    int steer = 0;
+    double heading = 1.5707963267948966;
+    if (phase == Ride && owner && owner->actorID == 144 && x >= -4580) {
+        phase = Run;
+        lift_uid = owner->uniqueID;
+        std::fprintf(stderr, "[native Fire Sea route] run tick=%llu x=%.1f\n",
+                     static_cast<unsigned long long>(tick), x);
+    }
+    if (phase == Run) {
+        steer = 22000;
+        if (owner && owner->actorID == 144 && x >= -4510 && p->mHorzSpeed >= 8*4096 &&
+            !std::strcmp(state, "St_Walk_Main")) {
+            phase = Jump;
+            launched = tick;
+            std::fprintf(stderr, "[native Fire Sea route] jump tick=%llu x=%.1f speed=%d\n",
+                         static_cast<unsigned long long>(tick), x, p->mHorzSpeed);
+        }
+    }
+    if (phase == Jump) {
+        if (hit && !owner && -4350 < x && x < -4050 &&
+            std::abs(p->mPosY + 2680*4096) < 8*4096) {
+            phase = Landed;
+            landed = tick;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] landed tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        } else {
+            if (tick < launched + 22) buttons = 2;
+            steer = x < -4260 ? 22000 : 0;
+        }
+    }
+    if (phase == Landed && tick >= landed + 20 && std::getenv("SM64DS_PC_TEST_FIRESEA_REBOARD"))
+        phase = CrossBlock;
+    const auto *lift = phase == CrossBlock || phase == ReboardJump || phase == SecondLanded
+        ? dActor_c::FindWithID(lift_uid) : nullptr;
+    if (phase == CrossBlock) {
+        const bool ready = lift && lift->aliveState == 1 && lift->mPosX > lift->mPrevPosX &&
+            -4230*4096 <= lift->mPosX && lift->mPosX <= -3860*4096;
+        if (x < -4210 || (ready && x < -4110)) steer = 22000;
+        if (ready && hit && !owner && x >= -4210 && p->mHorzSpeed >= 8*4096 &&
+            !std::strcmp(state, "St_Walk_Main")) {
+            phase = ReboardJump;
+            reboard_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] reboard-jump tick=%llu x=%.1f lift=%d\n",
+                         static_cast<unsigned long long>(tick), x, lift->mPosX);
+        }
+    }
+    if (phase == ReboardJump) {
+        if (owner && owner->actorID == 144 && owner->uniqueID == lift_uid) {
+            phase = Reboarded;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] reboarded tick=%llu uid=%u x=%.1f\n",
+                         static_cast<unsigned long long>(tick), lift_uid, x);
+        } else {
+            if (tick < reboard_launch + 18) buttons = 2;
+            steer = lift && p->mPosX < lift->mPosX + 40*4096 ? 22000 : 0;
+        }
+    }
+    if (phase == Reboarded && owner && owner->uniqueID == lift_uid && x >= -3210 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_GURA")) {
+        phase = GuraRun;
+    }
+    if (phase == GuraRun) {
+        heading = std::atan2(-2810 - x, -650 - z);
+        steer = 22000;
+        if (owner && owner->uniqueID == lift_uid && z <= -190 && p->mHorzSpeed >= 10*4096 &&
+            !std::strcmp(state, "St_Walk_Main")) {
+            phase = GuraJump;
+            gura_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] gura-jump tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == GuraJump) {
+        if (owner && owner->actorID == 141) {
+            phase = GuraLanded;
+            first_gura_uid = owner->uniqueID;
+            gura_landed = tick;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] gura-landed tick=%llu uid=%u x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), owner->uniqueID, x, z);
+        } else {
+            if (tick < gura_launch + 22) buttons = 2;
+            const double dx = -2810 - x, dz = -650 - z;
+            heading = std::atan2(dx, dz);
+            steer = std::hypot(dx, dz) > 100 ? 22000 : 0;
+        }
+    }
+    if (phase == GuraLanded && tick >= gura_landed + 24 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_GURA_CROSS")) phase = SecondRun;
+    if (phase == SecondRun) {
+        heading = std::atan2(-1910 - x, -675 - z);
+        steer = 22000;
+        if (owner && owner->uniqueID == first_gura_uid && x >= -2580 &&
+            p->mHorzSpeed >= 12*4096 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = SecondJump;
+            second_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] second-gura-jump tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == SecondJump) {
+        if (owner && owner->actorID == 141 && owner->uniqueID != first_gura_uid) {
+            phase = SecondLanded;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] second-gura-landed tick=%llu uid=%u x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), owner->uniqueID, x, z);
+        } else {
+            if (tick < second_launch + 22) buttons = 2;
+            heading = std::atan2(-1910 - x, -675 - z);
+            steer = x < -2010 ? 22000 : 0;
+        }
+    }
+    if (phase == SecondLanded && lift && lift->aliveState == 1 &&
+        lift->mPosX >= -1850*4096 && lift->mPosX > lift->mPrevPosX) phase = ReturnRun;
+    if (phase == ReturnRun) {
+        heading = std::atan2(-1530 - x, -55 - z);
+        steer = 22000;
+        if (owner && owner->actorID == 141 && z >= -470 &&
+            p->mHorzSpeed >= 12*4096 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = ReturnJump;
+            return_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] post-dip-jump tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == ReturnJump) {
+        if (owner && owner->uniqueID == lift_uid) {
+            phase = Returned;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] post-dip-boarded tick=%llu uid=%u x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), lift_uid, x, z);
+        } else {
+            if (tick < return_launch + 22) buttons = 2;
+            const double dx = -1530 - x, dz = -55 - z;
+            heading = std::atan2(dx, dz);
+            steer = std::hypot(dx, dz) > 110 ? 22000 : 0;
+        }
+    }
+    if (phase == Returned && owner && owner->uniqueID == lift_uid && x >= -835 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_ONEUP_BANK")) phase = BankRun;
+    if (phase == BankRun) {
+        heading = std::atan2(-150 - x, -100 - z);
+        steer = 19000;
+        if (owner && owner->uniqueID == lift_uid && x >= -560 &&
+            p->mHorzSpeed >= 10*4096 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = BankJump;
+            bank_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] bank-jump tick=%llu x=%.1f z=%.1f speed=%d\n",
+                         static_cast<unsigned long long>(tick), x, z, p->mHorzSpeed);
+        }
+    }
+    if (phase == BankJump) {
+        if (hit && !owner && -300 < x && x < 0 && -300 < z && z < 300 &&
+            std::abs(p->mPosY + 2800*4096) < 8*4096) {
+            phase = BankLanded;
+            bank_landed = tick;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] bank-landed tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        } else {
+            if (tick < bank_launch + 16) buttons = 2;
+            heading = std::atan2(-150 - x, -100 - z);
+            steer = x < -245 ? 19000 : 0;
+        }
+    }
+    if (phase == BankLanded && tick >= bank_landed + 104 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_UKISHIMA")) phase = IslandLineUp;
+    if (phase == IslandLineUp) {
+        heading = -1.5707963267948966;
+        steer = 11000;
+        if (x <= -218) {
+            phase = IslandBrake;
+            steer = 0;
+        }
+    }
+    if (phase == IslandBrake && hit && !owner && !std::strcmp(state, "St_Wait_Main"))
+        phase = IslandRun;
+    if (phase == IslandRun) {
+        heading = std::atan2(500 - x, -100 - z);
+        steer = 22000;
+        if (hit && !owner && x >= -51 && p->mHorzSpeed >= 15*4096 &&
+            !std::strcmp(state, "St_Walk_Main")) {
+            phase = IslandJump;
+            island_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] island-jump tick=%llu x=%.1f z=%.1f speed=%d\n",
+                         static_cast<unsigned long long>(tick), x, z, p->mHorzSpeed);
+        }
+    }
+    if (phase == IslandJump) {
+        if (owner && owner->actorID == 145) {
+            phase = IslandLanded;
+            island_uid = owner->uniqueID;
+            ridge_landed = tick;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] island-landed tick=%llu uid=%u x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), owner->uniqueID, x, z);
+        } else {
+            if (tick < island_launch + 22) buttons = 2;
+            heading = std::atan2(500 - x, -100 - z);
+            steer = x < 320 ? 22000 : 0;
+        }
+    }
+    // The island's low sections sink below the lava. Jump between the raised
+    // ridges and wait for the island to rise before starting each run-up.
+    constexpr double ridge_targets[] = {1100, 1700, 2200};
+    constexpr double ridge_takeoffs[] = {646, 1246, 1780};
+    if (phase == IslandLanded && std::getenv("SM64DS_PC_TEST_FIRESEA_ISLAND_CROSS") &&
+        tick >= ridge_landed + (ridge_hop == 0 ? 310 : 22) &&
+        owner && owner->uniqueID == island_uid && !std::strcmp(state, "St_Wait_Main") &&
+        owner->mPosY >= -3006*4096 && owner->mPosY >= owner->mPrevPosY) phase = RidgeRun;
+    if (phase == RidgeRun) {
+        heading = std::atan2(ridge_targets[ridge_hop] - x, -100 - z);
+        steer = 22000;
+        if (owner && owner->uniqueID == island_uid && x >= ridge_takeoffs[ridge_hop] &&
+            p->mHorzSpeed >= 10*4096 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = RidgeJump;
+            ridge_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] ridge-jump tick=%llu hop=%u x=%.1f y=%.1f speed=%d\n",
+                         static_cast<unsigned long long>(tick), ridge_hop + 1,
+                         x, p->mPosY/4096.0, p->mHorzSpeed);
+        }
+    }
+    if (phase == RidgeJump) {
+        const double target = ridge_targets[ridge_hop];
+        const bool east_bank = ridge_hop == 2;
+        const bool landed_on_target = east_bank
+            ? hit && !owner && x > 2000 && x < 2450 && std::abs(p->mPosY + 2700*4096) < 4*4096
+            : owner && owner->uniqueID == island_uid && std::abs(target - x) < 90;
+        if (landed_on_target) {
+            phase = east_bank ? EastBankLanded : IslandLanded;
+            ridge_landed = tick;
+            ++ridge_hop;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] ridge-landed tick=%llu hop=%u x=%.1f y=%.1f\n",
+                         static_cast<unsigned long long>(tick), ridge_hop, x, p->mPosY/4096.0);
+        } else {
+            if (tick < ridge_launch + 26) buttons = 2;
+            heading = std::atan2(target - x, -100 - z);
+            steer = x < target - (east_bank ? 75 : 140) ? 22000 : 0;
+        }
+    }
+    if (phase == EastBankLanded && !std::strcmp(state, "St_Wait_Main") &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_BULLY")) {
+        phase = BullyApproach;
+        std::fprintf(stderr, "[native Fire Sea route] bully-approach tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (phase == BullyApproach) {
+        if (!std::strcmp(state, "St_Hurt_Main")) {
+            phase = BullyHit;
+            std::fprintf(stderr, "[native Fire Sea route] bully-hurt tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        } else {
+            const bool counter = std::getenv("SM64DS_PC_TEST_FIRESEA_BULLY_COUNTER") != nullptr;
+            const double dx = (counter ? 2450 : 2340) - x;
+            const double dz = (counter ? 125 : 230) - z;
+            heading = std::atan2(dx, dz);
+            steer = std::hypot(dx, dz) > 45 ? 18000 : 0;
+            if (counter && x >= 2260 && z >= -10) {
+                for (auto *bully = dActor_c::FindWithActorID(215, nullptr); bully;
+                     bully = dActor_c::FindWithActorID(215, bully)) {
+                    if (bully->aliveState == 1 && bully->mPosX > 1950*4096 && bully->mPosX < 2700*4096 &&
+                        std::abs(bully->mPosY + 2700*4096) < 5*4096) {
+                        bully_uid = bully->uniqueID;
+                        phase = BullyAim;
+                        std::fprintf(stderr, "[native Fire Sea route] bully-aim tick=%llu uid=%u x=%.1f z=%.1f\n",
+                                     static_cast<unsigned long long>(tick), bully_uid, x, z);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (phase == BullyAim) {
+        const auto *bully = dActor_c::FindWithID(bully_uid);
+        if (bully && bully->aliveState == 1) {
+            const double dx = bully->mPosX/4096.0 - x, dz = bully->mPosZ/4096.0 - z;
+            const double distance = std::hypot(dx, dz);
+            heading = std::atan2(dx, dz);
+            steer = 8200;
+            const auto desired = static_cast<int>(heading*65536.0/6.283185307179586);
+            // Start while the Bully is still in front of the attack cylinder,
+            // allowing the first punch's animation to reach its active window.
+            if (distance < 215 && std::abs(int(static_cast<s16>(desired - p->mAngleY))) < 0x2600 &&
+                p->mHorzSpeed < 17*4096 && hit) {
+                phase = BullyStrike;
+                bully_strike = tick;
+                steer = 0;
+                std::fprintf(stderr, "[native Fire Sea route] bully-counter tick=%llu uid=%u distance=%.1f\n",
+                             static_cast<unsigned long long>(tick), bully_uid, distance);
+            }
+        }
+    }
+    if (phase == BullyStrike && tick < bully_strike + 5) buttons = 1;
+    if (phase == BullyStrike && tick >= bully_strike + 315 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_GRATE_CROSS") &&
+        hit && !owner && !std::strcmp(state, "St_Wait_Main") &&
+        !dActor_c::FindWithID(bully_uid)) {
+        phase = GrateCross;
+        std::fprintf(stderr, "[native Fire Sea route] grate-cross tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (phase == GrateCross) {
+        // The center of the horizontal grate is continuous with both banks.
+        const bool lift_view = std::getenv("SM64DS_PC_TEST_FIRESEA_RISING_LIFT_VIEW") != nullptr;
+        heading = std::atan2((lift_view ? 2810 : 3220) - x, 125 - z);
+        const double brake_x = lift_view ? 2660 :
+            (std::getenv("SM64DS_PC_TEST_FIRESEA_SEESAW_VIEW") ? 3025 : 3110);
+        steer = x < brake_x ? 19000 : 0;
+        const bool settled = hit && !owner && z > 60 && z < 400 &&
+            !std::strcmp(state, "St_Wait_Main");
+        if (lift_view && settled && x >= 2660 && x < 2920) {
+            phase = RisingLiftRamp;
+            lift_view_depart = tick;
+            std::fprintf(stderr, "[native Fire Sea route] rising-lift-view-depart tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        } else if (!lift_view && settled && x >= 3110 && x < 3310) {
+            phase = GreenBank;
+            green_bank_tick = tick;
+            std::fprintf(stderr, "[native Fire Sea route] green-bank tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == GreenBank && tick >= green_bank_tick + 54 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_SEESAW_VIEW")) {
+        phase = SeesawApproach;
+        std::fprintf(stderr, "[native Fire Sea route] seesaw-approach tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (phase == GreenBank && tick >= green_bank_tick + 2 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_LIFT_POLE")) {
+        phase = LiftPoleCombo;
+        std::fprintf(stderr, "[native Fire Sea route] lift-pole-approach tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (phase == LiftPoleCombo) {
+        const bool jumping = !std::strcmp(state, "St_Jump_Main") && p->mIsAirborne;
+        if (jumping && unsigned(p->mJumpComboStage) == lift_combo_count) {
+            ++lift_combo_count;
+            lift_combo_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] lift-pole-combo tick=%llu step=%u x=%.1f speed=%d\n",
+                         static_cast<unsigned long long>(tick), lift_combo_count, x, p->mHorzSpeed);
+            if (lift_combo_count == 3) {
+                phase = LiftPoleFlight;
+                lift_pole_jump = tick;
+                std::fprintf(stderr, "[native Fire Sea route] lift-pole-triple tick=%llu x=%.1f z=%.1f\n",
+                             static_cast<unsigned long long>(tick), x, z);
+            }
+        }
+        const bool landing = !std::strcmp(state, "St_Land_Main");
+        // Floor contact can precede the native Land state by a game update.
+        // A press on that update is consumed before Land can use its edge.
+        const bool ready = hit && (!lift_combo_count ||
+            (landing && p->mJumpComboTimer && (lift_combo_count == 1 || p->mHorzSpeed > 20*4096)));
+        if (ready) {
+            buttons = 2;
+            if (lift_combo_requested == lift_combo_count) {
+                ++lift_combo_requested;
+                std::fprintf(stderr, "[native Fire Sea route] lift-pole-press tick=%llu step=%u state=%s timer=%u speed=%d\n",
+                             static_cast<unsigned long long>(tick), lift_combo_requested, state,
+                             unsigned(p->mJumpComboTimer), p->mHorzSpeed);
+            }
+        } else if (jumping && tick < lift_combo_launch + (lift_combo_count == 1 ? 8 : 36)) {
+            buttons = 2;
+        }
+        heading = std::atan2(3800 - x, 250 - z);
+        if (lift_combo_count >= 2) steer = 32767;
+    }
+    if (phase == LiftPoleFlight || phase == LiftPoleLedge || phase == LiftPoleClimb) {
+        if (!std::strcmp(state, "St_Climb_Main")) {
+            dCc_c *attachment = nullptr;
+            std::memcpy(&attachment, &p->unk_37c, sizeof(attachment));
+            const auto *pole = attachment ? dActor_c::FindWithID(attachment->GetOwnerID()) : nullptr;
+            if (pole && pole->actorID == 287 && pole->mPosX == 3800*4096) {
+                if (phase != LiftPoleClimb) {
+                    phase = LiftPoleClimb;
+                    pole_uid = pole->uniqueID;
+                    std::fprintf(stderr, "[native Fire Sea route] lift-pole-attached tick=%llu uid=%u offset=%d\n",
+                                 static_cast<unsigned long long>(tick), pole->uniqueID, p->mAttachOffsetY);
+                }
+                if (p->mAttachOffsetY < 520*4096) {
+                    ntr::input_test_controls(true, 0, 0, 32767);
+                    return true;
+                }
+                phase = LiftPoleHold;
+                std::fprintf(stderr, "[native Fire Sea route] lift-pole-climbed tick=%llu offset=%d\n",
+                             static_cast<unsigned long long>(tick), p->mAttachOffsetY);
+            }
+        } else if (phase == LiftPoleClimb && hit && owner && owner->actorID == 143 &&
+                   !lift_ledge_jump && !std::strcmp(state, "St_Wait_Main")) {
+            // A grip at floor height can resolve as grounded on the seesaw.
+            // Jump from its edge before steering back into the pole.
+            phase = LiftPoleLedge;
+            lift_ledge_jump = tick;
+            buttons = 2;
+            std::fprintf(stderr, "[native Fire Sea route] lift-pole-rejump tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        } else if (phase == LiftPoleFlight || phase == LiftPoleLedge) {
+            heading = std::atan2(3800 - x, 250 - z);
+            steer = x < 3790 ? 16000 : 0;
+            if (phase == LiftPoleFlight && tick < lift_pole_jump + 48) {
+                buttons = 2;
+                if (p->mHorzSpeed > 5*4096 && p->mPosY < -2110*4096) {
+                    heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                    steer = 32767;
+                }
+            }
+            if (!std::strcmp(state, "St_LedgeHang_Main")) {
+                phase = LiftPoleLedge;
+                buttons = 0;
+            }
+            if (phase == LiftPoleLedge && !lift_ledge_jump && hit && !owner &&
+                x >= 3749 && x <= 3849 && std::abs(p->mPosY + 1995*4096) < 4*4096 &&
+                (!std::strcmp(state, "St_Wait_Main") || !std::strcmp(state, "St_Walk_Main"))) {
+                lift_ledge_jump = tick;
+            }
+            if (lift_ledge_jump && tick < lift_ledge_jump + 22) buttons = 2;
+            if (lift_ledge_jump && p->mPosY > -1940*4096) steer = 16000;
+        }
+    }
+    if (phase == LiftPoleHold && std::getenv("SM64DS_PC_TEST_FIRESEA_LIFT_BANK")) {
+        phase = PoleTip;
+    }
+    if (phase == RisingLiftRamp) {
+        heading = std::atan2(2810 - x, -495 - z);
+        steer = z > -420 ? 21000 : 0;
+        if (hit && !owner && z < -400 && std::abs(p->mPosY + 2400*4096) < 4*4096 &&
+            !std::strcmp(state, "St_Wait_Main")) {
+            phase = RisingLiftView;
+            std::fprintf(stderr, "[native Fire Sea route] rising-lift-view-reached tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        }
+    }
+    if (phase == RisingLiftView && tick >= lift_view_depart + 350) {
+        phase = RisingLiftJump;
+        lift_view_jump = tick;
+    }
+    if (phase == RisingLiftJump) {
+        if (tick < lift_view_jump + 32) buttons = 2;
+        if (tick > lift_view_jump + 40 && hit && !owner) phase = RisingLiftHold;
+    }
+    if (phase == SeesawApproach) {
+        heading = x < 3230 && z > -70 ? 3.141592653589793 : std::atan2(3950 - x, -120 - z);
+        steer = x < 3840 ? 22000 : 0;
+        if (hit && !owner && x >= 3840 && x < 4060 && !std::strcmp(state, "St_Wait_Main")) {
+            phase = SeesawView;
+            std::fprintf(stderr, "[native Fire Sea route] seesaw-view tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == SeesawView && x >= 4200 && hit && !owner && !std::strcmp(state, "St_Wait_Main") &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_RUNWAY")) {
+        phase = RunwayTravel;
+        std::fprintf(stderr, "[native Fire Sea route] runway-start tick=%llu x=%.1f z=%.1f\n",
+                     static_cast<unsigned long long>(tick), x, z);
+    }
+    if (phase == RunwayTravel) {
+        heading = std::atan2(6050 - x, 260 - z);
+        steer = x < 5890 ? 22000 : 0;
+        if (hit && !owner && x >= 5980 && x < 6140 && z > 125 && z < 500 &&
+            std::abs(p->mPosY + 2850*4096) < 4*4096 && !std::strcmp(state, "St_Wait_Main")) {
+            phase = RunwayEnd;
+            runway_end_tick = tick;
+            std::fprintf(stderr, "[native Fire Sea route] runway-end tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == RunwayEnd && tick >= runway_end_tick + 60 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_NET_POLE")) {
+        for (auto *pole = dActor_c::FindWithActorID(142, nullptr); pole;
+             pole = dActor_c::FindWithActorID(142, pole)) {
+            if (pole->aliveState == 1 && pole->mPosX == 6449*4096 &&
+                pole->mPosY >= -3080*4096 && pole->mPosY >= pole->mPrevPosY) {
+                pole_uid = pole->uniqueID;
+                phase = PoleRun;
+                std::fprintf(stderr, "[native Fire Sea route] pole-run tick=%llu uid=%u\n",
+                             static_cast<unsigned long long>(tick), pole_uid);
+                break;
+            }
+        }
+    }
+    if (phase == PoleRun) {
+        heading = std::atan2(6449 - x, 260 - z);
+        steer = 22000;
+        if (x >= 6100 && std::getenv("SM64DS_PC_TEST_FIRESEA_AMP_CONTACT")) {
+            phase = AmpContact;
+        } else if (hit && !owner && x >= 6100 && p->mHorzSpeed >= 8*4096 &&
+            !std::strcmp(state, "St_Walk_Main")) {
+            phase = PoleJump;
+            pole_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] pole-jump tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == AmpContact) {
+        // Step down to the grate at the western end of the Amp's orbit.
+        heading = std::atan2(6270 - x, 260 - z);
+        steer = x < 6210 && std::strcmp(state, "St_Electrocute_Main") ? 22000 : 0;
+        if (!std::strcmp(state, "St_Electrocute_Main") &&
+            std::getenv("SM64DS_PC_TEST_FIRESEA_AMP_RETREAT")) phase = AmpRetreat;
+    }
+    if (phase == AmpRetreat && std::strcmp(state, "St_Electrocute_Main")) {
+        heading = std::atan2(5990 - x, 260 - z);
+        steer = 26000;
+        if (hit && owner && owner->actorID == 142 && x <= 6305 &&
+            p->mHorzSpeed >= 5*4096 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = AmpRetreatJump;
+            amp_retreat_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] amp-retreat-jump tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+    }
+    if (phase == AmpRetreatJump) {
+        if (hit && !owner && x >= 5700 && x < 6140 && z > 125 && z < 500 &&
+            std::abs(p->mPosY + 2850*4096) < 4*4096) {
+            phase = AmpRetreatHold;
+            std::fprintf(stderr, "[native Fire Sea route] amp-retreat-landed tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        } else {
+            heading = std::atan2(5990 - x, 260 - z);
+            steer = x > 6030 ? 26000 : 0;
+            if (tick < amp_retreat_launch + 34) buttons = 2;
+        }
+    }
+    if (phase == PoleJump || phase == PoleClimb) {
+        if (!std::strcmp(state, "St_Climb_Main")) {
+            dCc_c *attachment = nullptr;
+            std::memcpy(&attachment, &p->unk_37c, sizeof(attachment));
+            if (attachment && attachment->GetOwnerID() == pole_uid) {
+                if (phase == PoleJump) {
+                    phase = PoleClimb;
+                    std::fprintf(stderr, "[native Fire Sea route] pole-attached tick=%llu uid=%u offset=%d\n",
+                                 static_cast<unsigned long long>(tick), pole_uid, p->mAttachOffsetY);
+                }
+                if (p->mAttachOffsetY >= 530*4096) {
+                    phase = PoleHold;
+                    pole_climbed = tick;
+                    std::fprintf(stderr, "[native Fire Sea route] pole-climbed tick=%llu uid=%u offset=%d\n",
+                                 static_cast<unsigned long long>(tick), pole_uid, p->mAttachOffsetY);
+                } else {
+                    ntr::input_test_controls(true, 0, 0, 32767);
+                    return true;
+                }
+            }
+        } else if (phase == PoleJump) {
+            if (tick < pole_launch + 24) buttons = 2;
+            heading = std::atan2(6449 - x, 260 - z);
+            steer = x < 6360 ? 22000 : 0;
+        }
+    }
+    if (phase == PoleHold && tick >= pole_climbed + 100 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_POLE_EXIT")) phase = PoleTip;
+    const bool lift_bank = std::getenv("SM64DS_PC_TEST_FIRESEA_LIFT_BANK") != nullptr;
+    if (phase == PoleTip || phase == PoleTipRelease) {
+        if (!std::strcmp(state, "St_Headstand_Main")) {
+            phase = PoleHeadstand;
+            std::fprintf(stderr, "[native Fire Sea route] pole-headstand tick=%llu uid=%u\n",
+                         static_cast<unsigned long long>(tick), pole_uid);
+        } else if (!std::strcmp(state, "St_Climb_Main")) {
+            // Climbing turns Mario toward the current camera heading. Keep
+            // climbing at the tip until he faces the shelf before rearming.
+            const bool facing_shelf = std::abs(static_cast<int16_t>(p->mAngleY - 0x4000)) <= 0x800;
+            if (phase == PoleTip && p->mAttachOffsetY >= (lift_bank ? 690 : 600)*4096 && (lift_bank || facing_shelf)) {
+                phase = PoleTipRelease;
+                pole_tip_release = tick;
+                std::fprintf(stderr, "[native Fire Sea route] pole-tip tick=%llu offset=%d\n",
+                             static_cast<unsigned long long>(tick), p->mAttachOffsetY);
+            }
+            // Releasing the stick arms the original headstand transition.
+            const bool climb = phase == PoleTip || tick >= pole_tip_release + 6;
+            ntr::input_test_controls(true, 0, 0, climb ? 32767 : 0);
+            return true;
+        }
+    }
+    if (phase == PoleHeadstand && p->mStateStep == 3) {
+        const auto *pole = dActor_c::FindWithID(pole_uid);
+        if (pole && (lift_bank || (pole->mPosY >= -3008*4096 && pole->mPosY >= pole->mPrevPosY))) {
+            phase = PoleExitJump;
+            pole_exit_launch = tick;
+            std::fprintf(stderr, "[native Fire Sea route] pole-exit-jump tick=%llu y=%d yaw=%d\n",
+                         static_cast<unsigned long long>(tick), p->mPosY, p->mAngleY);
+        }
+    }
+    if (phase == PoleExitJump || phase == PoleBrake || phase == PoleDrop) {
+        if (hit && !owner && (lift_bank
+            ? (x >= 3300 && x <= 4300 && std::abs(p->mPosY + 1250*4096) < 4*4096)
+            : (x >= 6750 && x < 7350 && z > -40 && z < 560 && std::abs(p->mPosY + 2100*4096) < 4*4096))) {
+            phase = PoleShelf;
+            std::fprintf(stderr, "[native Fire Sea route] pole-shelf-landed tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        } else if (tick < pole_exit_launch + 100) {
+            if (tick < pole_exit_launch + 34) buttons = 2;
+            // The stone begins at x=6750, before the overhanging item block.
+            // Brake in the air so Mario drops onto that strip of stone.
+            if (phase == PoleExitJump && x >= (lift_bank ? 4020 : 6600)) {
+                phase = PoleBrake;
+                std::fprintf(stderr, "[native Fire Sea route] pole-brake tick=%llu x=%.1f speed=%d\n",
+                             static_cast<unsigned long long>(tick), x, p->mHorzSpeed);
+            }
+            if (phase == PoleBrake && p->mHorzSpeed <= 0x1800) phase = PoleDrop;
+            if (phase == PoleBrake) {
+                heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                steer = 30000;
+            } else if (phase == PoleExitJump && std::strcmp(state, "St_Headstand_Main")) {
+                heading = std::atan2((lift_bank ? 4160 : 6940) - x, 260 - z);
+                steer = 30000;
+            }
+        }
+    }
+    if (phase == PoleShelf && std::getenv("SM64DS_PC_TEST_FIRESEA_LIFT_RIDE") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = LiftBankWest;
+    }
+    if (phase == LiftBankWest) {
+        heading = std::atan2(3450 - x, 610 - z);
+        steer = 22000;
+        if (x < 3490) phase = LiftBankLineUp;
+    }
+    if (phase == LiftBankLineUp) {
+        heading = std::atan2(3450 - x, 300 - z);
+        steer = 20000;
+        if (z < 345) phase = LiftBankSettle;
+    }
+    if (phase == LiftBankSettle) {
+        steer = 0;
+        if (!std::strcmp(state, "St_Wait_Main")) phase = LiftBankRun;
+    }
+    if (phase == LiftBankRun) {
+        heading = std::atan2(2800 - x, 300 - z);
+        steer = 32767;
+        if (hit && !owner && x < 3340) {
+            phase = LiftBankJump;
+            lift_bank_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] lift-bank-jump tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == LiftBankJump) {
+        if (hit && owner && owner->actorID == 140) {
+            phase = LiftBankRide;
+            std::fprintf(stderr, "[native Fire Sea route] rising-lift-boarded tick=%llu uid=%u\n",
+                         static_cast<unsigned long long>(tick), owner->uniqueID);
+        } else {
+            buttons = tick < lift_bank_jump + 34 ? 2 : 0;
+            heading = std::atan2(2800 - x, 300 - z);
+            steer = x > 2900 ? 30000 : 0;
+        }
+    }
+    if (phase == LiftBankRide) {
+        buttons = 0;
+        steer = 0;
+    }
+    if (phase == LiftBankRide && owner && owner->actorID == 140 &&
+        owner->mPosY >= 250*4096 && std::getenv("SM64DS_PC_TEST_FIRESEA_LIFT_EXIT")) {
+        phase = LiftTopWalk;
+        std::fprintf(stderr, "[native Fire Sea route] rising-lift-exit tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (phase == LiftTopWalk) {
+        heading = std::atan2(2180 - x, 300 - z);
+        steer = 28000;
+        if (hit && !owner && x < 2350 && std::abs(p->mPosY - 400*4096) < 4*4096) {
+            phase = LiftTopHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] rising-lift-walkway tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == LiftTopHold && std::getenv("SM64DS_PC_TEST_FIRESEA_LIFT_GAP") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = LiftGapRun;
+    }
+    if (phase == LiftGapRun) {
+        heading = std::atan2(600 - x, 300 - z);
+        steer = 32767;
+        if (hit && !owner && x < 1850 && p->mHorzSpeed > 16*4096) phase = LiftGapCrouch;
+    }
+    if (phase == LiftGapCrouch) {
+        heading = std::atan2(600 - x, 300 - z);
+        steer = 32767;
+        if (!std::strcmp(state, "St_LongJump_Main")) {
+            phase = LiftGapAir;
+            std::fprintf(stderr, "[native Fire Sea route] lift-gap-jump tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        } else {
+            buttons = !std::strcmp(state, "St_Crouch_Main") ? 0x102 : 0x100;
+        }
+    }
+    if (phase == LiftGapAir || phase == LiftGapBrake) {
+        if (hit && !owner && x < 900 && x > 200 &&
+            std::abs(p->mPosY - 400*4096) < 4*4096) {
+            phase = LiftGapHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] lift-gap-landed tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        } else {
+            const double speed = p->mHorzSpeed / 4096.0;
+            if (phase == LiftGapAir && x - speed*speed/3.0 - speed <= 540) phase = LiftGapBrake;
+            if (phase == LiftGapBrake && speed > 1) {
+                heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                steer = 32767;
+            } else if (phase == LiftGapAir) {
+                heading = std::atan2(600 - x, 300 - z);
+                steer = 32767;
+            }
+        }
+    }
+    if (phase == LiftGapHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_RAMP") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = UpperBlueRamp;
+    }
+    if (phase == UpperBlueRamp) {
+        heading = std::atan2(-580 - x, 300 - z);
+        steer = x > -450 ? 32767 : 12000;
+        if (hit && !owner && x < -530 && p->mPosY >= 780*4096) {
+            phase = UpperBlueCrest;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] upper-blue-crest tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+    }
+    if (phase == UpperBlueCrest && std::getenv("SM64DS_PC_TEST_FIRESEA_SILVER_DIRECT")) {
+        phase = SilverDirectLaunch;
+    }
+    if (phase == SilverDirectLaunch) {
+        heading = std::atan2(-1580 - x, 300 - z);
+        steer = 32767;
+        if (!std::strcmp(state, "St_LongJump_Main")) {
+            phase = SilverDirectAir;
+            std::fprintf(stderr, "[native Fire Sea route] silver-direct-jump tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        } else if (x < -550) {
+            buttons = !std::strcmp(state, "St_Crouch_Main") ? 0x102 : 0x100;
+        }
+    }
+    if (phase == SilverDirectAir || phase == SilverDirectBrake) {
+        if (hit && !owner && x < -1300 && x > -2100 &&
+            std::abs(p->mPosY - 735*4096) < 4*4096) {
+            phase = SilverDirectLand;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] silver-direct-land tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        } else {
+            const double speed = p->mHorzSpeed / 4096.0;
+            if (phase == SilverDirectAir && x - speed*speed/3.0 - speed <= -1550) phase = SilverDirectBrake;
+            steer = 0;
+            if (phase == SilverDirectBrake && speed > 1) {
+                heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                steer = 32767;
+            } else if (phase == SilverDirectAir) {
+                heading = std::atan2(-1580 - x, 300 - z);
+                steer = 32767;
+            }
+        }
+    }
+    if (phase == SilverDirectLand && !std::strcmp(state, "St_Wait_Main")) phase = SilverWestDrop;
+    if (phase == SilverWestDrop) {
+        heading = std::atan2(-2670 - x, 300 - z);
+        steer = x > -2570 ? 24000 : 0;
+        if (hit && !owner && x < -2450 && x > -2850 &&
+            p->mPosY > 335*4096 && p->mPosY < 395*4096) {
+            phase = SilverWestHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] silver-west-land tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+    }
+    if (phase == UpperBlueCrest && std::getenv("SM64DS_PC_TEST_FIRESEA_YELLOW") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = UpperYellowLine;
+    }
+    if (phase == UpperYellowLine) {
+        heading = std::atan2(-580 - x, -335 - z);
+        steer = 24000;
+        if (z < -285) phase = UpperYellowSettle;
+    }
+    if (phase == UpperYellowSettle) {
+        steer = 0;
+        if (!std::strcmp(state, "St_Wait_Main")) {
+            phase = UpperYellowClimb;
+            std::fprintf(stderr, "[native Fire Sea route] upper-yellow-climb tick=%llu z=%.1f\n",
+                         static_cast<unsigned long long>(tick), z);
+        }
+    }
+    if (phase == UpperYellowClimb) {
+        heading = std::atan2(-1630 - x, -355 - z);
+        steer = x > -1530 ? 32767 : 18000;
+        if (hit && !owner && x < -1560 && p->mPosY >= 1295*4096 &&
+            !std::strcmp(state, "St_Walk_Main")) {
+            phase = UpperYellowEvade;
+            upper_bank_jump = tick;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] upper-yellow-landed tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+    }
+    if (phase == UpperYellowEvade) {
+        heading = std::atan2(-1880 - x, -690 - z);
+        steer = z > -610 ? 20000 : 0;
+        if (tick >= upper_bank_jump + 14 && tick < upper_bank_jump + 44) buttons = 2;
+        if (hit && !owner && z < -560 && tick >= upper_bank_jump + 54 &&
+            std::abs(p->mPosY - 1300*4096) < 4*4096) {
+            phase = UpperYellowHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] upper-bank-evaded tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == UpperYellowHold && std::getenv("SM64DS_PC_TEST_FIRESEA_SILVER_DROP") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = UpperSilverInward;
+    }
+    if (phase == UpperSilverInward) {
+        heading = std::atan2(-2020 - x, -540 - z);
+        steer = 32767;
+        if (z > -715) phase = UpperSilverDrop;
+    }
+    if (phase == UpperSilverDrop) {
+        heading = std::atan2(-2200 - x, 270 - z);
+        steer = z < 160 ? 28000 : 0;
+        if (hit && !owner && std::abs(p->mPosY - 735*4096) < 4*4096 &&
+            x > -2450 && x < -1350 && z > 65 && z < 600) {
+            phase = UpperSilverHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] upper-silver-drop tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == SilverWestHold && std::getenv("SM64DS_PC_TEST_FIRESEA_SLIDE_CROSS") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        for (auto *lift = dActor_c::FindWithActorID(147, nullptr); lift;
+             lift = dActor_c::FindWithActorID(147, lift)) {
+            if (lift->mPosX == -3199*4096 && std::abs(lift->mPosZ - 300*4096) < 100*4096) {
+                phase = SlideNearJump;
+                slide_jump = tick;
+                break;
+            }
+        }
+    }
+    if (phase == SlideNearJump || phase == SlideFarJump || phase == SlideBankJump) {
+        const Phase flight = phase;
+        const double target = flight == SlideNearJump ? -3200 : (flight == SlideFarJump ? -3790 : -4360);
+        heading = std::atan2(target - x, 300 - z);
+        steer = x > target + 95 ? 26000 : 0;
+        buttons = tick < slide_jump + 28 ? 2 : 0;
+        if (hit && owner && owner->actorID == 147 &&
+            ((flight == SlideNearJump && owner->mPosX == -3199*4096) ||
+             (flight == SlideFarJump && owner->mPosX == -3800*4096))) {
+            phase = flight == SlideNearJump ? SlideNearRide : SlideFarRide;
+            slide_board_z = p->mPosZ;
+            steer = 0;
+            buttons = 0;
+            std::fprintf(stderr, "[native Fire Sea route] sliding-lift-board tick=%llu uid=%u x=%.1f\n",
+                         static_cast<unsigned long long>(tick), owner->uniqueID, x);
+        }
+        if (flight == SlideBankJump && hit && !owner && x < -4180 &&
+            std::abs(p->mPosY - 400*4096) < 4*4096) {
+            phase = SlideBankHold;
+            steer = 0;
+            buttons = 0;
+            std::fprintf(stderr, "[native Fire Sea route] sliding-lift-bank tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+    }
+    if ((phase == SlideNearRide || phase == SlideFarRide) && hit && owner && owner->actorID == 147 &&
+        z > 180 && z < 420 && std::abs(p->mPosZ - slide_board_z) >= 100*4096 &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = phase == SlideNearRide ? SlideFarJump : SlideBankJump;
+        slide_jump = tick + 1;
+    }
+    if (phase == SlideBankHold && std::getenv("SM64DS_PC_TEST_FIRESEA_SLIDE_BULLIES")) {
+        phase = SlideBullyRun;
+    }
+    if (phase == SlideBullyRun || phase == SlideBullyJump || phase == SlideBullyWest) {
+        heading = std::atan2(-5510 - x, 300 - z);
+        steer = x > -5400 ? 32767 : 0;
+        if (phase == SlideBullyRun && hit && x < -4650) {
+            phase = SlideBullyJump;
+            slide_bully_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] slide-bullies-jump tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        }
+        if (phase == SlideBullyJump) {
+            buttons = tick < slide_bully_jump + 32 ? 2 : 0;
+            if (tick > slide_bully_jump + 36 && hit && !owner && x < -4950) phase = SlideBullyWest;
+        }
+        if (phase == SlideBullyWest && hit && !owner && x < -5350 &&
+            std::abs(p->mPosY - 400*4096) < 4*4096) {
+            phase = SlideBullyHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] slide-bullies-west tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+    }
+    if (phase == SlideBullyHold && std::getenv("SM64DS_PC_TEST_FIRESEA_STRETCH_CLIMB")) {
+        phase = StretchRampClimb;
+    }
+    if (phase == StretchRampClimb) {
+        heading = std::atan2(-7050 - x, 305 - z);
+        steer = x > -6860 ? 32767 : 16000;
+        if (hit && owner && owner->actorID == 148 && x < -6930 && p->mPosY > 700*4096) {
+            phase = StretchRampHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-first-landing tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == StretchRampHold && std::getenv("SM64DS_PC_TEST_FIRESEA_STRETCH_SECOND") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = StretchSecondLine;
+    }
+    if (phase == StretchSecondLine) {
+        heading = std::atan2(-7105 - x, -430 - z);
+        steer = 24000;
+        if (z < -285) phase = StretchSecondSettle;
+    }
+    if (phase == StretchSecondSettle) {
+        steer = 0;
+        if (!std::strcmp(state, "St_Wait_Main")) {
+            phase = StretchSecondClimb;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-second-turn tick=%llu z=%.1f\n",
+                         static_cast<unsigned long long>(tick), z);
+        }
+    }
+    if (phase == StretchSecondClimb) {
+        heading = std::atan2(-5540 - x, -430 - z);
+        steer = x < -6070 ? 32767 : 16000;
+        if (hit && owner && owner->actorID == 148 && x > -5960 && z < -100 &&
+            p->mPosY > 1200*4096) {
+            phase = StretchSecondHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-second-landing tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == StretchSecondHold && std::getenv("SM64DS_PC_TEST_FIRESEA_STRETCH_THIRD") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = StretchThirdLine;
+    }
+    if (phase == StretchThirdLine) {
+        heading = std::atan2(-5910 - x, 235 - z);
+        steer = 24000;
+        if (z > 85) phase = StretchThirdSettle;
+    }
+    if (phase == StretchThirdSettle) {
+        steer = 0;
+        if (!std::strcmp(state, "St_Wait_Main")) {
+            phase = StretchThirdClimb;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-third-turn tick=%llu z=%.1f\n",
+                         static_cast<unsigned long long>(tick), z);
+        }
+    }
+    if (phase == StretchThirdClimb) {
+        heading = std::atan2(-4170 - x, 235 - z);
+        steer = x < -4460 ? 32767 : 16000;
+        if (hit && owner && owner->actorID == 148 && x > -4350 && z > 0) {
+            phase = StretchThirdHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-third-landing tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == StretchThirdHold && std::getenv("SM64DS_PC_TEST_FIRESEA_STRETCH_FOURTH") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = StretchFourthLine;
+    }
+    if (phase == StretchFourthLine) {
+        heading = std::atan2(-4240 - x, -440 - z);
+        steer = 24000;
+        if (z < -290) phase = StretchFourthSettle;
+    }
+    if (phase == StretchFourthSettle) {
+        steer = 0;
+        if (!std::strcmp(state, "St_Wait_Main")) {
+            phase = StretchFourthClimb;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-fourth-turn tick=%llu z=%.1f\n",
+                         static_cast<unsigned long long>(tick), z);
+        }
+    }
+    if (phase == StretchFourthClimb) {
+        heading = std::atan2(-5850 - x, -440 - z);
+        steer = x > -5470 ? 32767 : 16000;
+        if (hit && owner && owner->actorID == 148 && x < -5620 && z < -100) {
+            phase = StretchFourthHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-fourth-landing tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == StretchFourthHold && std::getenv("SM64DS_PC_TEST_FIRESEA_STRETCH_SHELF") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        phase = StretchShelfLineX;
+    }
+    if (phase == StretchShelfLineX) {
+        heading = std::atan2(-6010 - x, -442 - z);
+        steer = x > -5920 ? 18000 : 0;
+        if (x <= -5920 && !std::strcmp(state, "St_Wait_Main")) phase = StretchShelfLineZ;
+    }
+    if (phase == StretchShelfLineZ) {
+        heading = std::atan2(-6010 - x, 300 - z);
+        steer = 24000;
+        if (z > 145) phase = StretchShelfWait;
+    }
+    if (phase == StretchShelfWait) {
+        steer = 0;
+        if (hit && owner && owner->actorID == 148 && p->mPosY >= 2730*4096 &&
+            !std::strcmp(state, "St_Wait_Main")) {
+            phase = StretchShelfWalk;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-shelf-depart tick=%llu y=%.1f\n",
+                         static_cast<unsigned long long>(tick), p->mPosY/4096.0);
+        }
+    }
+    if (phase == StretchShelfWalk) {
+        heading = std::atan2(-6540 - x, 300 - z);
+        steer = x > -6410 ? 23000 : 0;
+        if (hit && !owner && x < -6280 && z > 51 && z < 551 &&
+            std::abs(p->mPosY - 2700*4096) < 4*4096) {
+            phase = StretchShelfHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] stretch-shelf-landed tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == StretchShelfHold && std::getenv("SM64DS_PC_TEST_FIRESEA_FIXED_UPPER") &&
+        !std::strcmp(state, "St_Wait_Main")) phase = FixedRampLine;
+    if (phase == FixedRampLine) {
+        heading = std::atan2(-6940 - x, 295 - z);
+        steer = x > -6890 ? (x > -6750 ? 22000 : 12500) : 0;
+        if (x <= -6890 && hit && !owner && p->mHorzSpeed == 0) phase = FixedRampUp;
+    }
+    if (phase == FixedRampUp) {
+        heading = std::atan2(-6940 - x, -790 - z);
+        steer = 26000;
+        if (z < -675) phase = FixedRampTurn;
+    }
+    if (phase == FixedRampTurn) {
+        steer = 0;
+        if (hit && !owner && std::abs(p->mPosY - 3000*4096) < 8*4096 &&
+            !std::strcmp(state, "St_Wait_Main")) {
+            phase = FixedUpperRun;
+            std::fprintf(stderr, "[native Fire Sea route] fixed-upper-turn tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == FixedUpperRun) {
+        heading = std::atan2(-5260 - x, -780 - z);
+        steer = x < -5480 ? 32767 : 15000;
+        if (hit && !owner && x > -5420 && std::abs(p->mPosY - 3600*4096) < 4*4096) {
+            phase = FixedUpperHold;
+            steer = 0;
+            std::fprintf(stderr, "[native Fire Sea route] fixed-upper-land tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == FixedUpperHold && std::getenv("SM64DS_PC_TEST_FIRESEA_FIXED_BLOCK") &&
+        !std::strcmp(state, "St_Wait_Main")) phase = FixedBlockLine;
+    if (phase == FixedBlockLine) {
+        heading = std::atan2(-5200 - x, 100 - z);
+        steer = z < -170 ? 24000 : 13000;
+        if (z > 45) phase = FixedBlockSettle;
+    }
+    if (phase == FixedBlockSettle) {
+        steer = 0;
+        if (hit && !owner && !std::strcmp(state, "St_Wait_Main") &&
+            std::hypot(x + 5200, z - 100) < 90) {
+            phase = FixedBlockJump;
+            fixed_block_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] fixed-item-jump tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+    }
+    if (phase == FixedBlockJump && tick < fixed_block_jump + 26) buttons = 2;
+    if (phase == FixedUpperHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_BRIDGE") &&
+        !std::strcmp(state, "St_Wait_Main")) {
+        for (auto *island = dActor_c::FindWithActorID(145, nullptr); island;
+             island = dActor_c::FindWithActorID(145, island)) {
+            // Wait away from the Bob-omb while the island nears its low point.
+            // Lining up, running and jumping take most of its rising half-cycle.
+            if (island->mPosX == -3150*4096 && island->mPosY <= 3325*4096 &&
+                island->mPosY < island->mPrevPosY) {
+                phase = UpperBridgeLine;
+                break;
+            }
+        }
+    }
+    if (phase == UpperBridgeLine) {
+        heading = std::atan2(-5250 - x, -75 - z);
+        steer = z < -145 ? 23000 : 0;
+        if (z >= -145 && !std::strcmp(state, "St_Wait_Main")) {
+            phase = UpperBridgeRun;
+            std::fprintf(stderr, "[native Fire Sea route] upper-bridge-depart tick=%llu z=%.1f\n",
+                         static_cast<unsigned long long>(tick), z);
+        }
+    }
+    if (phase == UpperBridgeRun || phase == UpperBridgeJump) {
+        heading = std::atan2(-3460 - x, 93 - z);
+        steer = x < -3560 ? 28000 : 0;
+        if (phase == UpperBridgeRun && hit && !owner && x > -4240) {
+            phase = UpperBridgeJump;
+            upper_bridge_jump = tick;
+        }
+        if (phase == UpperBridgeJump) {
+            buttons = tick < upper_bridge_jump + 26 ? 2 : 0;
+            if (hit && owner && owner->actorID == 145 && owner->mPosX == -3150*4096) {
+                phase = UpperBridgeHold;
+                steer = 0;
+                buttons = 0;
+                std::fprintf(stderr, "[native Fire Sea route] upper-bridge-land tick=%llu x=%.1f uid=%u\n",
+                             static_cast<unsigned long long>(tick), x, owner->uniqueID);
+            }
+        }
+    }
+    if (phase == UpperBridgeHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_ISLAND") &&
+        !std::strcmp(state, "St_Wait_Main")) phase = UpperIslandRun;
+    if (phase == UpperIslandRun || phase == UpperIslandJump) {
+        heading = std::atan2(-1890 - x, 93 - z);
+        steer = x < -2040 ? 28000 : 0;
+        if (phase == UpperIslandRun && hit && owner && owner->actorID == 145 && x > -2730) {
+            phase = UpperIslandJump;
+            upper_island_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] upper-island-jump tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+        if (phase == UpperIslandJump) {
+            buttons = tick < upper_island_jump + 28 ? 2 : 0;
+            if (hit && owner && owner->actorID == 145 && owner->mPosX == -1349*4096) {
+                phase = UpperIslandHold;
+                buttons = 0;
+                steer = 0;
+                std::fprintf(stderr, "[native Fire Sea route] upper-island-land tick=%llu x=%.1f uid=%u\n",
+                             static_cast<unsigned long long>(tick), x, owner->uniqueID);
+            }
+        }
+    }
+    if (phase == UpperIslandHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_DECK") &&
+        !std::strcmp(state, "St_Wait_Main")) phase = UpperDeckRun;
+    if (phase == UpperDeckRun || phase == UpperDeckCrouch || phase == UpperDeckRidgeJump ||
+        phase == UpperDeckRidgeBrake || phase == UpperDeckRidgeRun ||
+        phase == UpperDeckJump) {
+        heading = std::atan2(-70 - x, 93 - z);
+        steer = phase == UpperDeckJump && x > -200 ? 0 : 32767;
+        if (phase == UpperDeckRun && hit && owner && owner->actorID == 145 && x > -1830)
+            phase = UpperDeckCrouch;
+        if (phase == UpperDeckCrouch) {
+            if (!std::strcmp(state, "St_LongJump_Main")) {
+                phase = UpperDeckRidgeJump;
+                upper_deck_jump = tick;
+                std::fprintf(stderr, "[native Fire Sea route] upper-deck-ridge-longjump tick=%llu x=%.1f\n",
+                             static_cast<unsigned long long>(tick), x);
+            } else {
+                buttons = !std::strcmp(state, "St_Crouch_Main") ? 0x102 : 0x100;
+            }
+        }
+        if (phase == UpperDeckRidgeJump || phase == UpperDeckRidgeBrake) {
+            const double speed = p->mHorzSpeed / 4096.0;
+            if (phase == UpperDeckRidgeJump && x + speed*speed/3.0 + speed >= -835)
+                phase = UpperDeckRidgeBrake;
+            if (phase == UpperDeckRidgeBrake) {
+                heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                steer = speed > 1 ? 32767 : 0;
+            }
+            if (tick > upper_deck_jump + 36 && hit && owner && owner->actorID == 145 && x > -1030) {
+                phase = UpperDeckRidgeRun;
+                std::fprintf(stderr, "[native Fire Sea route] upper-deck-ridge-land tick=%llu x=%.1f\n",
+                             static_cast<unsigned long long>(tick), x);
+            }
+        }
+        if (phase == UpperDeckRidgeRun && hit && owner && owner->actorID == 145 &&
+            x > -720 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = UpperDeckJump;
+            upper_deck_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] upper-deck-jump tick=%llu x=%.1f y=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, p->mPosY / 4096.0);
+        }
+        if (phase == UpperDeckJump) {
+            buttons = tick < upper_deck_jump + 44 ? 2 : 0;
+            if (hit && !owner && x > -300 && x < 300 &&
+                std::abs(p->mPosY - 3700*4096) < 4*4096) {
+                phase = UpperDeckHold;
+                buttons = 0;
+                steer = 0;
+                std::fprintf(stderr, "[native Fire Sea route] upper-deck-land tick=%llu x=%.1f\n",
+                             static_cast<unsigned long long>(tick), x);
+            }
+        }
+    }
+    if (phase == UpperDeckHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_POLE") &&
+        !std::strcmp(state, "St_Wait_Main")) phase = UpperPoleRun;
+    if (phase == UpperPoleRun || phase == UpperPoleJump || phase == UpperPoleRejump) {
+        heading = std::atan2(600 - x, 93 - z);
+        steer = x < 565 ? 29000 : 0;
+        if (phase == UpperPoleRun && hit && !owner && x > 220) {
+            phase = UpperPoleJump;
+            upper_pole_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] upper-pole-jump tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+        if (phase == UpperPoleJump && tick >= upper_pole_jump + 36 &&
+            hit && owner && owner->actorID == 142 && owner->mPosX == 600*4096 &&
+            x > 465 && !std::strcmp(state, "St_Walk_Main")) {
+            phase = UpperPoleRejump;
+            upper_pole_jump = tick;
+            std::fprintf(stderr, "[native Fire Sea route] upper-pole-net-hop tick=%llu x=%.1f\n",
+                         static_cast<unsigned long long>(tick), x);
+        }
+        if ((phase == UpperPoleJump || phase == UpperPoleRejump) && tick < upper_pole_jump + 34)
+            buttons = 2;
+    }
+    if ((phase == UpperPoleJump || phase == UpperPoleRejump || phase == UpperPoleClimb) &&
+        !std::strcmp(state, "St_Climb_Main")) {
+        dCc_c *attachment = nullptr;
+        std::memcpy(&attachment, &p->unk_37c, sizeof(attachment));
+        const auto *pole = attachment ? dActor_c::FindWithID(attachment->GetOwnerID()) : nullptr;
+        if (pole && pole->actorID == 142 && pole->mPosX == 600*4096) {
+            if (phase != UpperPoleClimb) {
+                phase = UpperPoleClimb;
+                std::fprintf(stderr, "[native Fire Sea route] upper-pole-grab tick=%llu uid=%u offset=%d\n",
+                             static_cast<unsigned long long>(tick), pole->uniqueID, p->mAttachOffsetY);
+            }
+            if (p->mAttachOffsetY < 525*4096) {
+                ntr::input_test_controls(true, 0, 0, 32767);
+                return true;
+            }
+            phase = UpperPoleHold;
+            std::fprintf(stderr, "[native Fire Sea route] upper-pole-climbed tick=%llu offset=%d\n",
+                         static_cast<unsigned long long>(tick), p->mAttachOffsetY);
+        }
+    }
+    if (phase == UpperPoleHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_POLE_EXIT"))
+        phase = UpperPoleTip;
+    if (phase == UpperPoleTip || phase == UpperPoleTipRelease) {
+        if (!std::strcmp(state, "St_Headstand_Main")) {
+            phase = UpperPoleHeadstand;
+            std::fprintf(stderr, "[native Fire Sea route] upper-pole-headstand tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        } else if (!std::strcmp(state, "St_Climb_Main")) {
+            if (phase == UpperPoleTip && p->mAttachOffsetY >= 600*4096) {
+                phase = UpperPoleTipRelease;
+                upper_tip_release = tick;
+            }
+            const bool climb = phase == UpperPoleTip || tick >= upper_tip_release + 6;
+            ntr::input_test_controls(true, 0, 0, climb ? 32767 : 0);
+            return true;
+        }
+    }
+    if (phase == UpperPoleHeadstand && p->mStateStep == 3) {
+        const auto turn = static_cast<int16_t>(0x4000 - p->mAngleY);
+        if (std::abs(turn) > 600) {
+            // Horizontal input accelerates the original handstand turn.
+            // Reduce input near the target to limit its angular speed.
+            ntr::input_test_controls(true, 0, static_cast<int16_t>(std::clamp(turn*18, -32767, 32767)), 0);
+            return true;
+        }
+        if (p->mPosY < 4280*4096) {
+            ntr::input_test_controls(true, 0, 0, 0);
+            return true;
+        }
+        phase = UpperPoleExit;
+        upper_pole_exit = tick;
+        std::fprintf(stderr, "[native Fire Sea route] upper-pole-exit tick=%llu yaw=%d\n",
+                     static_cast<unsigned long long>(tick), p->mAngleY);
+    }
+    if (phase == UpperPoleExit || phase == UpperPoleExitBrake) {
+        if (hit && !owner && !p->mIsAirborne && !std::strcmp(state, "St_Wait_Main") &&
+            x > 900 && x < 1500 && z > -207 && z < 393 &&
+            std::abs(p->mPosY - 4300*4096) < 4*4096) {
+            phase = UpperPoleShelf;
+            upper_shelf_tick = tick;
+            std::fprintf(stderr, "[native Fire Sea route] upper-pole-shelf tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        } else {
+            buttons = tick < upper_pole_exit + 32 ? 2 : 0;
+            if (!std::strcmp(state, "St_LedgeHang_Main")) {
+                heading = p->mAngleY*6.283185307179586/65536.0;
+                steer = 32767;
+            } else if (std::strcmp(state, "St_Headstand_Main") && std::strcmp(state, "St_LedgeGrab_Main")) {
+                const double speed = p->mHorzSpeed / 4096.0;
+                if (phase == UpperPoleExit && x > 900 && x + speed*speed/3.0 + speed > 1250)
+                    phase = UpperPoleExitBrake;
+                if (phase == UpperPoleExitBrake && speed > 1) {
+                    heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                    steer = 32767;
+                } else if (phase == UpperPoleExit) {
+                    heading = std::atan2(1180 - x, 93 - z);
+                    steer = 32767;
+                }
+            }
+        }
+    }
+    if (phase == UpperPoleShelf && x < 1270) {
+        // Walk inward after the native ledge climb restores normal control.
+        heading = std::atan2(1310 - x, 93 - z);
+        steer = 18000;
+    }
+    if (phase == UpperPoleShelf && std::getenv("SM64DS_PC_TEST_FIRESEA_SECOND_UPPER_POLE") &&
+        tick > upper_shelf_tick + 150) {
+        const dActor_c *pole = nullptr;
+        for (auto *a = dActor_c::FindWithActorID(142, nullptr); a; a = dActor_c::FindWithActorID(142, a)) {
+            if (a->mPosX == 1800*4096 && a->mPosZ == 93*4096) {
+                pole = a;
+                break;
+            }
+        }
+        if (pole && !second_pole_uid) {
+            if (!std::strcmp(state, "St_Climb_Main")) {
+                dCc_c *attachment = nullptr;
+                std::memcpy(&attachment, &p->unk_37c, sizeof(attachment));
+                if (attachment && attachment->GetOwnerID() == pole->uniqueID) {
+                    second_pole_uid = pole->uniqueID;
+                    second_pole_grab = tick;
+                    std::fprintf(stderr, "[native Fire Sea route] second-upper-pole-grab tick=%llu uid=%u offset=%d\n",
+                                 static_cast<unsigned long long>(tick), second_pole_uid, p->mAttachOffsetY);
+                }
+            } else if (!second_pole_jump) {
+                heading = std::atan2(1590 - x, 93 - z);
+                steer = x < 1560 ? 18000 : 0;
+                if (hit && !owner && x >= 1560 && !std::strcmp(state, "St_Wait_Main") &&
+                    pole->mPosY >= 3690*4096) {
+                    second_pole_jump = tick;
+                    std::fprintf(stderr, "[native Fire Sea route] second-upper-pole-jump tick=%llu pole_y=%.1f x=%.1f\n",
+                                 static_cast<unsigned long long>(tick), pole->mPosY/4096.0, x);
+                }
+            }
+            if (second_pole_jump && !second_pole_uid) {
+                heading = std::atan2(1800 - x, 93 - z);
+                steer = x < 1770 ? 22000 : 0;
+                buttons = tick < second_pole_jump + 18 ? 2 : 0;
+            }
+        }
+    }
+    if (second_pole_uid && tick > second_pole_grab + 120 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_SECOND_UPPER_POLE_EXIT") && !second_settled) {
+        const bool underpass = std::getenv("SM64DS_PC_TEST_FIRESEA_POLE_UNDERPASS") != nullptr;
+        if (!second_exit && !std::strcmp(state, "St_Climb_Main")) {
+            if (!second_tip_release && p->mAttachOffsetY >= 600*4096)
+                second_tip_release = tick;
+            const bool climb = !second_tip_release || tick >= second_tip_release + 6;
+            ntr::input_test_controls(true, 0, 0, climb ? 32767 : 0);
+            return true;
+        }
+        if (!second_exit && !std::strcmp(state, "St_Headstand_Main") && p->mStateStep == 3) {
+            const auto turn = static_cast<int16_t>(0x4000 - p->mAngleY);
+            const bool at_height = underpass ? p->mPosY <= 3820*4096 : p->mPosY >= 4310*4096;
+            if (std::abs(turn) > 600 || !at_height) {
+                const int stick = std::abs(turn) > 600 ? std::clamp(turn*18, -32767, 32767) : 0;
+                ntr::input_test_controls(true, 0, static_cast<int16_t>(stick), 0);
+                return true;
+            }
+            second_exit = tick;
+            std::fprintf(stderr, "[native Fire Sea route] second-pole-exit tick=%llu yaw=%d y=%.1f\n",
+                         static_cast<unsigned long long>(tick), p->mAngleY, p->mPosY/4096.0);
+        }
+        if (second_exit) {
+            const bool on_rim = x > 1910 && x < 2100 && std::abs(p->mPosY - 4300*4096) < 4*4096;
+            const bool in_tunnel = x > 2200 && x < 2650 && std::abs(p->mPosY - 3700*4096) < 4*4096;
+            if (hit && !owner && !p->mIsAirborne && (underpass ? in_tunnel : on_rim)) {
+                second_settled = true;
+                if (underpass)
+                    underpass_tick = tick;
+                std::fprintf(stderr, "[native Fire Sea route] %s tick=%llu x=%.1f z=%.1f\n",
+                             underpass ? "second-pole-underpass" : "second-pole-east-rim",
+                             static_cast<unsigned long long>(tick), x, z);
+            } else {
+                buttons = tick < second_exit + (underpass ? 6 : 20) ? 2 : 0;
+                if (std::strcmp(state, "St_Headstand_Main")) {
+                    const double speed = p->mHorzSpeed/4096.0;
+                    if (!underpass && x > 1915 && x + speed*speed/3.0 + speed > 2010)
+                        second_brake = true;
+                    if (second_brake && speed > 1) {
+                        heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                        steer = 32767;
+                    } else if (!second_brake) {
+                        heading = std::atan2((underpass ? 2400 : 2000) - x, 93 - z);
+                        steer = 22000;
+                    }
+                }
+            }
+        }
+    }
+    if (underpass_tick && tick > underpass_tick + 120 && !third_pole_held &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_THIRD_UPPER_POLE")) {
+        const dActor_c *pole = nullptr;
+        for (auto *a = dActor_c::FindWithActorID(142, nullptr); a; a = dActor_c::FindWithActorID(142, a)) {
+            if (a->mPosX == 3000*4096 && a->mPosZ == 93*4096) {
+                pole = a;
+                break;
+            }
+        }
+        if (pole && !std::strcmp(state, "St_Climb_Main")) {
+            dCc_c *attachment = nullptr;
+            std::memcpy(&attachment, &p->unk_37c, sizeof(attachment));
+            if (attachment && attachment->GetOwnerID() == pole->uniqueID) {
+                third_pole_held = true;
+                third_pole_grab = tick;
+                std::fprintf(stderr, "[native Fire Sea route] third-upper-pole-grab tick=%llu uid=%u offset=%d\n",
+                             static_cast<unsigned long long>(tick), pole->uniqueID, p->mAttachOffsetY);
+            }
+        }
+        if (pole && !third_pole_held) {
+            if (!third_pole_run && pole->mPosY >= 3580*4096 && pole->mPosY > pole->mPrevPosY)
+                third_pole_run = true;
+            if (third_pole_run) {
+                heading = std::atan2(3000 - x, 93 - z);
+                steer = x < 2960 ? 29000 : 0;
+                if (!third_pole_jump && x > 2570 && hit && !owner &&
+                    !std::strcmp(state, "St_Walk_Main")) {
+                    third_pole_jump = tick;
+                    std::fprintf(stderr, "[native Fire Sea route] third-upper-pole-jump tick=%llu x=%.1f pole_y=%.1f\n",
+                                 static_cast<unsigned long long>(tick), x, pole->mPosY/4096.0);
+                }
+                if (third_pole_jump && !third_pole_hop && tick > third_pole_jump + 36 &&
+                    hit && owner == pole && x > 2850 && !std::strcmp(state, "St_Walk_Main")) {
+                    third_pole_hop = true;
+                    third_pole_jump = tick;
+                }
+                if (third_pole_jump && tick < third_pole_jump + 20)
+                    buttons = 2;
+            }
+        }
+    }
+    if (third_pole_grab && tick > third_pole_grab + 120 && !third_shelf_tick &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_THIRD_UPPER_POLE_EXIT")) {
+        if (!third_exit && !std::strcmp(state, "St_Climb_Main")) {
+            if (!third_tip_release && p->mAttachOffsetY >= 600*4096)
+                third_tip_release = tick;
+            const bool climb = !third_tip_release || tick >= third_tip_release + 6;
+            ntr::input_test_controls(true, 0, 0, climb ? 32767 : 0);
+            return true;
+        }
+        if (!third_exit && !std::strcmp(state, "St_Headstand_Main") && p->mStateStep == 3) {
+            const auto turn = static_cast<int16_t>(0x4000 - p->mAngleY);
+            if (std::abs(turn) > 600 || p->mPosY < 4310*4096) {
+                const int stick = std::abs(turn) > 600 ? std::clamp(turn*18, -32767, 32767) : 0;
+                ntr::input_test_controls(true, 0, static_cast<int16_t>(stick), 0);
+                return true;
+            }
+            third_exit = tick;
+            std::fprintf(stderr, "[native Fire Sea route] third-pole-exit tick=%llu yaw=%d y=%.1f\n",
+                         static_cast<unsigned long long>(tick), p->mAngleY, p->mPosY/4096.0);
+        }
+        if (third_exit) {
+            if (hit && !owner && !p->mIsAirborne && x > 3330 && x < 3850 &&
+                std::abs(p->mPosY - 4300*4096) < 4*4096) {
+                third_shelf_tick = tick;
+                std::fprintf(stderr, "[native Fire Sea route] third-pole-shelf tick=%llu x=%.1f z=%.1f\n",
+                             static_cast<unsigned long long>(tick), x, z);
+            } else {
+                buttons = tick < third_exit + 20 ? 2 : 0;
+                if (std::strcmp(state, "St_Headstand_Main")) {
+                    const double speed = p->mHorzSpeed/4096.0;
+                    if (x > 3340 && x + speed*speed/3.0 + speed > 3600)
+                        third_brake = true;
+                    if (third_brake && speed > 1) {
+                        heading = (static_cast<int>(p->mPrevAngleY) + 0x8000)*6.283185307179586/65536.0;
+                        steer = 32767;
+                    } else if (!third_brake) {
+                        heading = std::atan2(3580 - x, 93 - z);
+                        steer = 22000;
+                    }
+                }
+            }
+        }
+    }
+    if (third_shelf_tick && tick > third_shelf_tick + 120 &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_FALLING_BRIDGE")) {
+        static uint64_t bridge_arrived = 0;
+        if (!bridge_arrived && hit && !owner && !p->mIsAirborne && x > 5460 && x < 5825 &&
+            std::abs(p->mPosY - 4300*4096) < 4*4096) {
+            bridge_arrived = tick;
+            std::fprintf(stderr, "[native Fire Sea route] falling-bridge-arrived tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+        if (!bridge_arrived && x < 5520) {
+            heading = std::atan2(5600 - x, 93 - z);
+            steer = 29000;
+        }
+        if (bridge_arrived && tick > bridge_arrived + 150 &&
+            std::getenv("SM64DS_PC_TEST_FIRESEA_ARENA_PIPE") &&
+            !p->mIsNoControl && !p->mIsControlDisabled && x < 6575) {
+            // Walk down the inside of the basin toward the horizontal exit.
+            heading = std::atan2(6600 - x, 115 - z);
+            steer = 18000;
+        }
+    }
+    const double angle = heading - GetAngleToCamera(0)*6.283185307179586/65536.0;
+    ntr::input_test_controls(true, buttons, static_cast<int16_t>(std::sin(angle)*steer),
+                            static_cast<int16_t>(-std::cos(angle)*steer));
+    return true;
 }
 
 static bool replay_dark_world_island_hold() {
     if(!std::getenv("SM64DS_PC_AUTOMATION_ONLY") ||
        !std::getenv("SM64DS_PC_TEST_DIAMOND_RIDE") || data_0209f2f8!=35)return false;
+    if(replay_dark_world_extending_cross_settled &&
+       std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE")) {
+        const char *course=std::getenv("SM64DS_PC_TEST_LAVA_COURSE_LEVEL");
+        if(course && !std::strcmp(course,"35"))return false;
+    }
     auto *p=static_cast<Player *>(data_0209f394[0]);
     if(!p || p->aliveState!=1)return false;
     if (replay_wheel_main_route_ready) {
@@ -4295,8 +6357,33 @@ static bool replay_dark_world_island_hold() {
 static bool replay_bowser_tail_controls() {
     const char *enabled=std::getenv("SM64DS_PC_TEST_BOWSER_TAIL");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const bool firesea_combat = data_0209f2f8 == 38 && std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_THROW");
+    const bool firesea_key = firesea_combat && std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_KEY");
+    if (firesea_key && data_0209f20c)
+        return false; // The original clear screen has its own confirm replay.
+    if (data_0209f2f8 == 38 && automation && !std::strcmp(automation, "1") &&
+        std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_TILT")) {
+        const auto tick = ntr::rt_frame();
+        const auto *bowser = static_cast<const daKpa_c *>(dActor_c::FindWithActorID(279, nullptr));
+        const auto *floor = dActor_c::FindWithActorID(166, nullptr);
+        static bool tilt_seen = false, tilt_finished = false;
+        if (bowser && floor) {
+            tilt_seen |= bowser->mState == 19;
+            tilt_finished |= tilt_seen && bowser->mState != 19 && !floor->mAngleX && !floor->mAngleZ;
+        }
+        if (bowser && floor && tick % 5 == 0) {
+            std::fprintf(stderr, "[Fire Sea Bowser] tick=%llu state=%u step=%u y=%d vy=%d floor=%u x_angle=%d z_angle=%d message=%u timer=%u\n",
+                         static_cast<unsigned long long>(tick), unsigned(bowser->mState), unsigned(bowser->mStep),
+                         bowser->mPosY, bowser->mVertSpeed, floor->uniqueID, floor->mAngleX, floor->mAngleZ,
+                         unsigned(data_0209d660), unsigned(bowser->mTimer));
+        }
+        if (!firesea_combat || !tilt_finished) {
+            ntr::input_test_controls(true, data_0209d660 && tick % 45 < 3 ? 1 : 0, 0, 0);
+            return true;
+        }
+    }
     if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1") ||
-       data_0209f2f8!=36 || ntr::rt_frame()<1700)return false;
+       (data_0209f2f8!=36 && !firesea_combat) || ntr::rt_frame()<1700)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);
     auto *b=static_cast<daKpa_c *>(dActor_c::FindWithActorID(279,nullptr));
     auto *a=b?dActor_c::FindWithID(b->mTailUniqueID):nullptr;
@@ -4308,7 +6395,7 @@ static bool replay_bowser_tail_controls() {
     if(releasedAt) {
         buttons=tick<releasedAt+3?1:0;
         if(data_0209d660)buttons=tick%45<3?1:0;
-        else if(b->mState==4 && !p->mIsNoControl && !p->mIsControlDisabled) {
+        else if((!firesea_combat || firesea_key) && b->mState==4 && !p->mIsNoControl && !p->mIsControlDisabled) {
             auto *key=dActor_c::FindWithActorID(282,nullptr);
             const double gx=key?key->mPosX:b->mPosX,gz=key?key->mPosZ:b->mPosZ;
             const double dx=gx-p->mPosX,dz=gz-p->mPosZ;
@@ -4342,8 +6429,8 @@ static bool replay_bowser_tail_controls() {
             if(!heldSince)heldSince=tick;
             if(std::getenv("SM64DS_PC_TEST_BOWSER_THROW") && tick>heldSince+180 &&
                p->mStateStep==1 && std::abs(int(p->mAngleYSpeed))>=0xf00) {
-                // Input is consumed on the next original simulation update.
-                // Lead that update's yaw; select an armed, naturally spawned mine.
+                // Select an armed, naturally spawned mine. Fire Sea's replay
+                // observes the current Bowser heading before the release edge.
                 daKirai_c *nearest=nullptr; double best=1e100;
                 for(auto *actor=dActor_c::FindWithActorID(284,nullptr);actor;actor=dActor_c::FindWithActorID(284,actor)) {
                     auto *candidate=static_cast<daKirai_c *>(actor);
@@ -4352,7 +6439,8 @@ static bool replay_bowser_tail_controls() {
                 }
                 if(auto *mine=nearest) {
                     const auto desired=static_cast<int16_t>(std::lround(std::atan2(double(mine->mPosX)-p->mPosX,double(mine->mPosZ)-p->mPosZ)*65536.0/6.283185307179586));
-                    const auto error=static_cast<int16_t>(desired-p->mAngleY-p->mAngleYSpeed);
+                    const int heading = firesea_combat ? b->mAngleY : p->mAngleY+p->mAngleYSpeed;
+                    const auto error=static_cast<int16_t>(desired-heading);
                     if(std::abs(int(error))<800) {
                         buttons=1;releasedAt=tick;
                         std::fprintf(stderr,"[native Bowser throw pilot] release tick=%llu mine=%u target=%d,%d,%d heading=%d speed=%d error=%d\n",
@@ -4730,6 +6818,29 @@ static bool trace_script_progress(uint64_t frame)
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *power_fixture=std::getenv("SM64DS_PC_TEST_POWER_STAR");
     const auto fixture_frame=ntr::rt_frame();
+    // Isolate lift contact from the still incomplete water and approach route.
+    static bool wdw_lift_placed=false;
+    if (!wdw_lift_placed && automation && !std::strcmp(automation,"1") &&
+        data_0209f2f8==21) {
+        const char *tick=std::getenv("SM64DS_PC_TEST_WDW_ARROW_DROP");
+        if (tick && fixture_frame==std::strtoull(tick,nullptr,10)) {
+            auto *player=static_cast<Player *>(data_0209f394[0]);
+            for (auto *lift=dActor_c::FindWithActorID(96,nullptr); lift;
+                 lift=dActor_c::FindWithActorID(96,lift)) {
+                if (!player || player->aliveState!=1 || player->mIsNoControl ||
+                    player->mIsControlDisabled || lift->aliveState!=1 ||
+                    lift->mPosX!=-565*4096 || lift->mPosZ!=2938*4096) continue;
+                wdw_lift_placed=true;
+                player->mPosX=player->mPrevPosX=player->mPreClsnPosX=lift->mPosX;
+                player->mPosY=player->mPrevPosY=player->mPreClsnPosY=lift->mPosY+240*4096;
+                player->mPosZ=player->mPrevPosZ=player->mPreClsnPosZ=lift->mPosZ;
+                player->mHorzSpeed=player->mVertSpeed=0;
+                std::fprintf(stderr,"[native WDW arrow drop] tick=%llu uid=%u\n",
+                             static_cast<unsigned long long>(fixture_frame),lift->uniqueID);
+                break;
+            }
+        }
+    }
     // Isolated QA encounters. Ordinary mode approaches an original Mario-cap
     // Goomba; fixture mode spawns a native bank-1 Mario-cap Goomba nearby.
     // The normal tongue/contact/reward path must release and collect its cap.
@@ -4847,7 +6958,7 @@ static bool trace_script_progress(uint64_t frame)
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())
-        if(!replay_dark_world_island_hold() && !replay_bowser_tail_controls() && !pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_firesea_first_platform() && !replay_dark_world_island_hold() && !replay_bowser_tail_controls() && !pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
 
     if(std::getenv("SM64DS_PC_KEY_TRACE") && data_0209f2f8==2 && ntr::rt_frame()%60==0) {

@@ -21,7 +21,11 @@ class BattlefieldPlatformHostTests(unittest.TestCase):
         self.assertIn('if (mMeshCollider.IsEnabled())\n            mMeshCollider.Disable();',native)
         self.assertNotIn('data_ov095_021374a0 +',native)
         self.assertIn('data_ov095_02137780.Construct(1445)',native)
-        self.assertIn('assert(actorID==ACTOR_BOMB_SEESAW && mVariant==1)',native)
+        self.assertIn('data_ov095_02137798.Construct(1623)',native)
+        self.assertIn('data_ov095_021377e0.Construct(1624)',native)
+        self.assertIn('mVariant==2?data_ov043_02111c20:data_ov014_02114598',native)
+        self.assertIn('actorID==ACTOR_KM1_SEESAW && mVariant==2',native)
+        self.assertIn('mVariant==2?&data_ov095_02137798',native)
 
     def test_lift_native_member_offsets_and_original_motion(self):
         original,native=self.native('src/actors/daObjRotateUpdownLift_c.cpp')

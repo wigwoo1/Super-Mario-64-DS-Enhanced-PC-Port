@@ -26,10 +26,20 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daObjFl_London_c_classInit",
                  "daObjFl_Seesaw_c_classInit", "daObjRc_Tikuwa_c_classInit", "daObjRcBuranko_c_classInit",
+                 "daObjSeesaw_c_classInit_KM1_SEESAW",
+                 "daObjSeesaw_c_classInit_KM2_YOKOSEESAW",
                  "daObjSeesaw_c_classInit_BOMB_SEESAW",
                  "daObjSeesaw_c_classInit_RC_SEESAW",
+                 "daObjKm1_Dorifu_c_classInit",
+                 "daLinelift2_c_classInit_KM2_SUSUMU",
+                 "daObjKm2_Gura_c_classInit",
+                 "daObjKm2_Ami_Bou_c_classInit",
+                 "daObjKm2_Agaru_c_classInit", "daObjKm2_Nobiru_c_classInit",
+                 "daBrq_c_classInit", "_ZN6Player5ShockEj",
+                 "daObjKm2_Ukishima_c_classInit",
+                 "daDonketu_c_classInit", "_ZN7daOts_c19InitResourcesCommonEv", "_ZN7daOts_c14BehaviorCommonEv",
                  "daBar_c_classInit",
-                 "daObjSimpleLift_c_classInit_KM1_DERU", "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
+                 "daObjWcObj01_c_classInit", "_ZN17daObjFloatBoard_c19func_ov002_020b5e58EP27daObjFloatBoard_c_Resources", "_ZN17daObjFloatBoard_c8BehaviorEv", "daObjWcObj06_c_classInit", "daObjWc_Obj02_c_classInit", "daObjWc_Obj03_c_classInit", "daObjWc_Mizu_c_classInit", "daObjSimpleLift_c_classInit_KM1_DERU", "daObjSimpleLift_c_classInit_KM2_RIFUT01", "daObjSimpleBg_c_classInit_DOKAN", "daObjWlSubmarine_c_classInit", "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
@@ -37,6 +47,8 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "da1up_c_classInit_ONEUPKINOKO",
                  "daObj1UpLogo_c_classInit",
                  "daObjTatefuda_c_classInit",
+                 "daObjWc_Obj05_c_classInit",
+                 "daSCoin_c_classInit", "daObjNumber_c_classInit", "daObjPushblock_c_classInit",
                  "daObjHatenaBlock_c_classInit_ITEM_BLOCK",
                  "daObjHatenaBlock_c_classInit_HATENA_BLOCK",
                  "daObjPowerUpItem_c_classInit",
@@ -47,6 +59,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjHeart_c_classInit",
                  "daObjYajirusi_c_classInit_YAJIRUSI_L", "daObjYajirusi_c_classInit_YAJIRUSI_R",
                  "daObjTh_Fall_Block_c_classInit",
+                 "daObjKm2_Fall_Block_c_classInit", "daKpa2Bg_c_classInit",
                  "daTrsTrap_c_classInit_MERRYGOROUND",
                  "daTrsTrap_c_classInit_TERESAPIT",
                  "daTrsTrap_c_classInit_BOOKSHELF", "daBook_c_classInit_BOOK_SWITCH",
@@ -54,7 +67,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daBook_c_classInit_KILLER_BOOK", "daBookGen_c_classInit",
                  "daChair_c_classInit", "daPiano_c_classInit",
                  "daUdlift_c_classInit_UDLIFT_TERESA", "daUdlift_c_classInit_UDLIFT",
-                 "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
+                 "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daObjWc_Obj07_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
                  "daEykn_c_classInit_EYEKUN", "daEykn_c_classInit_EYEKUN_BOSS", "daEyBm_c_classInit",
                  "daTrs_c_classInit_TERESA", "daTrs_c_classInit_BOSS_TERESA",
                  "daTrsIcon_c_classInit", "daTBasket_c_classInit",
@@ -64,7 +77,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "_ZN13daObjSwitch_c13InitResourcesEv",
                  "daObjC0_Switch_c_classInit", "daObjC0Water_c_classInit",
                  "daMip_c_classInit", "daObj_Mip_Key_c_classInit",
-                 "daChScene_c_classInit", "daDoor_c_classInit", "daStarGate_c_classInit", "dMap_c_classInit",
+                 "daChScene_c_classInit", "daChRoom_c_classInit", "daDoor_c_classInit", "daStarGate_c_classInit", "dMap_c_classInit",
                  "daPicGate_c_classInit", "_ZN11daPicGate_cD1Ev", "_ZN11daPicGate_c19func_ov080_021261f4Ev",
                  "daDemo_c_classInit", "daC_Jugem_c_classInit", "__sinit_02073e6c",
                  "func_ov002_020e1e70", "func_ov002_020e200c",
@@ -433,12 +446,28 @@ def main() -> int:
                 sys.path.insert(0, str(root / "port/tools"))
                 import hostgen  # pylint: disable=import-outside-toplevel
                 transformed, rewrites = hostgen.transform(markerless)
+                # These math helpers write through local pointers that the
+                # MMIO pass cannot see. Submit the complete 64-bit operand so
+                # the host square-root unit runs after both halves are set.
+                if path.name == 'func_020531a4.c':
+                    operand = '    div[0] = 0;\n    div[1] = a;'
+                    assert transformed.count(operand) == 1
+                    transformed = transformed.replace('    volatile int *div = (volatile int *)0x40002b8;\n', '')
+                    transformed = transformed.replace(operand, '    NTR_MMIO(uint64_t, 0x040002b8) = (uint64_t)(uint32_t)a << 32;')
+                    rewrites+=1
+                if path.name == 'func_02053008.c':
+                    transformed = re.sub(r'^    volatile unsigned (?:short|int) \*r2b(?:0|8) = .*;\n', '', transformed, flags=re.M)
+                    transformed, count = re.subn(r'        \*r2b0 = 1;\n        r2b8\[0\] = 0;\n        r2b8\[1\] = (n|0);',
+                        r'        NTR_MMIO(uint16_t, 0x040002b0) = 1;\n        NTR_MMIO(uint64_t, 0x040002b8) = (uint64_t)(uint32_t)\1 << 32;',
+                        transformed)
+                    assert count == 2
+                    rewrites+=1
                 if path.name in ('daRNk_c.cpp', 'daRFlag_c.cpp'):
                     import koopa_host
                     transformed=koopa_host.transform(transformed,path.name)
                     rewrites+=1
                 if path.name in ('_ZN8Particle7Manager9AddSystemEiR7Vector3.cpp',
-                                 '_ZN8Particle10SysTracker6UpdateEv.cpp','func_0204a5c8.c',
+                                 '_ZN8Particle10SysTracker6UpdateEv.cpp','func_0204a5c8.c','func_0204c304.c',
                                  '_ZN10dScStage_c13InitResourcesEv.cpp','_ZN10dScStage_c14GraphCallback1Ev.cpp'):
                     import particle_host
                     transformed=particle_host.transform(transformed,path.name)
@@ -529,6 +558,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import fall_block_host
                     transformed=fall_block_host.transform(root,transformed,path.name=='d_a_obj_th_fall_block.cpp')
                     rewrites+=1
+                if path.name == 'd_a_obj_km2_fall_block.cpp':
+                    import fall_block_host
+                    transformed=fall_block_host.transform_firesea(root,transformed)
+                    rewrites+=1
                 if path.name == 'd_a_trs_trap.cpp':
                     import merry_go_round_host
                     transformed=merry_go_round_host.transform(root,transformed)
@@ -557,7 +590,7 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import rainbow_swing_host
                     transformed=rainbow_swing_host.transform(transformed)
                     rewrites += 1
-                if path.name in ('d_a_obj_rc_kaitendai.cpp','daObjKaitendai_c.cpp'):
+                if path.name in ('d_a_obj_rc_kaitendai.cpp','d_a_obj_wc_obj07.cpp','daObjKaitendai_c.cpp'):
                     import rainbow_disc_host
                     transformed=rainbow_disc_host.transform(root,transformed,path.name)
                     rewrites+=1
@@ -581,13 +614,96 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import bowser_host
                     transformed=bowser_host.transform(root,transformed)
                     rewrites+=1
+                if path.name == 'daKpa2Bg_c.cpp':
+                    import bowser_host
+                    transformed=bowser_host.transform_firesea_arena(root,transformed)
+                    rewrites+=1
                 if path.name == 'daOwl_c.cpp':
                     import owl_host
                     transformed=owl_host.transform(root,transformed)
                     rewrites+=1
+                if path.name in ('d_a_obj_wc_mizu.cpp', 'd_a_obj_wc_obj03.cpp'):
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_wdw_water(transformed,path.name)
+                    rewrites+=1
+                if path.name in ('d_a_obj_wc_obj01.cpp', 'd_a_obj_wc_obj06.cpp', 'daObjFloatBoard_c.cpp'):
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_wdw_float_board(transformed,path.name)
+                    rewrites+=1
+                if path.name == 'd_a_obj_wc_obj05.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_wdw_cage_lift(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_wc_obj02.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_wdw_arrow_lift(root,transformed)
+                    rewrites+=1
                 if path.name == 'daObjSimpleLift_c.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_linelift2.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_firesea_path_lift(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_km2_gura.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_firesea_gura(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_km2_ami_bou.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_firesea_net_pole(root,transformed)
+                    rewrites+=1
+                if path.name == 'dBgW_KcMbgSclY.cpp':
+                    # Use the native members underlying the ROM's interior symbols.
+                    transformed = transformed.replace('&data_020a0d60', '&data_020a0d0c.lineEnd')
+                    transformed = transformed.replace('= data_020a0d1c;', '= static_cast<dBgPi &>(data_020a0d0c);')
+
+                if path.name == 'daObjKm2_Nobiru_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_firesea_stretch_lift(root,transformed)
+
+                if path.name == 'd_a_obj_km2_agaru.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_firesea_rising_lift(root,transformed)
+                    rewrites+=1
+                if path.name == 'daBrq_c.cpp':
+                    import amp_host
+                    transformed=amp_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_km2_ukishima.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_firesea_ukishima(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjUkiyuka_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_ukiyuka(transformed)
+                    rewrites+=1
+                if path.name == 'daDonketu_c.cpp':
+                    import bully_host
+                    transformed=bully_host.transform_small(root,transformed)
+                    rewrites+=1
+                if path.name == 'daOts_c.cpp':
+                    import bully_host
+                    transformed=bully_host.transform_base(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjGuragura_c.cpp':
+                    from battlefield_platform_host import observe
+                    transformed=observe(transformed, 'daObjGuragura_c', 'tilt_x,tilt_z,settle_delay,target_x,target_z',
+                                        ['mTilt[0]', 'mTilt[2]', 'int(mSettleDelay)',
+                                         'mTiltTarget[0]', 'mTiltTarget[2]'], return_type='s32')
+                    rewrites+=1
+                if path.name == 'daObjSimpleBg_c.cpp':
+                    import warp_pipe_host
+                    transformed=warp_pipe_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjWlSubmarine_c.cpp':
+                    import docks_host
+                    transformed=docks_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjDorifu_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.observe_dorifu(transformed)
                     rewrites+=1
                 if path.name == 'daUdlift_c.cpp':
                     import udlift_host

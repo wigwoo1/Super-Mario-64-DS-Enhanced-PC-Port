@@ -1,7 +1,17 @@
-"""Read-only tracing around the original particle engine; no effect replacement."""
+"""Host bindings and tracing for the original particle engine."""
 
 
 def transform(text,name):
+    if name == 'func_0204c304.c':
+        # Both divisions call the DS _s32_div_f at 0x01ffabe4.
+        # A zero divisor returns the numerator on DS and traps on x86.
+        old = '''        p->h3c = 0xffff / (int)((u32)self->h2c >> 1);
+        p->h3e = 0xffff / self->h2c;'''
+        new = '''        const unsigned int life = self->h2c;
+        p->h3c = life >= 2 ? 0xffff / (life >> 1) : 0xffff;
+        p->h3e = life ? 0xffff / life : 0xffff;'''
+        assert text.count(old) == 1, 'Child particle lifetime divisions changed'
+        return 'extern "C" {\n' + text.replace(old, new, 1) + '\n}\n'
     if name=='_ZN10dScStage_c13InitResourcesEv.cpp':
         old='''        (void *)+[](void *) -> int { return 1; },
         (void *)+[](void *) -> int { return 1; },

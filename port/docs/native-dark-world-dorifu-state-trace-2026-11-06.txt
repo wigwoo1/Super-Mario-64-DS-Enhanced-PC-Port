@@ -1,0 +1,41 @@
+Native Dark World drifting-stairs runtime trace - 2026-11-06
+
+Build and tracing
+-----------------
+Added an opt-in read-only trace around the original daObjDorifu_c::Behavior
+update, wired only through the native build source generator. It records the
+actor position, active plank, timer, state, event bit, and five-plank collision
+mask when SM64DS_PC_DORIFU_TRACE is set. The normal actor state machine and
+collision calls are left intact. The private muted runner accepts -DorifuTrace.
+
+Build work/build-simple-lift-20261106.cmd succeeded. The executable
+work/source-extracted/sm64ds-decomp-main/build/port/sm64ds_pc.exe has SHA256
+8F64B81DC41481D9E3CE9D0DD8F5605D07382AFBDAD4F6BE211D15F61F5B27D6. The full
+native actor-data audit and six focused clock/input/rebinding/camera CTests
+passed.
+
+Replay evidence
+---------------
+The accepted 12-Star Mario QA fixture and complete native course route were
+replayed for 23,000 frames with audio submission muted. Exit code was 0, audio
+errors were 0, submitted samples were 0, and both copied save payloads match
+the fixture byte-for-byte. A screenshot was captured at frame 23,000.
+
+The original KM1_DORIFU actor (ID 134, UID 132) was sampled 1,231 times from
+tick 10,625 through 22,995. Every sample remained active plank 4, state 0,
+event bit 0, collision mask 0x10. This confirms it remains in its original
+waiting state with only the fifth plank collision enabled. It does not prove
+that Mario reaches the stairs or triggers their animation.
+
+The original level placement table has a native floor switch (actor ID 11) at
+(3855, 1700, -6), parameter 0x2a02, and the drifting stairs at
+(5155, 1700, -6), parameter 0xff00. The recovered switch code decodes event
+bit 0 from 0x2a02 and sets that bit when pressed; the stairs read event bit 0.
+The replay did not reach/press that switch. Next work should use ordinary
+player inputs to reach the switch and verify the stairs move through planks
+4..0, then return as the switch event clears. Do not report the stairs as
+traversable until collision and movement are observed in a targeted replay.
+
+The normal build behavior is unchanged by this diagnostic instrumentation.
+Course re-entry, another character, and full Dark World completion remain
+unverified. This is local source/build work only; no release or installation.

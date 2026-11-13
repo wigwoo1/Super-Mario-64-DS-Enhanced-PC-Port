@@ -1,0 +1,22 @@
+Dark World: extending platform and upper bank, 2026-11-06
+
+The existing native extending platform (actor 138) was verified again on the
+current build. Mario rode its moving collider, jumped to the far stone block,
+and settled before starting the next section. Original travel: 680 units.
+
+The optional SM64DS_PC_TEST_UPPER_DIAMOND_DISMOUNT continuation uses ordinary
+inputs after the accepted transfer to the second actor-135 loop. It waits for
+the eastbound pass nearest the bank, builds speed on the moving floor, and
+presses jump while Mario is walking. It releases input over the stone bank.
+No game physics, placement, collision data, or player state is overridden.
+
+In the muted 23,000-frame run, Mario ran at 21798, requested the jump at
+21834, and landed on static ground at 21876. The state and contact traces
+show the original airborne Jump state, moving support before takeoff, then
+205 settled static-floor samples with neutral input and controls available.
+Both isolated synthetic saves were unchanged. The original actor data
+audit and six focused smoke tests passed. Executable SHA-256:
+f79386d3d386ae6657e9cbafc5bd4990e2d22b07657a43835e03d5a2e8bf1d4e.
+
+This verifies one Mario route. Other platform variants, course re-entry,
+and the route from the central bank to the stairs switch remain unverified.

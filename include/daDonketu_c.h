@@ -18,7 +18,9 @@
  * registry profile.
  */
 struct daDonketu_c : daOts_c {
+#ifndef SM64DS_PLATFORM_PC
     u8  pad_398[0x64];
+#endif
     /* An actor unique ID, not a count: Behavior passes it to dActor_c::FindWithID and
        increments the byte at +0x3fe of whatever comes back; InitResources zeroes it.
        Left unnamed because that is as far as the bytes go -- daBDonketu_c's u8 at the
@@ -30,8 +32,10 @@ struct daDonketu_c : daOts_c {
 
     /* methods */
     int Behavior();
+#ifndef SM64DS_PLATFORM_PC
     int CleanupResources();
     int Render();
+#endif
     int InitResources();
     virtual int UpdateRunState();
     virtual void UpdateDeathState();

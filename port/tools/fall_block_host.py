@@ -2,6 +2,44 @@
 import re
 import struct
 
+from battlefield_platform_host import lazy_handles
+
+
+def transform_firesea(root, text):
+    raw = (root / 'extracted/overlays/overlay_0045.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<3I', raw, 0x021130ac-base) == (0x02113250, 0x02113248, 0x021125f0)
+    assert struct.unpack_from('<IHHIiiii', raw, 0x021130d0-base) == (
+        0x02111e24, 139, 210, 2, 0x60000, 0x150000, 0x1000000, 0)
+    assert struct.unpack_from('<4sHH', raw, 0x021125f0-base)[:2] == (b'CLPS', 8)
+    text = lazy_handles(text, ('Km2FallModelFilePtr', 'Km2FallClsnFileHandle'))
+    anchor = '    return daObjFallBlock_c_InitResources(this, &data_ov045_021130ac);'
+    assert text.count(anchor) == 1
+    text = text.replace('// @symbol daObjKm2_Fall_Block_c_classInit',
+                        'static void pc_firesea_fall_init_files();\n\n// @symbol daObjKm2_Fall_Block_c_classInit', 1)
+    text = text.replace(anchor, '''
+    auto *surface = pc_level_overlay_address(37, 0x021125f0);
+    if (!surface) return 0;
+    pc_firesea_fall_init_files();
+    data_ov045_021130ac.clps = static_cast<CLPS_Block *>(surface);
+    return daObjFallBlock_c_InitResources(this, &data_ov045_021130ac);''', 1)
+    return '#include "hal/level_overlay.h"\n' + text + '''
+extern "C" {
+ResourceDescriptor data_ov045_021130ac{
+    &data_ov045_02113250, &data_ov045_02113248, nullptr
+};
+}
+static void pc_firesea_fall_init_files() {
+    static const bool ready = [] {
+        data_ov045_02113250.Construct(1633);
+        data_ov045_02113248.Construct(1634);
+        return true;
+    }();
+    (void)ready;
+}
+static_assert(sizeof(daObjKm2_Fall_Block_c)==0x34c,"native KM2_KUZURE allocation");
+'''
+
 
 def transform(root, text, leaf=False):
     if leaf:

@@ -467,6 +467,18 @@ int _ZN7fBase_c7ProcessEMS_FivEMS_FbvEMS_FvjE(
                 action.vtable_offset,phase,observed_y,y,observed_player[0x644/4],observed_player[0x6c/4]);
         observed_y=y;
     };
+    const bool trace_arena = std::getenv("SM64DS_PC_FIRESEA_STARTUP_TRACE") &&
+        (data_0209f2f8 == 38 || (data_0209f2f8 == 37 && ntr::rt_frame() >= 18980));
+    auto observe_arena = [&](const char *phase, const void *callback) {
+        if (trace_arena) {
+            const auto *actor = static_cast<const fBase_c *>(self);
+            std::fprintf(stderr, "[arena startup] tick=%llu level=%d actor=%u self=%p slot=%d phase=%s fn=%p\n",
+                         static_cast<unsigned long long>(ntr::rt_frame()), int(data_0209f2f8),
+                         unsigned(actor->actorID), self, action.vtable_offset/4, phase, callback);
+            std::fflush(stderr);
+        }
+    };
+    observe_arena("before", reinterpret_cast<const void *>(before_fn));
     int result = before_fn(self);
     observe_y("before");
     if (tracing) {
@@ -480,6 +492,7 @@ int _ZN7fBase_c7ProcessEMS_FivEMS_FbvEMS_FvjE(
     }
     unsigned status = 0;
     if (result != 0) {
+        observe_arena("action", reinterpret_cast<const void *>(action_fn));
         result = action_fn(self);
         observe_y("action");
         if (tracing) {
@@ -488,6 +501,7 @@ int _ZN7fBase_c7ProcessEMS_FivEMS_FbvEMS_FvjE(
         }
         status = result == -1 ? 3u : (result == 1 ? 2u : 1u);
     }
+    observe_arena("after", reinterpret_cast<const void *>(after_fn));
     after_fn(self, status);
     observe_y("after");
     if (tracing) {

@@ -96,7 +96,9 @@ struct daOts_c : dEnemyBase_c {
        view that started at 0x398 costs an extra add wherever a field's address is
        taken). */
     struct Tail {
+#ifndef SM64DS_PLATFORM_PC
         u8  pad_000[0x398];
+#endif
         s32 mState;             /* 0x398 -- State */
         /* Where the actor stood at the top of the last Behavior frame that ran
            (BehaviorCommon copies mPos here before moving it); the ledge check puts
@@ -137,7 +139,11 @@ struct daOts_c : dEnemyBase_c {
     };
 
     /* The object viewed as a Tail. */
+#ifdef SM64DS_PLATFORM_PC
+    Tail &tail() { return mHostTail; }
+#else
     Tail &tail() { return *(Tail *)this; }
+#endif
 
     ModelAnim           mModelAnim;             /* 0x110 */
     dBgCh_Actr        mWithMeshClsn;          /* 0x174 */
@@ -155,6 +161,9 @@ struct daOts_c : dEnemyBase_c {
     u32                 mParticle1;             /* 0x338 */
     dCcAc_c  mdCcAc_c;    /* 0x33c */
     dExtShadowModel_c         mShadowModel;           /* 0x370 */
+#ifdef SM64DS_PLATFORM_PC
+    Tail mHostTail{};
+#endif
 
     /* INLINE, AND IT MUST BE. Both children's destructors store their own vtable,
        then this one's, then destroy all four members in place -- there is no `bl`

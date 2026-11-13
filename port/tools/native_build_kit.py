@@ -81,7 +81,7 @@ def main():
                 'prebuilt': prebuilt, 'local_objects': local, 'generators': generators,
                 'system_libraries': libraries, 'root_fallback': 'Compiled local checkout paths replaced with dot; launcher sets SM64DS_ASSET_ROOT.'}
     metadata['status']=(
-        'Experimental incomplete native port. Format2 omits all17 reviewed ROM-derived '
+        f'Experimental incomplete native port. Format 2 omits all {len(DATA_SOURCES)} reviewed ROM-derived '
         'data objects, including camera/minigame/stage-sound data, for local regeneration. '
         'Secret Slide original castle-to-slide entry through Peach\'s window, ITEM_BLOCK21 '
         'hit by Mario, Star pickup, Save & Continue, reload and repeat without duplicate credit '

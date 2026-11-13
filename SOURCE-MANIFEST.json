@@ -3995,8 +3995,8 @@
     },
     {
       "path": "include/daDonketu_c.h",
-      "sha256": "104ea5c1c381d5153d4cdf156a6692e72d007ec3dd9d18de2d5a1218a8f78091",
-      "bytes": 1795
+      "sha256": "c80d864076424dded7f1cd677a9bbc33ca2cee8f443810444fff9b87cb8a3baf",
+      "bytes": 1863
     },
     {
       "path": "include/daDoor_c.h",
@@ -4985,8 +4985,8 @@
     },
     {
       "path": "include/daOts_c.h",
-      "sha256": "729616bec756a60ad63e188ebf5c187e0911cc5695b0c34017401e87b8d81363",
-      "bytes": 14540
+      "sha256": "740e2310d5e0e539cafb679d516139f0eb9273f8e3e0ea781223cc6ae3f414f1",
+      "bytes": 14707
     },
     {
       "path": "include/daOwl_c.h",
@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "bebc908a4c558ff155f2a05a2484c80ff7a275279146f09457bf70f575eeed7a",
-      "bytes": 458570
+      "sha256": "2083abde29d34f390997a020c0b15ade49e6f99e1676b63968a23ff48fee8acd",
+      "bytes": 458954
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "bc492fef5e39239fee386a732cdda68703fd766991f180d0ada291b1544ff9d2",
-      "bytes": 254000
+      "sha256": "a1c7ff8e52d3a4f97644be44f728a946c55c17adb2cc1b22acd22812f0ee9901",
+      "bytes": 254392
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "7b8d59e271d6f861ec95a7bf453612dbfe14e3975fa00d4285f6489b0d53d897",
-      "bytes": 89820
+      "sha256": "59802eb5e9e6659783ead1e41994839eece84698e8aa14c156a9df298cc574b0",
+      "bytes": 90416
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6767,6 +6767,36 @@
       "path": "port/docs/native-current-build-installation-2026-10-16.txt",
       "sha256": "b6a86c812a9aa8e57f5794c5925e92ee7b16b7ebfa49b373ad10fe37b6d95d8d",
       "bytes": 4773
+    },
+    {
+      "path": "port/docs/native-dark-world-dorifu-state-trace-2026-11-06.txt",
+      "sha256": "19f603d0b3c65ccaa921098444c06138054ac9d4c7de1911bdc6a0fd163d0631",
+      "bytes": 2316
+    },
+    {
+      "path": "port/docs/native-dark-world-next-island-2026-11-06.txt",
+      "sha256": "eedb2adea3d9390da0864974febc1dd453489db2a4b229d131a3d099e99b3798",
+      "bytes": 2127
+    },
+    {
+      "path": "port/docs/native-dark-world-seesaw-transfer-2026-11-06.txt",
+      "sha256": "6a0f2ed485e1aad3eab83d117b434ef53a48315cab230a51b9f01f57b14d840d",
+      "bytes": 850
+    },
+    {
+      "path": "port/docs/native-dark-world-upper-diamond-2026-11-06.txt",
+      "sha256": "32404c89c8dd3b7ac97cd41ee7012767b4cfc4d8ebe9b6c380a10322caa961f2",
+      "bytes": 2012
+    },
+    {
+      "path": "port/docs/native-dark-world-upper-dismount-2026-11-06.txt",
+      "sha256": "b9359f6f72379e94e6597a50930f8c5d38ae87ed852a010e06bc17a384817692",
+      "bytes": 1318
+    },
+    {
+      "path": "port/docs/native-dark-world-upper-transfer-2026-11-06.txt",
+      "sha256": "aa94f9017c333d272dda2f8fdec51d7646f83a867daf46f859310288a40be235",
+      "bytes": 1819
     },
     {
       "path": "port/docs/native-dialogue-card-contrast-2026-10-25.txt",
@@ -7625,8 +7655,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "01c3d3ccbc3ef37e5677502d0a156bc4d98112a7fa11c77edcf260586f884473",
-      "bytes": 52929
+      "sha256": "797c65e4cc4f8ca23691d041efa590388a5646295641702d68e795a83f63b8f6",
+      "bytes": 58336
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7700,8 +7730,8 @@
     },
     {
       "path": "port/hal/cxxname_bridge.cpp",
-      "sha256": "c915ea7ad6710166d931dba1765d61391bd6d1b6148ea1577dd884055361730f",
-      "bytes": 34049
+      "sha256": "74909ff6e16cd786850c57a00a6caefd2d9114a9dd6a7e7a871f426fbb499c1d",
+      "bytes": 34954
     },
     {
       "path": "port/hal/demo_callbacks.inc",
@@ -8095,8 +8125,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "c66d490adb5b08466dde80746f37409caa5ddc0c71d321f9024dac135b9d7c58",
-      "bytes": 350206
+      "sha256": "6ae9e6da33e99603a51db177cc8c178b82df5509e25ab3f0396246c242918389",
+      "bytes": 459741
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9029,6 +9059,11 @@
       "bytes": 3998
     },
     {
+      "path": "port/tools/amp_host.py",
+      "sha256": "594d2108d09d54abf9451b43086ddfd8dbd327ee89af0e669e28bc217a3e50a3",
+      "bytes": 5517
+    },
+    {
       "path": "port/tools/arrow_sign_host.py",
       "sha256": "e2a69e13d9c9d4f169b1dc068f0ba34f555060ed7ac49327b60ae88c73709b0b",
       "bytes": 8021
@@ -9045,8 +9080,8 @@
     },
     {
       "path": "port/tools/battlefield_platform_host.py",
-      "sha256": "8737641d16d3d9d3d1ab1d880434df0c9618d3a3e0e6c9d8c133a422ee7cae7e",
-      "bytes": 11867
+      "sha256": "9cb1cc1795a3aa9cf7b7dbfef7bd8f0d3300242e691557504a8fe48a504696a6",
+      "bytes": 13152
     },
     {
       "path": "port/tools/bird_host.py",
@@ -9075,18 +9110,23 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "f152d6104d0599d59f338cf96150b68744bc455d1ccf8b0b2bc02f57fd943435",
-      "bytes": 52730
+      "sha256": "ec1f4573eadcd9868af4035270a0a272d8340f80fd62eecb3bf462fbb37944f4",
+      "bytes": 60207
     },
     {
       "path": "port/tools/bowser_host.py",
-      "sha256": "cc94e5b6b7c6199e3bc6203934ef5cb9560d8866c91c56f80fedf6cbd91de4b0",
-      "bytes": 11011
+      "sha256": "7197dc9102a69f3221673124064a2e9e3333f32d8599d9447879701eb7be009b",
+      "bytes": 12382
     },
     {
       "path": "port/tools/buddy_host.py",
       "sha256": "8127295d741f657741d02b5248b6882941d65c78a3d60e96cf02cd3cbbae4b63",
       "bytes": 6455
+    },
+    {
+      "path": "port/tools/bully_host.py",
+      "sha256": "474495ea0836470f8ca16e3daf0f121fd9b2dccbd6152974479e2415a0463c43",
+      "bytes": 4195
     },
     {
       "path": "port/tools/camera_host.py",
@@ -9230,8 +9270,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "062acac2e391a71bed7d6f7f72fa1eeb6ef174702f88d9044beeddbb0b9aaa82",
-      "bytes": 58372
+      "sha256": "43abd66a4cbbb055089203a2d56fc60e0f82bae956e5acd6f4b66495f69ee866",
+      "bytes": 76313
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9424,6 +9464,11 @@
       "bytes": 4875
     },
     {
+      "path": "port/tools/docks_host.py",
+      "sha256": "6ca706369c49602f54bfb8b0cabb7b8e058272464797ab7de8e493cc0b217574",
+      "bytes": 1522
+    },
+    {
       "path": "port/tools/dsmt_host.py",
       "sha256": "af3b5c04d2b6f8c2051720198b21765ade468fb49762864a631116891c50e4e7",
       "bytes": 11348
@@ -9435,8 +9480,8 @@
     },
     {
       "path": "port/tools/fall_block_host.py",
-      "sha256": "2686eb658f867d1a3290eb340c7e85893fa3077fda0596e0c3fd60d2c2b14273",
-      "bytes": 5674
+      "sha256": "2d31d37585762e1c507f0273ea8a86432fa13885a39c4eae3bece54c6873e3ec",
+      "bytes": 7343
     },
     {
       "path": "port/tools/feather_host.py",
@@ -9535,8 +9580,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "0e5e065c51caaa2d98f91e638dfc6dc6cd75e642feabafe3ebb34e2773e9411e",
-      "bytes": 29173
+      "sha256": "d54bf0d71da80f952cbbcf7a5ae99bdae16d71e20efed4631679f74d70db5fe3",
+      "bytes": 29735
     },
     {
       "path": "port/tools/linkage.py",
@@ -9575,13 +9620,13 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "eccf935fbeb7725c5641e07989b3e34a67c09eda978f4d8a7088c81d913480ed",
-      "bytes": 16189
+      "sha256": "d18c0ccfc6becb3a61ad9d9320cbb6bce63b9b89f8d58a1b83833303d0988704",
+      "bytes": 16209
     },
     {
       "path": "port/tools/native_kit_data.py",
-      "sha256": "5a8f165f357f32144ef577607a918cdf0b687e27a3dd042170185b42a0ff477b",
-      "bytes": 3983
+      "sha256": "763ad6e4e3952afd5f1f342bfbee2b41c207fda9356194e2b3e700af8796a523",
+      "bytes": 5236
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -9625,8 +9670,8 @@
     },
     {
       "path": "port/tools/particle_host.py",
-      "sha256": "963bd7dedfbedf824f50045be2d135784499f35a64115a3dcc5ae63558bf72f1",
-      "bytes": 2029
+      "sha256": "a9c6495f26b5ee9bff5f6b5520c10a00158540d1da07433a4ff8aae2e8f38683",
+      "bytes": 2614
     },
     {
       "path": "port/tools/pc_title_session.py",
@@ -9660,8 +9705,8 @@
     },
     {
       "path": "port/tools/rainbow_disc_host.py",
-      "sha256": "21c6640e586c63e5ea29085e0baa2d5c02a37043c7232ac9d220c8676cafd29d",
-      "bytes": 3058
+      "sha256": "7c1234d0df1224f5a584539d4352885c387bd7dbfbae6aeb5a798d823cbc4061",
+      "bytes": 4643
     },
     {
       "path": "port/tools/rainbow_donut_host.py",
@@ -9680,8 +9725,8 @@
     },
     {
       "path": "port/tools/reward_host.py",
-      "sha256": "edadbfa04403bb40389373cbd058696c4e14975c9ad3b022ca79b59dff90125e",
-      "bytes": 7523
+      "sha256": "2428856fe32eb907ee158217526605bbdcc3a6af93d90f9f559411a08e59e65c",
+      "bytes": 9623
     },
     {
       "path": "port/tools/romdata.py",
@@ -9710,8 +9755,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "3f6eda9c4aa81c82df465ed9d3c57740f4d59d5326464e6e51694ebe93c0293e",
-      "bytes": 1857
+      "sha256": "76d116907020ce1776cf1de4b6d5d95f4eef419d7665ed6287b9da4ba36a93d1",
+      "bytes": 23236
     },
     {
       "path": "port/tools/sound_host.py",
@@ -9730,8 +9775,8 @@
     },
     {
       "path": "port/tools/test_battlefield_platform_host.py",
-      "sha256": "85fa6c18776c2c5ae2024a20874f4405df4897c7447a4eee86b7111e6778cdcb",
-      "bytes": 3325
+      "sha256": "985a78f2931e0c8ba3043e45c5b9f8fea5c6b1110944691ea0db1de2435cd619",
+      "bytes": 3601
     },
     {
       "path": "port/tools/test_bombking_host.py",
@@ -9817,6 +9862,11 @@
       "path": "port/tools/warp_host.py",
       "sha256": "466dc7b77aa3f071c5d7e61025d8bf32bada00b4fd99cddb2eb23e26e62e7206",
       "bytes": 1203
+    },
+    {
+      "path": "port/tools/warp_pipe_host.py",
+      "sha256": "170f6a8fca9fa6c5e2f1e4f2cc22c12a33c98a5895d1957fba16432b835ce31b",
+      "bytes": 2216
     },
     {
       "path": "port/unmatched/camera_jitter.cpp",
@@ -18060,8 +18110,8 @@
     },
     {
       "path": "src/unnamed/arm9/0203/func_02038408.c",
-      "sha256": "660c771f02d5564d70376437a76c5636722eb9a2b843dad49954bac5307ec7c1",
-      "bytes": 214
+      "sha256": "995531e2b2b2696ea731d0396a0f5bd7274e3d65afa2d97da52cb7b2b33a222a",
+      "bytes": 293
     },
     {
       "path": "src/unnamed/arm9/0203/func_02038414.c",
@@ -27425,8 +27475,8 @@
     },
     {
       "path": "tools/assemble_pc_build.py",
-      "sha256": "7abfb1d3d7e6dfb93e20eae7b45cd080a31f50fd316a68203bbdd5c8d143232f",
-      "bytes": 6210
+      "sha256": "4b79ce89d693a4f2707f7f89cf40744863aad5c9ff9b4deff934ebb767bc54b5",
+      "bytes": 6310
     },
     {
       "path": "tools/asset_catalog.py",

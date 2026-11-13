@@ -23,6 +23,8 @@ static void pc_disc_observe(daObjKaitendai_c *a){
         assert text.count(anchor)==1
         text=text.replace(anchor,anchor+'\n    pc_render_probe::Scope probe(this,false,&mModel.mat4x3);')
         return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n#include "hal/actor_render_probe.h"\n'+text
+    if name == 'd_a_obj_wc_obj07.cpp':
+        return transform_wdw(root, text)
     raw=(root/'extracted/overlays/overlay_0036.bin').read_bytes()
     base=0x021111a0
     assert struct.unpack_from('<IHHIiiii',raw,0x02113b50-base)==(0x02111544,129,259,2,409600,4096000,29491200,6553600)
@@ -46,3 +48,35 @@ extern "C" ResourceDescriptor data_ov036_02113b2c={&data_ov036_02114050,&data_ov
 static_assert(sizeof(daObjRc_Kaitendai_c)==0x320,"native rotating-disc allocation");
 '''
     return text
+
+
+def transform_wdw(root, text):
+    from battlefield_platform_host import lazy_handles
+
+    rom = (root / 'extracted/overlays/overlay_0029.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x02113ff4 - base) == (
+        0x02112168, 94, 270, 2, 0, 0x110000, 0x1c20000, 0x640000)
+    assert struct.unpack_from('<3I', rom, 0x02113fd4 - base) == (
+        0x021142dc, 0x021142d4, 0x021130ac)
+    assert struct.unpack_from('<h', rom, 0x02113fc4 - base) == (0x444,)
+    text = lazy_handles(text, ('WcObj07ModelFilePtr', 'WcObj07CollisionFilePtr'))
+    text = text.replace('extern s16 data_ov029_02113fc4;\n', '')
+    anchor = 's32 daObjWc_Obj07_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, anchor + '''
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(21, 0x021130ac));
+    if (!surface) return 0;
+    static const bool ready = [surface] {
+        data_ov029_021142dc.Construct(1751);
+        data_ov029_021142d4.Construct(1752);
+        data_ov029_02113fd4 = {&data_ov029_021142dc, &data_ov029_021142d4, surface};
+        return true;
+    }();
+    (void)ready;
+''', 1).replace('data_ov029_02113fc4);', '0x444);')
+    return ('#include "hal/level_overlay.h"\n' + text.replace(
+        anchor,
+        'extern WcObj07ModelFilePtr data_ov029_021142dc;\n'
+        'extern WcObj07CollisionFilePtr data_ov029_021142d4;\n' + anchor, 1) +
+        '\nextern "C" ResourceDescriptor data_ov029_02113fd4 = {};\n')

@@ -1,0 +1,29 @@
+Native upper Dark World diamond transfer - 2026-11-06
+
+Optional SM64DS_PC_TEST_UPPER_DIAMOND_TRANSFER / private -UpperDiamondTransfer
+extends the accepted upper diamond ride. It centers Mario relative to the
+original source actor, waits for the eastbound upper edge, builds walking
+speed, crouches into an original LongJump, then brakes in the air. Only the
+automated controller sequence changes; original player/actor physics remain.
+
+First focused approach: ordinary jump. Actual airborne jump descends to y993
+at z-1369 while the target moves beyond z-1016; the moving surface is missed.
+The diagnostic run exits0, saves unchanged; it is not acceptance evidence.
+
+Second focused approach: native long jump and original 1.5-unit speed-change
+braking. Current EXE SHA256:
+9DF28FCF2C2BB1BD5D0CC8A27BA1B2F382568715AA50756FD6238802A7333D65
+Build, full native actor-data audit, six focused clock/input/rebinding/camera
+CTests all pass. Fresh muted 24,500-frame run: source135 UID134 boarding20448,
+centering20929..21062, wait21123, run21530, crouch21600, actualLongJump21604,
+airbrake21624, second-loop135 UID135 landing21660. Private independent checker
+accepts548 later grounded target samples, 600-unit X and Z spans, neutral
+controls/controlenabled, no flight damage/ledge/death. Exit0, audioerrors0,
+audible submitted samples0, both synthetic saves byte-identical to seed.
+Screenshot22000 reviewed: Mario safely on the second moving diamond loop.
+
+Central static dismount, seesaws, stairs switch/animation/passage and course
+re-entry remain unverified. The earlier source-boarding event called 'jump'
+remains only a request that resolves to walking; this transfer's LongJump is
+proved separately from the player state/airborne trace. No F installation or
+public release performed for these optional QA route changes.
