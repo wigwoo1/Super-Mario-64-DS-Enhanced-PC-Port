@@ -20,10 +20,12 @@
 #include "daOwl_c.h"
 #include "hal/pc_session.h"
 #include "daObjSwitch_c.h"
+#include "daObjBC_Switch_c.h"
 #include "daIbl_c.h"
 #include "daYegg_c.h"
 #include "daCoin_c.h"
 #include "daStar_c.h"
+#include "daObjWc_Mizu_c.h"
 #include "daStarBase_c.h"
 #include "daObjMarioCap_c.h"
 #include "daC_Jugem_c.h"
@@ -43,6 +45,8 @@
 #include "daObjCannonShutter_c.h"
 #include "daCnn_c.h"
 #include "daWbm_c.h"
+#include "daMenbo_c.h"
+#include "daKrpa_c.h"
 #include "daWanwan_c.h"
 #include "daObjPile_c.h"
 #include "daObjWanwanShutter_c.h"
@@ -430,6 +434,73 @@ static bool replay_star_save_controls() {
     }
     ntr::input_test_controls(true,buttons,0,0);return true;
 }
+static bool replay_wdw_hundred_coin_star() {
+    if(data_0209f2f8!=21 || !std::getenv("SM64DS_PC_TEST_WDW_HUNDRED_COIN_STAR"))return false;
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    if(!player || player->aliveState!=1 || data_0209f358[0]<100)return false;
+    const auto tick=ntr::rt_frame();
+    const dActor_c *target=nullptr;
+    for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;
+        actor=dActor_c::FindWithActorID(178,actor)) {
+        if(actor->param1==0x20 && actor->aliveState==1) {
+            target=actor;
+            break;
+        }
+    }
+    static unsigned observed=0;
+    if(target && target->uniqueID!=observed) {
+        observed=target->uniqueID;
+        std::fprintf(stderr,"[native WDW hundred-coin Star] observed uid=%u tick=%llu coins=%d\n",
+            observed,static_cast<unsigned long long>(tick),int(data_0209f358[0]));
+    }
+    if(!target && !observed)return false;
+    if(data_0209d660 || player->mIsNoControl || player->mIsControlDisabled) {
+        ntr::input_test_controls(true,data_0209d660 && tick%45<3 ? 1 : 0,0,0);
+        return true;
+    }
+    if(!target) {
+        // Take an ordinary upward stroke after the in-course save. Neutral
+        // input here lets the swimmer sink back down and run out of air.
+        static bool surfaced=false;
+        if(!surfaced && player->mPosY>=-690*4096) {
+            surfaced=true;
+            std::fprintf(stderr,"[native WDW hundred-coin Star] post-save surface tick=%llu y=%d\n",
+                static_cast<unsigned long long>(tick),player->mPosY);
+        }
+        const uint16_t keys=std::strcmp(pc_player_state_name(player),"St_Swim_Main") ? 0 :
+            !surfaced ? 0x80 | (tick%24<12 ? 2 : 0) : player->mPosY< -665*4096 ? 0x80 : 0;
+        ntr::input_test_controls(true,keys,0,0);
+        return true;
+    }
+    const double dx=double(target->mPosX)-player->mPosX;
+    const double dz=double(target->mPosZ)-player->mPosZ;
+    const double dy=double(target->mPosY)-player->mPosY;
+    const double horizontal=std::hypot(dx,dz);
+    const double radians=std::atan2(dx,dz);
+    uint16_t buttons=0;
+    int16_t stickX=0,stickY=0;
+    if(!std::strcmp(pc_player_state_name(player),"St_Swim_Main")) {
+        const auto yaw=static_cast<int16_t>(radians*65536.0/6.283185307179586);
+        const auto delta=static_cast<int16_t>(yaw-player->mAngleY);
+        const int steer=int(delta)-int(player->mAngleYSpeed)*6;
+        if(horizontal>35*4096.0)buttons=steer>768 ? 0x20 : steer< -768 ? 0x10 : 0;
+        const double pitch=std::abs(dy)<35*4096.0 ? 0 :
+            std::atan2(-dy,(std::max)(horizontal,80*4096.0))*65536.0/6.283185307179586;
+        const double error=pitch/(pitch<0 ? 0.6 : 1.25)-player->mPrevAngleX;
+        if(error>1536)buttons|=0x40;
+        if(error< -1536)buttons|=0x80;
+        if((horizontal<35*4096.0 || std::abs(int(delta))<0x2000) && tick%24<12)buttons|=2;
+    } else if(horizontal>65*4096.0) {
+        const double angle=radians-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        stickX=static_cast<int16_t>(std::sin(angle)*16000);
+        stickY=static_cast<int16_t>(-std::cos(angle)*16000);
+    } else if(dy>95*4096.0 && tick%65<12) {
+        buttons=2;
+    }
+    ntr::input_test_controls(true,buttons,stickX,stickY);
+    return true;
+}
+
 static bool replay_pillar_controls() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     if(!automation || std::strcmp(automation,"1") || data_0209d660)return false;
@@ -2086,6 +2157,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
         if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
     }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
+    if(!route_override && replay_wdw_hundred_coin_star())return true;
     if(!route_override && replay_big_boo_combat())return true;
     if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && pc_replay_crate_pound(static_cast<Player *>(data_0209f394[0])))return true;
@@ -2119,6 +2191,38 @@ static bool replay_course_route(const char *route_override=nullptr) {
        (has_y && (y< -32768 || y>32767)))return false;
     auto *player=static_cast<Player *>(data_0209f394[0]);
     if(!player || player->aliveState!=1)return false;
+    const char *cannon_mode=std::getenv("SM64DS_PC_TEST_CANNON");
+    const bool silver_reward_cannon=cannon_mode && !std::strcmp(cannon_mode,"wdw-silver-reward");
+    const bool blue_switch_warp=std::getenv("SM64DS_PC_TEST_WDW_BLUE_SWITCH") && x==852;
+    const bool wdw_cannon_warp=level==21 && data_0209f2f8==21 && y==0 && z==3562 &&
+        ((silver_reward_cannon && x==812) || blue_switch_warp);
+    if(wdw_cannon_warp && player->mPosY>3100*4096 && player->mPosX< -2400*4096) {
+        ++waypoint;
+        std::fprintf(stderr,silver_reward_cannon ? "[native WDW silver reward warp] arrived tick=%llu\n" :
+            "[native WDW cannon warp] arrived tick=%llu\n",
+            static_cast<unsigned long long>(ntr::rt_frame()));
+        ntr::input_test_controls(true,0,0,0);
+        return true;
+    }
+    if(level==21 && data_0209f2f8==21 && x==-2625 && y==2770 && z==3125 &&
+       cannon_mode && (!std::strcmp(cannon_mode,"wdw-downtown") ||
+                       silver_reward_cannon) &&
+       player->IsBeingShotOutOfCannon()) {
+        ++waypoint;
+        ntr::input_test_controls(true,0,0,0);
+        return true;
+    }
+    // The lower approach attracts Heave-Ho, whose throw lands Mario beside
+    // the next waypoint. Stop steering toward the lower floor on landing.
+    if(level==21 && data_0209f2f8==21 && x==-2600 && y==375 && z==1720 &&
+       std::getenv("SM64DS_PC_TEST_WDW_HEAVE_HO_ASCENT") && !player->mIsAirborne &&
+       player->mPosY==2250*4096 && player->mPosZ< -525*4096) {
+        ++waypoint;
+        std::fprintf(stderr,"[native WDW ascent] upper shelf landing tick=%llu\n",
+                     static_cast<unsigned long long>(ntr::rt_frame()));
+        ntr::input_test_controls(true,0,0,0);
+        return true;
+    }
     if(data_0209f2f8!=level) {
         const char *next=std::strchr(segment,',');int next_level=-1;
         if(next && std::sscanf(next+1,"%d:",&next_level)==1 && next_level==data_0209f2f8) {
@@ -2258,7 +2362,16 @@ static bool replay_course_route(const char *route_override=nullptr) {
         level==6 && chomp_pass && !std::strcmp(chomp_pass,"1") &&
         has_y && y==750 && x>=-1750 && x<=1775 && z>=1525 && z<=4150;
     const bool evading=passing_chomp || (!route_override && ntr::rt_frame()<replay_reentry_goomba_run_until);
+    // The Downtown switch has a finite retail timer. Keep moving through
+    // the timed portion of this input replay after the switch is pressed.
+    unsigned continuous_from=0;
+    const char *continuous_start=std::getenv("SM64DS_PC_TEST_WDW_CONTINUOUS_FROM");
+    const bool wdw_timed_route=level==21 && continuous_start &&
+        std::sscanf(continuous_start,"%u",&continuous_from)==1 && waypoint>=continuous_from &&
+        (!std::getenv("SM64DS_PC_TEST_WDW_BLUE_SWITCH") || waypoint<continuous_from+6);
+    const bool wdw_cage_steps=wdw_timed_route && player->mCharacter==1 && x>=1600 && y<0;
     const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course && !evading &&
+        (!wdw_timed_route || wdw_cage_steps) &&
         !(replay_rainbow_course_ready && level==28));
     const char *uphill_push=std::getenv("SM64DS_PC_TEST_ROUTE_UPHILL_PUSH");
     const double approach_dx=x*4096.0-player->mPosX;
@@ -2285,6 +2398,424 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        // The original warp triggers when Mario stops inside its cylinder.
+        if(wdw_cannon_warp && player->mPosY<100*4096 && horizontal<(blue_switch_warp ? 24 : 40)*4096.0) {
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        // Soaked Silver Stars replay: use Luigi's crouch jump from the
+        // center platform, and steer back toward the Star during the jump.
+        if(level==21 && x==-200 && y==4700 && z==50 && jump==2 &&
+           player->mCharacter==1 && std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP")) {
+            uint16_t input=0;
+            int magnitude=0;
+            if(player->mIsAirborne)
+                magnitude=horizontal>28*4096.0 ? 14500 : 0;
+            else if(horizontal>45*4096.0)
+                magnitude=10500;
+            else if(!std::strcmp(state,"St_Crouch_Main"))
+                input=0x102;
+            else if(!std::strcmp(state,"St_Wait_Main"))
+                input=0x100;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            ntr::input_test_controls(true,input,static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+            return true;
+        }
+        // The first Downtown cage step is too high for the pilot's regular
+        // jump. The preceding waypoint faces away from the step for a backflip.
+        if(wdw_cage_steps && x==1950 && y==-2100 && z==3370 && jump==1 &&
+           player->mPosY< -2200*4096) {
+            uint16_t input=0;
+            if(!player->mIsAirborne && player->mHorzSpeed==0) {
+                if(!std::strcmp(state,"St_Crouch_Main"))input=0x102;
+                else if(!std::strcmp(state,"St_Wait_Main"))input=0x100;
+            }
+            ntr::input_test_controls(true,input,0,0);
+            return true;
+        }
+        const bool upper_wdw_flower=level==21 && player->mAreaId==0 &&
+            x==-1600 && y==3500 && z==-3475 && jump==2 &&
+            std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP");
+        if(upper_wdw_flower || (wdw_timed_route && x==-1700 && y==-2800 && z==3550 && jump==2)) {
+            static bool pound_from_top=false;
+            if(player->mIsBalloon || player->mIsVanish) {
+                pound_from_top=false;
+                ++waypoint;
+                std::fprintf(stderr,"[native WDW power flower] %s pickup tick=%llu\n",
+                    player->mIsVanish ? "vanish" : "balloon",
+                    static_cast<unsigned long long>(tick));
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            // Approach directly below the block and let the normal jump
+            // collide with its underside before moving to the flight route.
+            uint16_t input=0;
+            int magnitude=0;
+            if(upper_wdw_flower) {
+                if(!player->mIsAirborne && player->mPosY>=3890*4096 &&
+                   horizontal<70*4096.0 && !std::strcmp(state,"St_Wait_Main"))
+                    pound_from_top=true;
+                if(pound_from_top && !std::strcmp(state,"St_Wait_Main") &&
+                   player->mPosY>=3890*4096) {
+                    input=2;
+                } else if(pound_from_top && !std::strcmp(state,"St_Jump_Main")) {
+                    input=0x100;
+                } else if(player->mIsAirborne && !pound_from_top)
+                    magnitude=horizontal>32*4096.0 ? 15000 : 0;
+                else if(!pound_from_top && !std::strcmp(state,"St_Crouch_Main"))
+                    input=0x102;
+                else if(!pound_from_top && !std::strcmp(state,"St_Wait_Main") && !player->mHorzSpeed)
+                    input=0x100;
+                else if(pound_from_top && !player->mIsAirborne && horizontal>25*4096.0)
+                    magnitude=11000;
+            } else if(!player->mIsAirborne && horizontal>48*4096.0)
+                magnitude=horizontal>150*4096.0 ? 12000 : 8500;
+            else if(!player->mIsAirborne && player->mHorzSpeed==0)
+                input=tick%52<16 ? 2 : 0;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            ntr::input_test_controls(true,input,static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+            return true;
+        }
+        if(silver_reward_cannon && level==21 && player->mAreaId==0 &&
+           x==0 && y==3275 && z==3500 && jump==2 && player->mIsBalloon) {
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            // Rise over the intervening platforms, then descend onto the sphere.
+            static bool reached_cruise_height=false;
+            if(player->mPosY>=4375*4096)reached_cruise_height=true;
+            const int magnitude=reached_cruise_height && horizontal>100*4096.0 ? 32700 : 0;
+            const uint16_t lift=horizontal>320*4096.0 && player->mPosY<4450*4096 &&
+                tick%8<4 ? 2 : 0;
+            ntr::input_test_controls(true,lift,static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+            return true;
+        }
+        if(level==21 && player->mAreaId==0 && x==-200 && y==4760 && z==50 &&
+           jump==2 && std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP")) {
+            if(player->mMeshClsn.IsOnGround() && !player->mIsAirborne &&
+               std::abs(player->mPosY-3750*4096)<20*4096 && horizontal<200*4096.0) {
+                for(auto *actor=dActor_c::FindWithActorID(179,nullptr);actor;
+                    actor=dActor_c::FindWithActorID(179,actor)) {
+                    if(static_cast<const daStar_c *>(actor)->mState==7 &&
+                       (actor->param1&0x7f)==7 &&
+                       std::abs(actor->mPosX-player->mPosX)<150*4096 &&
+                       std::abs(actor->mPosZ-player->mPosZ)<150*4096) {
+                        ++waypoint;
+                        ntr::input_test_controls(true,0,0,0);
+                        return true;
+                    }
+                }
+            }
+            // Gain height in the clear over the launch platform, then turn
+            // toward the original Silver Star with the timed lift input.
+            const int magnitude=player->mIsBalloon && player->mPosY>=4710*4096 ? 24500 : 0;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const uint16_t lift=player->mIsBalloon && player->mPosY<4840*4096 && tick%8<4 ? 2 : 0;
+            ntr::input_test_controls(true,lift,static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+            return true;
+        }
+        if(wdw_timed_route && jump==2 && y==-1375 && player->mIsBalloon) {
+            // Steer through the open plaza above the roofs. The original
+            // balloon callback supplies all movement and lift.
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            if(horizontal<radius*4096.0 && player->mPosY>=-1450*4096) {
+                ++waypoint;
+                if((x==1500 && z==700) || (x==-750 && z==3005))
+                    ntr::input_test_controls(true,0x100,0,0);
+                else
+                    ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            const int magnitude=horizontal>radius*4096.0 ? 32767 : 0;
+            const uint16_t lift=player->mPosY< -1330*4096 && tick%8<4 ? 2 : 0;
+            ntr::input_test_controls(true,lift,static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+            return true;
+        }
+        if(wdw_timed_route && x==-750 && y==-1375 && z==3005 && jump==2 &&
+           !player->mIsBalloon && player->mMeshClsn.IsOnGround() && !player->mIsAirborne &&
+           std::abs(player->mPosY+2050*4096)<12*4096 &&
+           horizontal<180*4096.0 && player->mPosZ>=2880*4096 && player->mPosZ<=3120*4096) {
+            // The balloon can expire before the descent command. The same
+            // supported shelf landing lets the route continue on foot.
+            ++waypoint;
+            std::fprintf(stderr,"[native WDW Star shelf] grounded after balloon expiry tick=%llu\n",
+                static_cast<unsigned long long>(tick));
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        const bool balloon_drop=(x==1500 && y==-1675 && z==700) ||
+            (x==-750 && y==-2050 && z==3005);
+        if(wdw_timed_route && balloon_drop && player->mIsBalloon) {
+            ntr::input_test_controls(true,0x100,0,0);
+            return true;
+        }
+        if(wdw_timed_route && x==1035 && y==-1550 && z==450 && jump==1 &&
+           player->mIsAirborne && player->mPosX<960*4096 &&
+           player->mPosY< -1550*4096 && std::abs(dz)<150*4096.0) {
+            // A single jump can clear both edges. Continue toward the street
+            // if Mario is already descending outside the roof's outer wall.
+            ++waypoint;
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        if(wdw_timed_route && x==-1150 && y==-2200 && z==-189 && jump==0) {
+            // Finish coasting west before turning toward the brick. A
+            // running turnaround arcs off this 125-unit-wide roof.
+            static bool stopped=false;
+            if(!stopped && (player->mIsAirborne || player->mHorzSpeed!=0)) {
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            stopped=true;
+            const bool on_roof=player->mMeshClsn.IsOnGround() && std::abs(dy)<15*4096;
+            const bool facing_brick=std::abs(static_cast<int16_t>(player->mAngleY-0x4000))<1200;
+            if(on_roof && horizontal>radius*4096.0) {
+                const double angle=1.5707963267948966-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const uint16_t attack=facing_brick && dx>0 && dx<200*4096 ?
+                    replay_route_window_buttons(waypoint) : 0;
+                const int magnitude=facing_brick ? 14000 : 8500;
+                ntr::input_test_controls(true,attack,static_cast<int16_t>(std::sin(angle)*magnitude),
+                    static_cast<int16_t>(-std::cos(angle)*magnitude));
+                return true;
+            }
+        }
+        // The crossbar roof is only 125 units deep. Release the stick on the
+        // way down so normal air deceleration keeps Mario over the roof.
+        if(wdw_timed_route && x==-165 && y==-2200 && z==-190 && jump==2) {
+            static uint64_t jump_tick=0;
+            const bool grounded=player->mMeshClsn.IsOnGround();
+            if(grounded && std::abs(dy)<15*4096 && player->mPosZ>=-250*4096 &&
+               player->mPosZ<=-125*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native WDW crossbar] landed tick=%llu pos=%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ);
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            if(!jump_tick && grounded && player->mPosZ>=-940*4096 &&
+               player->mPosZ<=-750*4096 && !std::strcmp(state,"St_Walk_Main"))
+                jump_tick=tick;
+            const bool brake=jump_tick && player->mPosZ>=-355*4096;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int magnitude=brake ? 0 : 24500;
+            ntr::input_test_controls(true,jump_tick && tick-jump_tick<26 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*magnitude),
+                static_cast<int16_t>(-std::cos(angle)*magnitude));
+            return true;
+        }
+        // The Downtown roof is higher than a standing jump from the top
+        // timed step. This waypoint requests an ordinary crouch/backflip.
+        if(wdw_timed_route && x==-2810 && y==-1550 && z==2710 && jump==2) {
+            static bool stopped_on_step=false,launched=false;
+            const auto steer=[&](double world_angle,int magnitude) {
+                const double angle=world_angle-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*magnitude),
+                                         static_cast<int16_t>(-std::cos(angle)*magnitude));
+            };
+            if(player->mMeshClsn.IsOnGround() && player->mPosY>=-1560*4096 &&
+               player->mPosX< -2750*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native WDW roof] landed tick=%llu pos=%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ);
+            } else if(!std::strcmp(state,"St_LedgeHang_Main")) {
+                ntr::input_test_controls(true,tick%12<6 ? 2 : 0,0,0);
+                return true;
+            } else if(player->mState==&data_ov002_0211052c) {
+                if(!launched) {
+                    launched=true;
+                    std::fprintf(stderr,"[native WDW roof] backflip tick=%llu pos=%d,%d,%d heading=%d\n",
+                        static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ,
+                        int(player->mPrevAngleY));
+                }
+                if(player->mPosX> -2830*4096 && player->mPosY> -1760*4096) {
+                    steer(std::atan2(dx,dz),22000);
+                    return true;
+                }
+            } else if(!launched && player->mMeshClsn.IsOnGround() &&
+                      std::abs(player->mPosY+1999*4096)<12*4096) {
+                if(player->mHorzSpeed==0) stopped_on_step=true;
+                if(stopped_on_step && std::abs(static_cast<int16_t>(player->mAngleY-0x4000))>1800) {
+                    steer(1.5707963267948966,8500);
+                    return true;
+                }
+                if(player->mHorzSpeed==0) {
+                    ntr::input_test_controls(true,!std::strcmp(state,"St_Crouch_Main") ? 0x102 : 0x100,0,0);
+                    return true;
+                }
+            }
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        // At the Downtown cannon Buddy, keep ordinary confirm input active
+        // until the authored shutter reports that it has opened.
+        if(level==21 && x==-400 && y==3500 && z==-3650 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_WDW_HIGH_ENTRY") && horizontal<210*4096.0 &&
+           std::abs(dy)<120*4096.0) {
+            for(auto *actor=dActor_c::FindWithActorID(14,nullptr);actor;
+                actor=dActor_c::FindWithActorID(14,actor)) {
+                if(actor->aliveState!=1 || actor->mAreaId!=0)continue;
+                if(static_cast<daObjCannonShutter_c *>(actor)->mCannonOpen) {
+                    ++waypoint;
+                    std::fprintf(stderr,"[native WDW cannon] shutter open tick=%llu\n",
+                                 static_cast<unsigned long long>(tick));
+                    ntr::input_test_controls(true,0,0,0);
+                    return true;
+                }
+            }
+            ntr::input_test_controls(true,tick%32<6 ? 1 : 0,0,0);
+            return true;
+        }
+        // The Mission 3 replay jumps under the cage block and waits for the
+        // native secret Star before leaving the roof for its landing marker.
+        const bool wdw_secret_star=level==21 && std::getenv("SM64DS_PC_TEST_WDW_SECRET_STAR");
+        const bool wdw_plank_jump=wdw_secret_star && jump==2 &&
+            ((z==3312 && (x==2187 || x==1562 || x==1187)) || (x==1187 && z==2687));
+        if(wdw_plank_jump && Event::GetBit(0)) {
+            const auto *floor=player->mMeshClsn.IsOnGround()
+                ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *owner=floor && floor->colliderIdx<24 ? floor->owner : nullptr;
+            const bool onPlank=owner && owner->actorID==98;
+            if(onPlank && owner->mPosX==x*4096 && owner->mPosZ==z*4096) {
+                std::fprintf(stderr,"[native WDW plank crossing] waypoint=%u uid=%u tick=%llu\n",
+                    waypoint,owner->uniqueID,static_cast<unsigned long long>(tick));
+                ++waypoint;
+                settle_until=tick+24;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=player->mIsAirborne && horizontal<95*4096.0 ? 0 : 32767;
+            const bool takeoff=onPlank && !player->mIsAirborne &&
+                !std::strcmp(state,"St_Walk_Main") && player->mHorzSpeed>=10*4096 &&
+                (std::max)(std::abs(player->mPosX-owner->mPosX),
+                           std::abs(player->mPosZ-owner->mPosZ))>=90*4096;
+            ntr::input_test_controls(true,takeoff || player->mState==&data_ov002_0211052c ||
+                !std::strcmp(state,"St_Jump_Main") ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        if(wdw_secret_star && x==900 && y==3750 && z==-1750 && jump==2) {
+            for(auto *a=dActor_c::FindWithActorID(178,nullptr);a;a=dActor_c::FindWithActorID(178,a)) {
+                if(a->aliveState!=1 || a->param1!=0x43)continue;
+                std::fprintf(stderr,"[native WDW secret Star] tick=%llu uid=%u\n",
+                    static_cast<unsigned long long>(tick),a->uniqueID);
+                ++waypoint;
+                settle_until=tick+180;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+        }
+        // The southwest block has a proven backflip path from the pushed block.
+        const bool cageCoinBlock=x==900 && y==3750 && z==-1750;
+        const bool southwestCoinBlock=x==-3550 && y==625 && z==4050;
+        const bool northwestCoinBlock=x==-2050 && y==2900 && z==-3550;
+        if(level==21 && player->mAreaId==0 && (cageCoinBlock || southwestCoinBlock || northwestCoinBlock) && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_WDW_CAGE_COINS")) {
+            static bool sawBlock=false;
+            static uint64_t nextJump=0;
+            static unsigned blockWaypoint=~0u;
+            if(blockWaypoint!=waypoint) {
+                blockWaypoint=waypoint;
+                // The southwest approach can open the block during the
+                // backflip before this waypoint takes control.
+                sawBlock=southwestCoinBlock;
+                nextJump=0;
+            }
+            const dActor_c *block=nullptr;
+            const unsigned coinParam=northwestCoinBlock ? 0x0300 : 0x0a00;
+            for(auto *actor=dActor_c::FindWithActorID(21,nullptr);actor;
+                actor=dActor_c::FindWithActorID(21,actor)) {
+                if(actor->aliveState==1 && actor->param1==coinParam &&
+                   actor->mPosX==x*4096 && actor->mPosZ==z*4096) {
+                    block=actor;
+                    sawBlock=true;
+                    break;
+                }
+            }
+            if(block && horizontal<34*4096.0) {
+                if(northwestCoinBlock && !std::strcmp(state,"St_Swim_Main")) {
+                    // Surface jump directly under the original box. The water
+                    // must remain below its underside for a hit to count.
+                    ntr::input_test_controls(true,tick%70<18 ? 2 : 0,0,0);
+                    return true;
+                }
+                const bool jumpReady=!player->mIsAirborne && !player->mHorzSpeed &&
+                    !std::strcmp(state,"St_Wait_Main");
+                if(jumpReady && tick>=nextJump)nextJump=tick+70;
+                ntr::input_test_controls(true,nextJump && tick+59<nextJump ? 2 : 0,0,0);
+                return true;
+            }
+            if(!block && sawBlock) {
+                const dActor_c *coin=nullptr;
+                double best=1100*4096.0;
+                for(auto *actor=dActor_c::FindWithActorID(288,nullptr);actor;
+                    actor=dActor_c::FindWithActorID(288,actor)) {
+                    if(actor->aliveState!=1 || actor->param1!=2 || actor->mAreaId!=0)continue;
+                    if(cageCoinBlock && (actor->mPosY<3440*4096 || actor->mPosX<635*4096 ||
+                       actor->mPosX>1135*4096 || actor->mPosZ< -2080*4096 || actor->mPosZ> -1260*4096))continue;
+                    if(!cageCoinBlock && (std::abs(actor->mPosX-x*4096)>700*4096 ||
+                       std::abs(actor->mPosZ-z*4096)>700*4096))continue;
+                    const double distance=std::hypot(double(actor->mPosX)-player->mPosX,
+                                                     double(actor->mPosZ)-player->mPosZ);
+                    if(distance<best){best=distance;coin=actor;}
+                }
+                if(!coin) {
+                    if(cageCoinBlock)
+                        std::fprintf(stderr,"[native WDW cage coins] roof payout ended tick=%llu total=%d\n",
+                            static_cast<unsigned long long>(tick),int(data_0209f358[0]));
+                    else
+                        std::fprintf(stderr,"[native WDW west coins] x=%d z=%d payout ended tick=%llu total=%d\n",
+                            x,z,static_cast<unsigned long long>(tick),int(data_0209f358[0]));
+                    ++waypoint;
+                }
+                const double angle=coin ? std::atan2(double(coin->mPosX)-player->mPosX,
+                    double(coin->mPosZ)-player->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0 : 0;
+                const int stick=coin && best>36*4096.0 ? 16000 : 0;
+                if(coin && !std::strcmp(state,"St_Swim_Main")) {
+                    const auto yaw=static_cast<int16_t>(std::atan2(double(coin->mPosX)-player->mPosX,
+                        double(coin->mPosZ)-player->mPosZ)*65536.0/6.283185307179586);
+                    const auto delta=static_cast<int16_t>(yaw-player->mAngleY);
+                    const int steer=int(delta)-int(player->mAngleYSpeed)*6;
+                    uint16_t input=steer>768 ? 0x20 : steer< -768 ? 0x10 : 0;
+                    if(coin->mPosY<player->mPosY-25*4096)input|=0x40;
+                    if(coin->mPosY>player->mPosY+70*4096)input|=0x80;
+                    if(std::abs(int(delta))<0x2000 && tick%24<12)input|=2;
+                    ntr::input_test_controls(true,input,0,0);
+                } else {
+                    ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*stick),
+                        static_cast<int16_t>(-std::cos(angle)*stick));
+                }
+                return true;
+            }
+        }
+        if(wdw_secret_star && x==3305 && y==1250 && z==825 && jump==1) {
+            static bool jumped=false;
+            static bool reentered=false;
+            if(reentered!=replay_lava_bridge_reentered) {
+                reentered=replay_lava_bridge_reentered;
+                jumped=false;
+            }
+            if(!jumped && !std::strcmp(state,"St_Jump_Main")) {
+                jumped=true;
+                std::fprintf(stderr,"[native WDW board jump] tick=%llu pos=%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ);
+            }
+            if(!jumped) {
+                const bool ready=!player->mIsAirborne && !std::strcmp(state,"St_Wait_Main");
+                ntr::input_test_controls(true,ready ? 2 : 0,0,0);
+                return true;
+            }
+            if(player->mIsAirborne && !std::strcmp(state,"St_Jump_Main")) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const int magnitude=horizontal>40*4096.0 ? 32767 : 0;
+                ntr::input_test_controls(true,2,static_cast<int16_t>(std::sin(angle)*magnitude),
+                    static_cast<int16_t>(-std::cos(angle)*magnitude));
+                return true;
+            }
+        }
         const char *fine=std::getenv("SM64DS_PC_TEST_ROUTE_FINE_SETTLE");
         const bool fine_settle=precise && radius<=10 && fine && !std::strcmp(fine,"1");
         if(slide_route && !std::strcmp(slide_route,"1") &&
@@ -2399,10 +2930,32 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // The Top o' the Town step is taller than a standing jump. Wait for
         // Mario to stop facing away, then use his ordinary backflip and steer
         // onto the middle of the raised walkway.
-        if(level==21 && ((x==-2200 && z==-2160) || (x==1110 && z==800) || (x==-3540 && z==4000) || (x==890 && z==3370) || (x==625 && (z==3370 || z==3625))) &&
+        const bool cage_backflip=level==21 && x==975 && y==600 && (z==-1510 || z==-1620) &&
+            std::getenv("SM64DS_PC_TEST_WDW_HEAVE_HO_ASCENT");
+        if(level==21 && (cage_backflip || (x==-2200 && z==-2160) || (x==1110 && z==800) || (x==-3540 && z==4000) || (x==890 && z==3370) || (x==625 && (z==3370 || z==3625))) &&
            std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP")) {
             static unsigned launched_waypoint=~0u;
+            static bool reentered=false;
+            if(reentered!=replay_lava_bridge_reentered) {
+                reentered=replay_lava_bridge_reentered;
+                launched_waypoint=~0u;
+            }
             const bool launched=launched_waypoint==waypoint;
+            if(cage_backflip && !std::strcmp(state,"St_LedgeHang_Main")) {
+                ntr::input_test_controls(true,tick%12<6 ? 2 : 0,0,0);
+                return true;
+            }
+            if(cage_backflip && launched && !std::strcmp(state,"St_Wait_Main") &&
+               player->mMeshClsn.IsOnGround()) {
+                const auto *floor=static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult());
+                if(floor && floor->colliderIdx<24 && floor->owner && floor->owner->actorID==99) {
+                    ++waypoint;
+                    std::fprintf(stderr,"[native WDW cage] climbed onto lift tick=%llu\n",
+                                 static_cast<unsigned long long>(ntr::rt_frame()));
+                    ntr::input_test_controls(true,0,0,0);
+                    return true;
+                }
+            }
             if(player->mState==&data_ov002_0211052c) {
                 if(!launched) {
                     launched_waypoint=waypoint;
@@ -2421,6 +2974,19 @@ static bool replay_course_route(const char *route_override=nullptr) {
                     !std::strcmp(state,"St_Wait_Main") ? 0x100 : 0;
                 ntr::input_test_controls(true,input,0,0);
                 return true;
+            }
+        }
+        if(level==21 && x==900 && y==3325 && z==-1900 &&
+           std::getenv("SM64DS_PC_TEST_WDW_HEAVE_HO_ASCENT")) {
+            static bool launched=false;
+            if(!launched) {
+                if(player->mIsAirborne) launched=true;
+                else {
+                    const bool ready=player->mPosY>=3180*4096 &&
+                        !std::strcmp(state,"St_Wait_Main");
+                    ntr::input_test_controls(true,ready ? 2 : 0,0,0);
+                    return true;
+                }
             }
         }
         // Start running while the disc is still bringing Mario around the
@@ -2467,8 +3033,71 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // Original swimming steers heading/pitch directly. Opt-in QA routes
         // use ordinary D-pad/stroke buttons; never write pose or player state.
         const char *swim_route=std::getenv("SM64DS_PC_TEST_SWIM_ROUTE");
+        const bool soaked_low_diamond=level==21 && player->mAreaId==0 &&
+            x==1850 && y==45 && z==-3100 &&
+            std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP") &&
+            std::getenv("SM64DS_PC_TEST_BLOCK_INTERACTION");
+        if(soaked_low_diamond) {
+            const auto *water=static_cast<const daObjWc_Mizu_c *>(dActor_c::FindWithActorID(101,nullptr));
+            if(water && water->mTargetPosY==45*4096) {
+                if(water->mPosY==water->mTargetPosY) {
+                    ++waypoint;
+                    std::fprintf(stderr,"[native WDW low diamond] settled tick=%llu\n",
+                        static_cast<unsigned long long>(tick));
+                }
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+        }
+        // Use the ordinary jump and crouch inputs once stopped over the switch.
+        if(level==21 && x==500 && y==375 && z==0 &&
+           std::getenv("SM64DS_PC_TEST_WDW_BLUE_SWITCH")) {
+            const auto *coinSwitch=static_cast<const daObjBC_Switch_c *>(dActor_c::FindWithActorID(10,nullptr));
+            if(coinSwitch && coinSwitch->mCoinTimer>0) {
+                ++waypoint;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            if(coinSwitch && horizontal<240*4096.0) {
+                static bool jumped=false;
+                static uint64_t firstLanding=0;
+                if(jumped && !player->mIsAirborne && player->mPosY>425*4096 && horizontal<90*4096.0 && !firstLanding) {
+                    firstLanding=tick;
+                    std::fprintf(stderr,"[native WDW blue switch] ordinary landing tick=%llu\n",static_cast<unsigned long long>(tick));
+                }
+                const auto elapsed=firstLanding ? tick-firstLanding : 0;
+                const bool pound=firstLanding && elapsed>=44 && elapsed<65 && player->mIsAirborne;
+                const bool jump=firstLanding ? elapsed>=28 && elapsed<44 : true;
+                if(player->mIsAirborne)jumped=true;
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const int stick=firstLanding || horizontal<52*4096.0 ? 0 : player->mIsAirborne ? 17500 : 12500;
+                ntr::input_test_controls(true,pound ? 0x100 : jump ? 2 : 0,
+                    static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+                return true;
+            }
+        }
         if(has_y && swim_route && !std::strcmp(swim_route,"1") &&
-           !std::strcmp(state,"St_Swim_Main")) {
+            !std::strcmp(state,"St_Swim_Main")) {
+            // For Mission 7, advance a Silver Star waypoint once its
+            // original collection animation has returned control.
+            if(level==21 &&
+               ((x==2200 && y==1200 && z==-2450) ||
+                (x==1600 && y==1850 && z==2300) ||
+                (x==-750 && y==2275 && z==2190))) {
+                for(auto *actor=dActor_c::FindWithActorID(179,nullptr);actor;
+                    actor=dActor_c::FindWithActorID(179,actor)) {
+                    if(actor->mAreaId!=0 || (actor->param1&0x7f)!=7 ||
+                       std::abs(actor->mPosX-x*4096)>100*4096 ||
+                       std::abs(actor->mPosZ-z*4096)>100*4096)
+                        continue;
+                    if(static_cast<const daStar_c *>(actor)->mState==7) {
+                        ++waypoint;
+                        ntr::input_test_controls(true,0,0,0);
+                        return true;
+                    }
+                    break;
+                }
+            }
             const short desired_yaw=static_cast<short>(std::atan2(dx,dz)*65536.0/6.283185307179586);
             const short delta=static_cast<short>(desired_yaw-player->mAngleY);
             const int steer=int(delta)-int(player->mAngleYSpeed)*6;
@@ -2480,7 +3109,38 @@ static bool replay_course_route(const char *route_override=nullptr) {
             if(pitch_error>1536)swim_buttons|=0x40;
             if(pitch_error< -1536)swim_buttons|=0x80;
             if(std::abs(int(delta))<0x2000 && tick%24<12)swim_buttons|=2;
-            if(horizontal<=radius*4096.0 && std::abs(dy)<=120*4096.0) {
+            if(level==21 && x==1700 && y==-1550 && z==1000 && jump==2) {
+                bool brick_present=false;
+                for(auto *actor=dActor_c::FindWithActorID(15,nullptr);actor;
+                    actor=dActor_c::FindWithActorID(15,actor)) {
+                    if(actor->aliveState==1 && actor->mAreaId==1 &&
+                       actor->mPosX==1700*4096 && actor->mPosZ==1000*4096) {
+                        brick_present=true;
+                        break;
+                    }
+                }
+                if(brick_present && horizontal<290*4096.0 && std::abs(int(delta))<0x1300 &&
+                   std::abs(dy)<160*4096.0) {
+                    swim_buttons&=~2;
+                    swim_buttons|=replay_route_window_buttons(waypoint);
+                }
+                if(brick_present) {
+                    ntr::input_test_controls(true,swim_buttons,0,0);
+                    return true;
+                }
+            }
+            // Use the ordinary surface jump at the Downtown shaft lip.
+            // The forward stick enables the jump even before wall contact.
+            const bool cannon_ramp=level==21 && x==-2625 && z==3650 && jump==1 &&
+                std::abs(player->mPosX+2625*4096)<135*4096 && player->mPosZ>3740*4096;
+            if(cannon_ramp && player->mPosY>=2610*4096 &&
+               std::abs(int(delta))<0x900) {
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                ntr::input_test_controls(true,tick%12<6 ? 2 : 0,
+                    static_cast<int16_t>(std::sin(angle)*25000),static_cast<int16_t>(-std::cos(angle)*25000));
+                return true;
+            }
+            if(!soaked_low_diamond && horizontal<=radius*4096.0 && std::abs(dy)<=120*4096.0) {
                 std::fprintf(stderr,"[native swim route] reached waypoint=%u tick=%llu\n",waypoint,static_cast<unsigned long long>(tick));
                 ++waypoint;
             }
@@ -2498,7 +3158,15 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 block_actor!=20 && block_actor!=21 && block_actor!=46))
                 block_level=-1;
         }
-        if(block_replay && !std::strcmp(block_replay,"1") && level==block_level) {
+        const bool soaked_brick=level==21 && block_actor==15 &&
+            std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP");
+        if(block_replay && !std::strcmp(block_replay,"1") && level==block_level &&
+           (!soaked_brick || (x==4400 && y==0 && z==1000))) {
+            if(soaked_brick && data_0209f310[0]>=5) {
+                ++waypoint;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
             dActor_c *block=nullptr;double block_distance=1e100;
             for(auto *candidate=dActor_c::FindWithActorID(block_actor,nullptr);candidate;
                 candidate=dActor_c::FindWithActorID(block_actor,candidate)) {
@@ -2506,6 +3174,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 const double by=double(candidate->mPosY)-player->mPosY;
                 const double bz=double(candidate->mPosZ)-player->mPosZ;
                 if(candidate->aliveState!=1 || std::abs(by)>700*4096.0)continue;
+                if(soaked_brick && (candidate->mAreaId!=0 ||
+                    candidate->mPosX!=4400*4096 || candidate->mPosZ!=1000*4096))continue;
                 const double distance=std::hypot(bx,bz);
                 if(distance<block_distance){block=candidate;block_distance=distance;}
             }
@@ -2560,11 +3230,18 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 const bool direct_ground_pound=pound_from_floor && !std::strcmp(pound_from_floor,"1");
                 static bool direct_pound_pending=false;
                 static uint64_t direct_next_jump=0,direct_r_until=0;
+                if(direct_ground_pound && direct_pound_pending && !player->mIsAirborne &&
+                   tick>=direct_next_jump)direct_pound_pending=false;
                 if(direct_ground_pound && !direct_pound_pending && !player->mIsAirborne && grounded_state &&
                    block_distance<180*4096.0 && tick>=direct_next_jump) {
+                    sx=sy=0;
                     buttons=2; // Ordinary jump, followed by the DS R ground-pound input in air.
                     direct_pound_pending=true;
                     direct_next_jump=tick+180;
+                } else if(direct_ground_pound && direct_pound_pending && !player->mIsAirborne &&
+                          tick+172<direct_next_jump) {
+                    sx=sy=0;
+                    buttons=2;
                 } else if(direct_ground_pound && player->mIsAirborne && direct_pound_pending &&
                           !std::strcmp(state,"St_Jump_Main")) {
                     buttons=0x100;
@@ -2655,15 +3332,42 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // a wide gap. Never change player position, velocity or actor state.
         static uint64_t route3_launch=0;
         static bool route3_jump_command=false,route3_long_jump=false;
+        static unsigned downtown_gap_waypoint=~0u;
         if(jump==3) {
             const bool wdw_gap=level==21 && x==-1550 && z==-3550 &&
                 std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP");
-            const bool runway=wdw_gap ?
-                player->mPosX<=-405*4096 && player->mPosY>=3490*4096 &&
-                player->mHorzSpeed>0xb000 :
-                horizontal<1600*4096.0 && player->mHorzSpeed>0x18000;
-            if(runway && !player->mIsAirborne &&
-               !std::strcmp(state,"St_Walk_Main") && (wdw_gap ? !route3_launch : tick>=next_jump)) {
+            const bool downtown_gap=wdw_timed_route && x==-3560 && y==-1425 && z==750;
+            const bool downtown_northwest=wdw_timed_route && x==-2425 && y==-2015 && z==-1050;
+            const bool downtown_north=wdw_timed_route && x==-550 && y==-2050 && z==-1230;
+            const bool downtown_crossbars=wdw_timed_route && x==-1475 && y==-2200 && z==-189;
+            const bool downtown_roofs=downtown_gap || downtown_northwest || downtown_north || downtown_crossbars;
+            if(downtown_roofs && downtown_gap_waypoint!=waypoint) {
+                downtown_gap_waypoint=waypoint;
+                route3_launch=0;
+                route3_jump_command=route3_long_jump=false;
+            }
+            bool runway=horizontal<1600*4096.0 && player->mHorzSpeed>0x18000;
+            if(wdw_gap)
+                runway=player->mPosX<=-405*4096 && player->mPosY>=3490*4096 &&
+                    player->mHorzSpeed>0xb000;
+            if(downtown_gap)
+                runway=player->mPosZ<=1865*4096 && player->mPosZ>=1750*4096 &&
+                    player->mPosY>=-1450*4096 && player->mHorzSpeed>0x18000;
+            if(downtown_northwest)
+                runway=player->mPosZ<=275*4096 && player->mPosZ>=180*4096 &&
+                    player->mPosX< -3500*4096 && player->mPosY>=-1435*4096 &&
+                    player->mHorzSpeed>0x16000;
+            if(downtown_north)
+                runway=player->mPosX>=-2160*4096 && player->mPosX<=-1250*4096 &&
+                    player->mPosY>=-1940*4096 && player->mHorzSpeed>0x10000 &&
+                    std::abs(static_cast<int16_t>(player->mAngleY-0x4000))<3500;
+            if(downtown_crossbars)
+                runway=player->mPosX<=-375*4096 && player->mPosX>=-500*4096 &&
+                    std::abs(player->mPosY+2200*4096)<15*4096 &&
+                    player->mHorzSpeed>0xb000 &&
+                    std::abs(static_cast<int16_t>(player->mAngleY-0xc000))<2200;
+            const bool may_launch=(wdw_gap || downtown_roofs) ? !route3_launch : tick>=next_jump;
+            if(runway && may_launch && !player->mIsAirborne && !std::strcmp(state,"St_Walk_Main")) {
                 route3_launch=tick;next_jump=tick+100;
                 route3_jump_command=false;route3_long_jump=false;
                 std::fprintf(stderr,"[native trapdoor replay] runway tick=%llu speed=%d\n",
@@ -2754,7 +3458,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
             char *end=nullptr;const long distance=std::strtol(value,&end,10);
             if(end && !*end && distance>=64 && distance<=1200)jump_range=distance;
         }
-        if(jump==1 && horizontal<jump_range*4096.0 && tick>=next_jump &&
+        if(jump==1 && !(wdw_secret_star && x==3305 && y==1250 && z==825) &&
+           horizontal<jump_range*4096.0 && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") ||
             (!player->mIsAirborne && !std::strcmp(state,"St_OnWall_Main")))) {
             jump_until=tick+12;next_jump=tick+75;
@@ -2822,6 +3527,12 @@ static bool replay_course_route(const char *route_override=nullptr) {
             if(jump==3 || passing_chomp)magnitude=32767;
             sx=static_cast<int16_t>(std::sin(angle)*magnitude);
             sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+        }
+        // A long jump over the narrow crossbars needs a coast on the far
+        // half, before the stick would reverse direction over the gap.
+        if(wdw_timed_route && x==-1475 && y==-2200 && z==-189 && jump==3 &&
+           route3_long_jump && player->mIsAirborne && player->mPosX<=-1200*4096) {
+            sx=sy=0;
         }
         // Optional maze trapdoor QA: retail stick braking gives a real rider
         // callback, then a running jump leaves the tilting floor for its bank.
@@ -2974,6 +3685,7 @@ static bool replay_lava_bridge_lifecycle() {
     }
     if(!phase) {
         if(!replay_course_route_complete)return false;
+        if(course_level==21 && Event::GetBit(0))return false;
         if(course_level==35 && !replay_dark_world_extending_cross_settled)return false;
         if(std::getenv("SM64DS_PC_TEST_UDLIFT_RETURN") && !replay_udlift_return_complete)return false;
         if(std::getenv("SM64DS_PC_TEST_RAINBOW_LIFT_RETURN") && !replay_rainbow_lift_return_complete)return false;
@@ -2994,7 +3706,7 @@ static bool replay_lava_bridge_lifecycle() {
     uint16_t buttons=0;int16_t sx=0,sy=0;
     auto controls=[&](){ntr::input_test_controls(true,buttons,sx,sy);return true;};
     if(phase==1) {
-        if((data_0209f2f8==2 || data_0209f2f8==4) && ready) {
+        if((data_0209f2f8==2 || data_0209f2f8==4 || (course_level==21 && data_0209f2f8==5)) && ready) {
             phase=2;event("castle-return");
             const char *crate_mode=std::getenv("SM64DS_PC_TEST_CRATE");
             if(crate_mode && !std::strcmp(crate_mode,"pound-reentry"))++pc_crate_reentry_epoch;
@@ -3010,11 +3722,12 @@ static bool replay_lava_bridge_lifecycle() {
         unsigned selected=0,selectionPhase=0,selectionMode=0,confirmed=0,selectionReady=0;
         if(pc_star_select_status(&selected,&selectionPhase,&selectionMode,&confirmed,&selectionReady)) {
             if(course_level==28 && std::getenv("SM64DS_PC_TEST_RAINBOW_CASTLE_ENTRY"))return replay_rainbow_castle_entry();
-            const unsigned target=std::getenv("SM64DS_PC_TEST_OWL_CYCLE") ? unsigned(pc_test_mission()-1):0;
+            const bool select_mission=course_level==21 || std::getenv("SM64DS_PC_TEST_OWL_CYCLE");
+            const unsigned target=select_mission ? unsigned(pc_test_mission()-1):0;
             if(selectionReady && !confirmed && selectionMode==0 && tick%20<3)
-                buttons=selected==target && selectionPhase==2?1:0x20;
+                buttons=selected==target && selectionPhase==2?1:course_level==21 && selected<target?0x10:0x20;
             else if(selectionReady && !confirmed && selectionMode==2 && selected==target &&
-                    std::getenv("SM64DS_PC_TEST_OWL_CYCLE") && tick%20<3)
+                    select_mission && tick%20<3)
                 buttons=1; // Original Yoshi character choice needs a second confirm edge.
             return controls();
         }
@@ -3566,6 +4279,283 @@ static bool replay_rabbit_controls() {
     return true;
 }
 
+static bool replay_wdw_skeeter_contact() {
+    if (!std::getenv("SM64DS_PC_TEST_SKEETER_CONTACT") || data_0209f2f8 != 21 ||
+        !replay_course_route_complete || data_0209d660)
+        return false;
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1 || player->mAreaId != 0)
+        return false;
+
+    static unsigned targetId = 0;
+    static int initialHealth = -1;
+    static uint64_t damageTick = 0;
+    static bool recovered = false;
+    const auto tick = ntr::rt_frame();
+    const char *state = pc_player_state_name(player);
+    const int health = player->GetHealth();
+    if (!targetId) {
+        double nearest = 1000 * 4096.0;
+        for (auto *a = dActor_c::FindWithActorID(230, nullptr); a;
+             a = dActor_c::FindWithActorID(230, a)) {
+            if (a->mAreaId != 0 || a->aliveState != 1) continue;
+            const double distance = std::hypot(double(a->mPosX) - player->mPosX,
+                                               double(a->mPosZ) - player->mPosZ);
+            if (distance >= nearest) continue;
+            nearest = distance;
+            targetId = a->uniqueID;
+        }
+        if (!targetId) return false;
+        initialHealth = health;
+        std::fprintf(stderr, "[skeeter test] approach tick=%llu target=%u player=%u health=%d\n",
+                     static_cast<unsigned long long>(tick), targetId, unsigned(player->uniqueID), health);
+    }
+
+    const auto *target = static_cast<const daMenbo_c *>(dActor_c::FindWithID(targetId));
+    if (!target || target->aliveState != 1) return false;
+    const auto &collider = target->mdCcAcPos_c;
+    const double distance = std::hypot(double(target->mPosX) - player->mPosX,
+                                       double(target->mPosZ) - player->mPosZ);
+    if (tick % 15 == 0 || collider.otherOwner == player->uniqueID) {
+        std::fprintf(stderr, "[skeeter test] sample tick=%llu target=%u owner=%u hit=%x dist=%.1f health=%d pending=%u state=%s x=%d y=%d z=%d\n",
+                     static_cast<unsigned long long>(tick), targetId, unsigned(collider.otherOwner),
+                     unsigned(collider.hitFlags), distance / 4096.0, health,
+                     unsigned(player->mHurtDamage), state, player->mPosX, player->mPosY, player->mPosZ);
+    }
+    if (!damageTick && health < initialHealth) {
+        damageTick = tick;
+        std::fprintf(stderr, "[skeeter test] damage tick=%llu target=%u health=%d\n",
+                     static_cast<unsigned long long>(tick), targetId, health);
+    }
+    const bool swimming = !std::strcmp(state, "St_Swim_Main") &&
+                          !player->mIsControlDisabled && !player->mIsNoControl;
+    if (damageTick && swimming && distance > 420 * 4096.0 && tick > damageTick + 60 && !recovered) {
+        recovered = true;
+        std::fprintf(stderr, "[skeeter test] recovered tick=%llu target=%u dist=%.1f health=%d\n",
+                     static_cast<unsigned long long>(tick), targetId, distance / 4096.0, health);
+    }
+    uint16_t buttons = 0;
+    if (swimming && !recovered) {
+        const double aimX = damageTick ? 2460 * 4096.0 : target->mPosX;
+        const double aimZ = damageTick ? -1490 * 4096.0 : target->mPosZ;
+        const double dx = aimX - player->mPosX;
+        const double dz = aimZ - player->mPosZ;
+        const auto yaw = static_cast<int16_t>(std::atan2(dx, dz) * 65536.0 / 6.283185307179586);
+        const auto delta = static_cast<int16_t>(yaw - player->mAngleY);
+        const int steer = int(delta) - int(player->mAngleYSpeed) * 6;
+        buttons = steer > 768 ? 0x20 : steer < -768 ? 0x10 : 0;
+        if (player->mPosY < target->mPosY - 125 * 4096) buttons |= 0x80;
+        if (std::abs(int(delta)) < 0x2000 && tick % 24 < 12) buttons |= 2;
+    }
+    ntr::input_test_controls(true, buttons, 0, 0);
+    return true;
+}
+
+// Ordinary attack and movement inputs against the original low-water enemy.
+static bool replay_wdw_skeeter_attack() {
+    if (!std::getenv("SM64DS_PC_TEST_SKEETER_ATTACK") || data_0209f2f8 != 21 ||
+        data_0209d660)
+        return false;
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1 || player->mAreaId != 0) return false;
+
+    static unsigned targetId = 0;
+    static bool started = false;
+    static uint64_t punchTick = 0;
+    static int coinBaseline = -1;
+    const auto tick = ntr::rt_frame();
+    const char *state = pc_player_state_name(player);
+    auto controls = [](uint16_t keys = 0, int16_t x = 0, int16_t y = 0) {
+        ntr::input_test_controls(true, keys, x, y);
+        return true;
+    };
+    auto steer = [&](double dx, double dz, double magnitude) {
+        const double angle = std::atan2(dx, dz) - GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+        return controls(0, static_cast<int16_t>(std::sin(angle) * magnitude),
+                        static_cast<int16_t>(-std::cos(angle) * magnitude));
+    };
+
+    if (!targetId) {
+        for (auto *a = dActor_c::FindWithActorID(230, nullptr); a;
+             a = dActor_c::FindWithActorID(230, a)) {
+            const auto *candidate = static_cast<const daMenbo_c *>(a);
+            if (a->aliveState == 1 && a->mAreaId == 0 && candidate->unk_374 == 500 * 4096) {
+                targetId = a->uniqueID;
+                break;
+            }
+        }
+    }
+    if (!targetId || !replay_course_route_complete) return false;
+    if (!started) {
+        started = true;
+        coinBaseline = data_0209f358[0];
+        std::fprintf(stderr, "[skeeter attack] start tick=%llu target=%u player=%u coins=%d\n",
+            static_cast<unsigned long long>(tick), targetId, unsigned(player->uniqueID), coinBaseline);
+    }
+    const auto *target = static_cast<const daMenbo_c *>(dActor_c::FindWithID(targetId));
+    if (target && target->aliveState == 1) {
+        const double dx = double(target->mPosX) - player->mPosX;
+        const double dz = double(target->mPosZ) - player->mPosZ;
+        const double dy = double(target->mPosY) - player->mPosY;
+        const double distance = std::hypot(dx, dz);
+        const auto yaw = static_cast<int16_t>(std::atan2(dx, dz) * 65536.0 / 6.283185307179586);
+        const auto facing = static_cast<int16_t>(yaw - player->mAngleY);
+        const auto &collider = target->mdCcAcPos_c;
+        if (tick % 15 == 0 || collider.otherOwner == player->uniqueID) {
+            std::fprintf(stderr, "[skeeter attack] sample tick=%llu target=%u owner=%u hit=%x death=%d distance=%.1f dy=%.1f facing=%d state=%s health=%d target_pos=%d,%d,%d player_pos=%d,%d,%d\n",
+                static_cast<unsigned long long>(tick), targetId, unsigned(collider.otherOwner),
+                unsigned(collider.hitFlags), int(target->mDeathState), distance / 4096.0, dy / 4096.0,
+                int(facing), state, player->GetHealth(), target->mPosX, target->mPosY, target->mPosZ,
+                player->mPosX, player->mPosY, player->mPosZ);
+        }
+        if (target->mDeathState || player->mIsNoControl || player->mIsControlDisabled)
+            return controls();
+        if (punchTick && tick < punchTick + 8) return controls(chomp_replay_button(1));
+        if (player->mIsAirborne || !std::strcmp(state, "St_PunchKick_Main")) return controls();
+        if (distance < 220 * 4096.0 && std::abs(dy) < 110 * 4096.0 &&
+            std::abs(int(facing)) < 2600 && tick >= punchTick + 48) {
+            punchTick = tick;
+            std::fprintf(stderr, "[skeeter attack] punch tick=%llu distance=%.1f\n",
+                static_cast<unsigned long long>(tick), distance / 4096.0);
+            return controls(chomp_replay_button(1));
+        }
+        return steer(dx, dz, distance < 330 * 4096.0 ? 11800 : 22000);
+    }
+
+    const dActor_c *nearestCoin = nullptr;
+    double nearest = 1300 * 4096.0;
+    for (auto *a = dActor_c::FindWithActorID(288, nullptr); a;
+         a = dActor_c::FindWithActorID(288, a)) {
+        const auto *coin = static_cast<const daCoin_c *>(a);
+        if (a->aliveState != 1 || a->mAreaId != 0 || coin->param1 != 2 ||
+            (a->mFlags & 8) || std::abs(a->mPosY - player->mPosY) > 180 * 4096)
+            continue;
+        const double distance = std::hypot(double(a->mPosX) - player->mPosX,
+                                           double(a->mPosZ) - player->mPosZ);
+        if (distance >= nearest) continue;
+        nearest = distance;
+        nearestCoin = a;
+    }
+    if (nearestCoin && data_0209f358[0] < coinBaseline + 3)
+        return steer(double(nearestCoin->mPosX) - player->mPosX,
+                     double(nearestCoin->mPosZ) - player->mPosZ, 13000);
+    return controls();
+}
+
+static bool replay_wdw_flame_chomp_eat() {
+    if (!std::getenv("SM64DS_PC_TEST_FLAME_CHOMP_EAT") ||
+        data_0209f2f8 != 21 || !replay_course_route_complete)
+        return false;
+    auto *p = static_cast<Player *>(data_0209f394[0]);
+    if (!p || p->aliveState != 1 || p->mAreaId != 0 || p->mCharacter != 3) return false;
+    constexpr double unit = 4096.0;
+    const auto tick = ntr::rt_frame();
+    static unsigned targetId = 0;
+    static uint64_t attack = 0, breath = 0;
+    if (!targetId) {
+        for (auto *a = dActor_c::FindWithActorID(270, nullptr); a; a = dActor_c::FindWithActorID(270,a)) {
+            if (a->mPosX == -100*4096 && a->mPosZ == 1450*4096) {
+                targetId = a->uniqueID;
+                break;
+            }
+        }
+        if (!targetId) return false;
+    }
+    auto *a = static_cast<daKrpa_c *>(dActor_c::FindWithID(targetId));
+    const char *state = pc_player_state_name(p);
+    const bool inMouth = a && p->mObjInMouth == reinterpret_cast<std::intptr_t>(a);
+    if ((tick%10==0 && (!breath || tick < breath+150)) || inMouth) {
+        std::fprintf(stderr,"[flame chomp eat] tick=%llu target=%u alive=%u mouth=%u enemy_flags=%x enemy_state=%u hit=%x player_flags=%x charge=%u step=%u fire_particles=%d,%d health=%d state=%s pos=%d,%d,%d heading=%d\n",
+            static_cast<unsigned long long>(tick), targetId, a ? unsigned(a->aliveState) : 0,
+            inMouth ? targetId : 0, a ? unsigned(a->mFlags) : 0u,
+            a ? unsigned(a->mStateIndex) : 255u, a ? unsigned(a->mdCcAcPos_c.hitFlags) : 0u,
+            unsigned(p->mStateFlags), unsigned(p->unk_6f4), unsigned(p->mStateStep), p->mParticle1, p->mParticle2, p->GetHealth(), state, p->mPosX,p->mPosY,p->mPosZ,p->mAngleY);
+    }
+    uint16_t keys = 0;
+    int16_t x = 0, y = 0;
+    if (!a && !breath && p->unk_6f4 && !std::strcmp(state, "St_Wait_Main")) {
+        breath=tick;
+        std::fprintf(stderr,"[flame chomp eat] fire input tick=%llu charge=%u\n",
+            static_cast<unsigned long long>(tick), unsigned(p->unk_6f4));
+    }
+    if (breath && tick<breath+10) keys=chomp_replay_button(1);
+    if (!inMouth && a && a->aliveState==1 && !p->mIsAirborne && !p->mIsNoControl && !p->mIsControlDisabled) {
+        const double dx=double(a->mPosX)-p->mPosX, dz=double(a->mPosZ)-p->mPosZ;
+        const double distance=std::hypot(dx,dz);
+        const auto yaw=static_cast<int16_t>(std::atan2(dx,dz)*65536.0/6.283185307179586);
+        if (distance<260*unit && std::abs(int(static_cast<int16_t>(yaw-p->mAngleY)))<3200 &&
+            tick>=attack+60 && (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+            attack=tick;
+            std::fprintf(stderr,"[flame chomp eat] tongue input tick=%llu range=%.1f\n",
+                         static_cast<unsigned long long>(tick),distance/unit);
+        }
+        if (attack && tick<attack+10) keys=chomp_replay_button(1);
+        if (!attack || tick>=attack+50) {
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            x=static_cast<int16_t>(std::sin(angle)*12000);
+            y=static_cast<int16_t>(-std::cos(angle)*12000);
+        }
+    }
+    ntr::input_test_controls(true,keys,x,y);
+    return true;
+}
+
+static bool replay_wdw_flame_chomp_dodge() {
+    if (!std::getenv("SM64DS_PC_TEST_FLAME_CHOMP_DODGE") ||
+        data_0209f2f8 != 21 || !replay_course_route_complete)
+        return false;
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1 || player->mAreaId != 0) return false;
+
+    constexpr double unit = 4096.0;
+    const auto tick = ntr::rt_frame();
+    static unsigned shotId = 0;
+    static uint64_t dodgeAt = 0;
+    static bool cleanedUp = false;
+    const int health = player->GetHealth();
+    if (!shotId) {
+        for (auto *shot = dActor_c::FindWithActorID(271, nullptr); shot;
+             shot = dActor_c::FindWithActorID(271, shot)) {
+            if (shot->mAreaId != 0 || shot->aliveState != 1 ||
+                std::hypot(double(shot->mPosX)-player->mPosX, double(shot->mPosZ)-player->mPosZ) > 350*unit)
+                continue;
+            shotId = shot->uniqueID;
+            dodgeAt = tick;
+            std::fprintf(stderr, "[flame chomp dodge] launch tick=%llu shot=%u health=%d player=%d,%d,%d shot_pos=%d,%d,%d\n",
+                static_cast<unsigned long long>(tick), shotId, health, player->mPosX, player->mPosY,
+                player->mPosZ, shot->mPosX, shot->mPosY, shot->mPosZ);
+            break;
+        }
+    }
+    if (shotId) {
+        const auto *shot = dActor_c::FindWithID(shotId);
+        if (shot && tick%5==0) {
+            std::fprintf(stderr, "[flame chomp dodge] flight tick=%llu shot=%u health=%d player=%d,%d,%d shot_pos=%d,%d,%d\n",
+                static_cast<unsigned long long>(tick), shotId, health, player->mPosX, player->mPosY,
+                player->mPosZ, shot->mPosX, shot->mPosY, shot->mPosZ);
+        }
+        if (!shot && !cleanedUp) {
+            cleanedUp = true;
+            std::fprintf(stderr, "[flame chomp dodge] cleanup tick=%llu shot=%u health=%d\n",
+                         static_cast<unsigned long long>(tick), shotId, health);
+        }
+    }
+    uint16_t buttons = 0;
+    int16_t x = 0, y = 0;
+    if (dodgeAt && !player->mIsControlDisabled && !player->mIsNoControl) {
+        const double dx = 810*unit-player->mPosX;
+        const double dz = 1680*unit-player->mPosZ;
+        if (std::hypot(dx,dz) > 65*unit && tick < dodgeAt+175) {
+            const double angle = std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            x = static_cast<int16_t>(std::sin(angle)*26500);
+            y = static_cast<int16_t>(-std::cos(angle)*26500);
+        }
+        if (tick >= dodgeAt+8 && tick < dodgeAt+30) buttons = chomp_replay_button(2);
+    }
+    ntr::input_test_controls(true,buttons,x,y);
+    return true;
+}
+
 // Observe an original mission1 dropper, take a hit, then leave its range.
 static bool replay_waterbomb_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_WATERBOMB");
@@ -3930,8 +4920,43 @@ static bool replay_cannon_cycle_controls() {
 static bool replay_cannon_controls() {
     const char *mode=std::getenv("SM64DS_PC_TEST_CANNON");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    if(!mode || std::strcmp(mode,"fire") || !automation || std::strcmp(automation,"1"))return false;
+    if(!mode || !automation || std::strcmp(automation,"1"))return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);
+    const bool silver_reward=!std::strcmp(mode,"wdw-silver-reward");
+    if(!std::strcmp(mode,"wdw-downtown") || silver_reward) {
+        if(data_0209f2f8!=21 || !p || p->aliveState!=1 ||
+           std::strcmp(pc_player_state_name(p),"St_Cannon_Main") || p->mStateStep!=1)
+            return false;
+        // Aim with the native camera stick and fire using the original button.
+        const auto desired=static_cast<int16_t>(silver_reward ? -32768 :
+                     std::atan2(6525.0,-6325.0)*65536.0/6.283185307179586);
+        const auto yaw_error=static_cast<int16_t>(GetAngleToCamera(0)+0x8000-desired);
+        if(std::abs(int(yaw_error))>125) {
+            const int magnitude=(std::clamp)(std::abs(int(yaw_error))*8,12000,24000);
+            const auto stick=static_cast<int16_t>(yaw_error>0 ? magnitude : -magnitude);
+            ntr::input_test_controls(true,0,stick,0);
+        } else if(silver_reward && data_0209f318) {
+            // Use the northbound shot to return to Mario's Power Flower.
+            short pitch=0;
+            std::memcpy(&pitch,reinterpret_cast<const char *>(data_0209f318)+0x17e,2);
+            const int pitch_error=int(pitch)-7680;
+            if(std::abs(pitch_error)>135) {
+                const int magnitude=(std::clamp)(std::abs(pitch_error)*8,12000,24000);
+                ntr::input_test_controls(true,0,0,
+                    static_cast<int16_t>(pitch_error>0 ? magnitude : -magnitude));
+            } else {
+                std::fprintf(stderr,"[native WDW silver reward cannon] fire tick=%llu pitch=%d\n",
+                    static_cast<unsigned long long>(ntr::rt_frame()),int(pitch));
+                ntr::input_test_controls(true,1,0,0);
+            }
+        } else {
+            std::fprintf(stderr,"[native WDW cannon] fire tick=%llu yaw_error=%d\n",
+                         static_cast<unsigned long long>(ntr::rt_frame()),int(yaw_error));
+            ntr::input_test_controls(true,1,0,0);
+        }
+        return true;
+    }
+    if(std::strcmp(mode,"fire"))return false;
     if(data_0209f2f8!=6 || !p || p->aliveState!=1)return false;
     static unsigned target=0;
     static bool shot=false,done=false;
@@ -6958,7 +7983,7 @@ static bool trace_script_progress(uint64_t frame)
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())
-        if(!replay_firesea_first_platform() && !replay_dark_world_island_hold() && !replay_bowser_tail_controls() && !pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
+        if(!replay_firesea_first_platform() && !replay_dark_world_island_hold() && !replay_bowser_tail_controls() && !pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_wdw_skeeter_contact() && !replay_wdw_skeeter_attack() && !replay_wdw_flame_chomp_dodge() && !replay_wdw_flame_chomp_eat() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }
 
     if(std::getenv("SM64DS_PC_KEY_TRACE") && data_0209f2f8==2 && ntr::rt_frame()%60==0) {
@@ -7033,7 +8058,7 @@ static bool trace_script_progress(uint64_t frame)
                 bytes_read==sizeof(anim_file)) ? static_cast<int>(anim_file) : -1;
             unsigned count=0;
             for(auto *a=dActor_c::Next(nullptr);a && count++<4096;a=dActor_c::Next(a)) {
-                if(a->actorID!=9 && a->actorID!=178 && a->actorID!=179 && a->actorID!=180 && a->actorID!=269 && (a->actorID<200 || a->actorID>202) && (a->actorID<288 || a->actorID>290))continue;
+                if(a->actorID!=9 && a->actorID!=10 && a->actorID!=178 && a->actorID!=179 && a->actorID!=180 && a->actorID!=269 && (a->actorID<200 || a->actorID>202) && (a->actorID<288 || a->actorID>290))continue;
                 int state=-1,death=0,index=-1,bits=0,payload=0;
                 unsigned hit=0,other=0,target=0,last_hit=0;
                 int tracked_star=-1;
@@ -7043,6 +8068,13 @@ static bool trace_script_progress(uint64_t frame)
                     state=e->mState;hit=e->mdCcAc_c.hitFlags;other=e->mdCcAc_c.otherOwner;
                     target=e->mTargetId;index=e->mPayoutIdx;payload=e->mParamHigh;
                     for(int i=0;i<5;++i)if(e->mPayoutDone[i])bits|=1<<i;
+                }else if(a->actorID==10) {
+                    auto *coinSwitch=static_cast<daObjBC_Switch_c *>(a);
+                    state=coinSwitch->mPressed;
+                    target=coinSwitch->mEventBit;
+                    payload=coinSwitch->mCoinTimerSeed;
+                    index=coinSwitch->mCoinTimer;
+                    bits=coinSwitch->mMeshCollider.IsEnabled();
                 }else if(a->actorID>=200 && a->actorID<=202) {
                     const auto *g=static_cast<daKrb_c *>(a);
                     state=g->mState;death=g->mDeathState;hit=g->mdCcAc_c.hitFlags;other=g->mdCcAc_c.otherOwner;

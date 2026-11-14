@@ -366,15 +366,27 @@ static PcNativeActorProfile pc_hmc_lift_profile = {
 };
 static PcNativeActorProfile pc_ironball_profile = {(void *)&daIbl_c_classInit,220,69,2,409600,8192000,25165824,25165824};
 extern "C" unsigned char g_profile_SECRET_COIN[];
+extern "C" void *daObjBC_Switch_c_classInit();
+static PcNativeActorProfile pc_blue_coin_switch_profile = {
+    (void *)&daObjBC_Switch_c_classInit,10,331,2,0xc8000,0xc8000,0x1000000,0x1000000
+};
 extern "C" void *daObjPushblock_c_classInit();
+extern "C" void *daObjBlockItemTag_c_classInit_BLK_SLVSTAR_TAG();
 extern "C" void *daObjNumber_c_classInit();
 static PcNativeActorProfile pc_push_block_profile = {
     (void *)&daObjPushblock_c_classInit,192,31,2,0x96000,0x12c000,0x1000000,0
+};
+static PcNativeActorProfile pc_silver_star_block_tag_profile = {
+    (void *)&daObjBlockItemTag_c_classInit_BLK_SLVSTAR_TAG,324,322,2,0x60000,0x200000,0x1000000,0
 };
 static PcNativeActorProfile pc_number_profile = {
     (void *)&daObjNumber_c_classInit,330,332,0x4800000,0,0xa000,0,0
 };
 extern "C" void *daObjWc_Obj05_c_classInit();
+extern "C" void *daObjWc_Obj04_c_classInit();
+static PcNativeActorProfile pc_wdw_switch_plank_profile = {
+    (void *)&daObjWc_Obj04_c_classInit,98,274,2,0x60000,0x100000,0x1000000,0x1000000
+};
 static PcNativeActorProfile pc_wdw_cage_lift_profile = {
     (void *)&daObjWc_Obj05_c_classInit,99,275,2,0,0x250000,0x2000000,0x2000000
 };
@@ -508,6 +520,20 @@ static PcNativeActorProfile pc_firesea_stretch_profile = {
 };
 extern "C" unsigned char g_profile_KM2_AGARU[];
 extern "C" unsigned char g_profile_BIRIKYU[];
+extern "C" unsigned char g_profile_KERONPA[];
+extern "C" unsigned char g_profile_KERONPA_FIRE[];
+extern "C" void *daHolhei_c_classInit();
+static PcNativeActorProfile pc_chuckya_profile = {
+    (void *)&daHolhei_c_classInit,190,100,0x10000003,0xc8000,0x320000,0x1000000,0x1000000
+};
+extern "C" void *daMenbo_c_classInit();
+static PcNativeActorProfile pc_skeeter_profile = {
+    (void *)&daMenbo_c_classInit,230,85,0x10000002,0xc8000,0xc8000,0x1000000,0x1000000
+};
+extern "C" void *daPopoi_c_classInit();
+static PcNativeActorProfile pc_heave_ho_profile = {
+    (void *)&daPopoi_c_classInit,238,93,3,0x64000,0xc8000,0x1000000,0x1000000
+};
 extern "C" unsigned char g_profile_KM2_UKISHIMA[];
 extern "C" void *daDonketu_c_classInit();
 static PcNativeActorProfile pc_small_bully_profile = {
@@ -621,10 +647,17 @@ static PcNativeActorProfile pc_fl_seesaw_profile = {
     (void *)&daObjFl_Seesaw_c_classInit,77,285,0x00000002u,
     0,0x00650000,0x02000000,0
 };
+// The retail STAR_CAMERA factory constructs a base actor with no custom vtable.
+static void *pc_star_camera_factory() { return new dActor_c(); }
 static void *pc_power_star_factory() { return new daStar_c(); }
 static void *pc_silver_star_factory() { return new daStar_c(); }
 static void *pc_star_marker_factory() { return new daStarBase_c(); }
 extern "C" void *daObjMarioCap_c_classInit();
+// Original ov002 STAR_CAMERA descriptor at 0x0210aa94.
+static PcNativeActorProfile pc_star_camera_profile = {
+    (void *)&pc_star_camera_factory,177,63,0,
+    0,0xc8000,0,0
+};
 // Original ov002 descriptors at 0210aa40/aa5c/aa78/95cc, native factories.
 static PcNativeActorProfile pc_power_star_profile = {
     (void *)&pc_power_star_factory,178,64,0x20000002u,
@@ -795,6 +828,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[184] = &pc_signpost_profile;
     data_020a4bb8_storage[194] = &pc_crate_profile;
     data_020a4bb8_storage[331] = &pc_oneup_logo_profile;
+    data_020a4bb8_storage[10] = &pc_blue_coin_switch_profile;
     data_020a4bb8_storage[11] = &pc_floor_switch_profile;
     data_020a4bb8_storage[12] = &pc_star_switch_profile;
     data_020a4bb8_storage[29] = &pc_updown_lift_profile;
@@ -802,6 +836,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[136] = g_profile_KM1_KURUMA;
     data_020a4bb8_storage[137] = g_profile_KM1_KURUMAJIKU;
     data_020a4bb8_storage[95] = &pc_wdw_square_board_profile;
+    data_020a4bb8_storage[98] = &pc_wdw_switch_plank_profile;
     data_020a4bb8_storage[99] = &pc_wdw_cage_lift_profile;
     data_020a4bb8_storage[100] = &pc_wdw_long_board_profile;
     data_020a4bb8_storage[96] = &pc_wdw_arrow_lift_profile;
@@ -814,6 +849,11 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[140] = g_profile_KM2_AGARU;
     data_020a4bb8_storage[142] = g_profile_KM2_AMI_BOU;
     data_020a4bb8_storage[266] = g_profile_BIRIKYU;
+    data_020a4bb8_storage[190] = &pc_chuckya_profile;
+    data_020a4bb8_storage[230] = &pc_skeeter_profile;
+    data_020a4bb8_storage[270] = g_profile_KERONPA;
+    data_020a4bb8_storage[271] = g_profile_KERONPA_FIRE;
+    data_020a4bb8_storage[238] = &pc_heave_ho_profile;
     data_020a4bb8_storage[145] = g_profile_KM2_UKISHIMA;
     data_020a4bb8_storage[215] = &pc_small_bully_profile;
     data_020a4bb8_storage[144] = &pc_firesea_path_lift_profile;
@@ -862,10 +902,12 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[9] = &pc_yoshi_egg_profile;
     data_020a4bb8_storage[201] = g_profile_KURIBO_S;
     data_020a4bb8_storage[202] = g_profile_KURIBO_L;
+    data_020a4bb8_storage[177] = &pc_star_camera_profile;
     data_020a4bb8_storage[178] = &pc_power_star_profile;
     data_020a4bb8_storage[179] = &pc_silver_star_profile;
     data_020a4bb8_storage[180] = &pc_star_marker_profile;
     data_020a4bb8_storage[192] = &pc_push_block_profile;
+    data_020a4bb8_storage[324] = &pc_silver_star_block_tag_profile;
     data_020a4bb8_storage[329] = g_profile_SECRET_COIN;
     data_020a4bb8_storage[330] = &pc_number_profile;
     data_020a4bb8_storage[269] = &pc_cap_reward_profile;

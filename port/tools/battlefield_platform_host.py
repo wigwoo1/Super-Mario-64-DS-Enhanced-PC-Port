@@ -18,7 +18,7 @@ def lazy_handles(text, kinds):
     return text
 
 
-def observe(text, cls, fields, values, return_type='int'):
+def observe(text, cls, fields, values, return_type='int', model='mModel'):
     # Read-only diagnostics, after original behavior has run. Do not force the
     # range check or collider on: distant disabled collision is intentional.
     start = text.index(f'{return_type} {cls}::Behavior()')
@@ -42,7 +42,7 @@ def observe(text, cls, fields, values, return_type='int'):
     text = text[:start] + chunk[:last] + trace + chunk[last:] + text[end:]
     render = f'{return_type} {cls}::Render()\n{{'
     assert text.count(render) == 1
-    text = text.replace(render, render+'\n    pc_render_probe::Scope probe(this,0,&mModel.mat4x3);',1)
+    text = text.replace(render, render+f'\n    pc_render_probe::Scope probe(this,0,&{model}.mat4x3);',1)
     return ('#include <cstdio>\n#include <cstdlib>\n#include <cassert>\n'
             '#include "ntr/rt.h"\n#include "hal/actor_render_probe.h"\n'+text)
 

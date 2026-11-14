@@ -24,6 +24,18 @@ NO_CONTROL_FREE = {0x020c9de4,0x020c9b7c,0x020c9998,0x020c990c}
 
 
 def transform(text):
+    if 'int daObjBlockItemTag_c::InitResources()' in text:
+        old = 'extern s32 data_ov002_020ff090[];'
+        if old not in text:
+            return text
+        # Import the original spawn-height table through the native data linker.
+        text = text.replace(old, 'extern "C" s32 data_ov002_020ff090[4];')
+        old = 'extern SharedFilePtr data_ov002_0210da18;'
+        assert text.count(old) == 1
+        text = text.replace(old, 'extern "C" SharedFilePtr data_ov002_0210da18;')
+        return ('#include <stddef.h>\n' + text +
+                '\nstatic_assert(sizeof(daObjBlockItemTag_c)==0xdc && '
+                'offsetof(daObjBlockItemTag_c,mActionPending)==0xd6);\n')
     if 's32 daSCoin_c::InitResources()' in text:
         anchor = 's32 daSCoin_c::InitResources()\n{'
         text = text.replace(anchor, anchor + '\n    pc_init_number_resources();')
@@ -147,6 +159,15 @@ extern "C" void pc_player_no_control_init(Player *self, const int *row) {
         for old, new in hooks.items():
             assert text.count(old) == 1, 'Star stay hook source changed: ' + old[:65]
             text = text.replace(old, new)
+        marker_position = '            ((dCamera_c *)cam)->SetPos(*(const Vector3*)&a->mPosX);'
+        assert text.count(marker_position) == 1, 'Star camera marker hook source changed'
+        text = text.replace(marker_position, marker_position + '''
+            if (std::getenv("SM64DS_PC_STAR_FLOW_TRACE")) {
+                std::fprintf(stderr, "[star camera marker] star=%u seq=%u param=%u pos=%d,%d,%d target=%d,%d,%d\\n",
+                    unsigned(mStarID), unsigned(mCamSeq), unsigned(a->param1),
+                    int(a->mPosX), int(a->mPosY), int(a->mPosZ),
+                    int(mPosX), int(mPosY), int(mPosZ));
+            }''')
         anchor = 'int daStar_c::func_ov002_020ea3a4() {'
         helper = '''static bool pc_star_should_stay(const daStar_c *star) {
     return pc_star::can_stay(ntr::video_get_settings().stay_in_stage_after_star,
@@ -156,7 +177,7 @@ extern "C" void pc_player_no_control_init(Player *self, const int *row) {
 
 '''
         assert text.count(anchor) == 1
-        text = '#include "ntr/video.h"\n#include "hal/star_collection_policy.h"\n' + text.replace(anchor, helper + anchor)
+        text = '#include <cstdio>\n#include <cstdlib>\n#include "ntr/video.h"\n#include "hal/star_collection_policy.h"\n' + text.replace(anchor, helper + anchor)
         # The complete table is defined in this TU using native member pointers.
         # Do not copy the DS PMF bytes over it during overlay initialization.
         text += '\nstatic_assert(sizeof(daStar_c)==0x4c4 && offsetof(daStar_c,mMarkerID)==0x434,"native silver-star layout");\n'

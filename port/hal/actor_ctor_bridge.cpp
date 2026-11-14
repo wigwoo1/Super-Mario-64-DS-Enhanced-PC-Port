@@ -58,11 +58,15 @@ SolidHeap *_ZN9SolidHeapC1EPvjP4HeapP18SolidHeapAllocator(
 ACTOR_TRAP(dActor_c::~dActor_c(), "dActor_c::~dActor_c")
 #endif
 
-// The real source TUs above supply the dActor_c, fBase_c, dBgActor_c,
-// The absent resource-init slot and return vector remain loud vtable fillers
-// for this actor-only smoke gate.
-ACTOR_TRAP(int fBase_c::InitResources(), "fBase_c::InitResources")
 #if defined(SM64DS_GAME_TARGET)
+// ActorBase.cpp keeps the cartridge default as a free function. The native
+// vtable needs a member entry for resource-free actors such as STAR_CAMERA.
+extern "C" int _ZN7fBase_c13InitResourcesEv();
+int fBase_c::InitResources()
+{
+    return _ZN7fBase_c13InitResourcesEv();
+}
+
 // The recovered ARM ABI function returns through an explicit output pointer.
 // Native virtual dispatch needs MSVC's ordinary Vector3-by-value method.
 extern "C" void _ZN8dActor_c25OnAimedAtWithEggReturnVecEv(Vector3 *, dActor_c *);
@@ -73,6 +77,7 @@ Vector3 dActor_c::OnAimedAtWithEggReturnVec()
     return result;
 }
 #else
+ACTOR_TRAP(int fBase_c::InitResources(), "fBase_c::InitResources")
 ACTOR_TRAP(Vector3 dActor_c::OnAimedAtWithEggReturnVec(), "dActor_c::OnAimedAtWithEggReturnVec")
 #endif
 

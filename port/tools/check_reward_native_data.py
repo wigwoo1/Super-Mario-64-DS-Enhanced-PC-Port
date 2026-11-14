@@ -23,6 +23,7 @@ def main():
         return matches[0]
     available=records(ROOT)
     for name,original,factory in (
+            ('pc_star_camera_profile','g_profile_STAR_CAMERA',cpp('pc_star_camera_factory')),
             ('pc_power_star_profile','g_profile_STAR',cpp('pc_power_star_factory')),
             ('pc_silver_star_profile','g_profile_SILVER_STAR',cpp('pc_silver_star_factory')),
             ('pc_star_marker_profile','g_profile_STARBASE',cpp('pc_star_marker_factory')),
@@ -65,7 +66,7 @@ def main():
         original=next(r for r in available if r['module']=='ov001' and r['address']==target)
         assert native==c(f'pc_oam_number_{digit}'),'native course-clear numeral pointer'
         assert pe_bytes(exe,native,8)==source_bytes(ROOT,original)[:8],'original numeral OAM bytes'
-    print('PASS: 4 reward profiles/factories, 18 native cap callbacks, '
+    print('PASS: 5 reward and camera profiles/factories, 18 native cap callbacks, '
           '14 native star callbacks, 12 canonical model/animation pointers '
           '20 original no-control descriptors with a native dispatcher, 6 native Power Star camera scripts and 20 course-clear numeral descriptors; '
           'runtime collection remains a separate gameplay check')

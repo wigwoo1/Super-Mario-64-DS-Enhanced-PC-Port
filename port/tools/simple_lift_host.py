@@ -329,6 +329,42 @@ def transform_wdw_cage_lift(root, text):
         ['unk_320', 'int(unk_328)', 'int(unk_32c)'], return_type='s32')
 
 
+def transform_wdw_switch_plank(root, text):
+    rom = (root / 'extracted/overlays/overlay_0029.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x0211417c - base) == (
+        0x02112964, 98, 274, 2, 0x60000, 0x100000, 0x1000000, 0x1000000)
+    assert struct.unpack_from('<4sHH', rom, 0x0211304c - base) == (b'CLPS', 8, 2)
+    for address, backing, file_id in (
+        (0x02112e48, 0x0211432c, 0x6d1), (0x02112e58, 0x02114324, 0x6d2),
+    ):
+        assert struct.unpack_from('<II', rom, address - base) == (backing, file_id)
+
+    text = lazy_handles(text, ('WcObj04ModelFilePtr', 'WcObj04CollisionFilePtr'))
+    anchor = 'int daObjWc_Obj04_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, anchor + '''
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(21, 0x0211304c));
+    if (!surface) return 0;
+    static const bool ready = [] {
+        data_ov029_0211432c.Construct(0x6d1);
+        data_ov029_02114324.Construct(0x6d2);
+        return true;
+    }();
+    (void)ready;
+''', 1)
+    text = text.replace('extern CLPS_Block data_ov029_0211304c;\n', '')
+    text = text.replace('mAngleY, data_ov029_0211304c);', 'mAngleY, *surface);')
+    raw_timer = '*(unsigned short *)(((char *)this) + 0x300 + 0xa0)'
+    assert text.count(raw_timer) == 2
+    text = text.replace(raw_timer, 'mStateTimer')
+    text += '\nstatic_assert(sizeof(daObjWc_Obj04_c) == 0x3a8);\n'
+    return '#include "hal/level_overlay.h"\n' + observe(
+        text, 'daObjWc_Obj04_c', 'state,timer,visible,event_bit',
+        ['int(mState)', 'int(mStateTimer)', 'int(mVisible)', 'int(mEventID)'],
+        model='mModel2')
+
+
 def transform_wdw_arrow_lift(root, text):
     rom = (root / 'extracted/overlays/overlay_0029.bin').read_bytes()
     base = 0x021111a0

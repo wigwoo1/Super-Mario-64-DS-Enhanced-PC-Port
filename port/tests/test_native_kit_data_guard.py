@@ -7,11 +7,13 @@ from native_kit_data import DATA_SOURCES,local_source,validate_generated_inputs,
 class KitDataGuard(unittest.TestCase):
     def test_reviewed_generated_data_stays_local(self):
         for name in ('sound/stage_sound_data.asm','camera/camera_native_data.asm',
-                     'camera/camera_native_data.cpp','minigame/minigame_resources.asm'):
+                     'camera/camera_native_data.cpp','minigame/minigame_resources.asm',
+                     'src/actors/daPopoi_c.cpp','src/actors/daMenbo_c.cpp',
+                     'src/game/actors/d_a_holhei.cpp'):
             path='CMakeFiles/sm64ds_pc.dir/pc-boot-src/'+name+'.obj'
             for spelling in (path,path.replace('/','\\')):
                 self.assertEqual(local_source(spelling),'build/port/pc-boot-src/'+name)
-        self.assertEqual(len(DATA_SOURCES),17)
+        self.assertEqual(len(DATA_SOURCES),23)
 
     def test_object_overlays_must_be_regenerated_and_cannot_be_prebuilt(self):
         for name in ('ov012_data.cpp','ov015_data.cpp'):

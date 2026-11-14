@@ -35,7 +35,8 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjKm2_Gura_c_classInit",
                  "daObjKm2_Ami_Bou_c_classInit",
                  "daObjKm2_Agaru_c_classInit", "daObjKm2_Nobiru_c_classInit",
-                 "daBrq_c_classInit", "_ZN6Player5ShockEj",
+                 "daBrq_c_classInit", "daPopoi_c_classInit", "daMenbo_c_classInit", "daHolhei_c_classInit", "daKrpa_c_classInit", "daKpFr_c_classInit", "_ZN6Player12GetHurtStateEv",
+                 "_ZN6Player5ShockEj",
                  "daObjKm2_Ukishima_c_classInit",
                  "daDonketu_c_classInit", "_ZN7daOts_c19InitResourcesCommonEv", "_ZN7daOts_c14BehaviorCommonEv",
                  "daBar_c_classInit",
@@ -43,11 +44,13 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjBSwdoor_c_classInit",
                  "daRNk_c_classInit", "daRFlag_c_classInit",
                  "daObjBlockL_c_classInit_BLOCK_L",
+                 "daObjBlockItemTag_c_classInit_BLK_SLVSTAR_TAG",
                  "daObjBlockS_c_classInit",
                  "da1up_c_classInit_ONEUPKINOKO",
                  "daObj1UpLogo_c_classInit",
                  "daObjTatefuda_c_classInit",
-                 "daObjWc_Obj05_c_classInit",
+                 "daObjWc_Obj04_c_classInit", "daObjWc_Obj05_c_classInit",
+                 "daObjBC_Switch_c_classInit",
                  "daSCoin_c_classInit", "daObjNumber_c_classInit", "daObjPushblock_c_classInit",
                  "daObjHatenaBlock_c_classInit_ITEM_BLOCK",
                  "daObjHatenaBlock_c_classInit_HATENA_BLOCK",
@@ -630,6 +633,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import simple_lift_host
                     transformed=simple_lift_host.transform_wdw_float_board(transformed,path.name)
                     rewrites+=1
+                if path.name == 'd_a_obj_wc_obj04.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_wdw_switch_plank(root,transformed)
+                    rewrites+=1
                 if path.name == 'd_a_obj_wc_obj05.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform_wdw_cage_lift(root,transformed)
@@ -670,6 +677,27 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daBrq_c.cpp':
                     import amp_host
                     transformed=amp_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name in ('d_a_krpa.cpp', 'd_a_kp_fr.cpp'):
+                    import flame_chomp_host
+                    transformed=flame_chomp_host.transform(root,transformed,path.name == 'd_a_kp_fr.cpp')
+                    rewrites+=1
+                if path.name == 'd_a_holhei.cpp':
+                    import chuckya_host
+                    transformed=chuckya_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daMenbo_c.cpp':
+                    import skeeter_host
+                    transformed=skeeter_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daPopoi_c.cpp':
+                    import heave_ho_host
+                    transformed=heave_ho_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'func_ov002_020db674.c':
+                    import heave_ho_host
+                    transformed=heave_ho_host.transform_throw(transformed)
+                    cpp_marker=True
                     rewrites+=1
                 if path.name == 'd_a_obj_km2_ukishima.cpp':
                     import simple_lift_host

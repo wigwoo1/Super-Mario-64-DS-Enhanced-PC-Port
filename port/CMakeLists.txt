@@ -482,7 +482,7 @@ set(OV002_DATA_SYMBOLS
     data_ov002_0211058c data_ov002_021106ac
     data_ov002_0210c080 data_ov002_0211110c
     data_ov002_0210d7f4
-    data_ov002_0210d794 data_ov002_0210d8f4
+    data_ov002_0210d6f4 data_ov002_0210d794 data_ov002_0210d8f4
     data_ov002_0210d854 data_ov002_0210d894
     data_ov002_0210d834
     data_ov002_02110064 data_ov002_020ff120 data_ov002_021101cc)
@@ -1056,6 +1056,10 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/boo_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/bully_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/amp_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/flame_chomp_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/chuckya_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/skeeter_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/heave_ho_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/oneup_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/signpost_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/floor_switch_host.py"
@@ -1107,6 +1111,10 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/dark_world_wheel_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/simple_lift_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/amp_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/flame_chomp_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/chuckya_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/skeeter_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/heave_ho_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/warp_pipe_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/docks_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/bowser_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"

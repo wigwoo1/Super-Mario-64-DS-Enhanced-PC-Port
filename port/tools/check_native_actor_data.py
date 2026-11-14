@@ -7,6 +7,7 @@ import struct
 from check_player_animation_data import pe_bytes
 from link_data import records, source_bytes, message_text_callbacks
 from lakitu_host import callback_bindings
+from chuckya_host import HANDLES as CHUCKYA_HANDLES, STATE_TEMPLATES as CHUCKYA_STATES
 from camera_host import owned_names, MODE_START, MODE_END
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -81,6 +82,13 @@ def main():
         if actual[0] != named(factory) or actual[1:] != expected[1:]:
             raise ValueError(f'{profile}: secret mission profile/factory differs from the original')
     print('PASS: original secret trigger, push block and number popup profiles and native factories')
+    block_tag = struct.unpack_from('<IHHIiiii', surface_rom, 0x02108bd8 - surface_base)
+    native_tag = struct.unpack('<IHHIiiii', pe_bytes(
+        args.exe, named('pc_silver_star_block_tag_profile'), 28))
+    if (native_tag[0] != named('daObjBlockItemTag_c_classInit_BLK_SLVSTAR_TAG')
+            or native_tag[1:] != block_tag[1:]):
+        raise ValueError('Silver Star brick tag profile/factory differs from the original')
+    print('PASS: original Silver Star brick tag profile and native factory')
     offset = 0x0210d814 - surface_base
     if struct.unpack_from('<4sHH', surface_rom, offset) != (b'CLPS', 8, 1):
         raise ValueError('Unexpected original warp pipe surface table')
@@ -187,6 +195,16 @@ def main():
             raise ValueError(f'{handle}: Wet-Dry World arrow lift resource differs from the original')
     print('PASS: native Wet-Dry World arrow lift profile, factory and original resource handles')
 
+    expected = struct.unpack_from('<IHHIiiii', wdw_rom, 0x0211417c - wdw_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_wdw_switch_plank_profile'), 28))
+    if actual[0] != named('daObjWc_Obj04_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Wet-Dry World switch plank profile/factory differs from the original')
+    for handle, literal in (('data_ov029_0211432c', 0x02112e4c), ('data_ov029_02114324', 0x02112e5c)):
+        file_id = struct.unpack_from('<I', wdw_rom, literal - wdw_base)[0]
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Wet-Dry World switch plank resource differs from the original')
+    print('PASS: native Wet-Dry World switch plank profile, factory and original resource handles')
+
     for profile, factory, address in (
         ('pc_wdw_crystal_profile', 'daObjWc_Obj03_c_classInit', 0x02113d90),
         ('pc_wdw_water_profile', 'daObjWc_Mizu_c_classInit', 0x021140b8),
@@ -226,6 +244,105 @@ def main():
     if actual[0] != named('daBrq_c_classInit') or actual[1:] != expected[1:]:
         raise ValueError('Amp profile/factory differs from the original')
     print('PASS: native Amp profile and factory')
+
+    flame_base, flame_rom = overlay(70)
+    for profile, factory, address in (
+        ('g_profile_KERONPA', 'daKrpa_c_classInit', 0x0212334c),
+        ('g_profile_KERONPA_FIRE', 'daKpFr_c_classInit', 0x02123424),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', flame_rom, address - flame_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{profile}: Flame Chomp profile/factory differs from the original')
+    if struct.unpack('<II', pe_bytes(args.exe, named('data_ov070_02123698'), 8)) != (0x351, 0):
+        raise ValueError('Flame Chomp model handle differs from the original')
+    for address in (0x021234c4, 0x021234dc):
+        expected = struct.unpack_from('<6I', flame_rom, address - flame_base)
+        pointers = tuple(named(f'data_ov070_{target:08x}') for target in expected[2:])
+        actual = struct.unpack('<6I', pe_bytes(args.exe, named(f'data_ov070_{address:08x}'), 24))
+        if actual != (*expected[:2], *pointers):
+            raise ValueError(f'{address:08x}: Flame Chomp animation header has incorrect native pointers')
+    for address, count in ((0x021222e8, 71), (0x02122404, 100)):
+        expected = flame_rom[address-flame_base:address-flame_base+4*count]
+        actual = pe_bytes(args.exe, named(f'data_ov070_{address:08x}'), 4*count)
+        if actual != expected:
+            raise ValueError(f'{address:08x}: Flame Chomp scale table differs from the original')
+    print('PASS: native Flame Chomp and projectile profiles, model handle, embedded animations and scale tables')
+
+    chuckya_base, chuckya_rom = overlay(62)
+    expected = struct.unpack_from('<IHHIiiii', chuckya_rom, 0x0211d9bc - chuckya_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_chuckya_profile'), 28))
+    if actual[0] != named('daHolhei_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Chuckya profile/factory differs from the original')
+    for handle, file_id in CHUCKYA_HANDLES.items():
+        actual = struct.unpack('<II', pe_bytes(args.exe, named(f'data_ov062_{handle:08x}'), 8))
+        if actual != (file_id, 0):
+            raise ValueError(f'{handle:08x}: Chuckya resource differs from the original')
+    defined_callbacks = set(symbols.values())
+    for state in CHUCKYA_STATES:
+        callbacks = struct.unpack('<2I', pe_bytes(args.exe, named(f'data_ov062_{state:08x}'), 8))
+        if any(callback not in defined_callbacks or not any(pe_bytes(args.exe, callback, 4))
+               for callback in callbacks):
+            raise ValueError(f'{state:08x}: Chuckya state has a missing native callback')
+    print('PASS: native Chuckya profile, factory, six resource handles and ten linked state records')
+
+    skeeter_base, skeeter_rom = overlay(90)
+    expected = struct.unpack_from('<IHHIiiii', skeeter_rom, 0x02134144 - skeeter_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_skeeter_profile'), 28))
+    if actual[0] != named('daMenbo_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Skeeter profile/factory differs from the original')
+    for handle, file_id in (
+        ('021344a0', 0x39f), ('02134488', 0x3a0), ('02134480', 0x3a1),
+        ('02134490', 0x3a2), ('02134498', 0x3a3),
+    ):
+        address = named(f'data_ov090_{handle}')
+        if struct.unpack('<II', pe_bytes(args.exe, address, 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Skeeter resource differs from the original')
+    for state, templates in (
+        ('021344e4', (0x021340f0, 0x02134100)),
+        ('021344f4', (0x02134110, 0x02134108)),
+        ('02134504', (0x02134118, 0x021340f8)),
+        ('02134514', (0x021340e8, 0x021340e0)),
+    ):
+        expected_callbacks = []
+        for template in templates:
+            address, adjustment = struct.unpack_from('<II', skeeter_rom, template - skeeter_base)
+            if adjustment:
+                raise ValueError(f'{state}: unexpected original Skeeter member adjustment')
+            expected_callbacks.append(symbols[f'?func_ov090_{address:08x}@daMenbo_c@@QAEHXZ'])
+        actual_callbacks = struct.unpack('<II', pe_bytes(args.exe, named(f'data_ov090_{state}'), 8))
+        if actual_callbacks != tuple(expected_callbacks):
+            raise ValueError(f'{state}: Skeeter callbacks differ from the original')
+    print('PASS: native Skeeter profile, factory, resource handles and four state records')
+
+    heave_base, heave_rom = overlay(77)
+    expected = struct.unpack_from('<IHHIiiii', heave_rom, 0x02127a74 - heave_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_heave_ho_profile'), 28))
+    if actual[0] != named('daPopoi_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Heave-Ho profile/factory differs from the original')
+    for handle, file_id in (
+        ('data_ov077_02127c88', 0x40d), ('data_ov077_02127ca0', 0x40e),
+        ('data_ov077_02127c90', 0x40f), ('data_ov077_02127c98', 0x410),
+    ):
+        if struct.unpack('<II', pe_bytes(args.exe, named(handle), 8)) != (file_id, 0):
+            raise ValueError(f'{handle}: Heave-Ho resource differs from the original')
+    for state, templates in (
+        ('02127ce8', (0x02127a20, 0x02127a28)),
+        ('02127cf8', (0x02127a38, 0x02127a40)),
+        ('02127d08', (0x02127a18, 0x02127a08)),
+        ('02127d18', (0x02127a10, 0x02127a48)),
+        ('02127cd8', (0x02127a30, 0x02127a00)),
+    ):
+        expected_callbacks = []
+        for template in templates:
+            address, adjustment = struct.unpack_from('<II', heave_rom, template - heave_base)
+            if adjustment:
+                raise ValueError(f'{state}: unexpected original Heave-Ho member adjustment')
+            expected_callbacks.append(symbols[f'?func_ov077_{address:08x}@daPopoi_c@@QAEHXZ'])
+        actual_callbacks = struct.unpack('<II', pe_bytes(args.exe, named(f'data_ov077_{state}'), 8))
+        if actual_callbacks != tuple(expected_callbacks):
+            raise ValueError(f'{state}: Heave-Ho callbacks differ from the original')
+    print('PASS: native Heave-Ho profile, factory, resource handles and five state records')
 
     expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112f2c - gura_base)
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_UKISHIMA'), 28))
@@ -311,6 +428,7 @@ def main():
             ('g_profile_COIN', 'daCoin_c_classInit_COIN', 2, 0x02108790),
             ('g_profile_RED_COIN', 'daCoin_c_classInit_RED_COIN', 2, 0x021087ac),
             ('g_profile_BLUE_COIN', 'daCoin_c_classInit_BLUE_COIN', 2, 0x021087c8),
+            ('pc_blue_coin_switch_profile', 'daObjBC_Switch_c_classInit', 2, 0x0210b248),
             ('g_profile_WANWAN', 'daWanwan_c_classInit', 14, 0x02114750),
             ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
             ('g_profile_FL_LONDON', 'daObjFl_London_c_classInit', 22, 0x02113f4c),
@@ -381,6 +499,13 @@ def main():
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
     print('PASS: original KAIDAN65 native factory and full profile descriptor match overlay 63')
+    switch_base, switch_rom = overlay(2)
+    switch_surface = 0x0210d6f4 - switch_base
+    if struct.unpack_from('<4sHH', switch_rom, switch_surface) != (b'CLPS', 8, 1):
+        raise ValueError('Incomplete original blue-coin switch CLPS header')
+    if pe_bytes(args.exe, named('data_ov002_0210d6f4'), 16) != switch_rom[switch_surface:switch_surface + 16]:
+        raise ValueError('Native blue-coin switch collision properties differ from the original')
+    print('PASS: original blue-coin switch profile, native factory and complete collision properties')
     # Dark World's KM1_SEESAW is variant2 of the recovered shared seesaw.
     # Keep its model/collision handles and complete CLPS surface row tied to
     # the original profile/resource tables, without enabling other variants.

@@ -36,6 +36,9 @@
 #include "daStar_c.h"
 #include "daStarBase_c.h"
 #include "daObjBlockL_c.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "daObjBC_Switch_c.h"
+#endif
 #include "SurfaceInfo.h"
 
 namespace Event { s32 GetBit(u32 bit); void SetBit(u32 bit); }
@@ -760,7 +763,11 @@ void daCoin_c::func_ov002_020b20b4()
     *(u32 *)(int)&mdCc_c.flags &= ~1;
     found = dActor_c::FindWithActorID(0xa, 0);
     if (found) {
+#if defined(SM64DS_PLATFORM_PC)
+        mDisappearTimer = static_cast<const daObjBC_Switch_c *>(found)->mCoinTimerSeed;
+#else
         mDisappearTimer = *(unsigned short *)((char *)found + 0x32a);
+#endif
     } else {
         mDisappearTimer = 0xfa;
     }

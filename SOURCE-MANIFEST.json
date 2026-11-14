@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "a1c7ff8e52d3a4f97644be44f728a946c55c17adb2cc1b22acd22812f0ee9901",
-      "bytes": 254392
+      "sha256": "3baf3fef9cc9b082d88085868ca3a435ccd49dbf9abdfa82ebc068ec4063a76b",
+      "bytes": 254441
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "59802eb5e9e6659783ead1e41994839eece84698e8aa14c156a9df298cc574b0",
-      "bytes": 90416
+      "sha256": "1353bea9070769d63264f4c0fb7d2ece782e19690bcb297b402a4b28a313547a",
+      "bytes": 91054
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7630,8 +7630,8 @@
     },
     {
       "path": "port/hal/actor_ctor_bridge.cpp",
-      "sha256": "9dde5ed86dec38c3d4d20343ece61ee4ffaf2667327e0f556ac39a21ab62e765",
-      "bytes": 4289
+      "sha256": "24ece7a31360a20f85154dce36e6dd25029d02e0c29694479264baf906f29caf",
+      "bytes": 4382
     },
     {
       "path": "port/hal/actor_profile_link_bridge.cpp",
@@ -7655,8 +7655,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "797c65e4cc4f8ca23691d041efa590388a5646295641702d68e795a83f63b8f6",
-      "bytes": 58336
+      "sha256": "73c73d9d1a6b323c5b318deaa76003c15bfe10cf5ffd373c3971f0aab132dc2b",
+      "bytes": 60439
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8125,8 +8125,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "6ae9e6da33e99603a51db177cc8c178b82df5509e25ab3f0396246c242918389",
-      "bytes": 459741
+      "sha256": "a223d18f2e8a2d137961ddd276f1c7c1d2d5d7cfb896f871d40bd51e74cce37a",
+      "bytes": 517150
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8900,8 +8900,8 @@
     },
     {
       "path": "port/tests/test_native_kit_data_guard.py",
-      "sha256": "858ca9b17483d2bf9ba2300639e99b670a39250052b0ee0cdf9010c114360ccb",
-      "bytes": 3227
+      "sha256": "aa6a15dcdb75bbe341e1935d99a8ce13d083580aceb765c658711c4ca8804bb9",
+      "bytes": 3358
     },
     {
       "path": "port/tests/test_picture_gate_transform.py",
@@ -9080,8 +9080,8 @@
     },
     {
       "path": "port/tools/battlefield_platform_host.py",
-      "sha256": "9cb1cc1795a3aa9cf7b7dbfef7bd8f0d3300242e691557504a8fe48a504696a6",
-      "bytes": 13152
+      "sha256": "82aa1cb86aff64f9357aa9ec8a968e7c65214c915ce6820d28c929a3743631be",
+      "bytes": 13170
     },
     {
       "path": "port/tools/bird_host.py",
@@ -9110,8 +9110,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "ec1f4573eadcd9868af4035270a0a272d8340f80fd62eecb3bf462fbb37944f4",
-      "bytes": 60207
+      "sha256": "c83881bccb29d4e327e0d57b3d7ae8ca41bbf5af85d7b2526ea515fddf6c3e04",
+      "bytes": 61811
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9270,8 +9270,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "43abd66a4cbbb055089203a2d56fc60e0f82bae956e5acd6f4b66495f69ee866",
-      "bytes": 76313
+      "sha256": "d0f2617d8692654b496bafc9a85739fcd5d6a20167aa23123166de44dcc28afd",
+      "bytes": 84635
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9370,8 +9370,8 @@
     },
     {
       "path": "port/tools/check_reward_native_data.py",
-      "sha256": "e0e671f5e6be2b79d1ea451702516a3fff212b29d7f39be55031a8981dd18416",
-      "bytes": 4562
+      "sha256": "337a2006cfdfc39d21f0c5e816c4fb0de45da347f69f1a0c5304f99b6f80ab43",
+      "bytes": 4667
     },
     {
       "path": "port/tools/check_shared_data.py",
@@ -9439,6 +9439,11 @@
       "bytes": 7751
     },
     {
+      "path": "port/tools/chuckya_host.py",
+      "sha256": "cf96addb3607ebce33745f02ed689e3d70e47ba8367ace91d540544e83344526",
+      "bytes": 6414
+    },
+    {
       "path": "port/tools/crate_host.py",
       "sha256": "0a4d653574d68b609ada5658c631c19c3b23b182be0688610b3d549e51fad063",
       "bytes": 5197
@@ -9489,6 +9494,11 @@
       "bytes": 1739
     },
     {
+      "path": "port/tools/flame_chomp_host.py",
+      "sha256": "9e92ab005f370278dc49e069d8fda0a1ea7285d511b01b98bbd66adfa7c56e83",
+      "bytes": 1948
+    },
+    {
       "path": "port/tools/floor_switch_host.py",
       "sha256": "f0ca8ed5a3827455128e338d7829ef80505b7381e9712ff11fbcdaa3b310c066",
       "bytes": 5299
@@ -9512,6 +9522,11 @@
       "path": "port/tools/healing_heart_host.py",
       "sha256": "9c08bb17120c776aa994847b319aa1a464a57547c528c97a1b91774dfa7404e7",
       "bytes": 4009
+    },
+    {
+      "path": "port/tools/heave_ho_host.py",
+      "sha256": "2c25d300186e261f1664814722889943987b5699f45b48ea1f6dc84b540193d8",
+      "bytes": 4964
     },
     {
       "path": "port/tools/host_frontier.py",
@@ -9580,8 +9595,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "d54bf0d71da80f952cbbcf7a5ae99bdae16d71e20efed4631679f74d70db5fe3",
-      "bytes": 29735
+      "sha256": "de06ed48b8221ecbe908ddaac3a21a16bdd87eae1e00d3b78846defc437213be",
+      "bytes": 30799
     },
     {
       "path": "port/tools/linkage.py",
@@ -9625,8 +9640,8 @@
     },
     {
       "path": "port/tools/native_kit_data.py",
-      "sha256": "763ad6e4e3952afd5f1f342bfbee2b41c207fda9356194e2b3e700af8796a523",
-      "bytes": 5236
+      "sha256": "5f5f69e76db583dc776413727a6b368ea59e31e1ccc4c91a95caa7032d362dce",
+      "bytes": 5432
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -9725,8 +9740,8 @@
     },
     {
       "path": "port/tools/reward_host.py",
-      "sha256": "2428856fe32eb907ee158217526605bbdcc3a6af93d90f9f559411a08e59e65c",
-      "bytes": 9623
+      "sha256": "c52266ec15e32f454a45919c4fba7d141ab9980e4876023fcd541b7b3706e329",
+      "bytes": 10999
     },
     {
       "path": "port/tools/romdata.py",
@@ -9755,8 +9770,13 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "76d116907020ce1776cf1de4b6d5d95f4eef419d7665ed6287b9da4ba36a93d1",
-      "bytes": 23236
+      "sha256": "6f9bf78dd236574ac2b8b5da9aad1d4708825ba1415b5ee04954a6adb626e93a",
+      "bytes": 24926
+    },
+    {
+      "path": "port/tools/skeeter_host.py",
+      "sha256": "07e6a52f35ed9902297bc39b3a5bdd3a0cde754a6f348f3f8e8184bac61c31e7",
+      "bytes": 2357
     },
     {
       "path": "port/tools/sound_host.py",
@@ -12475,8 +12495,8 @@
     },
     {
       "path": "src/actors/daCoin_c.cpp",
-      "sha256": "c7670d2107cc3f3c4830f252ccc2e1e0126d2f15841796e64c46c15b129bee40",
-      "bytes": 41964
+      "sha256": "c271b317689e384571d585664f1244647f7dde9e478ad5852557cbeeda90d4cd",
+      "bytes": 42166
     },
     {
       "path": "src/actors/dActor_c.cpp",
@@ -14570,8 +14590,8 @@
     },
     {
       "path": "src/game/actors/d_a_obj_bc_switch.cpp",
-      "sha256": "5332b2d6ec0e2a9ab6a7284644f11c54d2dea84b1a7ad01df3d11105cc43dd78",
-      "bytes": 19400
+      "sha256": "a0688c41464d1221c945898499de25fb47f49624ae387606ff1dcac2b88936e9",
+      "bytes": 20302
     },
     {
       "path": "src/game/actors/d_a_obj_bk_billboard.cpp",
@@ -15615,8 +15635,8 @@
     },
     {
       "path": "src/NumVsStarsObtained.c",
-      "sha256": "f20743629e25886e14e080a6835644ea22309e126c316a40a977ce192cc33d91",
-      "bytes": 415
+      "sha256": "b9bb645c57306519293f8423f8a98e29fd942f5cfaf15ede00d5d3a53e8c4ace",
+      "bytes": 832
     },
     {
       "path": "src/ObjectMessageIDToActualMessageID.c",
@@ -23655,8 +23675,8 @@
     },
     {
       "path": "src/unnamed/ov002/func_ov002_020dd8b8.cpp",
-      "sha256": "c5f7d573ba98cbb5d6683f50da752ca4edcb08faceb862b9cec67c00387a3207",
-      "bytes": 289
+      "sha256": "e12f622737f643aea1f05474547a5531118fb8c69deb9405324ebf8fcec3797d",
+      "bytes": 590
     },
     {
       "path": "src/unnamed/ov002/func_ov002_020dd8f4.c",

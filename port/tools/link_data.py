@@ -344,7 +344,8 @@ def main() -> int:
     # Native cap factories now make these indirect resource tables reachable.
     external_names.update({'_' + name: name for name in (
         'data_ov002_020ff0a0', 'data_ov002_020ff0ac',
-        'data_ov002_020ff0b8', 'data_ov002_020ff0c4')})
+        'data_ov002_020ff0b8', 'data_ov002_020ff0c4',
+        'data_ov002_020ff090')})
     if manifest_path.is_file():
         try:
             external_names.update(json.loads(manifest_path.read_text(encoding="utf-8")))
@@ -496,6 +497,25 @@ def main() -> int:
                     raise ValueError('Goomba embedded material pointer changed')
             material_relocations[key]=fields
 
+    # The two embedded Flame Chomp BCA headers contain four pre-relocated
+    # pointers each; preserve the header words and bind the arrays on PC.
+    for address, targets in (
+        (0x021234c4, (0x021227d8, 0x02122594, 0x02122968, 0x0212259c)),
+        (0x021234dc, (0x021226bc, 0x0212262c, 0x02122598, 0x021225e4)),
+    ):
+        key = ('ov070', address)
+        if key not in selected:
+            continue
+        header = source_bytes(root, selected[key]['row'])[:24]
+        if struct.unpack_from('<4I', header, 8) != targets:
+            raise ValueError('Flame Chomp embedded animation pointers changed')
+        selected[key]['size'] = 24
+        material_relocations[key] = dict(zip(range(8, 24, 4), targets))
+        for target in targets:
+            row = next(r for r in available if r['module'] == 'ov070' and r['address'] == target)
+            entry = selected.setdefault(('ov070', target), {'row': row, 'linker_names': []})
+            entry['linker_names'].append('_' + row['name'])
+
     lines = ["// Generated from local ROM symbols and unresolved linker names.",
              "// Do not edit or commit; source bytes remain in the user's ROM.",
              '#include <stddef.h>', 'extern "C" {']
@@ -504,15 +524,15 @@ def main() -> int:
                      for index, key in enumerate(sorted(selected))}
     for index, (key, item) in enumerate(sorted(selected.items())):
         row = item["row"]
-        data = source_bytes(root, row)
+        data = source_bytes(root, row)[:item.get("size")]
         storage = f"pc_rom_data_{index}"
         if key in material_relocations:
             fields=material_relocations[key]
             for target in set(fields.values()):
-                lines.append(f'extern unsigned char data_ov084_{target:08x}[];')
+                lines.append(f'extern unsigned char data_{key[0]}_{target:08x}[];')
             words=[]
             for offset in range(0,len(data),4):
-                if offset in fields: words.append(f'data_ov084_{fields[offset]:08x}')
+                if offset in fields: words.append(f'data_{key[0]}_{fields[offset]:08x}')
                 else: words.append(f'(void*)0x{struct.unpack_from("<I",data,offset)[0]:08x}u')
             lines.append(f'void *{storage}[{len(words)}] = {{'+', '.join(words)+'};')
             aliases.extend((external,storage) for external in sorted(set(item['linker_names'])))

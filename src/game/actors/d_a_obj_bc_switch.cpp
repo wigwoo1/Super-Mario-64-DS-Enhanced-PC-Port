@@ -115,15 +115,23 @@
 struct BcSwitchModelFilePtr : SharedFilePtr {
     u32 words[2];
 
+#if defined(SM64DS_PLATFORM_PC)
+    explicit BcSwitchModelFilePtr(u32 fileID) : words{fileID, 0} {}
+#else
     BcSwitchModelFilePtr(u32 fileID);
     ~BcSwitchModelFilePtr();
+#endif
 };
 
 struct BcSwitchCollisionFilePtr : SharedFilePtr {
     u32 words[2];
 
+#if defined(SM64DS_PLATFORM_PC)
+    explicit BcSwitchCollisionFilePtr(u32 fileID) : words{fileID, 0} {}
+#else
     BcSwitchCollisionFilePtr(u32 fileID);
     ~BcSwitchCollisionFilePtr();
+#endif
 };
 
 extern "C" {
@@ -141,7 +149,7 @@ void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
     dBgW_KcMbg *self, KCL_File *file, Matrix4x3 *mat, int scale,
     short angY, void *clps);
 extern "C" void func_020393c4(void* p, void* v);
-extern int func_ov002_020dd8b8(void* c);
+extern int func_ov002_020dd8b8(char* c);
 extern void func_ov002_020f1578(daObjBC_Switch_c *c, char *arg);
 }
 
@@ -176,12 +184,17 @@ void func_ov002_020f15b8(void* a, void* b, void* c) {
 // @symbol func_ov002_020f1578
 extern "C" {  /* .c-derived member: C linkage for the whole block */
 void func_ov002_020f1578(daObjBC_Switch_c *c, char *arg){
+#if defined(SM64DS_PLATFORM_PC)
+    if (reinterpret_cast<dActor_c *>(arg)->actorID == 0xbf && func_ov002_020dd8b8(arg))
+        c->mPressed = 1;
+#else
     /* (int) on the comparison is load-bearing bool-widening. arg+0xc is the
        colliding actor's actorID (PLAYER is 0xbf); Player.h is out of scope. */
     int b = (int)(*(unsigned short*)(arg + 0xc) == 0xbf);
     if (b == 0) return;
     if (func_ov002_020dd8b8(arg) != 0)
         c->mPressed = 1;
+#endif
 }
 }
 
@@ -221,7 +234,18 @@ int daObjBC_Switch_c::InitResources()
     unsigned short val;
     unsigned short* p;
 
+#if defined(SM64DS_PLATFORM_PC)
+    static const bool handlesReady = [] {
+        daObjBC_Switch_c_ModelFile.Construct(1084);
+        daObjBC_Switch_c_ClsnFile.Construct(1085);
+        return true;
+    }();
+    (void)handlesReady;
+#endif
     bmd = Model::LoadFile(daObjBC_Switch_c_ModelFile);
+#if defined(SM64DS_PLATFORM_PC)
+    if (!bmd) return 0;
+#endif
     mModel.SetFile((BMD_File *)bmd, 1, -1);
 
     mEventBit = (int)param1 & 0xf;
@@ -229,6 +253,9 @@ int daObjBC_Switch_c::InitResources()
     UpdateClsnPosAndRot();
 
     kcl = dBgW_Kc::LoadFile(daObjBC_Switch_c_ClsnFile);
+#if defined(SM64DS_PLATFORM_PC)
+    if (!kcl) return 0;
+#endif
     /* MEASURED on ov002/daObjBC_Switch_c::InitResources: this one call has
        to keep the mangled spelling. Its third parameter is a by-value
        Fix12<int> -- wall 6az -- and materialising one costs stack traffic
@@ -249,6 +276,11 @@ int daObjBC_Switch_c::InitResources()
     mCoinTimerSeed = (x >> 8) & 0xff;
     mHomeAreaId = mAreaId;
     val = mCoinTimerSeed;
+#if defined(SM64DS_PLATFORM_PC)
+    mCoinTimerSeed = (val == 0xff || val == 0) ? 250 : val * 10;
+    mCoinTimer = 0;
+    mTickSound = 0;
+#else
     p = (unsigned short*)(c + 0x300);
 
     /* ROM: if (val==0xff || val==0) store 0xfa; else *= 10 */
@@ -267,6 +299,7 @@ multiply:
         *(unsigned short*)((int)c + 0x32a) * 0xa;
 
 done:
+#endif
     return 1;
 }
 
