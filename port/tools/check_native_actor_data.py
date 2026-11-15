@@ -73,11 +73,15 @@ def main():
         raise ValueError('Warp pipe profile/factory differs from the original')
     surface_base, surface_rom = overlay(2)
     lift_base, lift_rom = overlay(91)
-    sky_lift = struct.unpack_from('<IHHIiiii', lift_rom, 0x02134f7c - lift_base)
-    native_sky_lift = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_sky_extending_profile'), 28))
-    if (native_sky_lift[0] != named('daObjSimpleLift_c_classInit_KM3_DERU01')
-            or native_sky_lift[1:] != sky_lift[1:]):
-        raise ValueError('Bowser in the Sky extending platform profile differs from the original')
+    for profile, factory, address in (
+        ('pc_sky_extending_profile', 'daObjSimpleLift_c_classInit_KM3_DERU01', 0x02134f7c),
+        ('pc_sky_upper_extending_profile', 'daObjSimpleLift_c_classInit_KM3_DERU02', 0x02134f98),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', lift_rom, address - lift_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{profile}: extending platform profile/factory differs from the original')
+    print('PASS: both native Bowser in the Sky extending-platform profiles and factories')
     for profile, factory, address in (
         ('g_profile_SECRET_COIN', 'daSCoin_c_classInit', 0x0210b00c),
         ('pc_push_block_profile', 'daObjPushblock_c_classInit', 0x0210968c),
@@ -139,17 +143,21 @@ def main():
         raise ValueError('Fire Sea sliding lift profile/factory differs from the original')
     print('PASS: native Fire Sea sliding lift profile and original movement tables')
 
-    expected = struct.unpack_from('<IHHIiiii', lift_rom, 0x02134e9c - lift_base)
-    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_firesea_path_lift_profile'), 28))
-    if actual[0] != named('daLinelift2_c_classInit_KM2_SUSUMU') or actual[1:] != expected[1:]:
-        raise ValueError('Fire Sea path-lift profile/factory differs from original')
+    for profile, factory, address in (
+        ('pc_firesea_path_lift_profile', 'daLinelift2_c_classInit_KM2_SUSUMU', 0x02134e9c),
+        ('pc_sky_path_lift_profile', 'daLinelift2_c_classInit_KM3_LIFT', 0x02134e80),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', lift_rom, address - lift_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{profile} or its factory differs from original')
     callbacks = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov091_021354e0'), 12))
     targets = tuple(next(addr for name, addr in symbols.items()
                          if name.startswith(f'?func_ov091_{method}@daLinelift2_c@@'))
                     for method in ('02132000', '02131f9c', '02131ef0'))
     if callbacks != targets:
         raise ValueError('Fire Sea path lift does not dispatch to its three original native states')
-    print('PASS: native Fire Sea path-lift profile, factory and three state callbacks')
+    print('PASS: native Fire Sea and Sky path-lift profiles, factories and three shared state callbacks')
 
     gura_base, gura_rom = overlay(45)
     expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112ffc - gura_base)

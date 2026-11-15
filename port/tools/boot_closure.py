@@ -34,11 +34,11 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjSeesaw_c_classInit_BOMB_SEESAW",
                  "daObjSeesaw_c_classInit_RC_SEESAW",
                  "daObjKm1_Dorifu_c_classInit", "daObjKm3_Dorifu_c_classInit",
-                 "daLinelift2_c_classInit_KM2_SUSUMU",
+                 "daLinelift2_c_classInit_KM2_SUSUMU", "daLinelift2_c_classInit_KM3_LIFT",
                  "daObjKm2_Gura_c_classInit",
                  "daObjKm2_Ami_Bou_c_classInit",
                  "daObjKm2_Agaru_c_classInit", "daObjKm2_Nobiru_c_classInit",
-                 "daObjSimpleLift_c_classInit_KM3_DERU01",
+                 "daObjSimpleLift_c_classInit_KM3_DERU01", "daObjSimpleLift_c_classInit_KM3_DERU02",
                  "daBrq_c_classInit", "daPopoi_c_classInit", "daMenbo_c_classInit", "daBtn_c_classInit_BATAN", "daHolhei_c_classInit", "daKrpa_c_classInit", "daKpFr_c_classInit", "_ZN6Player12GetHurtStateEv",
                  "_ZN6Player5ShockEj",
                  "daObjKm2_Ukishima_c_classInit",
@@ -655,7 +655,7 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     rewrites+=1
                 if path.name == 'd_a_linelift2.cpp':
                     import simple_lift_host
-                    transformed=simple_lift_host.transform_firesea_path_lift(root,transformed)
+                    transformed=simple_lift_host.transform_path_lift(root,transformed)
                     rewrites+=1
                 if path.name == 'd_a_obj_km2_gura.cpp':
                     import simple_lift_host

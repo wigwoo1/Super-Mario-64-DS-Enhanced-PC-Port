@@ -92,20 +92,28 @@ def transform(root,text):
     assert struct.unpack_from('<3I',raw,0x02135030-base)==(0x02135560,0x021354f8,0x02111b34)
     assert struct.unpack_from('<H',raw,0x02134506-base)[0]==80
     assert struct.unpack_from('<h',raw,0x02134516-base)[0]==16384
+    assert struct.unpack_from('<IHHIiiii',raw,0x02134f98-base)==(
+        0x021328a8,155,226,2,0,0x350000,0x2000000,0)
+    assert struct.unpack_from('<3I',raw,0x0213503c-base)==(0x02135528,0x02135518,0x02111b74)
+    assert struct.unpack_from('<H',raw,0x02134508-base)[0]==78
+    assert struct.unpack_from('<h',raw,0x02134518-base)[0]==16384
     sky=(root/'extracted/overlays/overlay_0047.bin').read_bytes()
     assert struct.unpack_from('<4sHH',sky,0x02111b34-0x021111a0)==(b'CLPS',8,1)
+    assert struct.unpack_from('<4sHH',sky,0x02111b74-0x021111a0)==(b'CLPS',8,1)
     text=lazy_handles(text,('SimpleLiftModelFilePtr','SimpleLiftClsnFileHandle'))
     text,n=re.subn(r'\*\(SharedFilePtr \*\*\)\(data_ov091_02135024 \+ mVariant \* 0xc\)',
                    '(mVariant==1 ? &data_ov091_02135560 : '
+                   'mVariant==2 ? &data_ov091_02135528 : '
                    'mVariant==4 ? &data_ov091_02135510 : &data_ov091_02135520)',text);assert n==2,n
     text,n=re.subn(r'\*\(SharedFilePtr \*\*\)\(data_ov091_02135028 \+ (?:mVariant \* 0xc|tableOffset)\)',
                    '(mVariant==1 ? &data_ov091_021354f8 : '
+                   'mVariant==2 ? &data_ov091_02135518 : '
                    'mVariant==4 ? &data_ov091_02135540 : &data_ov091_02135538)',text);assert n==3,n
     text=text.replace('*(void **)(data_ov091_0213502c + tableOffset)','surface')
     text=text.replace('extern char data_ov091_0213502c[];','extern unsigned char data_ov043_02111be0[];')
     anchor='int daObjSimpleLift_c::InitResources()\n{'
     text=text.replace(anchor,anchor+'''
-    assert(actorID==138 || actorID==147 || actorID==154);
+    assert(actorID==138 || actorID==147 || actorID==154 || actorID==155);
     void *surface=data_ov043_02111be0;
     if (actorID==154) {
         surface=pc_level_overlay_address(39, 0x02111b34);
@@ -113,6 +121,15 @@ def transform(root,text):
         static const bool ready=[] {
             data_ov091_02135560.Construct(0x679);
             data_ov091_021354f8.Construct(0x67a);
+            return true;
+        }();
+        (void)ready;
+    } else if (actorID==155) {
+        surface=pc_level_overlay_address(39, 0x02111b74);
+        if (!surface) return 0;
+        static const bool ready=[] {
+            data_ov091_02135528.Construct(0x67b);
+            data_ov091_02135518.Construct(0x67c);
             return true;
         }();
         (void)ready;
@@ -139,23 +156,28 @@ def transform(root,text):
     return observe(text,'daObjSimpleLift_c','variant,timer,pause,speed,heading',['int(mVariant)','int(mMoveTimer)','int(mPauseTimer)','int(mHorzSpeed)','int(mPrevAngleY)'])
 
 
-def transform_firesea_path_lift(root, text):
-    """Bind the Fire Sea variant of the original two-profile path lift."""
+def transform_path_lift(root, text):
+    """Bind the original Fire Sea and Sky path-lift variants."""
     rom = (root / 'extracted/overlays/overlay_0091.bin').read_bytes()
     base = 0x02130f00
     assert struct.unpack_from('<IHHIiiii', rom, 0x02134e9c - base) == (
         0x02132394, 144, 215, 2, 0x100000, 0x300000, 0x1000000, 0
     )
+    assert struct.unpack_from('<IHHIiiii', rom, 0x02134e80 - base) == (
+        0x021323cc, 157, 302, 2, 0x100000, 0x300000, 0x1000000, 0
+    )
     for address, target in ((0x02134e54, 0x02132000), (0x02134e44, 0x02131f9c),
                             (0x02134e4c, 0x02131ef0)):
         assert struct.unpack_from('<II', rom, address - base) == (target, 0)
-    for address, target in ((0x02134500, 0x021354a8), (0x021344f8, 0x02135490),
-                            (0x02134e60, 0x02112610)):
-        assert struct.unpack_from('<I', rom, address - base) == (target,)
-    level = (root / 'extracted/overlays/overlay_0045.bin').read_bytes()
-    clps = 0x02112610 - 0x021111a0
-    magic, stride, count = struct.unpack_from('<4sHH', level, clps)
-    assert magic == b'CLPS' and stride == 8 and count and clps + 8 + stride*count <= len(level)
+    for address, targets in ((0x021344fc, (0x02135498, 0x021354a8)),
+                             (0x021344f4, (0x021354a0, 0x02135490)),
+                             (0x02134e5c, (0x02111af4, 0x02112610))):
+        assert struct.unpack_from('<2I', rom, address - base) == targets
+    for overlay, address in ((47, 0x02111af4), (45, 0x02112610)):
+        level = (root / f'extracted/overlays/overlay_{overlay:04}.bin').read_bytes()
+        clps = address - 0x021111a0
+        magic, stride, count = struct.unpack_from('<4sHH', level, clps)
+        assert magic == b'CLPS' and stride == 8 and count and clps + 8 + stride*count <= len(level)
 
     text = lazy_handles(text, ('Linelift2ModelFilePtr', 'Linelift2CollisionFilePtr'))
     text = text.replace('void (dBgActor_c::*StateFunc)()', 'void (daLinelift2_c::*StateFunc)()')
@@ -163,19 +185,25 @@ def transform_firesea_path_lift(root, text):
         text = text.replace(f'extern StateFunc data_ov091_{symbol};\n', '')
         text = text.replace(f'data_ov091_{symbol},', f'&daLinelift2_c::func_ov091_{method},')
     text = re.sub(r'extern (?:SharedFilePtr|CLPS_Block) \*data_ov091_(?:021344fc|021344f4|02134e5c)\[\];[^\n]*\n', '', text)
-    text = text.replace('*data_ov091_021344fc[mVariant]', 'data_ov091_021354a8')
-    text = text.replace('*data_ov091_021344f4[mVariant]', 'data_ov091_02135490')
+    model = '(mVariant == 0 ? data_ov091_02135498 : data_ov091_021354a8)'
+    collision = '(mVariant == 0 ? data_ov091_021354a0 : data_ov091_02135490)'
+    text = text.replace('*data_ov091_021344fc[mVariant]', model)
+    text = text.replace('*data_ov091_021344f4[mVariant]', collision)
     text = text.replace('data_ov091_02134e5c[mVariant]', 'surface')
-    text = text.replace('data_ov091_021344fc[mVariant]->Release()', 'data_ov091_021354a8.Release()')
-    text = text.replace('data_ov091_021344f4[mVariant]->Release()', 'data_ov091_02135490.Release()')
+    text = text.replace('data_ov091_021344fc[mVariant]->Release()', model + '.Release()')
+    text = text.replace('data_ov091_021344f4[mVariant]->Release()', collision + '.Release()')
     anchor = '    mVariant = param1 >> 8;'
     assert text.count(anchor) == 1
     text = text.replace(anchor, anchor + '''
-    if (mVariant != 1) return 0;
-    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(37, 0x02112610));
+    if (!((actorID == 157 && mVariant == 0) || (actorID == 144 && mVariant == 1))) return 0;
+    const bool sky = mVariant == 0;
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(
+        sky ? 39 : 37, sky ? 0x02111af4 : 0x02112610));
     if (!surface) return 0;
     static bool files_ready = false;
     if (!files_ready) {
+        data_ov091_02135498.Construct(0x683);
+        data_ov091_021354a0.Construct(0x684);
         data_ov091_021354a8.Construct(0x669);
         data_ov091_02135490.Construct(0x66a);
         files_ready = true;
@@ -183,6 +211,8 @@ def transform_firesea_path_lift(root, text):
 ''', 1)
     text = ('#include "hal/level_overlay.h"\n'
             'struct Linelift2ModelFilePtr;\nstruct Linelift2CollisionFilePtr;\n'
+            'extern Linelift2ModelFilePtr data_ov091_02135498;\n'
+            'extern Linelift2CollisionFilePtr data_ov091_021354a0;\n'
             'extern Linelift2ModelFilePtr data_ov091_021354a8;\n'
             'extern Linelift2CollisionFilePtr data_ov091_02135490;\n' + text)
     return observe(text, 'daLinelift2_c', 'variant,state,node,timer,speed,target_x,target_y,target_z',

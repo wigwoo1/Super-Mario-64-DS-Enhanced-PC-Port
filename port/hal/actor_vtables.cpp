@@ -502,8 +502,12 @@ extern "C" void *daObjKm1_Ukishima_c_classInit();
 extern "C" void *daObjSimpleLift_c_classInit_KM1_DERU();
 extern "C" void *daObjSimpleLift_c_classInit_KM2_RIFUT01();
 extern "C" void *daObjSimpleLift_c_classInit_KM3_DERU01();
+extern "C" void *daObjSimpleLift_c_classInit_KM3_DERU02();
 static PcNativeActorProfile pc_sky_extending_profile = {
     (void *)&daObjSimpleLift_c_classInit_KM3_DERU01,154,225,2,0,0x350000,0x2000000,0
+};
+static PcNativeActorProfile pc_sky_upper_extending_profile = {
+    (void *)&daObjSimpleLift_c_classInit_KM3_DERU02,155,226,2,0,0x350000,0x2000000,0
 };
 static PcNativeActorProfile pc_firesea_sliding_profile = {
     (void *)&daObjSimpleLift_c_classInit_KM2_RIFUT01,147,218,2,0,0x350000,0x1000000,0
@@ -518,6 +522,7 @@ static PcNativeActorProfile pc_wdw_long_board_profile = {(void *)&daObjWcObj06_c
 static PcNativeActorProfile pc_wdw_arrow_lift_profile = {(void *)&daObjWc_Obj02_c_classInit,96,272,2,0,0x100000,0x1000000,0x1000000};
 static PcNativeActorProfile pc_dark_world_extending_profile = {(void *)&daObjSimpleLift_c_classInit_KM1_DERU,138,179,2,0,0x400000,0x2000000,0};
 extern "C" void *daLinelift2_c_classInit_KM2_SUSUMU();
+extern "C" void *daLinelift2_c_classInit_KM3_LIFT();
 extern "C" unsigned char g_profile_KM2_GURA[];
 extern "C" unsigned char g_profile_KM2_AMI_BOU[];
 extern "C" void *daObjKm2_Nobiru_c_classInit();
@@ -551,6 +556,9 @@ static PcNativeActorProfile pc_small_bully_profile = {
 };
 static PcNativeActorProfile pc_firesea_path_lift_profile = {
     (void *)&daLinelift2_c_classInit_KM2_SUSUMU,144,215,2,0x100000,0x300000,0x1000000,0
+};
+static PcNativeActorProfile pc_sky_path_lift_profile = {
+    (void *)&daLinelift2_c_classInit_KM3_LIFT,157,302,2,0x100000,0x300000,0x1000000,0
 };
 extern "C" void *daObjSimpleBg_c_classInit_DOKAN();
 static PcNativeActorProfile pc_warp_pipe_profile = {
@@ -870,6 +878,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[101] = &pc_wdw_water_profile;
     data_020a4bb8_storage[138] = &pc_dark_world_extending_profile;
     data_020a4bb8_storage[154] = &pc_sky_extending_profile;
+    data_020a4bb8_storage[155] = &pc_sky_upper_extending_profile;
     data_020a4bb8_storage[150] = &pc_sky_horizontal_seesaw_profile;
     data_020a4bb8_storage[149] = &pc_sky_vertical_seesaw_profile;
     data_020a4bb8_storage[147] = &pc_firesea_sliding_profile;
@@ -887,6 +896,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[145] = g_profile_KM2_UKISHIMA;
     data_020a4bb8_storage[215] = &pc_small_bully_profile;
     data_020a4bb8_storage[144] = &pc_firesea_path_lift_profile;
+    data_020a4bb8_storage[157] = &pc_sky_path_lift_profile;
     data_020a4bb8_storage[298] = &pc_warp_pipe_profile;
     data_020a4bb8_storage[90] = &pc_docks_submarine_profile;
     data_020a4bb8_storage[133] = &pc_dark_world_seesaw_profile;

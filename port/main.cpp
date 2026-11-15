@@ -2765,6 +2765,172 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 static_cast<int16_t>(std::sin(angle)*32767),static_cast<int16_t>(-std::cos(angle)*32767));
             return true;
         }
+        // Run straight onto the arrow ramp without interrupting the approach mid-slope.
+        if(level==39 && ((x==5700 && y==2789 && z==-875) || (x==6900 && y==4240 && z==-1050)) && jump==0 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS") && horizontal>=radius*4096.0) {
+            const double ramp_dz=x==6900 && player->mPosX<6400*4096 ? -875.0*4096.0-player->mPosZ : dz;
+            const double angle=std::atan2(dx,ramp_dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*32767),
+                static_cast<int16_t>(-std::cos(angle)*32767));
+            return true;
+        }
+        // Keep the normal climb and drop inputs separate from the first lift ride.
+        if(level==39 && x==680 && y==2370 && z==-883 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static bool caught_stone=false, crossed_stone=false;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const int px=player->mPosX;
+            const bool hanging=!std::strcmp(state,"St_LedgeHang_Main");
+            if(hanging && px>1600*4096 && px<1720*4096) caught_stone=true;
+            if(caught_stone && floor && !floor->owner && !hanging && px<1645*4096 && px>890*4096 &&
+               std::abs(player->mPosY-2471*4096)<12*4096 && !crossed_stone) {
+                crossed_stone=true;
+                std::fprintf(stderr,"[native Sky path lift] first block top tick=%llu\n",tick);
+            }
+            if(crossed_stone && floor && floor->owner && floor->owner->actorID==157 && px<890*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky path lift] reboard tick=%llu uid=%u x=%d\n",
+                    tick,unsigned(floor->owner->uniqueID),px);
+            }
+            const double angle=std::atan2(-450.0*4096.0,std::clamp(dz,-70.0*4096.0,70.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=caught_stone && px>790*4096 ? 32767 : 0;
+            ntr::input_test_controls(true,hanging && caught_stone && tick%12<6 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Jump onto the first wood block, then drop onto the westbound lift.
+        if(level==39 && x==20 && y==2370 && z==-883 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t launched=0;
+            static bool on_wood=false;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const bool on_lift=floor && floor->owner && floor->owner->actorID==157;
+            const bool hanging=!std::strcmp(state,"St_LedgeHang_Main");
+            const int px=player->mPosX/4096;
+            if(!launched && on_lift && px<=510 &&
+               (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"))) {
+                launched=tick;
+                std::fprintf(stderr,"[native Sky path lift] wood jump tick=%llu x=%d\n",tick,px);
+            }
+            if(!on_wood && launched && floor && !floor->owner && !hanging &&
+               px>78 && px<278 && std::abs(player->mPosY-2571*4096)<12*4096) {
+                on_wood=true;
+                std::fprintf(stderr,"[native Sky path lift] wood top tick=%llu x=%d\n",tick,px);
+            }
+            if(on_wood && on_lift && px<78) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky path lift] wood reboard tick=%llu uid=%u x=%d\n",
+                    tick,unsigned(floor->owner->uniqueID),px);
+            }
+            const bool brake=launched && !on_wood && !hanging && px<210;
+            const double angle=std::atan2((brake ? 450.0 : -450.0)*4096.0,
+                std::clamp(dz,-70.0*4096.0,70.0*4096.0))-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=px<590 && px>-45 ? (on_wood ? 32767 : 22000) : 0;
+            const bool jump_held=hanging ? tick%12<6 : launched && tick-launched<28;
+            ntr::input_test_controls(true,jump_held ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Request the next jump during Land, before reaching the second wood face.
+        if(level==39 && x==-580 && y==2370 && z==-883 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t launched=0;
+            static bool on_wood=false;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const bool on_lift=floor && floor->owner && floor->owner->actorID==157;
+            const bool hanging=!std::strcmp(state,"St_LedgeHang_Main");
+            const int px=player->mPosX/4096;
+            if(!launched && on_lift && px<0 && px>-275 &&
+               (!std::strcmp(state,"St_Land_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+                launched=tick;
+                std::fprintf(stderr,"[native Sky path lift] second wood jump tick=%llu x=%d\n",tick,px);
+            }
+            if(!on_wood && launched && floor && !floor->owner && !hanging &&
+               px>-522 && px<-322 && std::abs(player->mPosY-2571*4096)<12*4096) {
+                on_wood=true;
+                std::fprintf(stderr,"[native Sky path lift] second wood top tick=%llu x=%d\n",tick,px);
+            }
+            if(on_wood && on_lift && px<-522) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky path lift] second wood reboard tick=%llu uid=%u x=%d\n",
+                    tick,unsigned(floor->owner->uniqueID),px);
+            }
+            const bool brake=launched && !on_wood && !hanging && px<-410;
+            const double angle=std::atan2((brake ? 450.0 : -450.0)*4096.0,
+                std::clamp(dz,-70.0*4096.0,70.0*4096.0))-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            auto *lift=on_wood ? dActor_c::FindWithActorID(157,nullptr) : nullptr;
+            static bool deck_under_exit=false;
+            if(lift && lift->mPosX<=-220*4096) deck_under_exit=true;
+            const int stick=on_wood ? (deck_under_exit && px>-595 ? 15000 : 0) : 22000;
+            const bool jump_held=hanging ? tick%12<6 : launched && tick-launched<22;
+            ntr::input_test_controls(true,jump_held ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Backflip onto the taller blocks using the lift's westward carry.
+        const bool final_lift_block=x==-2600 && y==2011;
+        if(level==39 && ((x==-1490 && y==2370) || final_lift_block) && z==-883 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static unsigned flip_waypoint=~0u;
+            static bool launched=false, on_wood=false, deck_under_exit=false;
+            if(flip_waypoint!=waypoint) {
+                flip_waypoint=waypoint;
+                launched=on_wood=deck_under_exit=false;
+            }
+            const int offset=final_lift_block ? -800 : 0;
+            const char *name=final_lift_block ? "final" : "tall";
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const bool on_lift=floor && floor->owner && floor->owner->actorID==157;
+            const bool hanging=!std::strcmp(state,"St_LedgeHang_Main");
+            const int px=player->mPosX/4096;
+            const auto steer=[&](double world_x,int stick) {
+                const double angle=std::atan2(world_x*4096.0,std::clamp(dz,-70.0*4096.0,70.0*4096.0))
+                    -GetAngleToCamera(0)*6.283185307179586/65536.0;
+                sx=static_cast<int16_t>(std::sin(angle)*stick);
+                sy=static_cast<int16_t>(-std::cos(angle)*stick);
+            };
+            if(!launched && player->mState==&data_ov002_0211052c) {
+                launched=true;
+                std::fprintf(stderr,"[native Sky path lift] %s wood backflip tick=%llu x=%d\n",name,tick,px);
+            }
+            if(!on_wood && launched && floor && !floor->owner && !hanging &&
+               px>-1422+offset && px<-1222+offset && std::abs(player->mPosY-2671*4096)<12*4096) {
+                on_wood=true;
+                std::fprintf(stderr,"[native Sky path lift] %s wood top tick=%llu x=%d\n",name,tick,px);
+            }
+            if(on_wood && final_lift_block && floor && !floor->owner && !hanging && px<-2450 &&
+               px>-3800 && std::abs(player->mPosY-y*4096)<12*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky path lift] far bank tick=%llu x=%d\n",tick,px);
+            } else if(on_wood && final_lift_block) {
+                if(px>-2590) steer(-450,20000);
+            } else if(on_wood && on_lift && px<-1422) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky path lift] tall wood reboard tick=%llu uid=%u x=%d\n",
+                    tick,unsigned(floor->owner->uniqueID),px);
+            } else if(on_wood) {
+                auto *lift=dActor_c::FindWithActorID(157,nullptr);
+                if(lift && lift->mPosX<=-1190*4096) deck_under_exit=true;
+                if(deck_under_exit && px>-1490) steer(-450,15000);
+            } else if(hanging) {
+                buttons=tick%12<6 ? 2 : 0;
+            } else if(launched && player->mIsAirborne) {
+                if(player->mPosY>2480*4096 && px>-1300+offset) steer(-450,22000);
+                if(px<-1330+offset) steer(450,20000);
+            } else if(!launched && on_lift && px<=-820+offset) {
+                const bool east=std::abs(static_cast<int16_t>(player->mAngleY-0x4000))<1800;
+                if(!east) steer(450,9000);
+                else if(px<=-970+offset && player->mHorzSpeed==0)
+                    buttons=!std::strcmp(state,"St_Crouch_Main") ? 0x102 : 0x100;
+            }
+            ntr::input_test_controls(true,buttons,sx,sy);
+            return true;
+        }
         // Wait off the Sky Star Switch until its original timeout rearms it.
         if(level==39 && x==-4140 && y==-2400 && z==-670 && jump==0 &&
            horizontal<radius*4096.0) {
@@ -2923,6 +3089,216 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 -GetAngleToCamera(0)*6.283185307179586/65536.0;
             const int stick=running && playerX>2980*4096 ? 32767 : 0;
             ntr::input_test_controls(true,launch && tick-launch<30 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Transfer between the two western discs when the outer rim is aligned.
+        if(level==39 && x==-5910 && y==1990 && z==-1090 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static bool running=false;
+            static uint64_t launch=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *disc=floor && floor->owner && floor->owner->actorID==156 ? floor->owner : nullptr;
+            const bool on_first=disc && disc->mPosX>-5000*4096 && disc->mPosY>0;
+            const int px=player->mPosX;
+            const int pz=player->mPosZ;
+            if(launch && disc && disc->mPosX<-6000*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky west discs] landed tick=%llu uid=%u x=%d z=%d\n",
+                    tick,unsigned(disc->uniqueID),px,pz);
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            if(!running && on_first && !std::strcmp(state,"St_Wait_Main") &&
+               px<-4900*4096 && pz>-1620*4096 && pz<-1140*4096) {
+                running=true;
+                std::fprintf(stderr,"[native Sky west discs] run-up tick=%llu x=%d z=%d\n",tick,px,pz);
+            }
+            if(!launch && running && on_first && px<=-5230*4096 &&
+               player->mHorzSpeed>=0x9000 && std::abs(static_cast<int16_t>(player->mPrevAngleY-0xc000))<5200) {
+                launch=tick;
+                std::fprintf(stderr,"[native Sky west discs] jump tick=%llu x=%d z=%d speed=%d\n",
+                    tick,px,pz,player->mHorzSpeed);
+            }
+            const double angle=std::atan2(-530.0*4096.0,std::clamp(dz,-130.0*4096.0,130.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=running && px>-5780*4096 ? 32767 : 0;
+            ntr::input_test_controls(true,launch && tick-launch<34 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Grab the pole from the rotating deck and climb with normal stick input.
+        if(level==39 && x==-6309 && y==2000 && z==-883 && (jump==2 || jump==3) &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t launch=0;
+            static uint64_t tip_release=0, dismount_tick=0;
+            static bool attached=false, reported_top=false;
+            if(!std::strcmp(state,"St_Climb_Main") || !std::strcmp(state,"St_Headstand_Main")) {
+                dCc_c *attachment=nullptr;
+                std::memcpy(&attachment,&player->unk_37c,sizeof(attachment));
+                if(attachment) {
+                    auto *pole=dActor_c::FindWithActorID(287,nullptr);
+                    while(pole && pole->uniqueID!=attachment->GetOwnerID())
+                        pole=dActor_c::FindWithActorID(287,pole);
+                    if(pole && pole->mPosX<-6000*4096) {
+                        if(!attached) {
+                            attached=true;
+                            std::fprintf(stderr,"[native Sky west pole] attached tick=%llu uid=%u height=%d\n",
+                                tick,unsigned(pole->uniqueID),int(player->mAttachOffsetY));
+                        }
+                        if(!reported_top && player->mAttachOffsetY>=1880*4096) {
+                            reported_top=true;
+                            std::fprintf(stderr,"[native Sky west pole] top tick=%llu uid=%u height=%d\n",
+                                tick,unsigned(pole->uniqueID),int(player->mAttachOffsetY));
+                        }
+                        const bool tipped=!std::strcmp(state,"St_Headstand_Main");
+                        if(jump==3 && tipped) {
+                            if(!dismount_tick && player->mStateStep==3) {
+                                const auto turn=static_cast<int16_t>(0x4000-player->mAngleY);
+                                if(std::abs(turn)>650) {
+                                    const int stick=std::clamp(turn*18,-32767,32767);
+                                    ntr::input_test_controls(true,0,static_cast<int16_t>(stick),0);
+                                    return true;
+                                }
+                                dismount_tick=tick;
+                                std::fprintf(stderr,"[native Sky west pole] dismount input tick=%llu yaw=%d\n",
+                                    tick,int(player->mAngleY));
+                            }
+                            ntr::input_test_controls(true,dismount_tick && tick-dismount_tick<34 ? 2 : 0,0,0);
+                            return true;
+                        }
+                        if(jump==3 && !tip_release && player->mAttachOffsetY>=1890*4096)
+                            tip_release=tick;
+                        if(tip_release && tick-tip_release<12) {
+                            ntr::input_test_controls(true,0,0,0);
+                            return true;
+                        }
+                        ntr::input_test_controls(true,0,0,tipped ? 0 : 32767);
+                        return true;
+                    }
+                }
+            }
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            if(dismount_tick) {
+                const int px=player->mPosX;
+                const bool on_walkway=floor && !floor->owner && px>-5840*4096 && px<-4309*4096 &&
+                    std::abs(player->mPosY-3711*4096)<10*4096 && player->mPosZ>-1230*4096 && player->mPosZ<-530*4096;
+                if(on_walkway) {
+                    ++waypoint;
+                    std::fprintf(stderr,"[native Sky west pole] walkway tick=%llu x=%d z=%d\n",
+                        tick,px,player->mPosZ);
+                    ntr::input_test_controls(true,0,0,0);
+                    return true;
+                }
+                const double angle=std::atan2(470.0*4096.0,std::clamp(dz,-100.0*4096.0,100.0*4096.0))
+                    -GetAngleToCamera(0)*6.283185307179586/65536.0;
+                const int stick=px<-5600*4096 ? 25000 : 0;
+                ntr::input_test_controls(true,tick-dismount_tick<34 ? 2 : 0,
+                    static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+                return true;
+            }
+            const bool on_disc=floor && floor->owner && floor->owner->actorID==156 && floor->owner->mPosX<-6000*4096;
+            if(on_disc && horizontal<240*4096.0 && (!launch || tick-launch>75) &&
+               (!std::strcmp(state,"St_Walk_Main") || !std::strcmp(state,"St_Wait_Main"))) {
+                launch=tick;
+                std::fprintf(stderr,"[native Sky west pole] jump tick=%llu distance=%.1f\n",tick,horizontal/4096.0);
+            }
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=horizontal>200*4096.0 ? 25000 : horizontal>65*4096.0 ? 15000 : 0;
+            ntr::input_test_controls(true,launch && tick-launch<30 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Board the first upper extender while its deck moves east past the bank.
+        if(level==39 && x==-4050 && y==3660 && z==-883 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t launch=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            auto *deck=dActor_c::FindWithActorID(155,nullptr);
+            while(deck && deck->mPosX>-3600*4096) deck=dActor_c::FindWithActorID(155,deck);
+            const int px=player->mPosX;
+            if(launch && deck && floor && floor->owner==deck) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky upper extending] boarded tick=%llu uid=%u x=%d\n",
+                    tick,unsigned(deck->uniqueID),px);
+            } else if(!launch && deck && floor && !floor->owner && px>-4520*4096 &&
+                      std::abs(dz)<110*4096.0 && deck->mPosX>=-4330*4096 &&
+                      deck->mPosX<=-3970*4096 && deck->mPosX>deck->mPrevPosX &&
+                      (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"))) {
+                launch=tick;
+                std::fprintf(stderr,"[native Sky upper extending] jump tick=%llu uid=%u x=%d deck_x=%d\n",
+                    tick,unsigned(deck->uniqueID),px,deck->mPosX);
+            }
+            const double angle=launch ? std::atan2(470.0*4096.0,std::clamp(dz,-130.0*4096.0,130.0*4096.0)) :
+                std::atan2(-4460.0*4096.0-px,dz);
+            const double stick_angle=angle-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=launch ? (px<-4070*4096 ? 26000 : 0) :
+                (std::hypot(-4460.0*4096.0-px,dz)>60*4096.0 ? 15500 : 0);
+            ntr::input_test_controls(true,launch && tick-launch<24 ? 2 : 0,
+                static_cast<int16_t>(std::sin(stick_angle)*stick),static_cast<int16_t>(-std::cos(stick_angle)*stick));
+            return true;
+        }
+        // Use the short pole to cross between the two upper moving decks.
+        if(level==39 && x==-3247 && y==3150 && z==-883 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t tip_release=0, dismount=0;
+            static bool attached=false;
+            const bool climbing=!std::strcmp(state,"St_Climb_Main");
+            const bool headstand=!std::strcmp(state,"St_Headstand_Main");
+            if(climbing || headstand) {
+                dCc_c *attachment=nullptr;
+                std::memcpy(&attachment,&player->unk_37c,sizeof(attachment));
+                const auto *pole=attachment ? dActor_c::FindWithID(attachment->GetOwnerID()) : nullptr;
+                if(pole && pole->actorID==287 && pole->mPosX==x*4096) {
+                    if(!attached) {
+                        attached=true;
+                        std::fprintf(stderr,"[native Sky middle pole] attached tick=%llu uid=%u height=%d\n",
+                            tick,unsigned(pole->uniqueID),int(player->mAttachOffsetY));
+                    }
+                    if(climbing) {
+                        if(!tip_release && player->mAttachOffsetY>=640*4096) tip_release=tick;
+                        ntr::input_test_controls(true,0,0,tip_release && tick-tip_release<12 ? 0 : 32767);
+                        return true;
+                    }
+                    if(!dismount && player->mStateStep==3) {
+                        const auto turn=static_cast<int16_t>(0x4000-player->mAngleY);
+                        if(std::abs(turn)>650) {
+                            ntr::input_test_controls(true,0,static_cast<int16_t>(std::clamp(turn*18,-32767,32767)),0);
+                            return true;
+                        }
+                        auto *deck=dActor_c::FindWithActorID(155,nullptr);
+                        while(deck && deck->mPosX<-3200*4096) deck=dActor_c::FindWithActorID(155,deck);
+                        if(deck && deck->mPosX<=-2300*4096 && deck->mPosX<=deck->mPrevPosX) {
+                            dismount=tick;
+                            std::fprintf(stderr,"[native Sky middle pole] jump to second deck tick=%llu uid=%u\n",
+                                tick,unsigned(deck->uniqueID));
+                        }
+                    }
+                    ntr::input_test_controls(true,dismount && tick-dismount<30 ? 2 : 0,0,0);
+                    return true;
+                }
+            }
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *deck=floor && floor->owner && floor->owner->actorID==155 ? floor->owner : nullptr;
+            const int px=player->mPosX;
+            if(dismount && deck && deck->mPosX>-3200*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky middle pole] second deck tick=%llu uid=%u x=%d\n",
+                    tick,unsigned(deck->uniqueID),px);
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            const bool braking_for_pole=!dismount && px>=-3290*4096;
+            const double angle=std::atan2((braking_for_pole ? -450.0 : 450.0)*4096.0,
+                std::clamp(dz,-95.0*4096.0,95.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=dismount ? (px<-2530*4096 ? 25000 : 0) :
+                (px>-4070*4096 ? 24000 : 0);
+            ntr::input_test_controls(true,dismount && tick-dismount<30 ? 2 : 0,
                 static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
             return true;
         }
