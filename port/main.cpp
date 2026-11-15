@@ -12,6 +12,7 @@
 #include "dBgPi.h"
 #include "dBgCh_Gnd.h"
 #include "daKrb_c.h"
+#include "daKuriKing_c.h"
 #include "daBombking_c.h"
 #include "daKpa_c.h"
 #include "daKpaTail_c.h"
@@ -8940,6 +8941,93 @@ static bool replay_power_star_controls()
     return true;
 }
 
+// Test input after the original entry, first hit and rim detour finish.
+static bool replay_goomboss_second_hit()
+{
+    const char *enabled = std::getenv("SM64DS_PC_TEST_GOOMBOSS_SECOND_HIT");
+    const char *automation = std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if (!enabled || !automation || std::strcmp(automation, "1") ||
+        data_0209f2f8 != 45 || !replay_course_route_complete)
+        return false;
+
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    const auto *boss = static_cast<const daKuriKing_c *>(dActor_c::FindWithActorID(198, nullptr));
+    if (!player || !boss || boss->aliveState != 1 || boss->mSizeIndex != 2)
+        return false;
+
+    auto input = [](uint16_t buttons, int16_t x = 0, int16_t y = 0) {
+        ntr::input_test_controls(true, buttons, x, y);
+        return true;
+    };
+    const auto tick = ntr::rt_frame();
+    static uint64_t attackUntil = 0;
+    static uint64_t nextAttack = 0;
+    const char *state = pc_player_state_name(player);
+    if (player->mIsNoControl || player->mIsControlDisabled ||
+        player->mIsAirborne || player->mIsTakingDamage)
+        return input(0);
+    if (tick < attackUntil)
+        return input(1);
+    if (player->mObjInMouth)
+        return input(0x100);
+    if (std::strcmp(state, "St_Wait_Main") && std::strcmp(state, "St_Walk_Main"))
+        return input(0);
+
+    const dActor_c *target = nullptr;
+    bool hasEgg = false;
+    for (auto *actor = dActor_c::FindWithActorID(9, nullptr); actor;
+         actor = dActor_c::FindWithActorID(9, actor)) {
+        const auto *egg = static_cast<const daYegg_c *>(actor);
+        hasEgg |= egg->aliveState == 1 && egg->mPlayer == player &&
+                  egg->mState == daYegg_STATE_FOLLOW_PLAYER;
+    }
+    if (hasEgg) {
+        target = boss;
+    } else {
+        double nearest = 850.0;
+        for (auto *actor = dActor_c::FindWithActorID(200, nullptr); actor;
+             actor = dActor_c::FindWithActorID(200, actor)) {
+            const auto *goomba = static_cast<const daKrb_c *>(actor);
+            if (goomba->aliveState != 1 || goomba->mTargetUniqueID != boss->uniqueID ||
+                goomba->mEatenByYoshi || goomba->mDeathState)
+                continue;
+            const double distance = std::hypot(double(goomba->mPosX) - player->mPosX,
+                                               double(goomba->mPosZ) - player->mPosZ) / 4096.0;
+            if (distance < nearest) {
+                nearest = distance;
+                target = goomba;
+            }
+        }
+    }
+    if (!target)
+        return input(0);
+
+    const double dx = (double(target->mPosX) - player->mPosX) / 4096.0;
+    const double dz = (double(target->mPosZ) - player->mPosZ) / 4096.0;
+    const double distance = std::hypot(dx, dz);
+    constexpr double angleUnits = 65536.0 / 6.283185307179586;
+    const double heading = std::atan2(dx, dz);
+    const int facingError = std::abs(int(static_cast<int16_t>(int(heading * angleUnits) - player->mAngleY)));
+    const bool ready = hasEgg ? boss->mState == 3 || boss->mState == 4 : distance < 245;
+    if (ready && facingError < 4200 && tick >= nextAttack) {
+        attackUntil = tick + 8;
+        nextAttack = tick + 70;
+        std::fprintf(stderr, "[native Goomboss replay] tick=%llu action=%s target=%u distance=%.1f\n",
+                     static_cast<unsigned long long>(tick), hasEgg ? "throw" : "tongue",
+                     target->uniqueID, distance);
+        return input(1);
+    }
+    if (hasEgg && distance < 500 && facingError < 4200)
+        return input(0);
+
+    const double targetRadius = std::hypot(double(target->mPosX), double(target->mPosZ)) / 4096.0;
+    if (targetRadius < 1120 || targetRadius > 1690)
+        return input(0);
+    const double stickAngle = heading - GetAngleToCamera(0) / angleUnits;
+    const int magnitude = distance < 260 ? 12000 : 22000;
+    return input(0, static_cast<int16_t>(std::sin(stickAngle) * magnitude),
+                    static_cast<int16_t>(-std::cos(stickAngle) * magnitude));
+}
 // Opt-in read-only actor census for fresh-save route investigation. The
 // original object table may spawn actors whose retail profile is not yet
 // named/native; enumerate the live actor IDs once at a requested frame.
@@ -8968,6 +9056,14 @@ static void trace_actor_census(uint64_t frame)
             actor->uniqueID, actor->aliveState, actor->param1,
             static_cast<int>(actor->mAreaId), actor->mPosX, actor->mPosY,
             actor->mPosZ, actor->mFlags);
+    }
+    if (const auto *actor = dActor_c::FindWithActorID(198, nullptr)) {
+        const auto *boss = static_cast<const daKuriKing_c *>(actor);
+        std::fprintf(stderr,
+            "[native Goomboss] tick=%llu uid=%u state=%d substate=%u size=%u scale=%d wave=%u heading=%d\n",
+            static_cast<unsigned long long>(frame), boss->uniqueID, boss->mState,
+            unsigned(boss->mSubState), unsigned(boss->mSizeIndex), boss->mScaleX,
+            unsigned(boss->mSpawnedCount), int(boss->mAngleY));
     }
     std::fprintf(stderr, "[native actor census] tick=%llu total=%u\n",
         static_cast<unsigned long long>(frame), count);
@@ -9307,6 +9403,7 @@ static bool trace_script_progress(uint64_t frame)
     static uint64_t last_controls_tick=~uint64_t(0);
     if(last_controls_tick!=ntr::rt_frame()) {
         last_controls_tick=ntr::rt_frame();
+        if(!replay_goomboss_second_hit())
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
         if(!replay_furniture_encounter())

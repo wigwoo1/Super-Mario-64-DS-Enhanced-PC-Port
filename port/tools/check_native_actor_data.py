@@ -179,6 +179,37 @@ def main():
         raise ValueError('Incomplete Goomboss square path lift surface table')
     print('PASS: native Goomboss square path lift profile, factory, resource references and surface table')
 
+    boss_base, boss_rom = overlay(74)
+    for name, factory, address in (
+        ('pc_goomboss_profile', 'daKuriKing_c_classInit_KURIKING', 0x02122e78),
+        ('pc_goomboss_vanish_profile', 'daKuriKing_c_classInit_KURIKING_VANISH', 0x02122e94),
+    ):
+        original = struct.unpack_from('<IHHIiiii', boss_rom, address - boss_base)
+        native = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(name), 28))
+        if native[0] != named(factory) or native[1:] != original[1:]:
+            raise ValueError(f'{name}: Goomboss profile/factory differs from the original')
+    for table, module, count in (
+        (0x0212292c, 'ov084', 7),
+        (0x02122948, 'ov074', 12),
+    ):
+        original = struct.unpack_from(f'<{count}I', boss_rom, table - boss_base)
+        actual = struct.unpack(f'<{count}I', pe_bytes(args.exe, named(f'data_ov074_{table:08x}'), 4*count))
+        if actual != tuple(named(f'data_{module}_{address:08x}') for address in original):
+            raise ValueError('Goomboss shared animation handles differ from original ordering')
+    arena_animations = named('pc_goomboss_stage_animations')
+    originals = struct.unpack_from('<7I', boss_rom, 0x02122e5c - boss_base)
+    actual = struct.unpack('<7I', pe_bytes(args.exe, named('data_ov074_02122e5c'), 28))
+    if actual != tuple(arena_animations + address - 0x021111a0 for address in originals):
+        raise ValueError('Goomboss texture animations are bound to the wrong stage data')
+    original_clips = boss_rom[0x02122f34 - boss_base:0x02122fd0 - boss_base]
+    clip_addresses = pe_bytes(args.exe, named('data_ov074_02122f34'), len(original_clips))
+    for (handle, texture, flags), native in zip(struct.iter_unpack('<3I', original_clips),
+                                               struct.iter_unpack('<3I', clip_addresses)):
+        expected = (named(f'data_ov074_{handle:08x}'), arena_animations + texture - 0x021111a0, flags)
+        if native != expected:
+            raise ValueError('Goomboss animation clip differs from the original')
+    print('PASS: both Goomboss profiles, 19 live shared animation handles and 13 native animation clips')
+
     gura_base, gura_rom = overlay(45)
     expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112ffc - gura_base)
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_GURA'), 28))

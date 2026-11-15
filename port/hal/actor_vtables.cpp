@@ -268,6 +268,7 @@ extern "C" unsigned char g_profile_BLUE_COIN[];
 extern "C" unsigned char g_profile_KURIBO[], g_profile_KURIBO_S[], g_profile_KURIBO_L[];
 extern "C" void pc_goomba_init_resources();
 extern "C" void pc_bombking_init_resources();
+extern "C" void pc_goomboss_init_handles();
 extern "C" void pc_buddy_init_resources(), pc_shutter_init_resources();
 extern "C" void pc_chomp_init_resources(), pc_pile_init_resources(), pc_wanwan_fence_init_resources();
 extern "C" void pc_lava_bridge_init_resources();
@@ -283,6 +284,8 @@ extern "C" void *daObjMcWater_c_classInit();
 extern "C" void pc_cannon_init_resources(), pc_waterbomb_init_resources();
 extern "C" unsigned char g_profile_CANNON_SHUTTER[];
 extern "C" unsigned char g_profile_BOMBKING[];
+extern "C" void *daKuriKing_c_classInit_KURIKING();
+extern "C" void *daKuriKing_c_classInit_KURIKING_VANISH();
 extern "C" unsigned char g_profile_TREE[];
 extern "C" unsigned char g_profile_SBIRD[];
 extern "C" unsigned char g_profile_KINOPIO[];
@@ -300,6 +303,12 @@ struct PcNativeActorProfile {
     unsigned short behaviorPriority, renderPriority;
     unsigned int flags;
     int clipOffsetY, clipRadius, clipDistance, farDistance;
+};
+static PcNativeActorProfile pc_goomboss_profile = {
+    (void *)&daKuriKing_c_classInit_KURIKING, 198, 22, 0x34800000, 0, 0x100000, 0x3000000, 0x3000000
+};
+static PcNativeActorProfile pc_goomboss_vanish_profile = {
+    (void *)&daKuriKing_c_classInit_KURIKING_VANISH, 199, 23, 0x24800002, 0, 0x100000, 0x3000000, 0x3000000
 };
 extern "C" void *da1up_c_classInit_ONEUPKINOKO();
 extern "C" void *daObjTatefuda_c_classInit();
@@ -971,9 +980,12 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[269] = &pc_cap_reward_profile;
     pc_goomba_init_resources();
     pc_bombking_init_resources();
+    pc_goomboss_init_handles();
     _ZN13SharedFilePtr9ConstructEj(&data_ov102_0214e9c0,0x2b8);
     _ZN13SharedFilePtr9ConstructEj(&data_ov102_0214e9c8,0x2b7);
     data_020a4bb8_storage[189] = g_profile_BOMBKING;
+    data_020a4bb8_storage[198] = &pc_goomboss_profile;
+    data_020a4bb8_storage[199] = &pc_goomboss_vanish_profile;
     data_020a4bb8_storage[206] = g_profile_BOMBHEI;
     data_020a4bb8_storage[349] = &pc_exit_profile;
     data_020a4bb8_storage[348] = g_profile_CH_ROOM;

@@ -74,6 +74,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daBook_c_classInit_KILLER_BOOK", "daBookGen_c_classInit",
                  "daChair_c_classInit", "daPiano_c_classInit",
                  "daObjEmmYuka_c_classInit",
+                 "daKuriKing_c_classInit_KURIKING", "daKuriKing_c_classInit_KURIKING_VANISH",
                  "daUdlift_c_classInit_UDLIFT_TERESA", "daUdlift_c_classInit_UDLIFT",
                  "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daObjWc_Obj07_c_classInit", "daObjKm3_Kaitendai_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
                  "daEykn_c_classInit_EYEKUN", "daEykn_c_classInit_EYEKUN_BOSS", "daEyBm_c_classInit",
@@ -662,6 +663,14 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import simple_lift_host
                     transformed=simple_lift_host.transform_path_lift(root,transformed)
                     rewrites+=1
+                if path.name in ('d_a_kuri_king_kuriking.cpp', 'd_a_kuri_king_kuriking_vanish.cpp'):
+                    import goomboss_host
+                    transformed = goomboss_host.transform_factory(transformed)
+                    rewrites += 1
+                if path.name == 'daKuriKing_c.cpp':
+                    import goomboss_host
+                    transformed = goomboss_host.transform_actor(transformed)
+                    rewrites += 1
                 if path.name == 'daObjEmmYuka_c.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform_emm_yuka(transformed)

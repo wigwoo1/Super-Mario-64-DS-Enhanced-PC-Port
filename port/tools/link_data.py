@@ -573,6 +573,10 @@ def main() -> int:
             lines.append("    0,")
         lines.append("};")
         aliases.extend((external, storage) for external in sorted(set(item["linker_names"])))
+    # Goomboss's original animation records reference its arena overlay.
+    if ('ov074', 0x02122e4c) in selected:
+        import goomboss_host
+        lines.extend(goomboss_host.local_resource_cpp(root))
     lines.append("}")
     for external, storage in aliases:
         lines.append(f'#pragma comment(linker, "/alternatename:{external}=_'+storage+'")')

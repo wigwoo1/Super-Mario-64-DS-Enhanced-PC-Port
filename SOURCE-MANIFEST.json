@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "215ac02215ff243ddd399e47a8ac7c0ed3cb0d32240738aa9db7ea56c753d2c6",
-      "bytes": 91202
+      "sha256": "900c9be7ff59cd91bd02669c73f587d8458af8737d83ab80d167de3492676722",
+      "bytes": 91356
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "7a9f6623dee083f52f9a3fcd6e84490461d6983a67ce2c940d7abca61a74abdb",
-      "bytes": 63383
+      "sha256": "1dc02b69c33a31c87d1c8d2ad178dcc3054d7d871b51430a83638e0c3f75ccaf",
+      "bytes": 64013
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "3a8aa9a0840e0daddc74b7dc301fd00876c497272b573f995b642c3296deb423",
-      "bytes": 599958
+      "sha256": "babba0cf2357f7bca6c46cf59ae1c71735336e275ccd0e1b400170cfda9bccdd",
+      "bytes": 604556
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9115,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "dd899176b11ef4346a2e9d2b9079ab845ea3501b8b4bcefe77c110d5f71c360f",
-      "bytes": 63204
+      "sha256": "0217cb73c979b16396ff8a8d75982f4327fae9ee4ac65940eb88ac70aff46b76",
+      "bytes": 63757
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "9becebe6c59954d0d33f5c341f5929cd4e3ffc481c844d11babca9c811088b65",
-      "bytes": 90213
+      "sha256": "fbc10a16b1bb406ba97b1d2f652b92eaccb6f2943d1751765ee328e9be6ec752",
+      "bytes": 92357
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9514,6 +9514,11 @@
       "bytes": 6512
     },
     {
+      "path": "port/tools/goomboss_host.py",
+      "sha256": "2308270d8ac320c8f2450043cf6734f3a5e5238026d79b12eb55d8173287355c",
+      "bytes": 7391
+    },
+    {
       "path": "port/tools/hatena_switch_host.py",
       "sha256": "d5dab013451d9e8fea4ded2106582c7bf2847c653854f7324700d91da5d1a17f",
       "bytes": 3091
@@ -9600,8 +9605,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "cf2290a3f20fa88f6ec5abe9fb5e95038227926a2fe7d30f2f8fd93afaf8fefc",
-      "bytes": 31208
+      "sha256": "cc9ca49409c4da5fd8fb95849f922f57d0750290ed2043a1bc52eeb382620e3b",
+      "bytes": 31413
     },
     {
       "path": "port/tools/linkage.py",
