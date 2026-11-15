@@ -159,6 +159,26 @@ def main():
         raise ValueError('Fire Sea path lift does not dispatch to its three original native states')
     print('PASS: native Fire Sea and Sky path-lift profiles, factories and three shared state callbacks')
 
+    emm_base, emm_rom = overlay(52)
+    expected = struct.unpack_from('<IHHIiiii', emm_rom, 0x021125cc - emm_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_emm_yuka_profile'), 28))
+    if actual[0] != named('daObjEmmYuka_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Goomboss square path lift profile/factory differs from the original')
+    resource_addresses = (0x021126a8, 0x021126b0, 0x0211ba0c)
+    resource_names = ('data_ov052_021126a8', 'data_ov052_021126b0', 'data_ov064_0211ba0c')
+    if struct.unpack_from('<3I', emm_rom, 0x021125a0 - emm_base) != resource_addresses:
+        raise ValueError('Original Goomboss square path lift resource references changed')
+    descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov052_021125a0'), 12))
+    if descriptor != tuple(named(name) for name in resource_names):
+        raise ValueError('Goomboss square path lift native resource references differ')
+    surface_base, surface_rom = overlay(64)
+    offset = resource_addresses[2] - surface_base
+    if struct.unpack_from('<4sHH', surface_rom, offset) != (b'CLPS', 8, 2):
+        raise ValueError('Unexpected original Goomboss square path lift surface table')
+    if pe_bytes(args.exe, descriptor[2], 24) != surface_rom[offset:offset + 24]:
+        raise ValueError('Incomplete Goomboss square path lift surface table')
+    print('PASS: native Goomboss square path lift profile, factory, resource references and surface table')
+
     gura_base, gura_rom = overlay(45)
     expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112ffc - gura_base)
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_GURA'), 28))

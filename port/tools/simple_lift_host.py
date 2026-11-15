@@ -220,6 +220,37 @@ def transform_path_lift(root, text):
                     'mTargetPosX', 'mTargetPosY', 'mTargetPosZ'])
 
 
+def transform_emm_yuka(text):
+    """Bind the original path lift to host-owned handles and its ov064 surface."""
+    text = lazy_handles(text, ('EmmYukaModelFilePtr', 'EmmYukaCollisionFilePtr'))
+    declaration = 'extern EmmYukaFiles data_ov052_021125a0;'
+    assert text.count(declaration) == 1
+    text = text.replace(declaration, 'extern CLPS_Block data_ov064_0211ba0c;')
+    anchor = 'int daObjEmmYuka_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    binding = '''extern EmmYukaModelFilePtr data_ov052_021126a8;
+extern EmmYukaCollisionFilePtr data_ov052_021126b0;
+extern "C" EmmYukaFiles data_ov052_021125a0 = {
+    &data_ov052_021126a8, &data_ov052_021126b0, &data_ov064_0211ba0c
+};
+
+'''
+    setup = '''
+    static const bool filesReady = [] {
+        data_ov052_021126a8.Construct(1509);
+        data_ov052_021126b0.Construct(1510);
+        return true;
+    }();
+    (void)filesReady;
+'''
+    # Cleanup and Behavior, which precede InitResources, also use the bundle.
+    marker = '// @symbol _ZN14daObjEmmYuka_cD1Ev'
+    assert text.count(marker) == 1
+    text = text.replace(marker, binding + marker).replace(anchor, anchor + setup)
+    return observe(text, 'daObjEmmYuka_c', 'node,path_direction,speed',
+                   ['mNodeIndex', 'mPathDir', 'mHorzSpeed'])
+
+
 def transform_firesea_gura(root, text):
     rom = (root / 'extracted/overlays/overlay_0045.bin').read_bytes()
     base = 0x021111a0

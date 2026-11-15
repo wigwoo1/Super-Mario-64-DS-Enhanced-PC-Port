@@ -18,9 +18,11 @@ Final arena and ending checkpoint
 A selected muted replay from the original castle entrance uses a prepared
 80-Star File A. Mario crosses the upper moving platforms, hits Bowser with
 three mines, collects the giant Star and reaches the credits and final cake
-card. The original confirmation returns to the main menu. A stale dialogue
-card remains over the returned menu, and menu controls after the credits
-remain unverified. The two isolated save files were unchanged in that run.
+card. The original confirmation returns to the main menu. The PC dialogue
+card is cleared when the title scene takes over. A follow-up muted replay
+used scripted controller D-pad inputs to move focus to Rec Room and back,
+then A to open the file list and B to return to the title. Both isolated
+saves were unchanged. Physical controller hardware was not tested.
 This checkpoint does not establish earned campaign progression, ending save
 persistence or coverage of the remaining courses and requested features.
 

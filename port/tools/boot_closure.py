@@ -73,6 +73,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daBook_c_classInit_SHOOT_BOOK",
                  "daBook_c_classInit_KILLER_BOOK", "daBookGen_c_classInit",
                  "daChair_c_classInit", "daPiano_c_classInit",
+                 "daObjEmmYuka_c_classInit",
                  "daUdlift_c_classInit_UDLIFT_TERESA", "daUdlift_c_classInit_UDLIFT",
                  "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daObjWc_Obj07_c_classInit", "daObjKm3_Kaitendai_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
                  "daEykn_c_classInit_EYEKUN", "daEykn_c_classInit_EYEKUN_BOSS", "daEyBm_c_classInit",
@@ -660,6 +661,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'd_a_linelift2.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform_path_lift(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjEmmYuka_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_emm_yuka(transformed)
                     rewrites+=1
                 if path.name == 'd_a_obj_km2_gura.cpp':
                     import simple_lift_host

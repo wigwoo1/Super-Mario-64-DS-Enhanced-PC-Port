@@ -346,6 +346,8 @@ def main() -> int:
         'data_ov002_020ff0a0', 'data_ov002_020ff0ac',
         'data_ov002_020ff0b8', 'data_ov002_020ff0c4',
         'data_ov002_020ff090')})
+    # The Goomboss path lift uses the collision surface shared by ov064 scenery.
+    external_names['_data_ov064_0211ba0c'] = 'data_ov064_0211ba0c'
     if manifest_path.is_file():
         try:
             external_names.update(json.loads(manifest_path.read_text(encoding="utf-8")))

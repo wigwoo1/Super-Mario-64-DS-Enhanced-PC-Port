@@ -533,6 +533,10 @@ static PcNativeActorProfile pc_dark_world_extending_profile = {(void *)&daObjSim
 extern "C" void *daLinelift2_c_classInit_KM2_SUSUMU();
 extern "C" void *daLinelift2_c_classInit_KM3_LIFT();
 extern "C" unsigned char g_profile_KM2_GURA[];
+extern "C" void *daObjEmmYuka_c_classInit();
+static PcNativeActorProfile pc_emm_yuka_profile = {
+    (void *)&daObjEmmYuka_c_classInit, 175, 17, 2, 0, 0x150000, 0x2000000, 0
+};
 extern "C" unsigned char g_profile_KM2_AMI_BOU[];
 extern "C" void *daObjKm2_Nobiru_c_classInit();
 static PcNativeActorProfile pc_firesea_stretch_profile = {
@@ -896,6 +900,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[147] = &pc_firesea_sliding_profile;
     data_020a4bb8_storage[148] = &pc_firesea_stretch_profile;
     data_020a4bb8_storage[141] = g_profile_KM2_GURA;
+    data_020a4bb8_storage[175] = &pc_emm_yuka_profile;
     data_020a4bb8_storage[140] = g_profile_KM2_AGARU;
     data_020a4bb8_storage[142] = g_profile_KM2_AMI_BOU;
     data_020a4bb8_storage[266] = g_profile_BIRIKYU;

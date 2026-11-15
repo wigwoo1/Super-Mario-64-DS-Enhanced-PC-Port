@@ -76,7 +76,11 @@ int pc_stage_graph_draw_particles(void *self)
 void pc_stage_graph_prepare()
 {
 #if defined(SM64DS_GAME_TARGET)
-    ntr::gpu_set_menu_scene(pc_dsmt_active());
+    const bool title_menu = pc_dsmt_active();
+    ntr::gpu_set_menu_scene(title_menu);
+    // The ending can leave the last stage dialogue latched when the title takes over.
+    if (title_menu)
+        ntr::video_set_dialogue_card_active(false);
 #endif
     // The fiber runtime does not execute the ARM VBlank IRQ dispatcher.
     // Upload this active Stage callback's latest transform before scanout.

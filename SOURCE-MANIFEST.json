@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "3baf3fef9cc9b082d88085868ca3a435ccd49dbf9abdfa82ebc068ec4063a76b",
-      "bytes": 254441
+      "sha256": "62eb5768ec9506f75defc431a4684c547408de5284f039f0a81926ae4e648ddc",
+      "bytes": 254490
     },
     {
       "path": "port/build-support/README.md",
@@ -6615,8 +6615,8 @@
     },
     {
       "path": "port/docs/native-bowser-sky-2026-11-15.txt",
-      "sha256": "04c6cba2102843fc977f19b3b50ca72f9e8f430b66e3d0c877cd13935a601811",
-      "bytes": 1854
+      "sha256": "d227cf4924f112c55f9c286c130f4cc8e456b08ea09b0f2255e21732ab75dc74",
+      "bytes": 1993
     },
     {
       "path": "port/docs/native-brick-character-rules-verified-2026-10-25.txt",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "a5501a919f723a02fb0642dbb0abf33889b1dce84d1937fd8ca28987a809f896",
-      "bytes": 63151
+      "sha256": "7a9f6623dee083f52f9a3fcd6e84490461d6983a67ce2c940d7abca61a74abdb",
+      "bytes": 63383
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8050,8 +8050,8 @@
     },
     {
       "path": "port/hal/stage_graph_state.cpp",
-      "sha256": "f1d694130af04d7b82adcf6f99809759c89f57558c0c25ab797de3266007b7f1",
-      "bytes": 10398
+      "sha256": "7f41fc578e911681fcde72a804492b1e8b44a8397a0becb18aac12cdad38c2a4",
+      "bytes": 10597
     },
     {
       "path": "port/hal/stage_graph_state.h",
@@ -9115,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "993a2b0086d2f703456d05fb1fc54012bf3495c4978022d8cfb899d84f059e6a",
-      "bytes": 62948
+      "sha256": "dd899176b11ef4346a2e9d2b9079ab845ea3501b8b4bcefe77c110d5f71c360f",
+      "bytes": 63204
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "6a5385f770c8e95abf7288f766d7e1a573fdb842a4a61fd68bd8caf6f460af2e",
-      "bytes": 88716
+      "sha256": "9becebe6c59954d0d33f5c341f5929cd4e3ffc481c844d11babca9c811088b65",
+      "bytes": 90213
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9600,8 +9600,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "fe782caf61fdd57a6f1c4d4b81bea5451a2fccd0f9bfbfcb7b346fe167c3a604",
-      "bytes": 31060
+      "sha256": "cf2290a3f20fa88f6ec5abe9fb5e95038227926a2fe7d30f2f8fd93afaf8fefc",
+      "bytes": 31208
     },
     {
       "path": "port/tools/linkage.py",
@@ -9775,8 +9775,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "2f7850749e36e71e9cc25ea59e53ba8cbfeff831383f3624a44f6e31c4ca2379",
-      "bytes": 29991
+      "sha256": "ac6d97b97c8289cdb8d3affb4ba9e1f55f6ca033def6d1db22fdf7b719d18adb",
+      "bytes": 31279
     },
     {
       "path": "port/tools/skeeter_host.py",
