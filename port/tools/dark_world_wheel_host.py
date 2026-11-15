@@ -1,4 +1,4 @@
-"""Native resources and typed shared initialization for the Dark World wheel."""
+"""Native resources and typed shared initialization for Bowser course wheels."""
 from battlefield_platform_host import lazy_handles, observe
 import re
 
@@ -52,6 +52,38 @@ extern "C" int func_ov002_020b6c54(daObjKurumajiku_c *self,
             return observe(text,cls,'angle_z,cart0,cart1,cart2,cart3',
                 ['int(mAngleZ)']+['unsigned(mMountedActorIds[%d])'%i for i in range(4)])
         return observe(text,cls,'angle_z', ['int(mAngleZ)'])
+    sky_specs={
+        'd_a_obj_km3_kurumajiku.cpp': ('daObjKm3_Kurumajiku_c',
+            'Km3KurumajikuModelFilePtr', 'Km3KurumajikuClsnFilePtr',
+            '021125e8', '021125e0', '02112258', '02111b54', 1665, 1666),
+        'd_a_obj_km3_kuruma.cpp': ('daObjKm3_Kuruma_c',
+            'Km3KurumaModelFilePtr', 'Km3KurumaClsnFilePtr',
+            '02112638', '02112630', '02112408', '02111ab4', 1663, 1664),
+    }
+    if name in sky_specs:
+        cls, model_type, collision_type, model, collision, table, clps, model_id, collision_id = sky_specs[name]
+        for kind in (model_type, collision_type):
+            text = text.replace(f'{kind}(u32 ', f'{kind}(unsigned int ')
+        text = lazy_handles(text, (model_type, collision_type))
+        old = f'extern CLPS_Block data_ov047_{clps};\n'
+        assert text.count(old) == 1
+        text = text.replace(old, '')
+        old = f'&data_ov047_{clps}\n'
+        assert text.count(old) == 1
+        text = text.replace(old, 'nullptr\n')
+        anchor = f's32 {cls}::InitResources()\n{{'
+        assert text.count(anchor) == 1
+        text = text.replace(anchor, anchor + f'''
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(39, 0x{clps}));
+    if (!surface) return 0;
+    static const bool ready = [] {{
+        data_ov047_{model}.Construct({model_id});
+        data_ov047_{collision}.Construct({collision_id});
+        return true;
+    }}();
+    (void)ready;
+    data_ov047_{table}.clps = surface;''', 1)
+        return '#include "hal/level_overlay.h"\n' + text
     specs={
         'd_a_obj_km1_kurumajiku.cpp':('daObjKm1_Kurumajiku_c',
             'Km1KurumajikuModelFilePtr','Km1KurumajikuCollisionFilePtr',

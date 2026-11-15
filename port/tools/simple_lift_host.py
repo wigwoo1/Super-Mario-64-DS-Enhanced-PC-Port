@@ -25,6 +25,52 @@ def observe_dorifu(text):
     text=text[:start]+chunk[:last]+trace+chunk[last:]+text[end:]
     return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n'+text
 
+
+def transform_sky_dorifu(root, text):
+    """Bind native handles and resolve each surface in its owning course."""
+    rom = (root / 'extracted/overlays/overlay_0047.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x021124ec - base) == (
+        0x0211164c, 153, 224, 0, 0x500000, 0x1000000, 0x2000000, 0)
+    text = lazy_handles(text, ('DorifuModelFilePtr', 'DorifuClsnFileHandle'))
+    declaration = 'extern "C" {\nextern daObjDorifuResources data_ov047_02112508[5];\n}\n'
+    assert text.count(declaration) == 1
+    text = text.replace(declaration, '')
+    rows = []
+    surfaces = []
+    for i in range(5):
+        model, collision, surface = struct.unpack_from('<3I', rom, 0x02112508 - base + i*12)
+        assert struct.unpack_from('<4sHH', rom, surface - base) == (b'CLPS', 8, 2)
+        model_name = f'data_ov047_{model:08x}'
+        collision_name = f'data_ov047_{collision:08x}'
+        assert f'{model_name}(0x{0x66f+i*2:x})' in text
+        assert f'{collision_name}(0x{0x670+i*2:x})' in text
+        rows.append(f'    {{&{model_name}, &{collision_name}, nullptr}}')
+        surfaces.append(f'0x{surface:08x}')
+    marker = '// @symbol _ZN17daObjKm3_Dorifu_c13InitResourcesEv'
+    handles = re.findall(r'^(Dorifu\w+) (data_ov047_\w+)\((0x\w+)\);', text, re.M)
+    assert len(handles) == 10 and text.count(marker) == 1
+    declarations = [f'extern {handle} {name};' for handle, name, _ in handles]
+    bindings = '\n'.join(declarations) + '\nextern "C" daObjDorifuResources pc_sky_dorifu_resources[5] = {\n'
+    bindings += ',\n'.join(rows) + '\n};\n\n'
+    text = text.replace(marker, bindings + marker)
+    anchor = 's32 daObjKm3_Dorifu_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    setup = """
+    constexpr unsigned int surfaceAddresses[] = {SURFACES};
+    for (unsigned int row = 0; row < 5; ++row) {
+        auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(39, surfaceAddresses[row]));
+        if (!surface) return 0;
+        pc_sky_dorifu_resources[row].clps = surface;
+    }
+"""
+    setup += "    static const bool filesReady = [] {\n"
+    setup += ''.join(f'        {name}.Construct({file_id});\n' for _, name, file_id in handles)
+    setup += "        return true;\n    }();\n    (void)filesReady;\n"
+    text = text.replace(anchor, anchor + setup.replace('SURFACES', ', '.join(surfaces)))
+    return '#include "hal/level_overlay.h"\n' + text.replace('data_ov047_02112508', 'pc_sky_dorifu_resources')
+
+
 def transform(root,text):
     cfg=(root/'config/arm9/overlays/ov091/delinks.txt').read_text()
     base=int(re.search(r'\.text\s+start:0x([\da-f]+)',cfg)[1],16)
@@ -41,18 +87,36 @@ def transform(root,text):
     firesea=(root/'extracted/overlays/overlay_0045.bin').read_bytes()
     signature,stride,count=struct.unpack_from('<4sHH',firesea,0x02112530-0x021111a0)
     assert signature==b'CLPS' and stride==8 and count>0
+    assert struct.unpack_from('<IHHIiiii',raw,0x02134f7c-base)==(
+        0x021328d8,154,225,2,0,0x350000,0x2000000,0)
+    assert struct.unpack_from('<3I',raw,0x02135030-base)==(0x02135560,0x021354f8,0x02111b34)
+    assert struct.unpack_from('<H',raw,0x02134506-base)[0]==80
+    assert struct.unpack_from('<h',raw,0x02134516-base)[0]==16384
+    sky=(root/'extracted/overlays/overlay_0047.bin').read_bytes()
+    assert struct.unpack_from('<4sHH',sky,0x02111b34-0x021111a0)==(b'CLPS',8,1)
     text=lazy_handles(text,('SimpleLiftModelFilePtr','SimpleLiftClsnFileHandle'))
     text,n=re.subn(r'\*\(SharedFilePtr \*\*\)\(data_ov091_02135024 \+ mVariant \* 0xc\)',
-                   '(mVariant==4 ? &data_ov091_02135510 : &data_ov091_02135520)',text);assert n==2,n
+                   '(mVariant==1 ? &data_ov091_02135560 : '
+                   'mVariant==4 ? &data_ov091_02135510 : &data_ov091_02135520)',text);assert n==2,n
     text,n=re.subn(r'\*\(SharedFilePtr \*\*\)\(data_ov091_02135028 \+ (?:mVariant \* 0xc|tableOffset)\)',
-                   '(mVariant==4 ? &data_ov091_02135540 : &data_ov091_02135538)',text);assert n==3,n
+                   '(mVariant==1 ? &data_ov091_021354f8 : '
+                   'mVariant==4 ? &data_ov091_02135540 : &data_ov091_02135538)',text);assert n==3,n
     text=text.replace('*(void **)(data_ov091_0213502c + tableOffset)','surface')
     text=text.replace('extern char data_ov091_0213502c[];','extern unsigned char data_ov043_02111be0[];')
     anchor='int daObjSimpleLift_c::InitResources()\n{'
     text=text.replace(anchor,anchor+'''
-    assert(actorID==138 || actorID==147);
+    assert(actorID==138 || actorID==147 || actorID==154);
     void *surface=data_ov043_02111be0;
-    if (actorID==147) {
+    if (actorID==154) {
+        surface=pc_level_overlay_address(39, 0x02111b34);
+        if (!surface) return 0;
+        static const bool ready=[] {
+            data_ov091_02135560.Construct(0x679);
+            data_ov091_021354f8.Construct(0x67a);
+            return true;
+        }();
+        (void)ready;
+    } else if (actorID==147) {
         surface=pc_level_overlay_address(37, 0x02112530);
         if (!surface) return 0;
         static const bool ready=[] {

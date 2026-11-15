@@ -1,0 +1,14 @@
+Bowser in the Sky development checkpoint
+
+The native build restores selected extending platform, seesaw, rotating disc,
+wheel, Whomp and timed-stair actor behavior. A muted replay starts from a
+prepared 80-Star File A, enters through the original castle route, defeats
+Whomp and Chuckya, activates the floor switch, climbs all six treads and ends
+on the upper landing after the stairs reset. This checks the named route and
+does not establish earned prerequisites, lift traversal, the final Bowser
+fight, credits or campaign completion. Alternate exploratory routes in
+the opt-in replay code are diagnostic unless individually verified.
+
+The build kit regenerates the Whomp and timed-stair translation units from
+the user's matching ROM. The public source and kit contain the adapter code
+and symbol names. The full executable is produced locally.

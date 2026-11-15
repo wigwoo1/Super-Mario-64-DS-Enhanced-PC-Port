@@ -25,6 +25,8 @@ static void pc_disc_observe(daObjKaitendai_c *a){
         return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n#include "hal/actor_render_probe.h"\n'+text
     if name == 'd_a_obj_wc_obj07.cpp':
         return transform_wdw(root, text)
+    if name == 'd_a_obj_km3_kaitendai.cpp':
+        return transform_sky(root, text)
     raw=(root/'extracted/overlays/overlay_0036.bin').read_bytes()
     base=0x021111a0
     assert struct.unpack_from('<IHHIiiii',raw,0x02113b50-base)==(0x02111544,129,259,2,409600,4096000,29491200,6553600)
@@ -80,3 +82,37 @@ def transform_wdw(root, text):
         'extern WcObj07ModelFilePtr data_ov029_021142dc;\n'
         'extern WcObj07CollisionFilePtr data_ov029_021142d4;\n' + anchor, 1) +
         '\nextern "C" ResourceDescriptor data_ov029_02113fd4 = {};\n')
+
+
+def transform_sky(root, text):
+    from battlefield_platform_host import lazy_handles
+
+    rom = (root / 'extracted/overlays/overlay_0047.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x02112358 - base) == (
+        0x021113bc, 156, 227, 2, 0, 0x380000, 0x2000000, 0)
+    assert struct.unpack_from('<3I', rom, 0x02112334 - base) == (
+        0x02112610, 0x02112608, 0x02111bf4)
+    assert struct.unpack_from('<h2xh', rom, 0x02112320 - base) == (312, 624)
+    kinds = ('Km3KaitendaiModelFilePtr', 'Km3KaitendaiClsnFilePtr')
+    for kind in kinds:
+        text = text.replace(f'{kind}(u32 ', f'{kind}(unsigned int ')
+    text = lazy_handles(text, kinds)
+    text = text.replace('extern CLPS_Block data_ov047_02111bf4;\n', '')
+    text = text.replace('&data_ov047_02111bf4\n', 'nullptr\n')
+    text = text.replace('extern s16 data_ov047_02112320;\nextern s16 data_ov047_02112324;\n', '')
+    start = '''    s16 angle = data_ov047_02112320;
+    if ((param1 & 0xff) == 1)
+        angle = data_ov047_02112324;'''
+    assert text.count(start) == 1
+    text = text.replace(start, '''    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(39, 0x02111bf4));
+    if (!surface) return 0;
+    static const bool ready = [] {
+        data_ov047_02112610.Construct(1661);
+        data_ov047_02112608.Construct(1662);
+        return true;
+    }();
+    (void)ready;
+    data_ov047_02112334.clps = surface;
+    const s16 angle = (param1 & 0xff) == 1 ? 624 : 312;''')
+    return '#include "hal/level_overlay.h"\n' + text

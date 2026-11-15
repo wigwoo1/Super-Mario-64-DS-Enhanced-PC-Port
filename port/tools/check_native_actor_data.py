@@ -72,6 +72,12 @@ def main():
     if actual[0] != named('daObjSimpleBg_c_classInit_DOKAN') or actual[1:] != expected[1:]:
         raise ValueError('Warp pipe profile/factory differs from the original')
     surface_base, surface_rom = overlay(2)
+    lift_base, lift_rom = overlay(91)
+    sky_lift = struct.unpack_from('<IHHIiiii', lift_rom, 0x02134f7c - lift_base)
+    native_sky_lift = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_sky_extending_profile'), 28))
+    if (native_sky_lift[0] != named('daObjSimpleLift_c_classInit_KM3_DERU01')
+            or native_sky_lift[1:] != sky_lift[1:]):
+        raise ValueError('Bowser in the Sky extending platform profile differs from the original')
     for profile, factory, address in (
         ('g_profile_SECRET_COIN', 'daSCoin_c_classInit', 0x0210b00c),
         ('pc_push_block_profile', 'daObjPushblock_c_classInit', 0x0210968c),
@@ -286,6 +292,28 @@ def main():
             raise ValueError(f'{state:08x}: Chuckya state has a missing native callback')
     print('PASS: native Chuckya profile, factory, six resource handles and ten linked state records')
 
+    whomp_base, whomp_rom = overlay(79)
+    state_templates = (
+        0x02127c00, 0x02127bd0, 0x02127c10, 0x02127bd8,
+        0x02127bc0, 0x02127bc8, 0x02127c18, 0x02127c20,
+        0x02127be8, 0x02127bf8, 0x02127be0, 0x02127c08,
+    )
+    expected_states = []
+    for template in state_templates:
+        address, adjustment = struct.unpack_from('<II', whomp_rom, template - whomp_base)
+        if adjustment:
+            raise ValueError('Unexpected Whomp state member adjustment')
+        expected_states.append(symbols[f'?func_ov079_{address:08x}@daBtn_c@@QAEXXZ'])
+    native_states = struct.unpack('<12I', pe_bytes(args.exe, named('data_ov079_02128280'), 48))
+    if native_states != tuple(expected_states):
+        raise ValueError('Whomp state dispatch differs from the original')
+    for address, size in ((0x021275dc, 8), (0x021275e4, 8), (0x02127ba0, 16), (0x02127cfc, 384)):
+        offset = address - whomp_base
+        native_table = pe_bytes(args.exe, named(f'data_ov079_{address:08x}'), size)
+        if native_table != whomp_rom[offset:offset + size]:
+            raise ValueError(f'Whomp data at {address:08x} differs from the original')
+    print('PASS: original Whomp state dispatch, motion tables and collision properties')
+
     skeeter_base, skeeter_rom = overlay(90)
     expected = struct.unpack_from('<IHHIiiii', skeeter_rom, 0x02134144 - skeeter_base)
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_skeeter_profile'), 28))
@@ -439,6 +467,9 @@ def main():
             ('pc_battlefield_seesaw_profile','daObjSeesaw_c_classInit_BOMB_SEESAW',95,0x02137484),
             ('pc_dark_world_seesaw_profile','daObjSeesaw_c_classInit_KM1_SEESAW',95,0x021373f8),
             ('pc_fire_sea_seesaw_profile','daObjSeesaw_c_classInit_KM2_YOKOSEESAW',95,0x02137414),
+            ('pc_sky_horizontal_seesaw_profile','daObjSeesaw_c_classInit_KM3_YOKOSEESAW',95,0x0213744c),
+            ('pc_sky_vertical_seesaw_profile','daObjSeesaw_c_classInit_KM3_SEESAW',95,0x02137430),
+            ('pc_sky_dorifu_profile','daObjKm3_Dorifu_c_classInit',47,0x021124ec),
             ('g_profile_KM1_DORIFU','daObjKm1_Dorifu_c_classInit',43,0x021124fc),
             ('pc_battlefield_gate_profile','daObjBSwdoor_c_classInit',14,0x021145e4),
             ('pc_koopa_race_profile','daRNk_c_classInit',62,0x0211db78),
@@ -476,6 +507,10 @@ def main():
             ('g_profile_RC_CARPET','daObjRcCarpet_c_classInit',36,0x02113f78),
             ('pc_wdw_disc_profile','daObjWc_Obj07_c_classInit',29,0x02113ff4),
             ('pc_rainbow_disc_profile','daObjRc_Kaitendai_c_classInit',36,0x02113b50),
+            ('pc_whomp_profile','daBtn_c_classInit_BATAN',79,0x02127c5c),
+            ('pc_sky_disc_profile','daObjKm3_Kaitendai_c_classInit',47,0x02112358),
+            ('g_profile_KM3_KURUMA','daObjKm3_Kuruma_c_classInit',47,0x02112428),
+            ('g_profile_KM3_KURUMAJIKU','daObjKm3_Kurumajiku_c_classInit',47,0x0211227c),
             ('pc_rainbow_donut_profile','daObjRc_Tikuwa_c_classInit',36,0x02113cd4),
             ('pc_rainbow_swing_profile','daObjRcBuranko_c_classInit',36,0x02113a74),
             ('pc_rainbow_seesaw_profile','daObjSeesaw_c_classInit_RC_SEESAW',95,0x02137468),
@@ -556,6 +591,19 @@ def main():
         if pe_bytes(args.exe,named(clps),span)!=dorifu_rom[clps_offset:clps_offset+span]:
             raise ValueError(f'Incomplete original Dark World drifting-stairs CLPS row {i}')
     print('PASS: native Dark World KM1_DORIFU profile, five rebased resource rows and complete CLPS tables')
+    sky_base, sky_rom = overlay(47)
+    sky_rows = struct.unpack('<15I', pe_bytes(args.exe, named('pc_sky_dorifu_resources'), 60))
+    for i in range(5):
+        model, collision, surface = struct.unpack_from('<3I', sky_rom, 0x02112508 - sky_base + i*12)
+        handles = [named(f'data_ov047_{address:08x}') for address in (model, collision)]
+        if sky_rows[i*3:i*3+3] != (*handles, 0):
+            raise ValueError(f'Sky timed stair resource row {i} does not contain native handles')
+        for address, file_id in zip(handles, (0x66f+i*2, 0x670+i*2)):
+            if struct.unpack('<II', pe_bytes(args.exe, address, 8)) != (file_id, 0):
+                raise ValueError(f'Sky timed stair resource row {i} has an incorrect file ID')
+        if struct.unpack_from('<4sHH', sky_rom, surface - sky_base) != (b'CLPS', 8, 2):
+            raise ValueError(f'Sky timed stair resource row {i} has invalid collision properties')
+    print('PASS: native Sky KM3_DORIFU profile and five original model/collision handle pairs')
     for suffix in ('edc4','edcc','edd4','eddc','ede4','edec','edf4'):
         label='data_ov063_0211'+suffix
         named(label)

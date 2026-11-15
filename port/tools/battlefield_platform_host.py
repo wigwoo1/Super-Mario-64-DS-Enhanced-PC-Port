@@ -76,6 +76,10 @@ extern SeesawModelFilePtr data_ov095_02137798;
 extern SeesawCollisionFilePtr data_ov095_021377e0;
 extern SeesawModelFilePtr data_ov095_021377b0;
 extern SeesawCollisionFilePtr data_ov095_021377d0;
+extern SeesawModelFilePtr data_ov095_02137788;
+extern SeesawCollisionFilePtr data_ov095_021377e8;
+extern SeesawModelFilePtr data_ov095_021377d8;
+extern SeesawCollisionFilePtr data_ov095_021377a8;
 extern SeesawModelFilePtr data_ov095_021377b8;
 extern SeesawCollisionFilePtr data_ov095_021377c0;
 extern "C" unsigned char data_ov036_02112ba8[];
@@ -90,24 +94,36 @@ extern "C" unsigned char data_ov043_02111c20[];
             rainbow_handle = '021377b8' if symbol=='021374a0' else '021377c0'
             dark_world_handle = '02137798' if symbol=='021374a0' else '021377e0'
             fire_sea_handle = '021377b0' if symbol=='021374a0' else '021377d0'
+            sky_vertical_handle = '02137788' if symbol=='021374a0' else '021377e8'
+            sky_handle = '021377d8' if symbol=='021374a0' else '021377a8'
             replacement = ('(mVariant==6?&data_ov095_'+rainbow_handle+
+                           ':(mVariant==5?&data_ov095_'+sky_handle+
+                           ':(mVariant==4?&data_ov095_'+sky_vertical_handle+
                            ':(mVariant==3?&data_ov095_'+fire_sea_handle+
                            ':(mVariant==2?&data_ov095_'+dark_world_handle+
-                           ':&data_ov095_'+handle+')))')
+                           ':&data_ov095_'+handle+')))))')
             text, count = re.subn(pattern,replacement,text)
             assert count == 2, symbol
         old = '*(void **)(data_ov095_021374a8 + i * kFileStride)'
         assert text.count(old) == 1
         text = text.replace(old,
             '(mVariant==6?data_ov036_02112ba8:'
+            '(mVariant==4||mVariant==5?sky_surface:'
             '(mVariant==3?fire_sea_surface:'
-            '(mVariant==2?data_ov043_02111c20:data_ov014_02114598)))',1)
+            '(mVariant==2?data_ov043_02111c20:data_ov014_02114598))))',1)
         anchor = '    idx = mVariant;'
         assert text.count(anchor) == 1
         text = text.replace(anchor,'''    assert((actorID==ACTOR_BOMB_SEESAW && mVariant==1)||
            (actorID==ACTOR_KM1_SEESAW && mVariant==2)||
            (actorID==ACTOR_KM2_YOKOSEESAW && mVariant==3)||
+           (actorID==ACTOR_KM3_SEESAW && mVariant==4)||
+           (actorID==ACTOR_KM3_YOKOSEESAW && mVariant==5)||
            (actorID==ACTOR_RC_SEESAW && mVariant==6));
+    void *sky_surface = nullptr;
+    if (mVariant == 4 || mVariant == 5) {
+        sky_surface = pc_level_overlay_address(39, mVariant == 4 ? 0x02111ad4 : 0x02111b14);
+        if (!sky_surface) return 0;
+    }
     void *fire_sea_surface = nullptr;
     if (mVariant == 3) {
         fire_sea_surface = pc_level_overlay_address(37, 0x02112570);
@@ -117,6 +133,8 @@ extern "C" unsigned char data_ov043_02111c20[];
     if(!ready){data_ov095_02137780.Construct(1445);data_ov095_021377a0.Construct(1446);
         data_ov095_02137798.Construct(1623);data_ov095_021377e0.Construct(1624);
         data_ov095_021377b0.Construct(1645);data_ov095_021377d0.Construct(1646);
+        data_ov095_02137788.Construct(1669);data_ov095_021377e8.Construct(1670);
+        data_ov095_021377d8.Construct(1671);data_ov095_021377a8.Construct(1672);
         data_ov095_021377b8.Construct(1709);data_ov095_021377c0.Construct(1710);ready=true;}
 '''+anchor,1)
         return observe(text,'daObjSeesaw_c','variant,speed,pounded',

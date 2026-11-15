@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "1353bea9070769d63264f4c0fb7d2ece782e19690bcb297b402a4b28a313547a",
-      "bytes": 91054
+      "sha256": "215ac02215ff243ddd399e47a8ac7c0ed3cb0d32240738aa9db7ea56c753d2c6",
+      "bytes": 91202
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6612,6 +6612,11 @@
       "path": "port/docs/native-bowser-dark-world-2026-11-05.txt",
       "sha256": "2316305d5636ffb0623f7cad7543ea291393222274ba75d70c230de07b313b95",
       "bytes": 8046
+    },
+    {
+      "path": "port/docs/native-bowser-sky-2026-11-15.txt",
+      "sha256": "7146b1814730066320d82c484af543ad7a6cdebb84f466d7d5165f1c9579f7ff",
+      "bytes": 848
     },
     {
       "path": "port/docs/native-brick-character-rules-verified-2026-10-25.txt",
@@ -7655,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "73c73d9d1a6b323c5b318deaa76003c15bfe10cf5ffd373c3971f0aab132dc2b",
-      "bytes": 60439
+      "sha256": "17ee71ab516eafd129183cbd621ee7dfa7ff13e56537a4cdd0174fe474850c45",
+      "bytes": 62150
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8125,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "a223d18f2e8a2d137961ddd276f1c7c1d2d5d7cfb896f871d40bd51e74cce37a",
-      "bytes": 517150
+      "sha256": "b3fe35ca2fd6d75c3d65ecf11327cc317749c9cb1139edf4ef885c205c97a937",
+      "bytes": 558002
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9080,8 +9085,8 @@
     },
     {
       "path": "port/tools/battlefield_platform_host.py",
-      "sha256": "82aa1cb86aff64f9357aa9ec8a968e7c65214c915ce6820d28c929a3743631be",
-      "bytes": 13170
+      "sha256": "92449aff9bae790405edf54e60ff5ffcd14ae2a1cd6664e574c642886bf4233b",
+      "bytes": 14212
     },
     {
       "path": "port/tools/bird_host.py",
@@ -9110,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "c83881bccb29d4e327e0d57b3d7ae8ca41bbf5af85d7b2526ea515fddf6c3e04",
-      "bytes": 61811
+      "sha256": "f512ab69eb4cf91da7345b00e41fbad4d7acb54e61be1d7b15bd20245f0f380e",
+      "bytes": 62651
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9270,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "d0f2617d8692654b496bafc9a85739fcd5d6a20167aa23123166de44dcc28afd",
-      "bytes": 84635
+      "sha256": "100628f5f225ef7e35059a3102e096dae3dccf7d95f0c929c0a568a570b6591b",
+      "bytes": 87981
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9450,8 +9455,8 @@
     },
     {
       "path": "port/tools/dark_world_wheel_host.py",
-      "sha256": "f8b2b32106ffde90f8a9eb120e726d568289e403632054a0fa5890178a1b1928",
-      "bytes": 4551
+      "sha256": "2aa695614f0a40f2ab6126d6d348a46ced0980aa0365278d17eb2b30a58bbccd",
+      "bytes": 6094
     },
     {
       "path": "port/tools/demo_callbacks.py",
@@ -9640,8 +9645,8 @@
     },
     {
       "path": "port/tools/native_kit_data.py",
-      "sha256": "5f5f69e76db583dc776413727a6b368ea59e31e1ccc4c91a95caa7032d362dce",
-      "bytes": 5432
+      "sha256": "0a91f7651f16173d4a226bb0131c6fb73cda51d5ab88e11d57345702240c0d14",
+      "bytes": 5588
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -9720,8 +9725,8 @@
     },
     {
       "path": "port/tools/rainbow_disc_host.py",
-      "sha256": "7c1234d0df1224f5a584539d4352885c387bd7dbfbae6aeb5a798d823cbc4061",
-      "bytes": 4643
+      "sha256": "f8f7a6b09bd16b2780b64b58db48f862892e37507edc068a8ef2c0738049c92e",
+      "bytes": 6290
     },
     {
       "path": "port/tools/rainbow_donut_host.py",
@@ -9770,8 +9775,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "6f9bf78dd236574ac2b8b5da9aad1d4708825ba1415b5ee04954a6adb626e93a",
-      "bytes": 24926
+      "sha256": "bb0c7e677257a912e4afded04704b16b0ea964e2a8e48e28e816d2357d0571d0",
+      "bytes": 28364
     },
     {
       "path": "port/tools/skeeter_host.py",
@@ -9887,6 +9892,11 @@
       "path": "port/tools/warp_pipe_host.py",
       "sha256": "170f6a8fca9fa6c5e2f1e4f2cc22c12a33c98a5895d1957fba16432b835ce31b",
       "bytes": 2216
+    },
+    {
+      "path": "port/tools/whomp_host.py",
+      "sha256": "5f8a494b07d2dbdb78e1ccea057cf9d88f025273d52514adf0ce30bf9f549308",
+      "bytes": 3715
     },
     {
       "path": "port/unmatched/camera_jitter.cpp",
