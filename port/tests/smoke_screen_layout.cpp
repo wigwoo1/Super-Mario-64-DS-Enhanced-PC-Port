@@ -41,6 +41,16 @@ int main() {
     video_set_pause_screen(true);CHECK(!video_dual_screen_active());
     video_set_pause_screen(false);CHECK(video_dual_screen_active());
     video_set_minigame_active(false);CHECK(!video_dual_screen_active());
+    const auto credits=credits_layout(1280,720);
+    CHECK(credits.top.x==0 && credits.bottom.x==640);
+    CHECK(credits.top.width==640 && credits.bottom.width==640);
+    CHECK(credits.top.height==480 && credits.bottom.height==480);
+    video_set_minimap_gameplay(true);
+    video_set_credits_active(true);
+    CHECK(video_dual_screen_active() && !video_minimap_visible());
+    video_set_credits_active(false);
+    CHECK(!video_dual_screen_active());
+    video_set_minimap_gameplay(false);
     for(unsigned mode=0;mode<3;++mode) {
         VideoSettings s;s.minigame_layout=static_cast<MinigameLayout>(mode);video_set_settings(s);
         CHECK(video_save_settings("screen-layout-smoke.ini"));

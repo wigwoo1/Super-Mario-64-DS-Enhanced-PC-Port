@@ -16,6 +16,7 @@
 #include "daKpa_c.h"
 #include "daKpaTail_c.h"
 #include "daKirai_c.h"
+#include "daObjKey_c.h"
 #include "daBmb_c.h"
 #include "daBtn_c.h"
 #include "daHolhei_c.h"
@@ -117,7 +118,8 @@ extern "C" short data_0209f358[];
 extern "C" signed char data_0209f310[];
 extern "C" unsigned char data_0209f208;
 extern "C" unsigned char *data_0209f344;
-extern "C" unsigned int data_ov002_020ff480[];
+extern "C" unsigned int data_ov002_020ff480[0xc2 * 4];
+static constexpr unsigned player_animation_entries = sizeof(data_ov002_020ff480) / sizeof(unsigned int);
 // local extern: original data tables; structured actor/save headers do not
 // expose the global course mapping or message-state observations.
 extern "C" signed char SUBLEVEL_LEVEL_TABLE[];
@@ -8665,6 +8667,10 @@ static bool replay_bowser_tail_controls() {
             std::fprintf(stderr,"[native Sky Bowser] tick=%llu state=%d health=%d tail=%d x=%d z=%d\n",
                 tick,int(b->mState),int(b->mHealth),int(tail->mState),int(p->mPosX),int(p->mPosZ));
         }
+        if(b->mHealth==1 && tick%30==0) {
+            std::fprintf(stderr,"[native Sky Bowser final phase] tick=%llu boss=%d,%d,%d tail=%d,%d,%d\n",
+                tick,b->mPosX,b->mPosY,b->mPosZ,tail->mPosX,tail->mPosY,tail->mPosZ);
+        }
         if(!footing_checked && !data_0209d660 && !p->mIsNoControl && !p->mIsControlDisabled) {
             if(!footing_started)footing_started=tick;
             const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
@@ -8681,20 +8687,48 @@ static bool replay_bowser_tail_controls() {
                 return true;
             } else footing_checked=true;
         }
-        // The first successful throw leaves Bowser stunned. Return toward
-        // center while he recovers, then allow the next normal tail grab.
-        if(releasedAt && b->mHealth==2 && b->mState!=1 && b->mState!=12 &&
+        // Wait for the hurt hop, then approach again. After the second hit,
+        // state 3 begins the final phase on the shrinking floor.
+        const bool next_approach = b->mHealth==2 && b->mState!=1 && b->mState!=12;
+        const bool final_approach = b->mHealth==1 && b->mState==3;
+        if(releasedAt && (next_approach || final_approach) &&
            !data_0209d660 && !p->mIsNoControl && !p->mIsControlDisabled) {
             releasedAt=0;
             heldSince=0;
-            std::fprintf(stderr,"[native Sky Bowser] second approach tick=%llu state=%d\n",
-                tick,int(b->mState));
+            std::fprintf(stderr,"[native Sky Bowser] %s approach tick=%llu state=%d\n",
+                final_approach ? "third" : "second",tick,int(b->mState));
         }
     }
     if(releasedAt) {
         buttons=tick<releasedAt+3?1:0;
+        const auto *last_star=sky_combat && b->mHealth==0 ?
+            static_cast<const daObjKey_c *>(dActor_c::FindWithActorID(283,nullptr)) : nullptr;
         if(data_0209d660)buttons=tick%45<3?1:0;
-        else if(sky_combat && b->mHealth<3 && !p->mIsNoControl && !p->mIsControlDisabled &&
+        else if(last_star && last_star->mStep==3 && !p->mIsNoControl && !p->mIsControlDisabled) {
+            static uint64_t star_jump=0;
+            const double dx=double(last_star->mPosX)-p->mPosX;
+            const double dz=double(last_star->mPosZ)-p->mPosZ;
+            const double distance=std::hypot(dx,dz);
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            if(!star_jump && distance<60*4096.0 && p->mMeshClsn.IsOnGround() && !p->mIsAirborne) {
+                star_jump=tick;
+                std::fprintf(stderr,"[native Sky last star] jump tick=%llu uid=%u\n",tick,last_star->uniqueID);
+            }
+            if(star_jump && tick-star_jump<32)buttons=2;
+            const int stick=distance>35*4096.0 ? 12500 : 0;
+            sx=static_cast<int16_t>(std::sin(angle)*stick);
+            sy=static_cast<int16_t>(-std::cos(angle)*stick);
+        }
+        else if(sky_combat && b->mHealth==0 && b->mState==4 && b->mStep==2 &&
+                !p->mIsNoControl && !p->mIsControlDisabled) {
+            const double dx=double(b->mPosX)-p->mPosX;
+            const double dz=double(b->mPosZ)-p->mPosZ;
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=std::hypot(dx,dz)>160*4096.0 ? 14500 : 0;
+            sx=static_cast<int16_t>(std::sin(angle)*stick);
+            sy=static_cast<int16_t>(-std::cos(angle)*stick);
+        }
+        else if(sky_combat && b->mHealth>0 && b->mHealth<3 && !p->mIsNoControl && !p->mIsControlDisabled &&
                 std::hypot(double(p->mPosX),double(p->mPosZ))>170*4096.0) {
             const double angle=std::atan2(-double(p->mPosX),-double(p->mPosZ))
                 -GetAngleToCamera(0)*6.283185307179586/65536.0;
@@ -8727,27 +8761,39 @@ static bool replay_bowser_tail_controls() {
             const double step=(delta < -0.55 ? -0.55 : delta > 0.55 ? 0.55 : delta);
             gx=bx+std::sin(pa+step)*500;gz=bz+std::cos(pa+step)*500;
         }
+        if(sky_combat && b->mHealth==1) {
+            const double radius=std::hypot(gx,gz);
+            if(radius>1100) {
+                gx*=1100/radius;
+                gz*=1100/radius;
+            }
+        }
         if(tail->mState==2) {
             // Keep turning through the normal stick path; holding is accepted
             // only from the original tail callback and its recorded Player.
-            sx=static_cast<int16_t>(std::sin(tick*0.055)*32767);
-            sy=static_cast<int16_t>(-std::cos(tick*0.055)*32767);
+            const bool final_throw=sky_combat && b->mHealth==1;
+            const double swing=tick*(final_throw ? 0.48 : 0.055);
+            sx=static_cast<int16_t>(std::sin(swing)*32767);
+            sy=static_cast<int16_t>(-std::cos(swing)*32767);
             if(!heldSince)heldSince=tick;
-            if(std::getenv("SM64DS_PC_TEST_BOWSER_THROW") && tick>heldSince+180 &&
-               p->mStateStep==1 && std::abs(int(p->mAngleYSpeed))>=0xf00) {
+            if(std::getenv("SM64DS_PC_TEST_BOWSER_THROW") && tick>heldSince+(final_throw ? 30 : 180) &&
+               p->mStateStep==1 && std::abs(int(p->mAngleYSpeed))>=(final_throw ? 0xfe0 : 0xf00)) {
                 // Select an armed, naturally spawned mine. Fire Sea's replay
                 // observes the current Bowser heading before the release edge.
                 daKirai_c *nearest=nullptr; double best=1e100;
                 for(auto *actor=dActor_c::FindWithActorID(284,nullptr);actor;actor=dActor_c::FindWithActorID(284,actor)) {
                     auto *candidate=static_cast<daKirai_c *>(actor);
+                    // The southwest mine lies next to the final falling wedge.
+                    if(final_throw && (actor->mPosX>=0 || actor->mPosZ>=0))continue;
                     const double distance=std::hypot(double(actor->mPosX)-p->mPosX,double(actor->mPosZ)-p->mPosZ);
                     if(actor->aliveState==1 && candidate->mStateIndex==0 && distance<best){best=distance;nearest=candidate;}
                 }
                 if(auto *mine=nearest) {
                     const auto desired=static_cast<int16_t>(std::lround(std::atan2(double(mine->mPosX)-p->mPosX,double(mine->mPosZ)-p->mPosZ)*65536.0/6.283185307179586));
                     const int heading = (firesea_combat || sky_combat) ? b->mAngleY : p->mAngleY+p->mAngleYSpeed;
-                    const auto error=static_cast<int16_t>(desired-heading);
-                    if(std::abs(int(error))<800) {
+                    // Bias the final line through the late wedge beside the mine.
+                    const auto error=static_cast<int16_t>(desired-heading-(final_throw ? 590 : 0));
+                    if(std::abs(int(error))<(final_throw ? 500 : 800)) {
                         buttons=1;releasedAt=tick;
                         std::fprintf(stderr,"[native Bowser throw pilot] release tick=%llu mine=%u target=%d,%d,%d heading=%d speed=%d error=%d\n",
                             static_cast<unsigned long long>(tick),mine->uniqueID,mine->mPosX,mine->mPosY,mine->mPosZ,p->mAngleY,p->mAngleYSpeed,int(error));
@@ -9332,9 +9378,9 @@ static bool trace_script_progress(uint64_t frame)
                     &current_star,sizeof(current_star),&bytes_read) && bytes_read==1)
                 ? static_cast<int>(current_star) : -1;
             const auto *observed_player=static_cast<Player *>(data_0209f394[0]);
-            const unsigned anim_index=observed_player ? observed_player->mCharFileBase+(observed_player->param1&3) : 736;
+            const unsigned anim_index=observed_player ? observed_player->mCharFileBase+(observed_player->param1&3) : player_animation_entries;
             unsigned short anim_file=0;bytes_read=0;
-            const int anim_file_id=(anim_index<736 && ReadProcessMemory(GetCurrentProcess(),
+            const int anim_file_id=(anim_index<player_animation_entries && ReadProcessMemory(GetCurrentProcess(),
                 reinterpret_cast<void *>(data_ov002_020ff480[anim_index]),&anim_file,sizeof(anim_file),&bytes_read) &&
                 bytes_read==sizeof(anim_file)) ? static_cast<int>(anim_file) : -1;
             unsigned count=0;
@@ -9805,7 +9851,7 @@ static void report_player_animation()
     std::fprintf(stderr,"[sm64ds] animation snapshot tick=%llu player=%p char=%u animation=%u held=%08x flags=%u/%u/%u/%u\n",
         static_cast<unsigned long long>(ntr::rt_frame()),data_0209f394[0],word(8),animation,word(0x358),
         snapshot[0x6f9],snapshot[0x6fb],snapshot[0x6fd],snapshot[0x6ff]);
-    if(animation<736) {
+    if(animation<player_animation_entries) {
         unsigned handle[2]={};read=0;
         ReadProcessMemory(GetCurrentProcess(),reinterpret_cast<void *>(data_ov002_020ff480[animation]),handle,sizeof(handle),&read);
         std::fprintf(stderr,"[sm64ds] animation handle=%08x fileID/ref=%08x file=%08x\n",data_ov002_020ff480[animation],handle[0],handle[1]);

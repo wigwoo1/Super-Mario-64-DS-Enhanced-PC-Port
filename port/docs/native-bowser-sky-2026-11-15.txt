@@ -12,3 +12,20 @@ the opt-in replay code are diagnostic unless individually verified.
 The build kit regenerates the Whomp and timed-stair translation units from
 the user's matching ROM. The public source and kit contain the adapter code
 and symbol names. The full executable is produced locally.
+
+Final arena and ending checkpoint
+
+A selected muted replay from the original castle entrance uses a prepared
+80-Star File A. Mario crosses the upper moving platforms, hits Bowser with
+three mines, collects the giant Star and reaches the credits and final cake
+card. The original confirmation returns to the main menu. A stale dialogue
+card remains over the returned menu, and menu controls after the credits
+remain unverified. The two isolated save files were unchanged in that run.
+This checkpoint does not establish earned campaign progression, ending save
+persistence or coverage of the remaining courses and requested features.
+
+The ending changes restore the giant Star actor, extend the player animation
+table through the last ending animation, fix the native particle callback,
+and restore ending sprite and layout references. Credits use two original
+panels side by side with the gameplay counters and minimap hidden. The
+matching ROM supplies the animation and sprite data during local assembly.

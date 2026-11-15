@@ -90,6 +90,12 @@ void dPa_c::level_c::checkWaterRippleCallback_c::SpawnParticles(Particle::System
 extern "C" void _ZN5dPa_c7level_c20edStarKiraCallback_cC1Ev(void *self)
 { ::new (self) dPa_c::level_c::edStarKiraCallback_c(); }
 
+extern "C" void pc_particle_spawn_callback(
+    dPa_c::level_c::callback_c *callback, Particle::System *system)
+{
+    callback->SpawnParticles(*system);
+}
+
 extern "C" int _ZN6Player22IsBeingShotOutOfCannonEv(void *self)
 { return ((Player *)self)->Player::IsBeingShotOutOfCannon(); }
 

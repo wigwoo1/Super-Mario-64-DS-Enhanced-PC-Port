@@ -76,10 +76,10 @@ def main() -> int:
                             address + 4)
         size = max(4, next_address - address)
         # Player::SetAnim/IsAnim index by animation ID * 4 plus character.
-        # The next named table at 0x02100000 ends this 736-entry pointer run;
-        # 0x020ff790 is an interior label, not the end of the animation array.
+        # The final four-character row is animation 0xc1 at 0x02100090.
+        # Both 0x020ff790 and 0x02100000 are interior labels.
         if args.overlay == 2 and name == "data_ov002_020ff480":
-            size = 736 * 4
+            size = 0x021000a0 - address
         # SOUND_OBJ indexes seven 12-byte rows. The labels at +4/+8/+10
         # name members inside the first row, not the end of the array.
         # Stopping at the next label emitted only the first sound ID and

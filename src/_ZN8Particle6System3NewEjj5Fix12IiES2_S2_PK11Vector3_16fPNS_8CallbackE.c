@@ -31,6 +31,9 @@ struct VObj
 {
   VFn *vtable;
 };
+#ifdef SM64DS_PLATFORM_PC
+extern void pc_particle_spawn_callback(struct VObj *callback, struct ParamBlk *system);
+#endif
 struct System
 {
   int f0;
@@ -76,7 +79,12 @@ int _ZN8Particle6System3NewEjj5Fix12IiES2_S2_PK11Vector3_16fPNS_8CallbackE(unsig
     o = sys->f10;
     if (o != 0)
     {
+#ifdef SM64DS_PLATFORM_PC
+      /* Native callback virtuals use the host's member-call convention. */
+      pc_particle_spawn_callback(o, p);
+#else
       o->vtable[0](o, p);
+#endif
     }
     return sys->f0;
   }

@@ -62,6 +62,7 @@ bool g_dialogue_card_dark_text = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
 bool g_minigame_active = false;
+bool g_credits_active = false;
 bool g_star_select_active = false;
 int g_focus_left=-1,g_focus_top=0,g_focus_right=0,g_focus_bottom=0;
 std::vector<uint32_t> g_output;
@@ -488,6 +489,7 @@ void video_close() {
 #endif
     g_open = false;
     g_minigame_active = false;
+    g_credits_active = false;
     g_star_select_active = false;
     video_set_cutscene_letter(false);
     g_output.clear();
@@ -681,7 +683,8 @@ void video_set_menu_focus(int left,int top,int right,int bottom) {
     g_focus_left=left;g_focus_top=top;g_focus_right=right;g_focus_bottom=bottom;
 }
 bool video_minimap_visible() {
-    return g_settings.minimap && g_minimap_gameplay && !g_pause_screen && !g_minigame_active && !g_cutscene_letter;
+    return g_settings.minimap && g_minimap_gameplay && !g_pause_screen &&
+        !g_minigame_active && !g_credits_active && !g_cutscene_letter;
 }
 void video_set_cutscene_letter(bool active) {
     if(g_cutscene_letter!=active && std::getenv("SM64DS_PC_INTRO_TRACE"))
@@ -730,7 +733,8 @@ void video_set_minigame_active(bool active) {
 void video_set_star_select_active(bool active) {
     video_set_minigame_active(active);g_star_select_active=active;
 }
-bool video_dual_screen_active() { return g_minigame_active && !g_pause_screen; }
+void video_set_credits_active(bool active) { g_credits_active=active; }
+bool video_dual_screen_active() { return (g_minigame_active || g_credits_active) && !g_pause_screen; }
 
 void video_minimap_transparency_mask(const uint32_t *pixels, uint8_t *mask,
                                      uint32_t width, uint32_t height) {
@@ -897,7 +901,8 @@ bool video_present_frame() {
     const int touch_w = std::max(1L, touch_area.right - touch_area.left);
     const int touch_h = std::max(1L, touch_area.bottom - touch_area.top);
     const bool dual=video_dual_screen_active();
-    const auto screens=g_star_select_active?star_select_layout(g_settings.width,g_settings.height):
+    const auto screens=g_credits_active?credits_layout(g_settings.width,g_settings.height):
+        g_star_select_active?star_select_layout(g_settings.width,g_settings.height):
         screen_layout(g_settings.minigame_layout,g_settings.width,g_settings.height);
     const auto output_area=dual?screen_fit(g_settings.width,g_settings.height,{0,0,touch_w,touch_h}):ScreenRect{0,0,touch_w,touch_h};
     bool pointer_down=(GetAsyncKeyState(VK_LBUTTON)&0x8000)!=0;

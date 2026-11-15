@@ -34,7 +34,9 @@ extern unsigned char data_0209f2c4;
 #if defined(SM64DS_GAME_TARGET)
 extern void *data_0209f394[];
 extern unsigned char data_0209f294,data_0209f20c;
-extern int data_0209fc48;
+extern void *data_0209fc48;
+extern unsigned char data_0209f2d8;
+extern unsigned char data_02088610[],data_02087740[],data_02087c00[],data_02088fb8[];
 extern unsigned char data_0209f250;
 extern signed char data_0209f2f4;
 extern short data_0209f358[];
@@ -79,19 +81,31 @@ void pc_stage_graph_prepare()
     // The fiber runtime does not execute the ARM VBlank IRQ dispatcher.
     // Upload this active Stage callback's latest transform before scanout.
     const bool active = data_0209d4a8 == &data_0209f3c4;
-    if(!active)ntr::video_set_cannon_sight(false);
-    ntr::video_set_minimap_gameplay(active);
+    bool gameplay_overlay=active;
+#if defined(SM64DS_GAME_TARGET)
+    // The original movie mode spans the castle ending and credits. The two
+    // arena flight scripts start before that mode is enabled.
+    const bool ending_movie=data_0209f2d8==2;
+    const bool ending_flight=data_0209fc48==data_02088610 || data_0209fc48==data_02087740;
+    static bool credits_started=false;
+    credits_started=ending_movie && (credits_started || data_0209fc48==data_02087c00 ||
+                                    data_0209fc48==data_02088fb8);
+    ntr::video_set_credits_active(active && credits_started);
+    gameplay_overlay=active && !ending_movie && !ending_flight;
+#endif
+    if(!gameplay_overlay)ntr::video_set_cannon_sight(false);
+    ntr::video_set_minimap_gameplay(gameplay_overlay);
 #if defined(SM64DS_GAME_TARGET)
     const unsigned player_slot=data_0209f250<4?data_0209f250:0;
     const int coin_count=data_0209f358[player_slot];
     const int life_count=data_0209f2f4;
     const auto *hud_player=static_cast<const Player *>(data_0209f394[player_slot]);
-    const bool hud_ready=active && hud_player && pc_minimap_hud_art_prepare();
+    const bool hud_ready=gameplay_overlay && hud_player && pc_minimap_hud_art_prepare();
     ntr::video_set_minimap_counters(hud_ready,NumStars(),
         unsigned(coin_count<0?0:coin_count),unsigned(life_count<0?0:life_count),
         unsigned((data_02092144[player_slot]>>8)&255),hud_player?hud_player->mCharacter:3);
     unsigned timer_hundredths=0;
-    const bool slide_timer=active && data_0209f2f8==29 &&
+    const bool slide_timer=gameplay_overlay && data_0209f2f8==29 &&
         data_ov002_02111184[0]!=0 && Event::GetBit(0x1d)==0;
     if(slide_timer) {
         auto *timer=reinterpret_cast<Timer *>(data_0209d4c8);

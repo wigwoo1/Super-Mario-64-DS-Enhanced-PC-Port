@@ -6,7 +6,9 @@ import re
 import struct
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-START, END, ENTRIES = 0x0210E168, 0x0210ED68, 736
+START, END = 0x0210E168, 0x0210ED68
+TABLE_START, TABLE_END = 0x020FF480, 0x021000A0
+ENTRIES = (TABLE_END - TABLE_START) // 4
 # This reserved record has no constructor/reference in the recovered overlay.
 UNUSED = {0x0210E7B8}
 
@@ -90,16 +92,23 @@ def main():
     if missing:
         raise ValueError(f"missing native handle symbols: {missing}")
     overlay = (ROOT / "extracted/overlays/overlay_0002.bin").read_bytes()
-    original = overlay[0x020FF480 - 0x020AD660:0x02100000 - 0x020AD660]
+    original = overlay[TABLE_START - 0x020AD660:TABLE_END - 0x020AD660]
     if len(original) != ENTRIES * 4:
         raise ValueError("local animation pointer table has the wrong extent")
     for index, (address,) in enumerate(struct.iter_unpack("<I", original)):
         if address not in records:
             raise ValueError(f"animation entry {index} has no exact native handle mapping")
+    for animation, expected_ids in ((0xC0, (0x4CD, 0x56D, 0x56D, 0x56D)),
+                                    (0xC1, (0x4CC, 0x570, 0x570, 0x570))):
+        handles = struct.unpack_from("<4I", original, animation * 16)
+        actual_ids = tuple(original_ids[records[address].removeprefix("data_ov002_0210")]
+                           for address in handles)
+        if actual_ids != expected_ids:
+            raise ValueError(f"ending animation {animation:#x} does not select its original files")
     compiled = pe_bytes(args.exe, symbols["_data_ov002_020ff480"], ENTRIES * 4)
     if compiled != original:
-        raise ValueError("compiled table does not contain all original 736 entries")
-    print("PASS: 736 compiled animation entries match local ROM; 383 exact native handle symbols resolve; native handle overrides preserve original IDs including slide archive0x8099")
+        raise ValueError(f"compiled table does not contain all original {ENTRIES} entries")
+    print(f"PASS: all {ENTRIES} compiled animation entries match local ROM, including both ending animations; 383 native handles resolve")
 
 
 if __name__ == "__main__":

@@ -157,7 +157,7 @@ extern unsigned char data_ov002_0210e798[8];
 extern unsigned char data_ov002_0210e4f0[8];
 /* overlay_data emits raw ROM bytes; spell this table as words so its entries
    can be safely rebased in place during native startup. */
-extern unsigned int data_ov002_020ff480[736];
+extern unsigned int data_ov002_020ff480[0xc2 * 4];
 #define PC_PLAYER_ANIM_HANDLE(address, symbol) extern unsigned char symbol[8];
 #include "player_anim_handles.inc"
 #undef PC_PLAYER_ANIM_HANDLE
@@ -338,6 +338,7 @@ static PcNativeActorProfile pc_rainbow_swing_profile = {(void *)&daObjRcBuranko_
 static PcNativeActorProfile pc_rainbow_donut_profile = {(void *)&daObjRc_Tikuwa_c_classInit,126,256,33554438,307200,2048000,32768000,3276800};
 extern "C" void *daIbl_c_classInit();
 extern "C" void *daKpa_c_classInit(), *daKpaTail_c_classInit(), *daKpaFire_c_classInit(), *daKirai_c_classInit(), *daObjKey_c_classInit_OBJ_KEY();
+extern "C" void *daObjKey_c_classInit_LAST_STAR();
 // Cartridge ov060 profiles. Preview remains opt-in until boss runtime acceptance.
 static PcNativeActorProfile pc_bowser_profile = {(void *)&daKpa_c_classInit,279,143,67108864,409600,409600,16777216,16777216};
 extern "C" void *daKpa2Bg_c_classInit();
@@ -352,6 +353,9 @@ static PcNativeActorProfile pc_bowser_tail_profile = {(void *)&daKpaTail_c_class
 static PcNativeActorProfile pc_bowser_fire_profile = {(void *)&daKpaFire_c_classInit,280,144,2,327680,327680,16777216,8388608};
 static PcNativeActorProfile pc_bowser_mine_profile = {(void *)&daKirai_c_classInit,284,147,2,0,1638400,98304000,0};
 static PcNativeActorProfile pc_bowser_key_profile = {(void *)&daObjKey_c_classInit_OBJ_KEY,282,149,536870914,409600,409600,16384000,16384000};
+static PcNativeActorProfile pc_last_star_profile = {
+    (void *)&daObjKey_c_classInit_LAST_STAR,283,150,536870914,409600,1228800,16384000,16384000
+};
 extern "C" void *daOwl_c_classInit();
 static PcNativeActorProfile pc_owl_profile = {(void *)&daOwl_c_classInit,234,89,0,409600,819200,16777216,16777216};
 extern "C" void *daUdlift_c_classInit_UDLIFT_TERESA();
@@ -855,6 +859,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[280] = &pc_bowser_fire_profile;
     data_020a4bb8_storage[284] = &pc_bowser_mine_profile;
     data_020a4bb8_storage[282] = &pc_bowser_key_profile;
+    data_020a4bb8_storage[283] = &pc_last_star_profile;
     data_020a4bb8_storage[64] = &pc_casket_profile;
     data_020a4bb8_storage[262] = &pc_mri_profile;
     data_020a4bb8_storage[263] = &pc_big_mri_profile;
@@ -1059,18 +1064,16 @@ extern "C" void pc_actor_spawn_table_init(void)
            the actor TU. That TU is not part of the PC boot source closure,
            but Player's resource path consumes its model handle directly. */
         _ZN13SharedFilePtr9ConstructEj(data_ov002_02110aa4, 0x436);
-        /* Animation IDs index a 736-entry ROM table. Rebase each SharedFilePtr
-           address into the statically linked ov002 handle block. */
-        for (int i = 0; i < 736; ++i) {
-            const unsigned int address = data_ov002_020ff480[i];
+        /* Rebase each animation handle, including the ending rows. */
+        for (unsigned int &address : data_ov002_020ff480) {
             void *handle = pc_resolve_player_anim_handle(address);
             if (handle)
-                data_ov002_020ff480[i] = (unsigned int)(uintptr_t)handle;
+                address = (unsigned int)(uintptr_t)handle;
             else {
                 const char *trace = getenv("SM64DS_PC_TRACE");
                 if (trace && trace[0] && trace[0] != '0')
-                    fprintf(stderr, "[sm64ds] unresolved player anim entry[%d]=%08x\n",
-                            i, address);
+                    fprintf(stderr, "[sm64ds] unresolved player anim entry[%td]=%08x\n",
+                            &address - data_ov002_020ff480, address);
             }
         }
         data_ov002_020ff790[0] = data_ov002_0210e798;

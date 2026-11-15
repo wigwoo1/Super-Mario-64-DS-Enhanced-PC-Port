@@ -430,6 +430,11 @@ def main() -> int:
             # be dereferenced by the native animation controller.
             (('ov002', 0x0210a084), 2, 'ov002'),
             (('ov002', 0x0210a7a0), 18, 'ov002'),
+            # Ending sprites and their authored layout records.
+            (('ov002', 0x0210b6a8), 2, 'ov002'),
+            (('ov002', 0x0210b97c), 3, 'ov002'),
+            (('ov002', 0x0210b988), 4, 'ov002'),
+            (('ov002', 0x0210bba0), 10, 'ov002'),
             (('ov002', 0x0210be1c), 4, 'ov002'),
             (('ov002', 0x0210b998), 4, 'ov002'),
             (('ov002', 0x0210c3e0), 2, 'ov002'),

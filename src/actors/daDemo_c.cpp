@@ -516,7 +516,11 @@ extern int func_ov002_020f2984(char *p);
 extern int GetOwnerLanguage(void);
 extern void _ZN3OAM6RenderEbP7OamAttriiii5Fix12IiES3_ii( int a, struct OamAttr* attr, int x, int y, int e, int f, int g, int h, int i, int j);
 extern struct OamAttr* data_ov002_0210b988[];
+#ifdef SM64DS_PLATFORM_PC
+extern void func_0201ef50(int v);
+#else
 extern void func_0201ef50(unsigned char v);
+#endif
 extern void func_0201f108(void);
 extern int _ZN3OAM9RenderSubEP7OamAttriiii(struct OamAttr*, int, int, int, int);
 extern struct OamAttr* data_ov002_0210bba0[];

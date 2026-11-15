@@ -450,6 +450,7 @@ def main():
             ('pc_bowser_fire_profile', 'daKpaFire_c_classInit', 60, 0x0211a7d0),
             ('pc_bowser_mine_profile', 'daKirai_c_classInit', 60, 0x0211aa68),
             ('pc_bowser_key_profile', 'daObjKey_c_classInit_OBJ_KEY', 89, 0x02132b68),
+            ('pc_last_star_profile', 'daObjKey_c_classInit_LAST_STAR', 89, 0x02132b84),
             ('pc_picture_gate_profile', 'daPicGate_c_classInit', 80, 0x02128290),
             ('pc_player_profile', 'daPly_c_classInit', 2, 0x0210a704),
             ('pc_warp_profile', 'daWarpkun_c_classInit', 2, 0x0210ac98),
@@ -1145,7 +1146,8 @@ def main():
         expected = source_bytes(ROOT, matches[0])
         if pe_bytes(args.exe, native, len(expected), allow_zero_tail=True) != expected:
             raise ValueError(f'Player animation sequence {guest:08x}: list bytes differ')
-    for table_address, count in ((0x0210be1c, 4), (0x0210b998, 4), (0x0210c3e0, 2)):
+    for table_address, count in ((0x0210be1c, 4), (0x0210b998, 4), (0x0210c3e0, 2),
+                                 (0x0210b6a8, 2), (0x0210b97c, 3), (0x0210b988, 4), (0x0210bba0, 10)):
         original = map_rom[table_address - base:table_address - base + count * 4]
         compiled = pe_bytes(args.exe, named(f'data_ov002_{table_address:08x}'), count * 4)
         for guest, native in zip(struct.unpack(f'<{count}I', original), struct.unpack(f'<{count}I', compiled)):
@@ -1155,7 +1157,7 @@ def main():
                 raise ValueError(f'DEMO sprite {guest:08x}: missing native target')
             expected = source_bytes(ROOT, matches[0])
             if pe_bytes(args.exe, native, len(expected)) != expected:
-                raise ValueError(f'DEMO sprite {guest:08x}: OAM bytes differ')
+                raise ValueError(f'DEMO sprite or layout {guest:08x}: original bytes differ')
     preload_row = next(row for row in available if row['name'] == 'data_020756f0')
     original = source_bytes(ROOT, preload_row)
     compiled = pe_bytes(args.exe, named('data_020756f0'), 12 * 4)
@@ -1246,7 +1248,7 @@ def main():
           'Matrix4x3 scratch has 48 bytes; 4 Player jump descriptors and '
           'their 3 native workers verified; 2 Yoshi tongue/retract handles verified; 18 animation-sequence pointers '
           'resolve to complete ROM-matching native lists; 2 camera warning icon '
-          'pointers and 8 DEMO sprite '
+          'pointers and 29 DEMO sprite and layout '
           'pointers resolve to ROM-matching OAM data; 12 stage preload/release '
           'pointers bind to canonical native handles; native STAR_SELECT profile matches ROM priorities and factory')
 

@@ -33,6 +33,11 @@ ScreenRect screen_fit(unsigned source_width,unsigned source_height,const ScreenR
 namespace {
 ScreenRect fit(int x,int y,int width,int height) { return screen_fit(4,3,{x,y,width,height}); }
 }
+DualScreenLayout credits_layout(unsigned width, unsigned height) {
+    const int w=static_cast<int>(width), h=static_cast<int>(height);
+    const int split=w/2;
+    return {fit(0,0,split,h),fit(split,0,w-split,h)};
+}
 DualScreenLayout screen_layout(MinigameLayout mode, unsigned width, unsigned height) {
     const int w=static_cast<int>(width),h=static_cast<int>(height);
     if(mode==MinigameLayout::LeftRight) {
