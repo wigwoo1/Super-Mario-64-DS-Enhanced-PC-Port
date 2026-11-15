@@ -495,6 +495,7 @@ def main():
             ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
             ('pc_firesea_fall_block_profile','daObjKm2_Fall_Block_c_classInit',45,0x021130d0),
             ('pc_firesea_arena_profile','daKpa2Bg_c_classInit',60,0x0211a88c),
+            ('pc_sky_arena_profile','daKpa3Bg_c_classInit',60,0x0211a964),
             ('pc_kaidan_profile','daTrsTrap_c_classInit_KAIDAN',63,0x0211ea10),
             ('pc_boo_profile','daTrs_c_classInit_TERESA',63,0x0211e770),
             ('pc_big_boo_profile','daTrs_c_classInit_BOSS_TERESA',63,0x0211e78c),

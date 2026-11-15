@@ -3302,6 +3302,210 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
             return true;
         }
+        // Start the upper-bank jump with a short run-up as the deck extends.
+        if(level==39 && x==-1620 && y==3711 && z==-660 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t launch=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *deck=floor && floor->owner && floor->owner->actorID==155 &&
+                floor->owner->mPosX>-3200*4096 ? floor->owner : nullptr;
+            const int px=player->mPosX;
+            const int pz=player->mPosZ;
+            if(launch && floor && !floor->owner && px>-2000*4096 &&
+               px<-750*4096 && std::abs(player->mPosY-y*4096)<8*4096 &&
+               pz>-1120*4096 && pz<-550*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky upper bank] landed tick=%llu x=%d z=%d\n",tick,px,pz);
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            const bool running=deck && !launch && px>=-2300*4096 && deck->mPosX>=deck->mPrevPosX;
+            if(running && px>=-2180*4096 && player->mHorzSpeed>=0x9000 &&
+               std::abs(static_cast<int16_t>(player->mPrevAngleY-0x4000))<4900) {
+                launch=tick;
+                std::fprintf(stderr,"[native Sky upper bank] jump tick=%llu uid=%u x=%d z=%d\n",
+                    tick,unsigned(deck->uniqueID),px,pz);
+            }
+            const bool braking=launch && px>-1660*4096;
+            const double angle=std::atan2((braking ? -360.0 : 360.0)*4096.0,
+                std::clamp(dz,-155.0*4096.0,155.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=running || launch ? (braking ? 11500 : 26000) : 0;
+            ntr::input_test_controls(true,launch && tick-launch<27 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Time a running jump through the opening at the coin ledge so the
+        // descending cart is near the west end of its arc at landing.
+        if(level==39 && x==2650 && y==4590 && z==-990 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static unsigned target_cart=0;
+            static uint64_t launch=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            if(launch && floor && floor->owner && floor->owner->actorID==151 &&
+               floor->owner->mPosZ==z*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky upper wheel] boarded tick=%llu uid=%u x=%d y=%d\n",
+                    tick,unsigned(floor->owner->uniqueID),int(player->mPosX),int(player->mPosY));
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            if(!target_cart && floor && !floor->owner && !std::strcmp(state,"St_Wait_Main")) {
+                for(auto *cart=dActor_c::FindWithActorID(151,nullptr);cart;cart=dActor_c::FindWithActorID(151,cart)) {
+                    if(cart->mPosZ==z*4096 && cart->mPosX>=2780*4096 &&
+                       cart->mPosX<=2845*4096 && cart->mPosY>=4850*4096 &&
+                       cart->mPosY<4950*4096 && cart->mPosY<cart->mPrevPosY) {
+                        target_cart=cart->uniqueID;
+                        std::fprintf(stderr,"[native Sky upper wheel] run-up tick=%llu uid=%u x=%d y=%d\n",
+                            tick,target_cart,int(cart->mPosX),int(cart->mPosY));
+                        break;
+                    }
+                }
+            }
+            const int px=player->mPosX;
+            if(target_cart && !launch && floor && !floor->owner && px>=2055*4096 &&
+               player->mHorzSpeed>=0x10000) {
+                launch=tick;
+                std::fprintf(stderr,"[native Sky upper wheel] jump tick=%llu uid=%u x=%d\n",tick,target_cart,px);
+            }
+            const double angle=std::atan2(500.0*4096.0,std::clamp(dz,-75.0*4096.0,75.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=target_cart && px<2670*4096 ? 32767 : 0;
+            ntr::input_test_controls(true,launch && tick-launch<32 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Run west near the crest of the first high wheel. The next wheel's
+        // lower-right cart rises into the jump path as both axles turn.
+        if(level==39 && x==2460 && y==5260 && z==-985 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static bool running=false;
+            static uint64_t launch=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *cart=floor && floor->owner && floor->owner->actorID==151 ? floor->owner : nullptr;
+            const int px=player->mPosX;
+            if(launch && cart && cart->mPosZ==z*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky high wheel transfer] boarded tick=%llu uid=%u x=%d y=%d\n",
+                    tick,unsigned(cart->uniqueID),px,int(player->mPosY));
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            if(cart && cart->mPosZ==-990*4096) {
+                if(!running && cart->mPosX<=3135*4096 && cart->mPosX>=3060*4096 &&
+                   cart->mPosY>=4965*4096 && cart->mPosX<cart->mPrevPosX) {
+                    running=true;
+                    std::fprintf(stderr,"[native Sky high wheel transfer] run-up tick=%llu uid=%u x=%d\n",
+                        tick,unsigned(cart->uniqueID),px);
+                }
+                if(running && !launch && px<=2995*4096 && player->mHorzSpeed>=0x14000 &&
+                   std::abs(static_cast<int16_t>(player->mPrevAngleY-0xc000))<3000) {
+                    launch=tick;
+                    std::fprintf(stderr,"[native Sky high wheel transfer] jump tick=%llu x=%d y=%d\n",
+                        tick,px,int(player->mPosY));
+                }
+            }
+            const bool brake=launch && px<=2660*4096;
+            const bool heading_west=std::abs(static_cast<int16_t>(player->mPrevAngleY-0xc000))<5000;
+            const double angle=std::atan2((brake ? 500.0 : -500.0)*4096.0,
+                std::clamp(dz,-65.0*4096.0,65.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=running && (!brake || (heading_west && player->mHorzSpeed>0x2000)) ? 32767 : 0;
+            ntr::input_test_controls(true,launch && tick-launch<32 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Leave the second high wheel on its upper westbound arc.
+        if(level==39 && x==970 && y==5696 && z==-985 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static bool running=false;
+            static uint64_t launch=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *cart=floor && floor->owner && floor->owner->actorID==151 ? floor->owner : nullptr;
+            const int px=player->mPosX;
+            const int pz=player->mPosZ;
+            if(launch && floor && !floor->owner && px>370*4096 && px<1320*4096 &&
+               pz>-1200*4096 && pz<-760*4096 && std::abs(player->mPosY-y*4096)<8*4096) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky upper west ledge] landed tick=%llu x=%d z=%d\n",tick,px,pz);
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            if(cart && cart->mPosZ==z*4096) {
+                if(!running && cart->mPosX<=2080*4096 && cart->mPosY>=5820*4096 &&
+                   cart->mPosX<cart->mPrevPosX) {
+                    running=true;
+                    std::fprintf(stderr,"[native Sky upper west ledge] run-up tick=%llu uid=%u x=%d\n",
+                        tick,unsigned(cart->uniqueID),px);
+                }
+                if(running && !launch && px<=1860*4096 && player->mHorzSpeed>=0xa000 &&
+                   std::abs(static_cast<int16_t>(player->mPrevAngleY-0xc000))<3000) {
+                    launch=tick;
+                    std::fprintf(stderr,"[native Sky upper west ledge] jump tick=%llu x=%d y=%d\n",
+                        tick,px,int(player->mPosY));
+                }
+            }
+            const bool brake=launch && px<=1160*4096;
+            const bool heading_west=std::abs(static_cast<int16_t>(player->mPrevAngleY-0xc000))<5000;
+            const double angle=std::atan2((brake ? 500.0 : -500.0)*4096.0,
+                std::clamp(dz,-70.0*4096.0,70.0*4096.0))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const int stick=running && (!brake || (heading_west && player->mHorzSpeed>0x2000)) ? 32767 : 0;
+            ntr::input_test_controls(true,launch && tick-launch<32 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
+        // Use ordinary held jumps on the final authored stairs.
+        if(level==39 && x==343 && z==-5625 && y==6496 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static uint64_t stair_jump=0;
+            const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const int pz=player->mPosZ/4096;
+            const int py=player->mPosY/4096;
+            if(grounded && py>=6490 && pz<=-5600 && std::abs(dx)<80*4096.0) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Sky final stairs] landed tick=%llu y=%d z=%d\n",tick,py,pz);
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            const int riser=py<5946 ? -4385 : py<6046 ? -4585 : py<6146 ? -4785 :
+                py<6246 ? -4985 : py<6346 ? -5381 : -5566;
+            if(grounded && pz<=riser+125 && py<6490 && (!stair_jump || tick-stair_jump>=42) &&
+               std::abs(dx)<90*4096.0) {
+                stair_jump=tick;
+                std::fprintf(stderr,"[native Sky final stairs] jump tick=%llu y=%d z=%d\n",tick,py,pz);
+            }
+            const double angle=std::atan2(std::clamp(dx,-75.0*4096.0,75.0*4096.0),-420.0*4096.0)
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            ntr::input_test_controls(true,stair_jump && tick-stair_jump<28 ? 2 : 0,
+                static_cast<int16_t>(std::sin(angle)*23000),static_cast<int16_t>(-std::cos(angle)*23000));
+            return true;
+        }
+        // Brake at the rim, then let Mario drop through the center of the pipe.
+        if(level==39 && x==343 && z==-5889 && y==6646 && jump==2 &&
+           std::getenv("SM64DS_PC_TEST_SKY_WHOMP_CROSS")) {
+            static bool approached=false;
+            if(!approached) {
+                approached=true;
+                std::fprintf(stderr,"[native Sky final pipe] approach tick=%llu x=%d z=%d\n",
+                    tick,int(player->mPosX),int(player->mPosZ));
+            }
+            const double speed=(std::max)(0.0,player->mHorzSpeed/4096.0);
+            const bool north=std::abs(static_cast<int16_t>(player->mPrevAngleY-0x8000))<0x3000;
+            const double stop_distance=(std::max)(0.0,speed*speed/(2.0*0xd00/4096.0)-speed/2.0);
+            const double error=dz/4096.0+(north ? stop_distance : -stop_distance);
+            const double angle=std::atan2(std::clamp(dx,-75.0*4096.0,75.0*4096.0),
+                (error>0 ? 380.0 : -380.0)*4096.0)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            const bool countersteer=speed>4 && (north == (error>0));
+            const int stick=countersteer ? 32767 : std::abs(error)>15 ? 10800 : 0;
+            ntr::input_test_controls(true,0,
+                static_cast<int16_t>(std::sin(angle)*stick),static_cast<int16_t>(-std::cos(angle)*stick));
+            return true;
+        }
         // Opt-in Sky disc replay. Run from the upper walkway and brake over
         // the east half of the disc before the center Amp.
         if(level==39 && x==4320 && y==-1400 && z==-1850 && jump==0) {
@@ -8419,6 +8623,7 @@ static bool replay_bowser_tail_controls() {
     const char *enabled=std::getenv("SM64DS_PC_TEST_BOWSER_TAIL");
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const bool firesea_combat = data_0209f2f8 == 38 && std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_THROW");
+    const bool sky_combat = data_0209f2f8 == 40 && std::getenv("SM64DS_PC_TEST_BOWSER_THROW");
     const bool firesea_key = firesea_combat && std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_KEY");
     if (firesea_key && data_0209f20c)
         return false; // The original clear screen has its own confirm replay.
@@ -8444,7 +8649,7 @@ static bool replay_bowser_tail_controls() {
         }
     }
     if(!enabled || std::strcmp(enabled,"1") || !automation || std::strcmp(automation,"1") ||
-       (data_0209f2f8!=36 && !firesea_combat) || ntr::rt_frame()<1700)return false;
+       (data_0209f2f8!=36 && !firesea_combat && !sky_combat) || ntr::rt_frame()<1700)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);
     auto *b=static_cast<daKpa_c *>(dActor_c::FindWithActorID(279,nullptr));
     auto *a=b?dActor_c::FindWithID(b->mTailUniqueID):nullptr;
@@ -8453,10 +8658,50 @@ static bool replay_bowser_tail_controls() {
     const auto tick=ntr::rt_frame();
     uint16_t buttons=0;int16_t sx=0,sy=0;
     static uint64_t heldSince=0,releasedAt=0;
+    if(sky_combat) {
+        static uint64_t footing_started=0;
+        static bool footing_checked=false;
+        if(tick%30==0) {
+            std::fprintf(stderr,"[native Sky Bowser] tick=%llu state=%d health=%d tail=%d x=%d z=%d\n",
+                tick,int(b->mState),int(b->mHealth),int(tail->mState),int(p->mPosX),int(p->mPosZ));
+        }
+        if(!footing_checked && !data_0209d660 && !p->mIsNoControl && !p->mIsControlDisabled) {
+            if(!footing_started)footing_started=tick;
+            const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+            const auto *floor=grounded ? static_cast<const dBgPi *>(p->mMeshClsn.GetFloorResult()) : nullptr;
+            if(floor && floor->owner && floor->owner->actorID==167) {
+                footing_checked=true;
+                std::fprintf(stderr,"[native Sky Bowser] wedge contact tick=%llu uid=%u x=%d z=%d\n",
+                    tick,unsigned(floor->owner->uniqueID),int(p->mPosX),int(p->mPosZ));
+            } else if(tick-footing_started<480) {
+                const double angle=std::atan2(2570.0*4096.0-p->mPosX,-double(p->mPosZ))
+                    -GetAngleToCamera(0)*6.283185307179586/65536.0;
+                ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*32767),
+                    static_cast<int16_t>(-std::cos(angle)*32767));
+                return true;
+            } else footing_checked=true;
+        }
+        // The first successful throw leaves Bowser stunned. Return toward
+        // center while he recovers, then allow the next normal tail grab.
+        if(releasedAt && b->mHealth==2 && b->mState!=1 && b->mState!=12 &&
+           !data_0209d660 && !p->mIsNoControl && !p->mIsControlDisabled) {
+            releasedAt=0;
+            heldSince=0;
+            std::fprintf(stderr,"[native Sky Bowser] second approach tick=%llu state=%d\n",
+                tick,int(b->mState));
+        }
+    }
     if(releasedAt) {
         buttons=tick<releasedAt+3?1:0;
         if(data_0209d660)buttons=tick%45<3?1:0;
-        else if((!firesea_combat || firesea_key) && b->mState==4 && !p->mIsNoControl && !p->mIsControlDisabled) {
+        else if(sky_combat && b->mHealth<3 && !p->mIsNoControl && !p->mIsControlDisabled &&
+                std::hypot(double(p->mPosX),double(p->mPosZ))>170*4096.0) {
+            const double angle=std::atan2(-double(p->mPosX),-double(p->mPosZ))
+                -GetAngleToCamera(0)*6.283185307179586/65536.0;
+            sx=static_cast<int16_t>(std::sin(angle)*22000);
+            sy=static_cast<int16_t>(-std::cos(angle)*22000);
+        }
+        else if(!sky_combat && (!firesea_combat || firesea_key) && b->mState==4 && !p->mIsNoControl && !p->mIsControlDisabled) {
             auto *key=dActor_c::FindWithActorID(282,nullptr);
             const double gx=key?key->mPosX:b->mPosX,gz=key?key->mPosZ:b->mPosZ;
             const double dx=gx-p->mPosX,dz=gz-p->mPosZ;
@@ -8500,7 +8745,7 @@ static bool replay_bowser_tail_controls() {
                 }
                 if(auto *mine=nearest) {
                     const auto desired=static_cast<int16_t>(std::lround(std::atan2(double(mine->mPosX)-p->mPosX,double(mine->mPosZ)-p->mPosZ)*65536.0/6.283185307179586));
-                    const int heading = firesea_combat ? b->mAngleY : p->mAngleY+p->mAngleYSpeed;
+                    const int heading = (firesea_combat || sky_combat) ? b->mAngleY : p->mAngleY+p->mAngleYSpeed;
                     const auto error=static_cast<int16_t>(desired-heading);
                     if(std::abs(int(error))<800) {
                         buttons=1;releasedAt=tick;

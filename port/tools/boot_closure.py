@@ -66,7 +66,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjHeart_c_classInit",
                  "daObjYajirusi_c_classInit_YAJIRUSI_L", "daObjYajirusi_c_classInit_YAJIRUSI_R",
                  "daObjTh_Fall_Block_c_classInit",
-                 "daObjKm2_Fall_Block_c_classInit", "daKpa2Bg_c_classInit",
+                 "daObjKm2_Fall_Block_c_classInit", "daKpa2Bg_c_classInit", "daKpa3Bg_c_classInit",
                  "daTrsTrap_c_classInit_MERRYGOROUND",
                  "daTrsTrap_c_classInit_TERESAPIT",
                  "daTrsTrap_c_classInit_BOOKSHELF", "daBook_c_classInit_BOOK_SWITCH",
@@ -624,6 +624,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daKpa2Bg_c.cpp':
                     import bowser_host
                     transformed=bowser_host.transform_firesea_arena(root,transformed)
+                    rewrites+=1
+                if path.name == 'daKpa3Bg_c.cpp':
+                    import bowser_host
+                    transformed=bowser_host.transform_sky_arena(root,transformed)
                     rewrites+=1
                 if path.name == 'daOwl_c.cpp':
                     import owl_host

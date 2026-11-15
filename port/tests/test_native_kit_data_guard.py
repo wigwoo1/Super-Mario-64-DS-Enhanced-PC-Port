@@ -10,11 +10,11 @@ class KitDataGuard(unittest.TestCase):
                      'camera/camera_native_data.cpp','minigame/minigame_resources.asm',
                      'src/actors/daPopoi_c.cpp','src/actors/daMenbo_c.cpp',
                      'src/game/actors/d_a_holhei.cpp','src/game/actors/d_a_btn.cpp',
-                     'src/game/actors/d_a_obj_km3_dorifu.cpp'):
+                     'src/game/actors/d_a_obj_km3_dorifu.cpp','src/actors/daKpa3Bg_c.cpp'):
             path='CMakeFiles/sm64ds_pc.dir/pc-boot-src/'+name+'.obj'
             for spelling in (path,path.replace('/','\\')):
                 self.assertEqual(local_source(spelling),'build/port/pc-boot-src/'+name)
-        self.assertEqual(len(DATA_SOURCES),25)
+        self.assertEqual(len(DATA_SOURCES),26)
 
     def test_object_overlays_must_be_regenerated_and_cannot_be_prebuilt(self):
         for name in ('ov012_data.cpp','ov015_data.cpp'):
@@ -44,7 +44,7 @@ class KitDataGuard(unittest.TestCase):
         bad=copy.deepcopy(metadata);bad['local_objects'].pop()
         with self.assertRaisesRegex(ValueError,'roster'):validate_manifest(bad)
         for name in ('camera/camera_native_data.asm', 'src/game/actors/d_a_btn.cpp',
-                     'src/game/actors/d_a_obj_km3_dorifu.cpp'):
+                     'src/game/actors/d_a_obj_km3_dorifu.cpp', 'src/actors/daKpa3Bg_c.cpp'):
             bad=copy.deepcopy(metadata)
             bad['prebuilt'][0]['origin_object']=f'CMakeFiles/sm64ds_pc.dir/pc-boot-src/{name}.obj'
             with self.assertRaisesRegex(ValueError,'cannot be prebuilt'):validate_manifest(bad)

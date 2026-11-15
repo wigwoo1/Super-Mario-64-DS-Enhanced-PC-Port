@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "275f8ed87da619197485b360b1c431b16219778c646ac07fa610338ae8e6846b",
-      "bytes": 62685
+      "sha256": "3461ddedbd137891fa6700f21c817b733d8fc269d7d362af95e5141aa1473a85",
+      "bytes": 62996
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "ad69267b91f342d4606557ca9e4f20bdfc37dc55ef3b42a78e61125b5ad39364",
-      "bytes": 581887
+      "sha256": "f87fd047a36f26f2622c42f318cb4203171e8488b1e5adfd162458f481ce091b",
+      "bytes": 597042
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8905,8 +8905,8 @@
     },
     {
       "path": "port/tests/test_native_kit_data_guard.py",
-      "sha256": "878d45abf3b6fc9f9d137c2c62fee5743bfb275270a225423ce3085e5c6b4ee3",
-      "bytes": 3590
+      "sha256": "1725ec94d177e7bac84850ce0d87c01da2bb7eda9e3f6317f40ecd56eb27a9e6",
+      "bytes": 3647
     },
     {
       "path": "port/tests/test_picture_gate_transform.py",
@@ -9115,13 +9115,13 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "6f8d813fb8dfcd9d01cf7fa2a5ec7bc4052540990df0cf8ed9e5574deb841e90",
-      "bytes": 62721
+      "sha256": "993a2b0086d2f703456d05fb1fc54012bf3495c4978022d8cfb899d84f059e6a",
+      "bytes": 62948
     },
     {
       "path": "port/tools/bowser_host.py",
-      "sha256": "7197dc9102a69f3221673124064a2e9e3333f32d8599d9447879701eb7be009b",
-      "bytes": 12382
+      "sha256": "c16e497cc49bcfd8bb5a4a180d4ee2d6495a9345de71a1b6a3fab831a0541c0b",
+      "bytes": 18064
     },
     {
       "path": "port/tools/buddy_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "840ff2a56e7d28a3a70161177a155779dd957e63b421889f73c455c0490d786e",
-      "bytes": 88424
+      "sha256": "a25ee042f0faf7961be81e34920bcc02d4878fbc692c407b1800ce75aba55c0c",
+      "bytes": 88499
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9645,8 +9645,8 @@
     },
     {
       "path": "port/tools/native_kit_data.py",
-      "sha256": "0a91f7651f16173d4a226bb0131c6fb73cda51d5ab88e11d57345702240c0d14",
-      "bytes": 5588
+      "sha256": "ac2ddf633996b69b8fcf6a77f7fa3b81eca5b3303abfeabe9caa6e20fa555195",
+      "bytes": 5661
     },
     {
       "path": "port/tools/native_save_hooks.py",
@@ -9745,8 +9745,8 @@
     },
     {
       "path": "port/tools/reward_host.py",
-      "sha256": "c52266ec15e32f454a45919c4fba7d141ab9980e4876023fcd541b7b3706e329",
-      "bytes": 10999
+      "sha256": "531321b1dcba16e2c13edad01d29674d94a27c64ace30900a9e9451aa6b0c1d4",
+      "bytes": 10732
     },
     {
       "path": "port/tools/romdata.py",

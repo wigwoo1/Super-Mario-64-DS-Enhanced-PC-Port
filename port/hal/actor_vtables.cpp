@@ -341,8 +341,12 @@ extern "C" void *daKpa_c_classInit(), *daKpaTail_c_classInit(), *daKpaFire_c_cla
 // Cartridge ov060 profiles. Preview remains opt-in until boss runtime acceptance.
 static PcNativeActorProfile pc_bowser_profile = {(void *)&daKpa_c_classInit,279,143,67108864,409600,409600,16777216,16777216};
 extern "C" void *daKpa2Bg_c_classInit();
+extern "C" void *daKpa3Bg_c_classInit();
 static PcNativeActorProfile pc_firesea_arena_profile = {
     (void *)&daKpa2Bg_c_classInit,166,145,0,0,0x1388000,0x1388000,0x1388000
+};
+static PcNativeActorProfile pc_sky_arena_profile = {
+    (void *)&daKpa3Bg_c_classInit,167,146,0,0x190000,0x190000,0x1000000,0x1900000
 };
 static PcNativeActorProfile pc_bowser_tail_profile = {(void *)&daKpaTail_c_classInit,278,142,128,409600,409600,16777216,16777216};
 static PcNativeActorProfile pc_bowser_fire_profile = {(void *)&daKpaFire_c_classInit,280,144,2,327680,327680,16777216,8388608};
@@ -373,6 +377,7 @@ static PcNativeActorProfile pc_blue_coin_switch_profile = {
 extern "C" void *daObjPushblock_c_classInit();
 extern "C" void *daObjBlockItemTag_c_classInit_BLK_SLVSTAR_TAG();
 extern "C" void *daObjNumber_c_classInit();
+extern "C" void pc_init_number_resources();
 static PcNativeActorProfile pc_push_block_profile = {
     (void *)&daObjPushblock_c_classInit,192,31,2,0x96000,0x12c000,0x1000000,0
 };
@@ -799,6 +804,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[187] = &pc_rabbit_profile;
     data_020a4bb8_storage[229] = &pc_rabbit_key_profile;
     pc_rabbit_init_resources();
+    pc_init_number_resources();
     pc_buddy_init_resources();pc_shutter_init_resources();
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
@@ -844,6 +850,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[234] = &pc_owl_profile;
     data_020a4bb8_storage[279] = &pc_bowser_profile;
     data_020a4bb8_storage[166] = &pc_firesea_arena_profile;
+    data_020a4bb8_storage[167] = &pc_sky_arena_profile;
     data_020a4bb8_storage[278] = &pc_bowser_tail_profile;
     data_020a4bb8_storage[280] = &pc_bowser_fire_profile;
     data_020a4bb8_storage[284] = &pc_bowser_mine_profile;

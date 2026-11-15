@@ -37,14 +37,11 @@ def transform(text):
                 '\nstatic_assert(sizeof(daObjBlockItemTag_c)==0xdc && '
                 'offsetof(daObjBlockItemTag_c,mActionPending)==0xd6);\n')
     if 's32 daSCoin_c::InitResources()' in text:
-        anchor = 's32 daSCoin_c::InitResources()\n{'
-        text = text.replace(anchor, anchor + '\n    pc_init_number_resources();')
-        return ('#include <stddef.h>\nextern "C" void pc_init_number_resources();\n' + text +
+        return ('#include <stddef.h>\n' + text +
                 '\nstatic_assert(sizeof(daSCoin_c)==0x114 && offsetof(daSCoin_c,mCollectedCount)==0x110);\n')
     if 's32 daObjNumber_c::InitResources()' in text:
-        anchor = 's32 daObjNumber_c::InitResources()\n{'
-        text = text.replace(anchor, anchor + '\n    pc_init_number_resources();')
-        # Overlay 2's original number resource handles.
+        # Initialize these shared overlay handles at registry startup, before
+        # a red coin or another number-model user can acquire a reference.
         text += """
 extern "C" void pc_init_number_resources() {
     static const bool initialized = [] {
@@ -58,7 +55,7 @@ extern "C" void pc_init_number_resources() {
 }
 static_assert(sizeof(daObjNumber_c)==0x150 && offsetof(daObjNumber_c,mDelay)==0x14c);
 """
-        return '#include <stddef.h>\nextern "C" void pc_init_number_resources();\n' + text
+        return '#include <stddef.h>\n' + text
     if 'int daObjPushblock_c::InitResources()' in text:
         anchor = 'int daObjPushblock_c::InitResources()\n{'
         text = text.replace(anchor, anchor + """

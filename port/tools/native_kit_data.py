@@ -25,6 +25,7 @@ ROM_ACTOR_SOURCES = (
     ('src/game/actors/d_a_holhei.cpp', 'chuckya_host', 'transform'),
     ('src/game/actors/d_a_btn.cpp', 'whomp_host', 'transform'),
     ('src/game/actors/d_a_obj_km3_dorifu.cpp', 'simple_lift_host', 'transform_sky_dorifu'),
+    ('src/actors/daKpa3Bg_c.cpp', 'bowser_host', 'transform_sky_arena'),
 )
 DATA_SOURCES |= frozenset('build/port/pc-boot-src/' + rel
                           for rel, _, _ in ROM_ACTOR_SOURCES)
