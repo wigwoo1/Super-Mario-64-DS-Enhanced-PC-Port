@@ -2197,6 +2197,13 @@ static bool replay_course_route(const char *route_override=nullptr) {
        (has_y && (y< -32768 || y>32767)))return false;
     auto *player=static_cast<Player *>(data_0209f394[0]);
     if(!player || player->aliveState!=1)return false;
+    if (data_0209f2f8 == 50 && player->mCharacter == 0 &&
+        std::getenv("SM64DS_PC_TEST_MARIO_DOOR_RELOAD")) {
+        // The character door brings Mario back out automatically. Stop
+        // the test's approach input before it sends him back through it.
+        ntr::input_test_controls(true, 0, 0, 0);
+        return true;
+    }
     const char *cannon_mode=std::getenv("SM64DS_PC_TEST_CANNON");
     const bool silver_reward_cannon=cannon_mode && !std::strcmp(cannon_mode,"wdw-silver-reward");
     const bool blue_switch_warp=std::getenv("SM64DS_PC_TEST_WDW_BLUE_SWITCH") && x==852;
@@ -8953,6 +8960,27 @@ static bool replay_goomboss_second_hit()
     auto *player = static_cast<Player *>(data_0209f394[0]);
     const auto *boss = static_cast<const daKuriKing_c *>(dActor_c::FindWithActorID(198, nullptr));
     const bool finalHitEnabled = std::getenv("SM64DS_PC_TEST_GOOMBOSS_FINAL_HIT") != nullptr;
+    if (finalHitEnabled && player && (!boss || boss->aliveState != 1)) {
+        const auto *key = dActor_c::FindWithActorID(282, nullptr);
+        if (key && key->aliveState == 1 && (key->param1 & 7) == 2 &&
+            !(key->mFlags & 0x04000000) && !player->mIsNoControl &&
+            !player->mIsControlDisabled && !player->mIsAirborne) {
+            const char *state = pc_player_state_name(player);
+            if (!std::strcmp(state, "St_Walk_Main") || !std::strcmp(state, "St_Wait_Main")) {
+                static bool clearedPoison = false;
+                const double x = player->mPosX / 4096.0;
+                const double z = player->mPosZ / 4096.0;
+                clearedPoison |= std::hypot(490.0 - x, -1410.0 - z) < 60.0;
+                const double targetX = clearedPoison ? key->mPosX / 4096.0 : 490.0;
+                const double targetZ = clearedPoison ? key->mPosZ / 4096.0 : -1410.0;
+                const double angle = std::atan2(targetX - x, targetZ - z) -
+                                     GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+                ntr::input_test_controls(true, 0, static_cast<int16_t>(std::sin(angle) * 21000),
+                                                static_cast<int16_t>(-std::cos(angle) * 21000));
+                return true;
+            }
+        }
+    }
     if (!player || !boss || boss->aliveState != 1 ||
         (boss->mSizeIndex != 2 && !(finalHitEnabled && boss->mSizeIndex == 1)))
         return false;
@@ -8964,47 +8992,83 @@ static bool replay_goomboss_second_hit()
     const auto tick = ntr::rt_frame();
     static uint64_t attackUntil = 0;
     static uint64_t nextAttack = 0;
+    static bool finalCircling = false;
+    static bool finalFlankReached = false;
+    static uint64_t finalJumpUntil = 0;
+    static uint64_t finalEscapeUntil = 0;
     const char *state = pc_player_state_name(player);
+    const bool finalApproach = boss->mSizeIndex == 1 && !finalFlankReached;
+    const bool finalEscapeLanding = finalEscapeUntil && player->mIsAirborne &&
+                                    !std::strcmp(state, "St_Jump_Main");
+    const bool finalEscapeLanded = finalEscapeUntil && !player->mIsAirborne &&
+                                   !std::strcmp(state, "St_Land_Main");
     if (player->mIsNoControl || player->mIsControlDisabled ||
-        player->mIsAirborne || player->mIsTakingDamage)
+        (player->mIsAirborne && !finalApproach && !finalEscapeLanding) || player->mIsTakingDamage)
         return input(0);
     if (tick < attackUntil)
         return input(1);
     if (player->mObjInMouth)
         return input(0x100);
-    if (std::strcmp(state, "St_Wait_Main") && std::strcmp(state, "St_Walk_Main"))
+    if (!player->mIsAirborne && !finalEscapeLanded &&
+        std::strcmp(state, "St_Wait_Main") && std::strcmp(state, "St_Walk_Main"))
         return input(0);
 
-    if (boss->mSizeIndex == 1) {
+    if (finalApproach) {
         const double x = player->mPosX / 4096.0;
         const double z = player->mPosZ / 4096.0;
+        constexpr double turn = 6.283185307179586;
         const double azimuth = std::atan2(x, z);
-        const bool waitForWave = boss->mState == 5 || boss->mState == 6 ||
-                                 (boss->mState == 2 && !boss->mSpawnedCount);
-        // The straight path to the first outer minion clips Goomboss.
-        // Keep the useful flank and go around the boss's feet on the rim.
-        if (waitForWave || azimuth > -0.82) {
-            const double next = waitForWave ? -0.24 : (std::max)(azimuth - 0.16, -0.85);
-            const double dx = 1715.0 * std::sin(next) - x;
-            const double dz = 1715.0 * std::cos(next) - z;
-            if (waitForWave && std::hypot(dx, dz) < 22.0)
-                return input(0);
-            const double camera = GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
-            const double angle = std::atan2(dx, dz) - camera;
-            const int magnitude = waitForWave ? 14000 : 30000;
-            return input(0, static_cast<int16_t>(std::sin(angle) * magnitude),
-                            static_cast<int16_t>(-std::cos(angle) * magnitude));
+        finalCircling |= boss->mState == 2;
+        // Leave after the summoning state starts to keep the original
+        // minion placement. Hop past the foot on the outside lane.
+        if (finalCircling && azimuth < -0.96 && !player->mIsAirborne) {
+            finalFlankReached = true;
+            return input(0);
         }
+        const double next = finalCircling ? (std::max)(azimuth - 0.20, -1.0) : -0.14;
+        const double radius = 1480.0;
+        // Aim the jump toward the middle of the wood so the foot's
+        // outward displacement cannot carry the landing off the rim.
+        const double targetX = player->mIsAirborne ? -1120.0 : radius * std::sin(next);
+        const double targetZ = player->mIsAirborne ? 1025.0 : radius * std::cos(next);
+        const double dx = targetX - x;
+        const double dz = targetZ - z;
+        if (!finalCircling && std::hypot(dx, dz) < 22.0)
+            return input(0);
+        const double camera = GetAngleToCamera(0) * turn / 65536.0;
+        const double angle = std::atan2(dx, dz) - camera;
+        const int magnitude = finalCircling ? 30000 : 14000;
+        if (finalCircling && tick % 5 == 0) {
+            for (int index = 2; index < 4; ++index) {
+                const auto &foot = boss->mdCc_cs[index];
+                std::fprintf(stderr, "[native Goomboss foot] tick=%llu index=%d pos=%d,%d,%d radius=%d height=%d flags=%x other=%u\n",
+                             static_cast<unsigned long long>(tick), index, int(foot.pos.x), int(foot.pos.y),
+                             int(foot.pos.z), int(foot.radius), int(foot.height), unsigned(foot.flags),
+                             unsigned(foot.otherOwner));
+            }
+        }
+        if (finalCircling && azimuth < -0.29 && !finalJumpUntil) {
+            finalJumpUntil = tick + 100;
+            std::fprintf(stderr, "[native Goomboss replay] tick=%llu action=rim-jump x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+        const uint16_t buttons = tick < finalJumpUntil ? 2 : 0;
+        return input(buttons, static_cast<int16_t>(std::sin(angle) * magnitude),
+                        static_cast<int16_t>(-std::cos(angle) * magnitude));
     }
 
     const dActor_c *target = nullptr;
-    bool hasEgg = false;
+    const daYegg_c *heldEgg = nullptr;
     for (auto *actor = dActor_c::FindWithActorID(9, nullptr); actor;
          actor = dActor_c::FindWithActorID(9, actor)) {
         const auto *egg = static_cast<const daYegg_c *>(actor);
-        hasEgg |= egg->aliveState == 1 && egg->mPlayer == player &&
-                  egg->mState == daYegg_STATE_FOLLOW_PLAYER;
+        if (egg->aliveState == 1 && egg->mPlayer == player &&
+            egg->mState == daYegg_STATE_FOLLOW_PLAYER) {
+            heldEgg = egg;
+            break;
+        }
     }
+    const bool hasEgg = heldEgg != nullptr;
     if (hasEgg) {
         target = boss;
     } else {
@@ -9018,7 +9082,7 @@ static bool replay_goomboss_second_hit()
             const double distance = std::hypot(double(goomba->mPosX) - player->mPosX,
                                                double(goomba->mPosZ) - player->mPosZ) / 4096.0;
             const double radius = std::hypot(double(goomba->mPosX), double(goomba->mPosZ)) / 4096.0;
-            if (boss->mSizeIndex == 1 && (radius < 1120.0 || radius > 1690.0))
+            if (boss->mSizeIndex == 1 && (radius < 1330.0 || radius > 1690.0))
                 continue;
             if (distance < nearest) {
                 nearest = distance;
@@ -9035,6 +9099,49 @@ static bool replay_goomboss_second_hit()
     constexpr double angleUnits = 65536.0 / 6.283185307179586;
     const double heading = std::atan2(dx, dz);
     const int facingError = std::abs(int(static_cast<int16_t>(int(heading * angleUnits) - player->mAngleY)));
+    if (heldEgg && boss->mSizeIndex == 1) {
+        const auto distanceToEgg = [heldEgg](const dActor_c &actor) {
+            return std::hypot(double(actor.mPosX) - heldEgg->mPosX,
+                              double(actor.mPosY) - heldEgg->mPosY,
+                              double(actor.mPosZ) - heldEgg->mPosZ) / 4096.0;
+        };
+        const double bossDistance = distanceToEgg(*boss);
+        bool minionCloser = false;
+        for (auto *actor = dActor_c::FindWithActorID(200, nullptr); actor;
+             actor = dActor_c::FindWithActorID(200, actor)) {
+            if (actor->aliveState == 1 && (actor->mFlags & 0x10000000) &&
+                !(actor->mFlags & 8) && distanceToEgg(*actor) < bossDistance + 72.0) {
+                minionCloser = true;
+                break;
+            }
+        }
+        if (finalEscapeLanding && !minionCloser && bossDistance < 1700.0 &&
+            (boss->mState == 3 || boss->mState == 4) && tick >= nextAttack) {
+            attackUntil = tick + 8;
+            nextAttack = tick + 70;
+            std::fprintf(stderr, "[native Goomboss replay] tick=%llu action=air-throw target=%u distance=%.1f\n",
+                         static_cast<unsigned long long>(tick), boss->uniqueID, bossDistance);
+            return input(1);
+        }
+        // Eggs seek the closest eligible actor from where they start. Run
+        // around the formation on the wood until that actor is Goomboss.
+        if (minionCloser || tick < finalEscapeUntil || finalEscapeLanding) {
+            if (!finalEscapeUntil || (finalEscapeLanded && tick >= finalEscapeUntil)) {
+                finalEscapeUntil = tick + 60;
+                std::fprintf(stderr, "[native Goomboss replay] tick=%llu action=egg-escape-jump\n",
+                             static_cast<unsigned long long>(tick));
+            }
+            const double x = player->mPosX / 4096.0;
+            const double z = player->mPosZ / 4096.0;
+            const double next = std::atan2(x, z) - 0.20;
+            const double alongRim = std::atan2(1520.0 * std::sin(next) - x,
+                                               1520.0 * std::cos(next) - z)
+                                   - GetAngleToCamera(0) / angleUnits;
+            return input(tick < finalEscapeUntil ? 2 : 0,
+                         static_cast<int16_t>(std::sin(alongRim) * 30000),
+                         static_cast<int16_t>(-std::cos(alongRim) * 30000));
+        }
+    }
     const bool ready = hasEgg ? boss->mState == 3 || boss->mState == 4 : distance < 245;
     if (ready && facingError < 4200 && tick >= nextAttack) {
         attackUntil = tick + 8;
@@ -9048,7 +9155,7 @@ static bool replay_goomboss_second_hit()
         return input(0);
 
     const double targetRadius = std::hypot(double(target->mPosX), double(target->mPosZ)) / 4096.0;
-    if (targetRadius < 1120 || targetRadius > 1690)
+    if ((boss->mSizeIndex == 2 && targetRadius < 1120) || targetRadius > 1690)
         return input(0);
     const double stickAngle = heading - GetAngleToCamera(0) / angleUnits;
     const int magnitude = distance < 260 ? 12000 : 22000;
