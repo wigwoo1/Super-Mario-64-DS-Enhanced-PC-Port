@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "d7372cc8d23f814370828f5821354301936d05f9da140248db1723b0005d4758",
-      "bytes": 65789
+      "sha256": "5bdec0d66e00da48e67db042c6ca4fbe11e3b36fc66d8b6caee25eb0c5bc4a3c",
+      "bytes": 66045
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "b86a34ab660c74007cacf913df4441fb8597bda48711c46db805e09358c6916c",
-      "bytes": 674940
+      "sha256": "f4b4e22e744eb801db5ce2c18b3b838a1c56b4bd42218f78b8af66177d711b73",
+      "bytes": 682965
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9115,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "b7bd5a0485e04a72cdb714242b559caa31408eeb2f2315d5de6373ca7b849c8c",
-      "bytes": 64327
+      "sha256": "6b36eed67d9f949072dc2dcd779cbcd12c5ccc28d2791dc4bbd0243d0be0b4f7",
+      "bytes": 64608
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "54d03fdaa7a94553e1c7d8ebc7cfe394590494fbb8e847ade1fbaef7c88757ec",
-      "bytes": 93720
+      "sha256": "7249a0a1f93362b47d7d2760a94ddfbbab99d31f21eb7b0d3defa08f6269a32f",
+      "bytes": 94173
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9780,8 +9780,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "0628c20ac2a463e7e157aef18b699dfc6f2560d760cec6b6b4f36dc86b2d3bf2",
-      "bytes": 33708
+      "sha256": "c89a7c9371539f6fc4d0ec12f2d561cfbc94ea4251262641952be3617834ae57",
+      "bytes": 35134
     },
     {
       "path": "port/tools/skeeter_host.py",

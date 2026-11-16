@@ -82,6 +82,11 @@ def main():
     if actual[0] != named('daObjBk_Lift_c_classInit') or actual[1:] != expected[1:]:
         raise ValueError('Fortress tower step profile/factory differs from the original')
     print('PASS: original fortress tower step profile and native factory')
+    expected = struct.unpack_from('<IHHIiiii', fortress_rom, 0x021146f0 - fortress_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_fortress_rotating_bar_profile'), 28))
+    if actual[0] != named('daObjBk_Rotebar_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fortress rotating bar profile/factory differs from the original')
+    print('PASS: original fortress rotating bar profile and native factory')
     surface_base, surface_rom = overlay(2)
     lift_base, lift_rom = overlay(91)
     for profile, factory, address in (

@@ -18,6 +18,7 @@
 #include "daKpaTail_c.h"
 #include "daKirai_c.h"
 #include "daObjKey_c.h"
+#include "daObjBk_Rotebar_c.h"
 #include "daBmb_c.h"
 #include "daBtn_c.h"
 #include "daHolhei_c.h"
@@ -2528,6 +2529,16 @@ static bool replay_fortress_buddy_lane() {
     return aim(buddy->mPosX/4096,buddy->mPosZ/4096,14000,keys);
 }
 
+static bool replay_fortress_red_coin_collected=false;
+
+static bool fortress_red_coin_present(int x,int z) {
+    for(auto *coin=dActor_c::FindWithActorID(289,nullptr);coin;coin=dActor_c::FindWithActorID(289,coin))
+        if(coin->aliveState==1 && std::abs(coin->mPosX-x*4096)<20*4096 &&
+           std::abs(coin->mPosZ-z*4096)<20*4096)
+            return true;
+    return false;
+}
+
 static bool replay_fortress_summit_lift() {
     if(data_0209f2f8!=7 || !std::getenv("SM64DS_PC_TEST_FORTRESS_SUMMIT_LIFT"))return false;
     auto *player=static_cast<Player *>(data_0209f394[0]);
@@ -2556,6 +2567,52 @@ static bool replay_fortress_summit_lift() {
     };
     if(phase==Finished && replay_king_whomp_encounter(player))return true;
     if(player->mIsNoControl || player->mIsControlDisabled)return controls();
+    if(phase==Finished && std::getenv("SM64DS_PC_TEST_FORTRESS_RED_TERRACE")) {
+        static unsigned point=0;
+        constexpr int route[][2]={{1591,-108},{1775,500},{1775,900},{1600,1000},{1480,1120},{1299,1266},
+                                  {1100,1480},{900,1530},{725,1600},{650,1650},{650,2000},{650,2250},{540,2250}};
+        if(point>=std::size(route)) {
+            auto *bar=static_cast<daObjBk_Rotebar_c *>(dActor_c::FindWithActorID(51,nullptr));
+            if(!bar || !fortress_red_coin_present(-247,2754))return controls();
+            static bool boarding=false, supported=false, positioned=false;
+            if(owner==bar && !supported) {
+                supported=true;
+                std::fprintf(stderr,"[native fortress rotating bar] boarded tick=%llu uid=%u\n",
+                             static_cast<unsigned long long>(tick),bar->uniqueID);
+            }
+            if(!boarding && grounded && bar->mAngleY==0 && bar->mPauseTimer>=34) {
+                boarding=true;
+                std::fprintf(stderr,"[native fortress rotating bar] approach tick=%llu pause=%d\n",
+                             static_cast<unsigned long long>(tick),int(bar->mPauseTimer));
+            }
+            if(boarding && !positioned) {
+                if(owner==bar && player->mPosX<=-140*4096) {
+                    positioned=true;
+                    return controls();
+                }
+                return aim(-185*4096,2250*4096,0,bar->mPauseTimer>10?25000:18000);
+            }
+            if(positioned && owner==bar && uint16_t(bar->mAngleY)>=0x9000) {
+                const double heading=uint16_t(bar->mAngleY)*6.283185307179586/65536.0;
+                const int x=bar->mPosX+static_cast<int>(500*4096*std::cos(heading));
+                const int z=bar->mPosZ-static_cast<int>(500*4096*std::sin(heading));
+                return aim(x,z,0,22000);
+            }
+            return controls();
+        }
+        const int x=route[point][0],z=route[point][1];
+        const bool coin=point==0 || point==5;
+        const double distance=std::hypot(double(x)*4096-player->mPosX,double(z)*4096-player->mPosZ);
+        if(grounded && std::abs(player->mPosY-2500*4096)<30*4096 &&
+           (coin?!fortress_red_coin_present(x,z):distance<45*4096.0)) {
+            std::fprintf(stderr,"[native fortress red terrace] reached tick=%llu point=%u coin=%u\n",
+                         static_cast<unsigned long long>(tick),point,unsigned(coin));
+            ++point;
+            return controls();
+        }
+        return aim(x*4096,z*4096,0,point==0?20000:16000);
+    }
+
     if(phase==Finished && std::getenv("SM64DS_PC_TEST_FORTRESS_TOWER_FIRST_STEP")) {
         static unsigned waypoint=0;
         static bool launched=false;
@@ -2842,6 +2899,10 @@ static bool replay_course_route(const char *route_override=nullptr) {
         if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
     }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
+    if(!route_override && data_0209f2f8==7 && replay_fortress_red_coin_collected && !replay_fortress_sliding_crossed) {
+        if(const char *continuation=std::getenv("SM64DS_PC_TEST_FORTRESS_RED_CONTINUE"))route=continuation;
+    }
+
     const char *fortress_tail=!route_override && data_0209f2f8==7 && replay_fortress_sliding_crossed
         ? std::getenv("SM64DS_PC_TEST_FORTRESS_TAIL_ROUTE") : nullptr;
     if(fortress_tail && *fortress_tail) {
@@ -2853,6 +2914,10 @@ static bool replay_course_route(const char *route_override=nullptr) {
         }
         route=fortress_tail;
     }
+    static bool fortress_lower_started=false;
+    const char *fortress_lower=!route_override && data_0209f2f8==7 && fortress_tail
+        ? std::getenv("SM64DS_PC_TEST_FORTRESS_RED_LOWER") : nullptr;
+    if(fortress_lower_started && fortress_lower)route=fortress_lower;
     if(!route_override && replay_wdw_hundred_coin_star())return true;
     if(!route_override && replay_haunt_rear_boos(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && replay_big_boo_combat())return true;
@@ -2865,6 +2930,38 @@ static bool replay_course_route(const char *route_override=nullptr) {
     }
     if(!segment) {
         replay_course_route_complete=true;
+        if(data_0209f2f8==7 && !replay_fortress_red_coin_collected && std::getenv("SM64DS_PC_TEST_FORTRESS_RED_COIN")) {
+            auto *player=static_cast<Player *>(data_0209f394[0]);
+            int16_t sx=0,sy=0;
+            uint16_t buttons=0;
+            static bool launched=false;
+            if(player && !player->mIsNoControl && !player->mIsControlDisabled) {
+                if(player->mState==&data_ov002_0211052c) {
+                    if(!launched)std::fprintf(stderr,"[native fortress red coin] backflip tick=%llu pos=%d,%d,%d\n",
+                         static_cast<unsigned long long>(ntr::rt_frame()),player->mPosX,player->mPosY,player->mPosZ);
+                    launched=true;
+                } else if(launched && !player->mIsAirborne && player->mMeshClsn.IsOnGround() &&
+                          !fortress_red_coin_present(3729,444) && std::getenv("SM64DS_PC_TEST_FORTRESS_RED_CONTINUE")) {
+                    replay_fortress_red_coin_collected=true;
+                    replay_course_route_complete=false;
+                    waypoint=0;
+                    std::fprintf(stderr,"[native fortress red coin] continue tick=%llu\n",
+                                 static_cast<unsigned long long>(ntr::rt_frame()));
+                } else if(!launched && !player->mIsAirborne && player->mMeshClsn.IsOnGround()) {
+                    if(std::abs(int(player->mAngleY))>900) {
+                        const double angle=-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                        sx=static_cast<int16_t>(std::sin(angle)*11500);
+                        sy=static_cast<int16_t>(-std::cos(angle)*11500);
+                    } else if(!std::strcmp(pc_player_state_name(player),"St_Crouch_Main")) {
+                        buttons=player->mHorzSpeed==0?0x102:0x100;
+                    } else if(player->mHorzSpeed==0) {
+                        buttons=0x100;
+                    }
+                }
+            }
+            ntr::input_test_controls(true,buttons,sx,sy);
+            return true;
+        }
         if(data_0209f2f8==47 && std::getenv("SM64DS_PC_TEST_KING_BOO_MAZE")) {
             auto *player=static_cast<Player *>(data_0209f394[0]);
             const auto *boss=static_cast<daTrs_c *>(dActor_c::FindWithActorID(210,nullptr));
@@ -3215,6 +3312,24 @@ static bool replay_course_route(const char *route_override=nullptr) {
             ntr::input_test_controls(true,buttons,sx,sy);
             return true;
         }
+        if(fortress_lower) {
+            if(fortress_lower_started) {
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            const auto *player=static_cast<Player *>(data_0209f394[0]);
+            if(player && !player->mIsAirborne && !player->mIsNoControl && !player->mIsControlDisabled &&
+               player->mMeshClsn.IsOnGround() && player->mPosY<1100*4096 && player->mHorzSpeed==0 &&
+               !fortress_red_coin_present(-247,2754)) {
+                fortress_lower_started=true;
+                replay_course_route_complete=false;
+                waypoint=0;
+                std::fprintf(stderr,"[native fortress lower red] route begins tick=%llu\n",
+                             static_cast<unsigned long long>(ntr::rt_frame()));
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+        }
         if(fortress_tail)return replay_fortress_summit_lift();
         if(!route_override && replay_courtyard_boo(static_cast<Player *>(data_0209f394[0])))return true;
         if(replay_fortress_buddy_lane())return true;
@@ -3267,6 +3382,17 @@ static bool replay_course_route(const char *route_override=nullptr) {
         ntr::input_test_controls(true,0,0,0);
         return true;
     }
+    if(level==50 && data_0209f2f8==50 && x==1466 && z==-3660 && player->mCharacter==1 &&
+       std::getenv("SM64DS_PC_TEST_LUIGI_CAMPAIGN")) {
+        // The character switch exits through the same door, so advance the
+        // approach waypoint before movement can send Luigi back into it.
+        ++waypoint;
+        std::fprintf(stderr,"[native Luigi campaign] character selected tick=%llu\n",
+                     static_cast<unsigned long long>(ntr::rt_frame()));
+        ntr::input_test_controls(true,0,0,0);
+        return true;
+    }
+
     const char *cannon_mode=std::getenv("SM64DS_PC_TEST_CANNON");
     const bool silver_reward_cannon=cannon_mode && !std::strcmp(cannon_mode,"wdw-silver-reward");
     const bool blue_switch_warp=std::getenv("SM64DS_PC_TEST_WDW_BLUE_SWITCH") && x==852;
@@ -3461,7 +3587,9 @@ static bool replay_course_route(const char *route_override=nullptr) {
     const bool maintain_uphill=uphill_push && !std::strcmp(uphill_push,"1") && precise && has_y &&
         approach_dy>10*4096.0 && approach_horizontal<180*4096.0 &&
         player->mFloorNormalY<0x0f00 && player->mFloorClass>=2 && player->mFloorClass<5;
-    if(precise && ntr::rt_frame()<settle_until && !maintain_uphill) {
+    const bool fortress_lower_gap=fortress_lower_started && fortress_lower && x==-2075 &&
+        (z==-2025 || z==-3650);
+    if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
     }
     uint16_t buttons=0;int16_t sx=0,sy=0;
@@ -5751,14 +5879,29 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 }
             if(close) {jump_until=tick+12;next_jump=tick+60;}
         }
-        double jump_range=tree_test && !std::strcmp(tree_test,"1") ? 120.0:320.0;
+        double jump_range=fortress_lower_started && fortress_lower ? 550.0 :
+            (tree_test && !std::strcmp(tree_test,"1") ? 120.0:320.0);
         // Input-only QA for a gap reached from a moving floor. A test may
         // request its ordinary jump before the default approach threshold.
         if(const char *value=std::getenv("SM64DS_PC_TEST_ROUTE_JUMP_RANGE")) {
             char *end=nullptr;const long distance=std::strtol(value,&end,10);
             if(end && !*end && distance>=64 && distance<=1200)jump_range=distance;
         }
-        if(jump==1 && !(wdw_secret_star && x==3305 && y==1250 && z==825) &&
+        static bool fortress_lower_jumped[2]{};
+        if(fortress_lower_gap) {
+            const unsigned gap=z==-2025?0:1;
+            const int launchZ=gap==0?-1110:-2770;
+            if(!fortress_lower_jumped[gap] && !player->mIsAirborne &&
+               !std::strcmp(state,"St_Walk_Main") && player->mPosZ<=launchZ*4096 &&
+               player->mPosZ>=(launchZ-60)*4096 && player->mHorzSpeed>0x15000) {
+                fortress_lower_jumped[gap]=true;
+                jump_until=tick+55;
+                next_jump=tick+90;
+                std::fprintf(stderr,"[native fortress lower red] running jump tick=%llu gap=%u z=%d speed=%d\n",
+                             static_cast<unsigned long long>(tick),gap+1,player->mPosZ,player->mHorzSpeed);
+            }
+        }
+        if(jump==1 && !fortress_lower_gap && !(wdw_secret_star && x==3305 && y==1250 && z==825) &&
            horizontal<jump_range*4096.0 && tick>=next_jump &&
            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main") ||
             (!player->mIsAirborne && !std::strcmp(state,"St_OnWall_Main")))) {
@@ -5838,7 +5981,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
             // travel even when the surface-class filter above does not match.
             if(route_override && level==35 && dy>0 && full_uphill && !std::strcmp(full_uphill,"1") &&
                std::getenv("SM64DS_PC_TEST_DIAMOND_CONTINUE_ROUTE"))magnitude=32767;
-            if(jump==3 || passing_chomp)magnitude=32767;
+            if(jump==3 || passing_chomp || fortress_lower_gap)magnitude=32767;
             sx=static_cast<int16_t>(std::sin(angle)*magnitude);
             sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
         }

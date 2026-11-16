@@ -174,6 +174,36 @@ def transform(root,text):
     return observe(text,'daObjSimpleLift_c','variant,timer,pause,speed,heading',['int(mVariant)','int(mMoveTimer)','int(mPauseTimer)','int(mHorzSpeed)','int(mPrevAngleY)'])
 
 
+def transform_fortress_rotating_bar(root, text):
+    """Bind the rotating bar's original handles and active course surface."""
+    rom = (root / 'extracted/overlays/overlay_0015.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x021146f0 - base) == (
+        0x02112ba0, 51, 204, 2, 0, 0x350000, 0x1000000, 0)
+    offset = 0x02113654 - base
+    magic, stride, count = struct.unpack_from('<4sHH', rom, offset)
+    assert magic == b'CLPS' and stride == 8 and count > 0
+    assert offset + 8 + stride * count <= len(rom)
+    text = lazy_handles(text, ('BkRotebarModelFilePtr', 'BkRotebarCollisionFilePtr'))
+    anchor = 's32 daObjBk_Rotebar_c::InitResources()\n{'
+    assert text.count(anchor) == 1 and text.count('&data_ov015_02113654);') == 1
+    text = text.replace(anchor, anchor + '''
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(7, 0x02113654));
+    if (!surface) return 0;
+    static const bool ready = [] {
+        data_ov015_02114a8c.Construct(1435);
+        data_ov015_02114a84.Construct(1436);
+        return true;
+    }();
+    (void)ready;
+''')
+    text = text.replace('&data_ov015_02113654);', 'surface);')
+    text = text.replace('unsigned PlayLong(', 'int PlayLong(')
+    return '#include "hal/level_overlay.h"\n' + observe(
+        text, 'daObjBk_Rotebar_c', 'pause,heading',
+        ['int(mPauseTimer)', 'int(mPrevAngleY)'], return_type='s32')
+
+
 def transform_fortress_tower_step(root, text):
     """Load the tower step's native handles and active course surface table."""
     rom = (root / 'extracted/overlays/overlay_0015.bin').read_bytes()

@@ -604,6 +604,10 @@ static PcNativeActorProfile pc_sky_path_lift_profile = {
 };
 extern "C" void *daObjSimpleBg_c_classInit_DOKAN();
 extern "C" void *daObjSimpleBg_c_classInit_BK_TOWER();
+extern "C" void *daObjBk_Rotebar_c_classInit();
+static PcNativeActorProfile pc_fortress_rotating_bar_profile = {
+    (void *)&daObjBk_Rotebar_c_classInit,51,204,2,0,0x350000,0x1000000,0
+};
 extern "C" void *daObjBk_Lift_c_classInit();
 static PcNativeActorProfile pc_fortress_tower_profile = {
     (void *)&daObjSimpleBg_c_classInit_BK_TOWER,49,202,0,0x300000,0x800000,0x1000000,0
@@ -949,6 +953,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[165] = &pc_king_whomp_profile;
     data_020a4bb8_storage[55] = &pc_fortress_sliding_profile;
     data_020a4bb8_storage[49] = &pc_fortress_tower_profile;
+    data_020a4bb8_storage[51] = &pc_fortress_rotating_bar_profile;
     data_020a4bb8_storage[52] = &pc_fortress_tower_step_profile;
     data_020a4bb8_storage[230] = &pc_skeeter_profile;
     data_020a4bb8_storage[270] = g_profile_KERONPA;
