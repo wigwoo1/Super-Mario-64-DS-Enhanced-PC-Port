@@ -2884,17 +2884,19 @@ static bool replay_course_route(const char *route_override=nullptr) {
             }
             const bool combat=std::getenv("SM64DS_PC_TEST_KING_BOO_COMBAT")!=nullptr;
             if(combat && player && boss && !data_0209d660 && !player->mIsNoControl &&
-               !player->mIsControlDisabled && boss->unk_5cc!=7 && boss->mDataIdx>1) {
+               !player->mIsControlDisabled && boss->unk_5cc!=7 && boss->mDataIdx>0) {
                 static uint64_t jump=0,pound=0;
                 const char *state=pc_player_state_name(player);
                 const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
                 const bool walking=!std::strcmp(state,"St_Walk_Main");
-                const bool jumping=!std::strcmp(state,"St_Jump_Main");
+                const bool finalHit=boss->mDataIdx==1;
+                const bool backflip=player->mState==&data_ov002_0211052c;
+                const bool jumping=!std::strcmp(state,"St_Jump_Main") || (finalHit && backflip);
                 const double dx=double(boss->mdCcAcPos_c.pos.x)-player->mPosX;
                 const double dz=double(boss->mdCcAcPos_c.pos.z)-player->mPosZ;
                 const double distance=std::hypot(dx,dz)/4096.0;
                 const double height=(double(player->mPosY)-boss->mdCcAcPos_c.pos.y)/4096.0;
-                const bool vulnerable=boss->unk_5cc==1 && (boss->mOpacity>=220 || boss->mDataIdx==2) &&
+                const bool vulnerable=boss->unk_5cc==1 && (boss->mOpacity>=220 || boss->mDataIdx<3) &&
                                       boss->mdCcAcPos_c.pos.x<0;
                 if(grounded && jump && tick-jump>45)jump=pound=0;
                 auto aim=[&](double x,double z,double magnitude) {
@@ -2903,7 +2905,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
                     sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
                 };
                 bool evading=false;
-                if(boss->mDataIdx==2 && grounded && (walking || !std::strcmp(state,"St_Wait_Main"))) {
+                if(boss->mDataIdx<3 && grounded && (walking || !std::strcmp(state,"St_Wait_Main"))) {
                     auto *ball=dActor_c::FindWithActorID(254,nullptr);
                     while(ball) {
                         const double bx=player->mPosX-double(ball->mPosX);
@@ -2922,8 +2924,24 @@ static bool replay_course_route(const char *route_override=nullptr) {
                         evading=true;
                     }
                 }
-                if(!evading && !jump && grounded && (walking || !std::strcmp(state,"St_Wait_Main"))) {
-                    if(vulnerable && distance<490 && walking) {
+                if(finalHit && !jump && backflip) {
+                    jump=tick;
+                    std::fprintf(stderr,"[native King Boo combat] backflip tick=%llu distance=%.1f\n",
+                                 static_cast<unsigned long long>(tick),distance);
+                }
+                const bool crouched=!std::strcmp(state,"St_Crouch_Main");
+                if(!evading && !jump && grounded && (walking || !std::strcmp(state,"St_Wait_Main") || (finalHit && crouched))) {
+                    const double turnRange=finalHit?535.0:370.0;
+                    if(finalHit && ((vulnerable && distance<345) || crouched)) {
+                        const int away=static_cast<int>(std::atan2(-dx,-dz)*65536.0/6.283185307179586);
+                        const int error=std::abs(int(static_cast<int16_t>(away-player->mAngleY)));
+                        if(crouched)buttons=player->mHorzSpeed==0?0x102:0x100;
+                        else if(error>3000)aim(-dx,-dz,11500);
+                        else if(player->mHorzSpeed<=0x4000)buttons=0x100;
+                    } else if(boss->mDataIdx<3 && vulnerable && boss->mOpacity<255 && distance<turnRange) {
+                        // Break eye contact so King Boo becomes solid before the attack.
+                        aim(-dz,dx,15000);
+                    } else if(!finalHit && vulnerable && distance<(boss->mDataIdx==3?490:390) && walking) {
                         jump=tick;
                         std::fprintf(stderr,"[native King Boo combat] jump tick=%llu distance=%.1f\n",
                                      static_cast<unsigned long long>(tick),distance);
@@ -2936,9 +2954,15 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 }
                 if(jump && !pound) {
                     if(tick-jump<45)buttons=2;
-                    if(distance>100)aim(dx,dz,22000);
+                    // Leave the stick neutral during the backflip to preserve its facing.
+                    if(!finalHit) {
+                        if(boss->mDataIdx<3 && distance<180 && boss->mOpacity<220)
+                            aim(-dz,dx,14500);
+                        else if(distance>100)
+                            aim(dx,dz,22000);
+                    }
                     if(jumping && boss->unk_5cc==1 && boss->mdCcAcPos_c.pos.x<0 && height>=235 &&
-                       distance<(boss->mDataIdx==3?235:150)) {
+                       distance<(boss->mDataIdx==3?235:160) && (boss->mDataIdx==3 || boss->mOpacity>=220)) {
                         pound=tick;
                         std::fprintf(stderr,"[native King Boo combat] pound tick=%llu distance=%.1f height=%.1f\n",
                                      static_cast<unsigned long long>(tick),distance,height);
@@ -2949,6 +2973,27 @@ static bool replay_course_route(const char *route_override=nullptr) {
                     static_cast<unsigned long long>(tick),unsigned(boss->unk_5cc),unsigned(boss->mOpacity),
                     unsigned(boss->mdCcAcPos_c.hitFlags),distance,height,state);
             }
+            if(combat && player && (!boss || boss->mDataIdx==0) &&
+               !player->mIsNoControl && !player->mIsControlDisabled && !player->mIsAirborne &&
+               !data_0209d660 && std::getenv("SM64DS_PC_TEST_KING_BOO_KEY")) {
+                const auto *key=dActor_c::FindWithActorID(282,nullptr);
+                if(key && key->aliveState==1 && (key->param1&7)==3 && !(key->mFlags&0x04000000)) {
+                    // Clear the curtain before following the arena floor to the key.
+                    static bool clearOfCurtain=false;
+                    clearOfCurtain |= player->mPosX<=-650*4096;
+                    const double dx=(clearOfCurtain?double(key->mPosX):-720*4096.0)-player->mPosX;
+                    const double dz=clearOfCurtain?double(key->mPosZ)-player->mPosZ:0.0;
+                    const double distance=std::hypot(dx,dz)/4096.0;
+                    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    const double magnitude=std::clamp(distance*95.0,10000.0,24500.0);
+                    sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+                    if(tick%60==0)
+                        std::fprintf(stderr,"[native King Boo key] approach tick=%llu uid=%u distance=%.1f\n",
+                                     static_cast<unsigned long long>(tick),key->uniqueID,distance);
+                }
+            }
+
             ntr::input_test_controls(true,buttons,sx,sy);
             return true;
         }
