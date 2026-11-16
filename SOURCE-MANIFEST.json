@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "b29a46e58c476a4b457748e2c6564b73f1c126bc75b873006575443e8dc57aac",
-      "bytes": 65058
+      "sha256": "d7372cc8d23f814370828f5821354301936d05f9da140248db1723b0005d4758",
+      "bytes": 65789
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "cf2cc785e761a4ede14d5525fa14213e874b4202a7e3a7fe3c9ce3ebde3e941f",
-      "bytes": 652618
+      "sha256": "8675b72ac3a0e3dfb666d4472d8c5409fa1ee944858adbca7ddc3697c5891c27",
+      "bytes": 671702
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9105,8 +9105,8 @@
     },
     {
       "path": "port/tools/boo_host.py",
-      "sha256": "cc1edd2d567af1c2e2542711bef4bf2da9ec180d1c979a66bb82abf41902552a",
-      "bytes": 4748
+      "sha256": "35f4bec0f2c38301bc92c49290c15374e2e431a484e077e24bbb89fd8a841c0e",
+      "bytes": 7154
     },
     {
       "path": "port/tools/book_host.py",
@@ -9115,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "3317c5a23258f70393f85bc8031191a5e0ba61f7f4123cbc1b44db6ade9a07c0",
-      "bytes": 64029
+      "sha256": "b7bd5a0485e04a72cdb714242b559caa31408eeb2f2315d5de6373ca7b849c8c",
+      "bytes": 64327
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9145,8 +9145,8 @@
     },
     {
       "path": "port/tools/carpet_host.py",
-      "sha256": "2ab455cf26e8c968fabcc1061402b4e6869bd58ace3c9d215c41725845f666ed",
-      "bytes": 3897
+      "sha256": "956099b43874361ebedd9a63cbf848baeda4a7fc8807e176e227f14f8c73273e",
+      "bytes": 6332
     },
     {
       "path": "port/tools/casket_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "535005f658c869a4bf66040f823111f59cebab297347ea56eae09f9b5f50f72d",
-      "bytes": 93479
+      "sha256": "54d03fdaa7a94553e1c7d8ebc7cfe394590494fbb8e847ade1fbaef7c88757ec",
+      "bytes": 93720
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",

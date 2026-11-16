@@ -10,6 +10,7 @@ def transform(root, text):
     text = text.replace('_ZN17daObjSlIceBlock_c16CleanupResourcesEv','func_ov055_02111264')
     assert text.count('data_ov008_02111b6c') == 2
     text = text.replace('data_ov008_02111b6c','data_ov055_02111b6c')
+    text = bind_fireball_caller(text)
     cfg = (root/'config/arm9/overlays/ov063/delinks.txt').read_text()
     base = int(re.search(r'\.text\s+start:0x([\da-f]+)', cfg)[1], 16)
     raw = (root/'extracted/overlays/overlay_0063.bin').read_bytes()
@@ -71,3 +72,47 @@ static void pc_boo_observe(const char *event,daTrs_c *self) {
     text += '\nstatic_assert(sizeof(daTrs_c)==0x5e0,"native Boo layout");\n'
     text += 'static_assert(offsetof(daTrs_c,unk_5cf)==0x5cf,"native Boo variant offset");\n'
     return '#include <cstddef>\n#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n#include "hal/actor_render_probe.h"\n'+text
+
+
+def bind_fireball_caller(text):
+    old = '''            if (((unsigned int)*(u16*)&this->mFlags_5d4 << 23) >> 31)
+                *(u8*)(fb + 0x36e) = 1;
+            else
+                *(u8*)(fb + 0x36e) = 0;
+            *(int*)(fb + 0x364) = 0x3e8000;
+            func_02012694(0x122, &this->mCamSpacePosX);'''
+    assert text.count(old) == 1
+    text = text.replace(old, '''            if (fb) {
+                auto *ball = reinterpret_cast<daFPknBall_c *>(fb);
+                ball->mMirrored = (static_cast<unsigned>(*(u16*)&mFlags_5d4) >> 8) & 1;
+                ball->mMaxDistance = 0x3e8000;
+                func_02012694(0x122, &this->mCamSpacePosX);
+            }''')
+    return text.replace('#include "common.h"', '#include "common.h"\n#include "daFPknBall_c.h"', 1)
+
+
+def transform_fireball(text, name):
+    if name == 'dActor_c.cpp':
+        signature = 'extern "C" void _ZN8dActor_c13SpawnFireballERK7Vector3PK10Vector3_165Fix12IiES7_j('
+        body = '        *(Fix12i *)((char *)a + 0x35c) = unk35c;\n    }\n}'
+        assert text.count(signature) == 1 and text.count(body) == 1
+        return (text.replace('#include "common.h"', '#include "common.h"\n#include "daFPknBall_c.h"', 1)
+                    .replace(signature, signature.replace('void ', 'dActor_c *'))
+                    .replace(body, '        static_cast<daFPknBall_c *>(a)->mTargetSpeed = unk35c;\n    }\n    return a;\n}'))
+
+    anchor = 'int daFPknBall_c::Behavior() {'
+    assert text.count(anchor) == 1
+    default_range = '    mMaxDistance = 0x5dc000;'
+    assert text.count(default_range) == 1
+    text = text.replace(default_range, '    if (!mMaxDistance) mMaxDistance = 0x5dc000;')
+    text = text.replace(anchor, anchor + r'''
+    if (std::getenv("SM64DS_PC_BOO_TRACE") && param1 == 4) {
+        const auto tick = ntr::rt_frame();
+        if (mStateTimer == 0 || tick % 10 == 0)
+            std::fprintf(stderr,"[native King Boo fireball] tick=%llu uid=%u side=%u range=%d travel=%d pos=%d,%d,%d\n",
+                         static_cast<unsigned long long>(tick),uniqueID,unsigned(mMirrored),mMaxDistance,
+                         mDistanceFlown,mPosX,mPosY,mPosZ);
+    }
+''')
+    return ('#include <cstddef>\n#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n' + text +
+            '\nstatic_assert(sizeof(daFPknBall_c)==0x378,"native fireball layout");\n')

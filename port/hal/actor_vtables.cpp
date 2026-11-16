@@ -325,6 +325,14 @@ extern "C" void *daTBasket_c_classInit();
 static PcNativeActorProfile pc_boo_profile = {
     (void *)&daTrs_c_classInit_TERESA,209,49,6,0x64000,0x64000,0x1000000,0xa00000
 };
+extern "C" void *daFPknBall_c_classInit();
+static PcNativeActorProfile pc_boo_fireball_profile = {
+    (void *)&daFPknBall_c_classInit,254,112,2,0x50000,0x50000,0x1000000,0x500000
+};
+extern "C" void *daLuigi_c_classInit();
+static PcNativeActorProfile pc_luigi_reflection_profile = {
+    (void *)&daLuigi_c_classInit,195,19,0x00800002,0x50000,0x50000,0x1f40000,0x1f40000
+};
 static PcNativeActorProfile pc_big_boo_profile = {
     (void *)&daTrs_c_classInit_BOSS_TERESA,210,50,6,0xc8000,0xc8000,0x1000000,0xa00000
 };
@@ -367,6 +375,10 @@ static PcNativeActorProfile pc_last_star_profile = {
 };
 extern "C" void *daOwl_c_classInit();
 static PcNativeActorProfile pc_owl_profile = {(void *)&daOwl_c_classInit,234,89,0,409600,819200,16777216,16777216};
+extern "C" void *daObjPathLift_c_classInit();
+static PcNativeActorProfile pc_path_lift_profile = {
+    (void *)&daObjPathLift_c_classInit,31,299,2,0,0x300000,0x1000000,0x1000000
+};
 extern "C" void *daUdlift_c_classInit_UDLIFT_TERESA();
 extern "C" void *daUdlift_c_classInit_UDLIFT(), *daUdlift_c_classInit_RC_RIFT02();
 extern "C" void *daObjCasket_c_classInit();
@@ -859,6 +871,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[65] = &pc_kaidan_profile;
     data_020a4bb8_storage[209] = &pc_boo_profile;
     data_020a4bb8_storage[210] = &pc_big_boo_profile;
+    data_020a4bb8_storage[254] = &pc_boo_fireball_profile;
+    data_020a4bb8_storage[195] = &pc_luigi_reflection_profile;
     data_020a4bb8_storage[211] = &pc_boo_icon_profile;
     data_020a4bb8_storage[212] = &pc_boo_basket_profile;
     data_020a4bb8_storage[158] = &pc_bookshelf_profile;
@@ -868,6 +882,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[328] = &pc_book_generator_profile;
     data_020a4bb8_storage[326] = &pc_haunted_chair_profile;
     data_020a4bb8_storage[249] = &pc_mad_piano_profile;
+    data_020a4bb8_storage[31] = &pc_path_lift_profile;
     data_020a4bb8_storage[32] = &pc_haunt_lift_profile;
     data_020a4bb8_storage[33] = &pc_hmc_lift_profile;
     data_020a4bb8_storage[131] = &pc_rainbow_lift_profile;

@@ -77,9 +77,9 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjEmmYuka_c_classInit",
                  "daKuriKing_c_classInit_KURIKING", "daKuriKing_c_classInit_KURIKING_VANISH",
                  "daUdlift_c_classInit_UDLIFT_TERESA", "daUdlift_c_classInit_UDLIFT",
-                 "daUdlift_c_classInit_RC_RIFT02", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daObjWc_Obj07_c_classInit", "daObjKm3_Kaitendai_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
+                 "daUdlift_c_classInit_RC_RIFT02", "daObjPathLift_c_classInit", "daObjRcCarpet_c_classInit", "daObjRc_Kaitendai_c_classInit", "daObjWc_Obj07_c_classInit", "daObjKm3_Kaitendai_c_classInit", "daIbl_c_classInit", "daObjCasket_c_classInit",
                  "daEykn_c_classInit_EYEKUN", "daEykn_c_classInit_EYEKUN_BOSS", "daEyBm_c_classInit",
-                 "daTrs_c_classInit_TERESA", "daTrs_c_classInit_BOSS_TERESA",
+                 "daTrs_c_classInit_TERESA", "daTrs_c_classInit_BOSS_TERESA", "daFPknBall_c_classInit",
                  "daTrsIcon_c_classInit", "daTBasket_c_classInit",
                  "func_ov055_02111264",
                  "_ZN11daTrsTrap_c13InitResourcesEv",
@@ -588,7 +588,7 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import casket_host
                     transformed=casket_host.transform(root,transformed)
                     rewrites+=1
-                if path.name in ('d_a_obj_rc_carpet.cpp','dPathLiftActor_c.cpp'):
+                if path.name in ('d_a_obj_rc_carpet.cpp','dPathLiftActor_c.cpp','daObjPathLift_c.cpp'):
                     import carpet_host
                     transformed=carpet_host.transform(root,transformed,path.name)
                     rewrites+=1
@@ -775,6 +775,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name in ('daChair_c.cpp','d_a_piano.cpp'):
                     import haunted_furniture_host
                     transformed=haunted_furniture_host.transform(root,transformed,path.name=='d_a_piano.cpp')
+                    rewrites+=1
+                if path.name in ('dActor_c.cpp', 'daFPknBall_c.cpp'):
+                    import boo_host
+                    transformed=boo_host.transform_fireball(transformed,path.name)
                     rewrites+=1
                 if path.name == 'daTrs_c.cpp':
                     import boo_host

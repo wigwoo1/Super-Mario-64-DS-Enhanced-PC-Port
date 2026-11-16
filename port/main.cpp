@@ -2865,28 +2865,309 @@ static bool replay_course_route(const char *route_override=nullptr) {
     }
     if(!segment) {
         replay_course_route_complete=true;
-        if(data_0209f2f8==46 && std::getenv("SM64DS_PC_TEST_KING_BOO_MAZE")) {
-            auto *p=static_cast<Player *>(data_0209f394[0]);
-            constexpr int route[][2]={{700,620},{900,0},{2040,0},{3500,0},{3500,-2000},
-                                      {3500,-3500},{5500,-3500},{7000,-3500},{7000,-5500}};
-            static size_t point=0;
+        if(data_0209f2f8==47 && std::getenv("SM64DS_PC_TEST_KING_BOO_MAZE")) {
+            auto *player=static_cast<Player *>(data_0209f394[0]);
+            const auto *boss=static_cast<daTrs_c *>(dActor_c::FindWithActorID(210,nullptr));
+            const auto tick=ntr::rt_frame();
             int16_t sx=0,sy=0;
-            if(p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled &&
-               point<std::size(route)) {
-                const double dx=route[point][0]*4096.0-p->mPosX,dz=route[point][1]*4096.0-p->mPosZ;
+            uint16_t buttons=data_0209d660 && tick%42<5?1:0;
+            if(player && boss && !player->mIsNoControl && !player->mIsControlDisabled &&
+               !player->mIsAirborne && boss->unk_5cc==7) {
+                const double dx=-230*4096.0-player->mPosX,dz=-double(player->mPosZ);
                 const double distance=std::hypot(dx,dz)/4096.0;
-                if(distance<110) {
-                    std::fprintf(stderr,"[native King Boo maze] waypoint=%zu tick=%llu area=%d\n",
-                                 point,static_cast<unsigned long long>(ntr::rt_frame()),int(p->mAreaId));
-                    ++point;
-                } else {
-                    const double yaw=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-                    const double magnitude=std::clamp(distance*60.0,14000.0,23000.0);
-                    sx=static_cast<int16_t>(std::sin(yaw)*magnitude);
-                    sy=static_cast<int16_t>(-std::cos(yaw)*magnitude);
+                if(distance>25) {
+                    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    const double magnitude=std::clamp(distance*85.0,12000.0,19000.0);
+                    sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
                 }
             }
-            ntr::input_test_controls(true,0,sx,sy);
+            const bool combat=std::getenv("SM64DS_PC_TEST_KING_BOO_COMBAT")!=nullptr;
+            if(combat && player && boss && !data_0209d660 && !player->mIsNoControl &&
+               !player->mIsControlDisabled && boss->unk_5cc!=7 && boss->mDataIdx>1) {
+                static uint64_t jump=0,pound=0;
+                const char *state=pc_player_state_name(player);
+                const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+                const bool walking=!std::strcmp(state,"St_Walk_Main");
+                const bool jumping=!std::strcmp(state,"St_Jump_Main");
+                const double dx=double(boss->mdCcAcPos_c.pos.x)-player->mPosX;
+                const double dz=double(boss->mdCcAcPos_c.pos.z)-player->mPosZ;
+                const double distance=std::hypot(dx,dz)/4096.0;
+                const double height=(double(player->mPosY)-boss->mdCcAcPos_c.pos.y)/4096.0;
+                const bool vulnerable=boss->unk_5cc==1 && (boss->mOpacity>=220 || boss->mDataIdx==2) &&
+                                      boss->mdCcAcPos_c.pos.x<0;
+                if(grounded && jump && tick-jump>45)jump=pound=0;
+                auto aim=[&](double x,double z,double magnitude) {
+                    const double angle=std::atan2(x,z)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    sx=static_cast<int16_t>(std::sin(angle)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(angle)*magnitude);
+                };
+                bool evading=false;
+                if(boss->mDataIdx==2 && grounded && (walking || !std::strcmp(state,"St_Wait_Main"))) {
+                    auto *ball=dActor_c::FindWithActorID(254,nullptr);
+                    while(ball) {
+                        const double bx=player->mPosX-double(ball->mPosX);
+                        const double bz=player->mPosZ-double(ball->mPosZ);
+                        if(ball->aliveState==1 && std::hypot(bx,bz)<390*4096.0) {
+                            const double side=player->mPosX<-1000*4096?1.0:-1.0;
+                            aim(side*std::abs(bz),side*bz>=0?-bx:bx,26500);
+                            evading=true;
+                            break;
+                        }
+                        ball=dActor_c::FindWithActorID(254,ball);
+                    }
+                    if(!evading && (boss->unk_5cc==3 || boss->unk_5cc==6)) {
+                        const double rx=-1000*4096.0-player->mPosX,rz=-double(player->mPosZ);
+                        if(std::hypot(rx,rz)>100*4096.0)aim(rx,rz,19000);
+                        evading=true;
+                    }
+                }
+                if(!evading && !jump && grounded && (walking || !std::strcmp(state,"St_Wait_Main"))) {
+                    if(vulnerable && distance<490 && walking) {
+                        jump=tick;
+                        std::fprintf(stderr,"[native King Boo combat] jump tick=%llu distance=%.1f\n",
+                                     static_cast<unsigned long long>(tick),distance);
+                    } else if(vulnerable) {
+                        aim(dx,dz,17500);
+                    } else {
+                        // Turn away from the Boo without running into the mirror plane.
+                        aim(-4096.0,-dz*0.2,15000);
+                    }
+                }
+                if(jump && !pound) {
+                    if(tick-jump<45)buttons=2;
+                    if(distance>100)aim(dx,dz,22000);
+                    if(jumping && boss->unk_5cc==1 && boss->mdCcAcPos_c.pos.x<0 && height>=235 &&
+                       distance<(boss->mDataIdx==3?235:150)) {
+                        pound=tick;
+                        std::fprintf(stderr,"[native King Boo combat] pound tick=%llu distance=%.1f height=%.1f\n",
+                                     static_cast<unsigned long long>(tick),distance,height);
+                    }
+                }
+                if(pound && tick-pound<10)buttons=chomp_replay_button(0x400);
+                if(tick%30==0)std::fprintf(stderr,"[native King Boo combat] trace tick=%llu state=%u opacity=%u collision=%u distance=%.1f height=%.1f player=%s\n",
+                    static_cast<unsigned long long>(tick),unsigned(boss->unk_5cc),unsigned(boss->mOpacity),
+                    unsigned(boss->mdCcAcPos_c.hitFlags),distance,height,state);
+            }
+            ntr::input_test_controls(true,buttons,sx,sy);
+            return true;
+        }
+        if(data_0209f2f8==46 && std::getenv("SM64DS_PC_TEST_KING_BOO_MAZE")) {
+            auto *p=static_cast<Player *>(data_0209f394[0]);
+            constexpr int route[][2]={{700,620},{900,0},{2040,0},{3120,0},{3220,-295},{3500,-425},{3500,-2000},
+                                      {3500,-3500},{4750,-3500},{5500,-3500},{5530,-3660},
+                                      {6870,-4790},{7000,-4960},{7000,-5460},{7000,-9700},{6550,-9635},{6550,-9960},{6550,-10340},{7530,-10700},{7530,-11130},
+                                      {7000,-11300},{7000,-12150}};
+            static size_t point=0;
+            static uint64_t takeoff=0, supported=0, jump_off=0, east_jump=0;
+            static bool airborne=false, braked=false, safe_bank=false, east_airborne=false;
+            static uint64_t diagonal_jump=0, lift_jump=0, second_lift_jump=0, third_lift_jump=0, deck_jump=0, arena_jump=0;
+            static bool diagonal_airborne=false;
+            int16_t sx=0,sy=0;
+            uint16_t buttons=0;
+            if(p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled &&
+               point<std::size(route) && (point<7 || (point<=9 && p->mAreaId==2) ||
+               (point>=9 && point<=13 && p->mAreaId==3) || (point>=13 && p->mAreaId==4))) {
+                const double dx=route[point][0]*4096.0-p->mPosX,dz=route[point][1]*4096.0-p->mPosZ;
+                const double distance=std::hypot(dx,dz)/4096.0;
+                const auto tick=ntr::rt_frame();
+                auto steer=[&](double x,double z,double magnitude) {
+                    const double yaw=std::atan2(x,z)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    sx=static_cast<int16_t>(std::sin(yaw)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(yaw)*magnitude);
+                };
+                if(point==7) {
+                    const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+                    const auto *floor=grounded?static_cast<const dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+                    const auto *owner=floor && floor->colliderIdx<24?floor->owner:nullptr;
+                    const char *state=pc_player_state_name(p);
+                    if(airborne && owner && owner->actorID==160 && !supported) {
+                        supported=tick;
+                        std::fprintf(stderr,"[native King Boo maze] trapdoor support tick=%llu uid=%u pos=%d,%d,%d\n",
+                                     static_cast<unsigned long long>(tick),owner->uniqueID,p->mPosX,p->mPosY,p->mPosZ);
+                    }
+                    if(!supported) {
+                        if(!takeoff && grounded && p->mPosZ<=-2440*4096 && p->mHorzSpeed>0xa000) {
+                            takeoff=tick;
+                            std::fprintf(stderr,"[native King Boo maze] trapdoor approach tick=%llu z=%d speed=%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosZ,p->mHorzSpeed);
+                        }
+                        if(takeoff && !airborne && tick-takeoff<25) {
+                            if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+                            else if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+                        }
+                        if(!airborne && !std::strcmp(state,"St_LongJump_Main")) {
+                            airborne=true;
+                            std::fprintf(stderr,"[native King Boo maze] trapdoor long jump tick=%llu\n",
+                                         static_cast<unsigned long long>(tick));
+                        }
+                        const double speed=(std::max)(0.0,p->mHorzSpeed/4096.0);
+                        if(airborne && -p->mPosZ/4096.0+speed*speed/3.0+speed>=3920.0)braked=true;
+                        if(!braked || speed>0)steer(braked?-dx:dx,braked?1.0:-4050*4096.0-p->mPosZ,32767);
+                    } else if(!safe_bank) {
+                        if(!jump_off && tick>=supported+4 && !std::strcmp(state,"St_Land_Main") &&
+                           p->mStateTimer==0) {
+                            jump_off=tick;
+                            std::fprintf(stderr,"[native King Boo maze] trapdoor dismount tick=%llu\n",
+                                         static_cast<unsigned long long>(tick));
+                        }
+                        if(jump_off && tick>jump_off+12 && grounded && !owner && p->mPosZ<-3790*4096 &&
+                           std::abs(p->mPosY)<15*4096) {
+                            safe_bank=true;
+                            std::fprintf(stderr,"[native King Boo maze] north bank tick=%llu pos=%d,%d,%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+                        } else if(jump_off) {
+                            if(tick-jump_off<8)buttons=2;
+                            const double bank_dz=-3900*4096.0-p->mPosZ;
+                            steer(dx,bank_dz,32767);
+                        }
+                    } else {
+                        const double across_z=-3850*4096.0-p->mPosZ;
+                        steer(4700*4096.0-p->mPosX,across_z,32767);
+                        if(!east_jump && grounded && p->mPosX>=3990*4096 && p->mHorzSpeed>=0xa000) {
+                            east_jump=tick;
+                            std::fprintf(stderr,"[native King Boo maze] east gap takeoff tick=%llu x=%d z=%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosZ);
+                        }
+                        if(east_jump && tick-east_jump<30)buttons=2;
+                        east_airborne=east_airborne || p->mIsAirborne;
+                        if(east_airborne && grounded && !owner && p->mPosX>=4450*4096 &&
+                           std::abs(p->mPosY)<15*4096) {
+                            ++point;
+                            std::fprintf(stderr,"[native King Boo maze] east bank tick=%llu x=%d z=%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosZ);
+                        }
+                    }
+                } else if(point==11) {
+                    const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+                    const char *state=pc_player_state_name(p);
+                    if(!diagonal_jump && grounded && p->mPosX>=5810*4096 &&
+                       p->mPosZ<=-3860*4096 && p->mHorzSpeed>0xa000) {
+                        diagonal_jump=tick;
+                        std::fprintf(stderr,"[native King Boo maze] diagonal runway tick=%llu x=%d z=%d\n",
+                                     static_cast<unsigned long long>(tick),p->mPosX,p->mPosZ);
+                    }
+                    if(diagonal_jump && !diagonal_airborne && tick-diagonal_jump<25) {
+                        if(!std::strcmp(state,"St_Crouch_Main"))buttons=0x102;
+                        else if(!std::strcmp(state,"St_Walk_Main"))buttons=0x100;
+                    }
+                    if(!diagonal_airborne && !std::strcmp(state,"St_LongJump_Main")) {
+                        diagonal_airborne=true;
+                        std::fprintf(stderr,"[native King Boo maze] diagonal long jump tick=%llu\n",
+                                     static_cast<unsigned long long>(tick));
+                    }
+                    if(diagonal_airborne && grounded && p->mPosX>=6550*4096 && p->mPosZ<=-4480*4096 &&
+                       std::abs(p->mPosY)<15*4096) {
+                        ++point;
+                        std::fprintf(stderr,"[native King Boo maze] south bank tick=%llu x=%d z=%d\n",
+                                     static_cast<unsigned long long>(tick),p->mPosX,p->mPosZ);
+                    } else {
+                        steer(dx,dz,32767);
+                    }
+                } else if(point==14) {
+                    if(p->mPosZ<=-9570*4096 && p->mMeshClsn.IsOnGround() && !p->mIsAirborne &&
+                       std::abs(p->mPosY)<15*4096) {
+                        ++point;
+                        std::fprintf(stderr,"[native King Boo maze] bridge far bank tick=%llu x=%d z=%d\n",
+                                     static_cast<unsigned long long>(tick),p->mPosX,p->mPosZ);
+                    }
+                    steer(dx,dz,32767);
+                } else if(point==16) {
+                    const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+                    const auto *floor=grounded?static_cast<const dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+                    const auto *owner=floor && floor->colliderIdx<24?floor->owner:nullptr;
+                    if(owner && owner->actorID==31 && (owner->param1&255)==4) {
+                        ++point;
+                        std::fprintf(stderr,"[native King Boo maze] first path lift boarded tick=%llu uid=%u\n",
+                                     static_cast<unsigned long long>(tick),owner->uniqueID);
+                    } else {
+                        if(!lift_jump && grounded && distance<385 &&
+                           std::abs(static_cast<int16_t>(p->mAngleY-0x8000))<2600 &&
+                           !std::strcmp(pc_player_state_name(p),"St_Walk_Main")) {
+                            lift_jump=tick;
+                            std::fprintf(stderr,"[native King Boo maze] first path lift jump tick=%llu x=%d z=%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosZ);
+                        }
+                        if(lift_jump && tick-lift_jump<40)buttons=2;
+                        if(distance>55)steer(dx,dz,lift_jump?18500:14500);
+                    }
+                } else if(point==17) {
+                    const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+                    const auto *floor=grounded?static_cast<const dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+                    const auto *owner=floor && floor->colliderIdx<24?floor->owner:nullptr;
+                    const int path=owner && owner->actorID==31?owner->param1&255:-1;
+                    if(path==5) {
+                        ++point;
+                        std::fprintf(stderr,"[native King Boo maze] second path lift boarded tick=%llu uid=%u\n",
+                                     static_cast<unsigned long long>(tick),owner->uniqueID);
+                    } else if(path==4 && !second_lift_jump && p->mPosY>=450*4096) {
+                        if(p->mPosZ>-10000*4096)steer(dx,dz,18000);
+                        else if(p->mPosY>=620*4096 &&
+                                !std::strcmp(pc_player_state_name(p),"St_Walk_Main")) {
+                            second_lift_jump=tick;
+                            buttons=2;
+                            steer(dx,dz,18000);
+                            std::fprintf(stderr,"[native King Boo maze] second path lift jump tick=%llu pos=%d,%d,%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+                        }
+                    } else if(second_lift_jump) {
+                        if(tick-second_lift_jump<40)buttons=2;
+                        if(distance>65)steer(dx,dz,18000);
+                    }
+                } else if(point==18 || point==19) {
+                    const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+                    const auto *floor=grounded?static_cast<const dBgPi *>(p->mMeshClsn.GetFloorResult()):nullptr;
+                    const auto *owner=floor && floor->colliderIdx<24?floor->owner:nullptr;
+                    const int path=owner && owner->actorID==31?owner->param1&255:-1;
+                    const bool upper_deck=point==19;
+                    auto &jump=upper_deck?deck_jump:third_lift_jump;
+                    const bool arrived=upper_deck
+                        ? jump && grounded && !owner && p->mPosZ<-10900*4096 && p->mPosY>=1195*4096
+                        : path==6;
+                    if(arrived) {
+                        ++point;
+                        std::fprintf(stderr,"[native King Boo maze] %s tick=%llu uid=%u pos=%d,%d,%d\n",
+                                     upper_deck?"upper deck landed":"third path lift boarded",
+                                     static_cast<unsigned long long>(tick),owner?owner->uniqueID:0,
+                                     p->mPosX,p->mPosY,p->mPosZ);
+                    } else if(jump || (upper_deck?path==6 && p->mPosY>=1120*4096:path==5 && p->mPosX>=7410*4096)) {
+                        if(!jump && !std::strcmp(pc_player_state_name(p),"St_Walk_Main")) {
+                            jump=tick;
+                            std::fprintf(stderr,"[native King Boo maze] %s tick=%llu pos=%d,%d,%d\n",
+                                         upper_deck?"upper deck jump":"third path lift jump",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+                        }
+                        if(jump && tick-jump<40)buttons=2;
+                        if(distance>65)steer(dx,dz,18000);
+                    }
+                } else if(point==21) {
+                    if(arena_jump && p->mStateStep!=0 &&
+                       !std::strcmp(pc_player_state_name(p),"St_LedgeHang_Main")) {
+                        buttons=chomp_replay_button(0x400);
+                    } else if(!arena_jump && p->mPosZ>-11950*4096) {
+                        steer(dx,dz,16000);
+                    } else {
+                        if(!arena_jump && !p->mIsAirborne && p->mHorzSpeed==0 &&
+                           !std::strcmp(pc_player_state_name(p),"St_Wait_Main")) {
+                            arena_jump=tick;
+                            std::fprintf(stderr,"[native King Boo maze] arena rim jump tick=%llu pos=%d,%d,%d\n",
+                                         static_cast<unsigned long long>(tick),p->mPosX,p->mPosY,p->mPosZ);
+                        }
+                        if(arena_jump && tick-arena_jump<25)buttons=2;
+                        if(arena_jump && p->mPosY>1260*4096 && p->mPosZ>-12115*4096)steer(dx,dz,14500);
+                    }
+                } else if((point==12 || point==15) && distance<30 && p->mHorzSpeed>=0x4000) {
+                    // Let the landing momentum settle before approaching the narrow doorway.
+                } else if(distance<(point==10 || point==12 || point==15?30:110) && (point!=9 || p->mAreaId==3) &&
+                          (point!=13 || p->mAreaId==4)) {
+                    std::fprintf(stderr,"[native King Boo maze] waypoint=%zu tick=%llu area=%d\n",
+                                 point,static_cast<unsigned long long>(tick),int(p->mAreaId));
+                    ++point;
+                } else {
+                    steer(dx,dz,std::clamp(distance*60.0,14000.0,23000.0));
+                }
+            }
+            ntr::input_test_controls(true,buttons,sx,sy);
             return true;
         }
         if(fortress_tail)return replay_fortress_summit_lift();
