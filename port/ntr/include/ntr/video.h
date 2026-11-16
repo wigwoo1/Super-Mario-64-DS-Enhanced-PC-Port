@@ -68,6 +68,7 @@ void video_set_minimap_timer(bool active,unsigned elapsed_hundredths);
 void video_set_cutscene_letter(bool active);
 // The native game bridge updates this when DS dialogue opens or closes.
 void video_set_dialogue_card_active(bool active, bool dark_text = false);
+void video_set_course_clear_active(bool active);
 bool video_minimap_visible();
 // Present the original bottom-screen pause/options interface as the main view.
 void video_set_pause_screen(bool active, bool custom_settings = false);

@@ -59,6 +59,7 @@ bool g_cannon_sight=false;
 bool g_cutscene_letter = false;
 bool g_dialogue_card_active = false;
 bool g_dialogue_card_dark_text = false;
+bool g_course_clear_active = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
 bool g_minigame_active = false;
@@ -85,12 +86,15 @@ uint32_t dialogue_card_color(uint32_t destination, uint32_t source) {
 
 struct DialogueCardBounds {int left=54,top=50,right=182,bottom=146;};
 
-DialogueCardBounds dialogue_card_bounds(const Framebuffer &foreground) {
+DialogueCardBounds dialogue_card_bounds(const Framebuffer &foreground,bool course_clear) {
     // Dialogue glyphs are in the PPU foreground. Their anchor differs between
     // cutscene/Lakitu messages and ordinary NPC boxes, so center the same-size
     // card on the actual visible text rather than assuming one fixed anchor.
     int min_x=SCREEN_W,min_y=SCREEN_H,max_x=-1,max_y=-1;
-    for(int y=40;y<168;++y) for(int x=20;x<196;++x) {
+    // Course-clear titles can span nearly the full screen in some languages.
+    // Scan their text band before the save buttons and HUD are composited.
+    for(int y=course_clear?24:40;y<(course_clear?124:168);++y)
+        for(int x=course_clear?0:20;x<(course_clear?SCREEN_W:196);++x) {
         if(foreground.px[y][x]>>24) {
             min_x=std::min(min_x,x); min_y=std::min(min_y,y);
             max_x=std::max(max_x,x); max_y=std::max(max_y,y);
@@ -98,15 +102,16 @@ DialogueCardBounds dialogue_card_bounds(const Framebuffer &foreground) {
     }
     if(max_x<min_x || max_y<min_y) return {};
     constexpr int min_width=128,min_height=96,padding_x=10,padding_y=10;
-    const int width=std::min(SCREEN_W-24,std::max(min_width,max_x-min_x+1+padding_x*2));
+    const int margin=course_clear?std::min(12,std::min(min_x,SCREEN_W-max_x-1)):12;
+    const int width=std::min(SCREEN_W-margin*2,std::max(min_width,max_x-min_x+1+padding_x*2));
     const int height=std::min(SCREEN_H-24,std::max(min_height,max_y-min_y+1+padding_y*2));
     const int center_x=(min_x+max_x+1)/2,center_y=(min_y+max_y+1)/2;
-    const int left=std::clamp(center_x-width/2,12,SCREEN_W-12-width);
+    const int left=std::clamp(center_x-width/2,margin,SCREEN_W-margin-width);
     const int top=std::clamp(center_y-height/2,12,SCREEN_H-12-height);
     return {left,top,left+width,top+height};
 }
 
-void dialogue_card_on_scene(Framebuffer &frame,const DialogueCardBounds &bounds) {
+void dialogue_card_on_scene(Framebuffer &frame,const DialogueCardBounds &bounds,bool dark_text) {
     const int left=bounds.left,top=bounds.top,right=bounds.right,bottom=bounds.bottom;
     for(int y=top;y<bottom;++y) for(int x=left;x<right;++x) {
         const bool border=x==left || x==right-1 || y==top || y==bottom-1;
@@ -115,14 +120,14 @@ void dialogue_card_on_scene(Framebuffer &frame,const DialogueCardBounds &bounds)
         if(corner && !border && !inner_border) continue;
         // NPC cards sit above the 3D scene, so keep the character model from
         // washing out the dialogue text through the translucent fill.
-        const uint32_t fill=g_dialogue_card_dark_text?0xe8fff0c8u:0xe8172033u;
+        const uint32_t fill=dark_text?0xe8fff0c8u:0xe8172033u;
         const uint32_t color=border?0xe8e8b850u:inner_border?0xffedcf86u:fill;
         auto &pixel=frame.px[y][x];
         pixel=dialogue_card_color(pixel,color);
     }
 }
 
-void dialogue_card_on_foreground(Framebuffer &frame,const DialogueCardBounds &bounds) {
+void dialogue_card_on_foreground(Framebuffer &frame,const DialogueCardBounds &bounds,bool dark_text) {
     const int left=bounds.left,top=bounds.top,right=bounds.right,bottom=bounds.bottom;
     for(int y=top;y<bottom;++y) for(int x=left;x<right;++x) {
         const bool border=x==left || x==right-1 || y==top || y==bottom-1;
@@ -133,7 +138,7 @@ void dialogue_card_on_foreground(Framebuffer &frame,const DialogueCardBounds &bo
         if(pixel>>24) continue; // retain every original text and UI pixel
         if(border) pixel=0xe8e8b850u;
         else if(inner_border) pixel=0xffedcf86u;
-        else pixel=g_dialogue_card_dark_text?0xe8fff0c8u:0xe8172033u;
+        else pixel=dark_text?0xe8fff0c8u:0xe8172033u;
     }
 }
 
@@ -697,6 +702,10 @@ void video_set_dialogue_card_active(bool active, bool dark_text) {
     g_dialogue_card_active = active;
     g_dialogue_card_dark_text = dark_text;
 }
+
+void video_set_course_clear_active(bool active) {
+    g_course_clear_active=active;
+}
 void video_set_pause_screen(bool active, bool custom_settings) {
     if(active && !g_pause_screen && g_minimap_gameplay && g_gpu) {
         if(!gpu_readback_gameplay(g_editor_background,g_editor_width,g_editor_height))
@@ -1000,13 +1009,14 @@ bool video_present_frame() {
     }
     uint8_t foreground_mask=ppu_backgrounds_above_3d();
     ppu_scanout(ENGINE_A,g_foreground,true,foreground_mask);
-    const bool dialogue_card=g_dialogue_card_active && !g_pause_screen && !g_minigame_active &&
+    const bool dialogue_card=(g_dialogue_card_active || g_course_clear_active) && !g_pause_screen && !g_minigame_active &&
         !g_cutscene_letter && !g_menu_open && !dual;
-    const auto dialogue_bounds=dialogue_card?dialogue_card_bounds(g_foreground):DialogueCardBounds{};
-    if(dialogue_card && g_gpu) dialogue_card_on_foreground(g_foreground,dialogue_bounds);
+    const bool dark_text=!g_course_clear_active && g_dialogue_card_dark_text;
+    const auto dialogue_bounds=dialogue_card?dialogue_card_bounds(g_foreground,g_course_clear_active):DialogueCardBounds{};
+    if(dialogue_card && g_gpu) dialogue_card_on_foreground(g_foreground,dialogue_bounds,dark_text);
     if (!g_gpu && geometry_visible) {
         gx_render(g_top);
-        if(dialogue_card) dialogue_card_on_scene(g_top,dialogue_bounds);
+        if(dialogue_card) dialogue_card_on_scene(g_top,dialogue_bounds,dark_text);
         for(int y=0;y<SCREEN_H;++y)for(int x=0;x<SCREEN_W;++x)
             if(g_foreground.px[y][x]>>24)g_top.px[y][x]=g_foreground.px[y][x];
     }

@@ -95,6 +95,7 @@ void pc_stage_graph_prepare()
     credits_started=ending_movie && (credits_started || data_0209fc48==data_02087c00 ||
                                     data_0209fc48==data_02088fb8);
     ntr::video_set_credits_active(active && credits_started);
+    ntr::video_set_course_clear_active(active && !title_menu && data_0209f20c!=0);
     gameplay_overlay=active && !ending_movie && !ending_flight;
 #endif
     if(!gameplay_overlay)ntr::video_set_cannon_sight(false);

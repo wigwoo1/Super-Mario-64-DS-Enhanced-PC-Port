@@ -588,6 +588,7 @@ def main():
             ('g_profile_RC_CARPET','daObjRcCarpet_c_classInit',36,0x02113f78),
             ('pc_wdw_disc_profile','daObjWc_Obj07_c_classInit',29,0x02113ff4),
             ('pc_rainbow_disc_profile','daObjRc_Kaitendai_c_classInit',36,0x02113b50),
+            ('pc_fortress_floating_island_profile','daObjBk_Ukisima_c_classInit',15,0x021147c4),
             ('pc_whomp_profile','daBtn_c_classInit_BATAN',79,0x02127c5c),
             ('pc_king_whomp_profile','daBtn_c_classInit_BATANKING',79,0x02127c40),
             ('pc_sky_disc_profile','daObjKm3_Kaitendai_c_classInit',47,0x02112358),

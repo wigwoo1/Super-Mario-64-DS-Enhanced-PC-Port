@@ -23,6 +23,8 @@ static void pc_disc_observe(daObjKaitendai_c *a){
         assert text.count(anchor)==1
         text=text.replace(anchor,anchor+'\n    pc_render_probe::Scope probe(this,false,&mModel.mat4x3);')
         return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n#include "hal/actor_render_probe.h"\n'+text
+    if name == 'd_a_obj_bk_ukisima.cpp':
+        return transform_fortress(root, text)
     if name == 'd_a_obj_wc_obj07.cpp':
         return transform_wdw(root, text)
     if name == 'd_a_obj_km3_kaitendai.cpp':
@@ -50,6 +52,41 @@ extern "C" ResourceDescriptor data_ov036_02113b2c={&data_ov036_02114050,&data_ov
 static_assert(sizeof(daObjRc_Kaitendai_c)==0x320,"native rotating-disc allocation");
 '''
     return text
+
+
+def transform_fortress(root, text):
+    from battlefield_platform_host import lazy_handles
+
+    rom = (root / 'extracted/overlays/overlay_0015.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x021147c4 - base) == (
+        0x02112cb8, 50, 203, 2, 0x3e8000, 0x7d0000, 0x2000000, 0xcd0000)
+    assert struct.unpack_from('<3I', rom, 0x021147a4 - base) == (
+        0x02114aac, 0x02114ab4, 0x02113614)
+    assert struct.unpack_from('<h', rom, 0x02114794 - base) == (128,)
+    assert struct.unpack_from('<4sHH', rom, 0x02113614 - base) == (b'CLPS', 8, 2)
+    text = lazy_handles(text, ('UkisimaModelFilePtr', 'UkisimaClsnFileHandle'))
+    declaration = 'extern ResourceDescriptor data_ov015_021147a4;'
+    assert text.count(declaration) == 1
+    text = text.replace(declaration, declaration + '''
+extern UkisimaModelFilePtr data_ov015_02114aac;
+extern UkisimaClsnFileHandle data_ov015_02114ab4;''')
+    text = text.replace('extern s16 data_ov015_02114794;\n', '')
+    anchor = 's32 daObjBk_Ukisima_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, anchor + '''
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(7, 0x02113614));
+    if (!surface) return 0;
+    static const bool ready = [] {
+        data_ov015_02114aac.Construct(1441);
+        data_ov015_02114ab4.Construct(1442);
+        return true;
+    }();
+    (void)ready;
+    data_ov015_021147a4 = {&data_ov015_02114aac, &data_ov015_02114ab4, surface};
+''').replace('data_ov015_02114794);', '128);')
+    return ('#include "hal/level_overlay.h"\n' + text +
+            '\nextern "C" ResourceDescriptor data_ov015_021147a4 = {};\n')
 
 
 def transform_wdw(root, text):
