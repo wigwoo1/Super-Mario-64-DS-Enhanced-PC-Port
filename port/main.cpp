@@ -8952,7 +8952,9 @@ static bool replay_goomboss_second_hit()
 
     auto *player = static_cast<Player *>(data_0209f394[0]);
     const auto *boss = static_cast<const daKuriKing_c *>(dActor_c::FindWithActorID(198, nullptr));
-    if (!player || !boss || boss->aliveState != 1 || boss->mSizeIndex != 2)
+    const bool finalHitEnabled = std::getenv("SM64DS_PC_TEST_GOOMBOSS_FINAL_HIT") != nullptr;
+    if (!player || !boss || boss->aliveState != 1 ||
+        (boss->mSizeIndex != 2 && !(finalHitEnabled && boss->mSizeIndex == 1)))
         return false;
 
     auto input = [](uint16_t buttons, int16_t x = 0, int16_t y = 0) {
@@ -8972,6 +8974,28 @@ static bool replay_goomboss_second_hit()
         return input(0x100);
     if (std::strcmp(state, "St_Wait_Main") && std::strcmp(state, "St_Walk_Main"))
         return input(0);
+
+    if (boss->mSizeIndex == 1) {
+        const double x = player->mPosX / 4096.0;
+        const double z = player->mPosZ / 4096.0;
+        const double azimuth = std::atan2(x, z);
+        const bool waitForWave = boss->mState == 5 || boss->mState == 6 ||
+                                 (boss->mState == 2 && !boss->mSpawnedCount);
+        // The straight path to the first outer minion clips Goomboss.
+        // Keep the useful flank and go around the boss's feet on the rim.
+        if (waitForWave || azimuth > -0.82) {
+            const double next = waitForWave ? -0.24 : (std::max)(azimuth - 0.16, -0.85);
+            const double dx = 1715.0 * std::sin(next) - x;
+            const double dz = 1715.0 * std::cos(next) - z;
+            if (waitForWave && std::hypot(dx, dz) < 22.0)
+                return input(0);
+            const double camera = GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+            const double angle = std::atan2(dx, dz) - camera;
+            const int magnitude = waitForWave ? 14000 : 30000;
+            return input(0, static_cast<int16_t>(std::sin(angle) * magnitude),
+                            static_cast<int16_t>(-std::cos(angle) * magnitude));
+        }
+    }
 
     const dActor_c *target = nullptr;
     bool hasEgg = false;
@@ -8993,6 +9017,9 @@ static bool replay_goomboss_second_hit()
                 continue;
             const double distance = std::hypot(double(goomba->mPosX) - player->mPosX,
                                                double(goomba->mPosZ) - player->mPosZ) / 4096.0;
+            const double radius = std::hypot(double(goomba->mPosX), double(goomba->mPosZ)) / 4096.0;
+            if (boss->mSizeIndex == 1 && (radius < 1120.0 || radius > 1690.0))
+                continue;
             if (distance < nearest) {
                 nearest = distance;
                 target = goomba;
