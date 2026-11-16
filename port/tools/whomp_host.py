@@ -69,4 +69,20 @@ static_assert(offsetof(BtnHandle, file) == 4);''')
     text = text.replace('int daBtn_c::Render()\n{', '''int daBtn_c::Render()
 {
     pc_render_probe::Scope probe(this, mState, &mModelAnim.mat4x3);''')
-    return '#include <cstddef>\n#include "hal/actor_render_probe.h"\n' + text
+    anchor = '    func_ov079_02124188();\n\n    if (func_ov079_021243e0(0)'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, '''    if (mIsKing && std::getenv("SM64DS_PC_TEST_KING_WHOMP")) {
+        static unsigned previous = 256;
+        if (mSubState != previous || ntr::rt_frame() % 120 == 0) {
+            previous = mSubState;
+            std::fprintf(stderr,
+                "[native King Whomp actor] tick=%llu state=%d phase=%u flags=%08x timer=%u nearest=%d target=%d\\n",
+                static_cast<unsigned long long>(ntr::rt_frame()), mState,
+                unsigned(mSubState), unsigned(mFlags), unsigned(mStateTimer),
+                mNearestDist, int(mTargetAngle));
+        }
+    }
+
+''' + anchor)
+    return ('#include <cstddef>\n#include <cstdio>\n#include <cstdlib>\n'
+            '#include "hal/actor_render_probe.h"\n#include "ntr/rt.h"\n' + text)

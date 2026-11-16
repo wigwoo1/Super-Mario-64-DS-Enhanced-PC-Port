@@ -39,6 +39,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjKm2_Ami_Bou_c_classInit",
                  "daObjKm2_Agaru_c_classInit", "daObjKm2_Nobiru_c_classInit",
                  "daObjSimpleLift_c_classInit_KM3_DERU01", "daObjSimpleLift_c_classInit_KM3_DERU02",
+                 "daObjBk_Lift_c_classInit",
                  "daBrq_c_classInit", "daPopoi_c_classInit", "daMenbo_c_classInit", "daBtn_c_classInit_BATAN", "daHolhei_c_classInit", "daKrpa_c_classInit", "daKpFr_c_classInit", "_ZN6Player12GetHurtStateEv",
                  "_ZN6Player5ShockEj",
                  "daObjKm2_Ukishima_c_classInit",
@@ -658,6 +659,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daObjSimpleLift_c.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjBk_Lift_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_fortress_tower_step(root,transformed)
                     rewrites+=1
                 if path.name == 'd_a_linelift2.cpp':
                     import simple_lift_host

@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "1dc02b69c33a31c87d1c8d2ad178dcc3054d7d871b51430a83638e0c3f75ccaf",
-      "bytes": 64013
+      "sha256": "b29a46e58c476a4b457748e2c6564b73f1c126bc75b873006575443e8dc57aac",
+      "bytes": 65058
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "f75cdb94867f01669a95d416a1405408da59ae2626d86f433739e2d21dae0fa5",
-      "bytes": 612244
+      "sha256": "cf2cc785e761a4ede14d5525fa14213e874b4202a7e3a7fe3c9ce3ebde3e941f",
+      "bytes": 652618
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9115,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "0217cb73c979b16396ff8a8d75982f4327fae9ee4ac65940eb88ac70aff46b76",
-      "bytes": 63757
+      "sha256": "3317c5a23258f70393f85bc8031191a5e0ba61f7f4123cbc1b44db6ade9a07c0",
+      "bytes": 64029
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "fbc10a16b1bb406ba97b1d2f652b92eaccb6f2943d1751765ee328e9be6ec752",
-      "bytes": 92357
+      "sha256": "535005f658c869a4bf66040f823111f59cebab297347ea56eae09f9b5f50f72d",
+      "bytes": 93479
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9780,8 +9780,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "ac6d97b97c8289cdb8d3affb4ba9e1f55f6ca033def6d1db22fdf7b719d18adb",
-      "bytes": 31279
+      "sha256": "0628c20ac2a463e7e157aef18b699dfc6f2560d760cec6b6b4f36dc86b2d3bf2",
+      "bytes": 33708
     },
     {
       "path": "port/tools/skeeter_host.py",
@@ -9895,13 +9895,13 @@
     },
     {
       "path": "port/tools/warp_pipe_host.py",
-      "sha256": "170f6a8fca9fa6c5e2f1e4f2cc22c12a33c98a5895d1957fba16432b835ce31b",
-      "bytes": 2216
+      "sha256": "cccfcd987986110ce35dc59389699e44c226bf07460abe119afdd8ff4d6b429f",
+      "bytes": 3308
     },
     {
       "path": "port/tools/whomp_host.py",
-      "sha256": "5f8a494b07d2dbdb78e1ccea057cf9d88f025273d52514adf0ce30bf9f549308",
-      "bytes": 3715
+      "sha256": "7ff9c2c693a04628a4c3d6adec03b04ee0db410d595e6e98207beaa9d5496336",
+      "bytes": 4525
     },
     {
       "path": "port/unmatched/camera_jitter.cpp",

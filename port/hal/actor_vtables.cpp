@@ -520,6 +520,10 @@ extern "C" void *daObjKm1_Ukishima_c_classInit();
 extern "C" void *daObjSimpleLift_c_classInit_KM1_DERU();
 extern "C" void *daObjSimpleLift_c_classInit_KM2_RIFUT01();
 extern "C" void *daObjSimpleLift_c_classInit_KM3_DERU01();
+extern "C" void *daObjSimpleLift_c_classInit_BK_TRANSBAR();
+static PcNativeActorProfile pc_fortress_sliding_profile = {
+    (void *)&daObjSimpleLift_c_classInit_BK_TRANSBAR,55,208,2,0,0x350000,0x1000000,0
+};
 extern "C" void *daObjSimpleLift_c_classInit_KM3_DERU02();
 static PcNativeActorProfile pc_sky_extending_profile = {
     (void *)&daObjSimpleLift_c_classInit_KM3_DERU01,154,225,2,0,0x350000,0x2000000,0
@@ -560,8 +564,12 @@ static PcNativeActorProfile pc_chuckya_profile = {
     (void *)&daHolhei_c_classInit,190,100,0x10000003,0xc8000,0x320000,0x1000000,0x1000000
 };
 extern "C" void *daBtn_c_classInit_BATAN();
+extern "C" void *daBtn_c_classInit_BATANKING();
 static PcNativeActorProfile pc_whomp_profile = {
     (void *)&daBtn_c_classInit_BATAN,164,74,0x10000002,0,0x320000,0x1000000,0x960000
+};
+static PcNativeActorProfile pc_king_whomp_profile = {
+    (void *)&daBtn_c_classInit_BATANKING,165,75,0x10800002,0,0x640000,0x1f40000,0x1f40000
 };
 extern "C" void *daMenbo_c_classInit();
 static PcNativeActorProfile pc_skeeter_profile = {
@@ -583,6 +591,14 @@ static PcNativeActorProfile pc_sky_path_lift_profile = {
     (void *)&daLinelift2_c_classInit_KM3_LIFT,157,302,2,0x100000,0x300000,0x1000000,0
 };
 extern "C" void *daObjSimpleBg_c_classInit_DOKAN();
+extern "C" void *daObjSimpleBg_c_classInit_BK_TOWER();
+extern "C" void *daObjBk_Lift_c_classInit();
+static PcNativeActorProfile pc_fortress_tower_profile = {
+    (void *)&daObjSimpleBg_c_classInit_BK_TOWER,49,202,0,0x300000,0x800000,0x1000000,0
+};
+static PcNativeActorProfile pc_fortress_tower_step_profile = {
+    (void *)&daObjBk_Lift_c_classInit,52,205,2,0x30000,0x180000,0x1000000,0x1000000
+};
 static PcNativeActorProfile pc_warp_pipe_profile = {
     (void *)&daObjSimpleBg_c_classInit_DOKAN, 298, 187, 2, 0, 0x200000, 0x1000000, 0
 };
@@ -915,6 +931,10 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[266] = g_profile_BIRIKYU;
     data_020a4bb8_storage[190] = &pc_chuckya_profile;
     data_020a4bb8_storage[164] = &pc_whomp_profile;
+    data_020a4bb8_storage[165] = &pc_king_whomp_profile;
+    data_020a4bb8_storage[55] = &pc_fortress_sliding_profile;
+    data_020a4bb8_storage[49] = &pc_fortress_tower_profile;
+    data_020a4bb8_storage[52] = &pc_fortress_tower_step_profile;
     data_020a4bb8_storage[230] = &pc_skeeter_profile;
     data_020a4bb8_storage[270] = g_profile_KERONPA;
     data_020a4bb8_storage[271] = g_profile_KERONPA_FIRE;

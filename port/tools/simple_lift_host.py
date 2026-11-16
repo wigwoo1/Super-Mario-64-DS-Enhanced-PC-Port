@@ -1,4 +1,4 @@
-"""Native resources for the reviewed Dark World sliding-platform variant."""
+"""Native resources for the supported moving-platform variants."""
 import re,struct
 from battlefield_platform_host import lazy_handles,observe
 
@@ -100,22 +100,40 @@ def transform(root,text):
     sky=(root/'extracted/overlays/overlay_0047.bin').read_bytes()
     assert struct.unpack_from('<4sHH',sky,0x02111b34-0x021111a0)==(b'CLPS',8,1)
     assert struct.unpack_from('<4sHH',sky,0x02111b74-0x021111a0)==(b'CLPS',8,1)
+    assert struct.unpack_from('<IHHIiiii',raw,0x02135008-base)==(
+        0x021327e8,55,208,2,0,0x350000,0x1000000,0)
+    assert struct.unpack_from('<3I',raw,0x0213506c-base)==(0x02135508,0x02135530,0x02113554)
+    assert struct.unpack_from('<H',raw,0x02134510-base)[0]==50
+    assert struct.unpack_from('<h',raw,0x02134520-base)[0]==-16384
+    fortress=(root/'extracted/overlays/overlay_0015.bin').read_bytes()
+    assert struct.unpack_from('<4sHH',fortress,0x02113554-0x021111a0)==(b'CLPS',8,1)
     text=lazy_handles(text,('SimpleLiftModelFilePtr','SimpleLiftClsnFileHandle'))
     text,n=re.subn(r'\*\(SharedFilePtr \*\*\)\(data_ov091_02135024 \+ mVariant \* 0xc\)',
                    '(mVariant==1 ? &data_ov091_02135560 : '
                    'mVariant==2 ? &data_ov091_02135528 : '
-                   'mVariant==4 ? &data_ov091_02135510 : &data_ov091_02135520)',text);assert n==2,n
+                   'mVariant==4 ? &data_ov091_02135510 : '
+                   'mVariant==6 ? &data_ov091_02135508 : &data_ov091_02135520)',text);assert n==2,n
     text,n=re.subn(r'\*\(SharedFilePtr \*\*\)\(data_ov091_02135028 \+ (?:mVariant \* 0xc|tableOffset)\)',
                    '(mVariant==1 ? &data_ov091_021354f8 : '
                    'mVariant==2 ? &data_ov091_02135518 : '
-                   'mVariant==4 ? &data_ov091_02135540 : &data_ov091_02135538)',text);assert n==3,n
+                   'mVariant==4 ? &data_ov091_02135540 : '
+                   'mVariant==6 ? &data_ov091_02135530 : &data_ov091_02135538)',text);assert n==3,n
     text=text.replace('*(void **)(data_ov091_0213502c + tableOffset)','surface')
     text=text.replace('extern char data_ov091_0213502c[];','extern unsigned char data_ov043_02111be0[];')
     anchor='int daObjSimpleLift_c::InitResources()\n{'
     text=text.replace(anchor,anchor+'''
-    assert(actorID==138 || actorID==147 || actorID==154 || actorID==155);
+    assert(actorID==55 || actorID==138 || actorID==147 || actorID==154 || actorID==155);
     void *surface=data_ov043_02111be0;
-    if (actorID==154) {
+    if (actorID==55) {
+        surface=pc_level_overlay_address(7, 0x02113554);
+        if (!surface) return 0;
+        static const bool ready=[] {
+            data_ov091_02135508.Construct(0x59f);
+            data_ov091_02135530.Construct(0x5a0);
+            return true;
+        }();
+        (void)ready;
+    } else if (actorID==154) {
         surface=pc_level_overlay_address(39, 0x02111b34);
         if (!surface) return 0;
         static const bool ready=[] {
@@ -154,6 +172,36 @@ def transform(root,text):
     text='#include "hal/level_overlay.h"\n'+text
     text+='\nstatic_assert(sizeof(SimpleLiftModelFilePtr)==8 && sizeof(SimpleLiftClsnFileHandle)==8,"native simple lift handles");\n'
     return observe(text,'daObjSimpleLift_c','variant,timer,pause,speed,heading',['int(mVariant)','int(mMoveTimer)','int(mPauseTimer)','int(mHorzSpeed)','int(mPrevAngleY)'])
+
+
+def transform_fortress_tower_step(root, text):
+    """Load the tower step's native handles and active course surface table."""
+    rom = (root / 'extracted/overlays/overlay_0015.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x0211462c - base) == (
+        0x0211290c, 52, 205, 2, 0x30000, 0x180000, 0x1000000, 0x1000000)
+    magic, stride, count = struct.unpack_from('<4sHH', rom, 0x02113594 - base)
+    assert magic == b'CLPS' and stride == 8 and count > 0
+    assert 0x02113594 - base + 8 + stride * count <= len(rom)
+    text = lazy_handles(text, ('BkLiftModelFilePtr', 'BkLiftCollisionFilePtr'))
+    anchor = 'int daObjBk_Lift_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, anchor + '''
+    auto *surface = static_cast<CLPS_Block *>(pc_level_overlay_address(7, 0x02113594));
+    if (!surface) return 0;
+    static const bool ready = [] {
+        data_ov015_02114a64.Construct(1433);
+        data_ov015_02114a5c.Construct(1434);
+        return true;
+    }();
+    (void)ready;
+''', 1)
+    text = text.replace('&data_ov015_02113594);', 'surface);')
+    text = text.replace('    mJustSteppedOn = 1;\n    mMove = 1;\n}',
+                        '    mJustSteppedOn = 1;\n    mMove = 1;\n    return 0;\n}')
+    return '#include "hal/level_overlay.h"\n' + observe(
+        text, 'daObjBk_Lift_c', 'kind,timer,move,heading',
+        ['int(param1 & 0xff)', 'int(mMoveTimer)', 'int(mMove)', 'int(mPrevAngleY)'])
 
 
 def transform_path_lift(root, text):

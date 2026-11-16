@@ -71,17 +71,29 @@ def main():
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_warp_pipe_profile'), 28))
     if actual[0] != named('daObjSimpleBg_c_classInit_DOKAN') or actual[1:] != expected[1:]:
         raise ValueError('Warp pipe profile/factory differs from the original')
+    expected = struct.unpack_from('<IHHIiiii', pipe_rom, 0x0214e118 - pipe_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_fortress_tower_profile'), 28))
+    if actual[0] != named('daObjSimpleBg_c_classInit_BK_TOWER') or actual[1:] != expected[1:]:
+        raise ValueError('Fortress tower profile/factory differs from the original')
+    print('PASS: original fortress tower profile and native factory')
+    fortress_base, fortress_rom = overlay(15)
+    expected = struct.unpack_from('<IHHIiiii', fortress_rom, 0x0211462c - fortress_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_fortress_tower_step_profile'), 28))
+    if actual[0] != named('daObjBk_Lift_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Fortress tower step profile/factory differs from the original')
+    print('PASS: original fortress tower step profile and native factory')
     surface_base, surface_rom = overlay(2)
     lift_base, lift_rom = overlay(91)
     for profile, factory, address in (
+        ('pc_fortress_sliding_profile', 'daObjSimpleLift_c_classInit_BK_TRANSBAR', 0x02135008),
         ('pc_sky_extending_profile', 'daObjSimpleLift_c_classInit_KM3_DERU01', 0x02134f7c),
         ('pc_sky_upper_extending_profile', 'daObjSimpleLift_c_classInit_KM3_DERU02', 0x02134f98),
     ):
         expected = struct.unpack_from('<IHHIiiii', lift_rom, address - lift_base)
         actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
         if actual[0] != named(factory) or actual[1:] != expected[1:]:
-            raise ValueError(f'{profile}: extending platform profile/factory differs from the original')
-    print('PASS: both native Bowser in the Sky extending-platform profiles and factories')
+            raise ValueError(f'{profile}: moving platform profile/factory differs from the original')
+    print("PASS: both Bowser in the Sky extending-platform profiles and Whomp's Fortress sliding-platform profile")
     for profile, factory, address in (
         ('g_profile_SECRET_COIN', 'daSCoin_c_classInit', 0x0210b00c),
         ('pc_push_block_profile', 'daObjPushblock_c_classInit', 0x0210968c),
@@ -569,6 +581,7 @@ def main():
             ('pc_wdw_disc_profile','daObjWc_Obj07_c_classInit',29,0x02113ff4),
             ('pc_rainbow_disc_profile','daObjRc_Kaitendai_c_classInit',36,0x02113b50),
             ('pc_whomp_profile','daBtn_c_classInit_BATAN',79,0x02127c5c),
+            ('pc_king_whomp_profile','daBtn_c_classInit_BATANKING',79,0x02127c40),
             ('pc_sky_disc_profile','daObjKm3_Kaitendai_c_classInit',47,0x02112358),
             ('g_profile_KM3_KURUMA','daObjKm3_Kuruma_c_classInit',47,0x02112428),
             ('g_profile_KM3_KURUMAJIKU','daObjKm3_Kurumajiku_c_classInit',47,0x0211227c),

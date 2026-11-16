@@ -240,6 +240,7 @@ static bool replay_lava_bridge_reentered;
 #include "hal/ironball_replay.h"
 #include "hal/ironball_encounter_state.h"
 static bool replay_course_route_complete;
+static bool replay_courtyard_boo(Player *player);
 static bool replay_dark_world_extending_cross_settled;
 static bool replay_book_puzzle_complete;
 static bool replay_udlift_return_complete;
@@ -590,8 +591,129 @@ static uint16_t replay_route_window_buttons(unsigned waypoint,bool settling=fals
     }
     return buttons;
 }
-static bool replay_big_boo_combat() {
-    if(!std::getenv("SM64DS_PC_TEST_BIG_BOO_COMBAT") || data_0209f2f8!=12 || replay_course_route_waypoint<530)return false;
+static uint16_t chomp_replay_button(unsigned action);
+static bool replay_haunt_rear_boos(Player *player) {
+    if(!std::getenv("SM64DS_PC_TEST_HAUNT_REAR_BOOS") || data_0209f2f8!=12 || !player)return false;
+    const bool east_enabled=std::getenv("SM64DS_PC_TEST_HAUNT_EAST_BOO")!=nullptr;
+    const bool back_enabled=std::getenv("SM64DS_PC_TEST_HAUNT_BACK_BOO")!=nullptr;
+    const bool final_enabled=std::getenv("SM64DS_PC_TEST_HAUNT_FINAL_BOO")!=nullptr;
+    struct Bounds {
+        int min_x,max_x,min_z,max_z;
+        bool Contains(int x,int z) const {return x>=min_x && x<=max_x && z>=min_z && z<=max_z;}
+    };
+    struct Room {int area,exit_gate;Bounds entry,retreat,coins;int center_x;};
+    constexpr Room rooms[]={
+        {6,2,{-2050,-1050,-1340,-700},{-1940,-1120,-1325,-790},{-2150,-1000,-1460,-680},-1525},
+        {2,3,{2620,2940,1670,2240},{2460,2820,1720,2360},{2280,3000,1600,2490},2640},
+        {5,4,{-400,130,-850,-220},{-290,155,-730,-275},{-430,230,-870,-175},-90},
+        {2,5,{2810,3150,200,660},{2775,3210,175,665},{2725,3260,120,755},3000},
+    };
+    static size_t room_index=0;
+    if(room_index==std::size(rooms))return false;
+    const auto &room=rooms[room_index];
+    static bool engaged=false;
+    if(!engaged) {
+        const int x=player->mPosX/4096,z=player->mPosZ/4096;
+        if(std::abs(player->mPosY)>20*4096)return false;
+        if(!room.entry.Contains(x,z))return false;
+        engaged=true;
+    }
+    const auto tick=ntr::rt_frame();
+    auto input=[](uint16_t buttons=0,int16_t x=0,int16_t y=0) {
+        ntr::input_test_controls(true,buttons,x,y);
+        return true;
+    };
+    if(data_0209d660)return input(tick%42<5?1:0);
+    if(player->mIsNoControl || player->mIsControlDisabled)return input();
+
+    auto steer=[&](double dx,double dz,int magnitude) {
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        return input(0,static_cast<int16_t>(std::sin(angle)*magnitude),
+                       static_cast<int16_t>(-std::cos(angle)*magnitude));
+    };
+    static unsigned target_id=0;
+    static uint64_t jump_at=0,pound_at=0;
+    static int previous_gate=-1;
+    for(auto *a=dActor_c::FindWithActorID(210,nullptr);a;a=dActor_c::FindWithActorID(210,a)) {
+        const auto *boss=static_cast<const daTrs_c *>(a);
+        if(boss->unk_5cf!=14 || boss->mTimer180==previous_gate)continue;
+        previous_gate=boss->mTimer180;
+        std::fprintf(stderr,"[native rear Boo replay] tick=%llu boss=%u gate=%d\n",
+                     static_cast<unsigned long long>(tick),boss->uniqueID,previous_gate);
+    }
+    const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const char *state=pc_player_state_name(player);
+    const bool ready=grounded && (!std::strcmp(state,"St_Wait_Main") ||
+                                  !std::strcmp(state,"St_Walk_Main"));
+    if(jump_at && ready && tick-jump_at>30) {
+        target_id=0;
+        jump_at=pound_at=0;
+    }
+    const size_t last_room=final_enabled?3:back_enabled?2:east_enabled?1:0;
+    if((room_index<last_room || final_enabled) && previous_gate==room.exit_gate && ready && !jump_at) {
+        ++room_index;
+        engaged=false;
+        return false;
+    }
+    daTrs_c *target=nullptr;
+    double distance=1e100;
+    for(auto *a=dActor_c::FindWithActorID(209,nullptr);a;a=dActor_c::FindWithActorID(209,a)) {
+        auto *boo=static_cast<daTrs_c *>(a);
+        if(boo->mAreaIdx!=room.area || boo->unk_5cf!=2 || boo->aliveState!=1 || boo->unk_5cc!=1 ||
+           (target_id && boo->uniqueID!=target_id))continue;
+        if(room.exit_gate==5 && (boo->mHomePosX!=3000*4096 || boo->mHomePosZ!=400*4096))continue;
+        const double dx=double(boo->mdCcAcPos_c.pos.x)-player->mPosX;
+        const double dz=double(boo->mdCcAcPos_c.pos.z)-player->mPosZ;
+        const double d=std::hypot(dx,dz)/4096.0;
+        if(d<distance){target=boo;distance=d;}
+    }
+    if(ready && !jump_at && distance>240) {
+        for(auto *coin=dActor_c::FindWithActorID(290,nullptr);coin;coin=dActor_c::FindWithActorID(290,coin)) {
+            const int x=coin->mPosX/4096,z=coin->mPosZ/4096;
+            if(coin->aliveState!=1 || std::abs(coin->mPosY-player->mPosY)>90*4096 ||
+               !room.coins.Contains(x,z))continue;
+            const double dx=double(coin->mPosX)-player->mPosX,dz=double(coin->mPosZ)-player->mPosZ;
+            if(std::hypot(dx,dz)>16*4096.0)return steer(dx,dz,14500);
+        }
+    }
+    if(pound_at)return input(tick-pound_at<8?chomp_replay_button(0x400):0);
+    if(jump_at) {
+        if(target && player->mIsAirborne && player->mPosY>target->mPosY+70*4096 &&
+           target->mOpacity==255 && distance<175) {
+            pound_at=tick;
+            std::fprintf(stderr,"[native rear Boo replay] pound tick=%llu target=%u distance=%.1f\n",
+                         static_cast<unsigned long long>(tick),target->uniqueID,distance);
+            return input(chomp_replay_button(0x400));
+        }
+        return input(tick-jump_at<19?chomp_replay_button(2):0);
+    }
+    if(!target || !ready)return input();
+
+    const double dx=double(target->mdCcAcPos_c.pos.x)-player->mPosX;
+    const double dz=double(target->mdCcAcPos_c.pos.z)-player->mPosZ;
+    const double contact=(double(target->mdCcAcPos_c.radius)+player->mdCcAcPos_c.radius)/4096.0;
+    if(target->mOpacity==255 && distance<contact+60) {
+        target_id=target->uniqueID;
+        jump_at=tick;
+        std::fprintf(stderr,"[native rear Boo replay] jump tick=%llu target=%u distance=%.1f contact=%.1f\n",
+                     static_cast<unsigned long long>(tick),target_id,distance,contact);
+        return input(chomp_replay_button(2));
+    }
+    const double heading=uint16_t(player->mAngleY)*6.283185307179586/65536.0;
+    if((std::sin(heading)*dx+std::cos(heading)*dz)>0 ||
+       (target->mOpacity<200 && distance<225)) {
+        const double x=player->mPosX/4096.0,z=player->mPosZ/4096.0;
+        const double retreat_x=std::clamp(x-dx/4096.0,double(room.retreat.min_x),double(room.retreat.max_x))-x;
+        const double retreat_z=std::clamp(z-dz/4096.0,double(room.retreat.min_z),double(room.retreat.max_z))-z;
+        if(std::hypot(retreat_x,retreat_z)>25)return steer(retreat_x,retreat_z,17500);
+        return steer(x<room.center_x?1:-1,0,15000);
+    }
+    return input();
+}
+static bool replay_big_boo_combat(bool at_campaign_hall=false) {
+    if(!std::getenv("SM64DS_PC_TEST_BIG_BOO_COMBAT") || data_0209f2f8!=12)return false;
+    const bool campaign=std::getenv("SM64DS_PC_TEST_HAUNT_FINAL_BOO")!=nullptr;
+    if(campaign ? !at_campaign_hall : replay_course_route_waypoint<530)return false;
     auto *p=static_cast<Player *>(data_0209f394[0]);if(!p || p->aliveState!=1)return false;
     daTrs_c *boss=nullptr;
     for(auto *a=dActor_c::FindWithActorID(210,nullptr);a;a=dActor_c::FindWithActorID(210,a)) {
@@ -761,6 +883,26 @@ static bool replay_big_mri_approach() {
     if(phase==0 && !std::strcmp(state,"St_WallSlide_Main")){phase=1;kick=tick;}
     if(phase==1 && !p->mIsAirborne && p->mPosY>1600*4096){phase=2;}
     if(phase==2 && p->mAreaId==4 && p->mPosY>1600*4096){phase=3;}
+    if(phase==3 && std::getenv("SM64DS_PC_TEST_KING_BOO_PAINTING")) {
+        auto *painting=dActor_c::FindWithActorID(307,nullptr);
+        if(!painting || painting->mAreaId!=4 || p->mIsNoControl || p->mIsControlDisabled) {
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        const double dx=double(painting->mPosX)-p->mPosX;
+        const double dz=double(painting->mPosZ)+80*4096-p->mPosZ;
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        static uint64_t jump_at=0;
+        if(!jump_at && !p->mIsAirborne && std::hypot(dx,dz)<260*4096.0) {
+            jump_at=tick;
+            std::fprintf(stderr,"[native King Boo painting] jump tick=%llu uid=%u\n",
+                         static_cast<unsigned long long>(tick),painting->uniqueID);
+        }
+        ntr::input_test_controls(true,jump_at && tick-jump_at<48?chomp_replay_button(2):0,
+                                 static_cast<int16_t>(std::sin(angle)*24000),
+                                 static_cast<int16_t>(-std::cos(angle)*24000));
+        return true;
+    }
     if(phase==3 && p->mPosX < 20*4096){phase=4;}
     if(phase==4 && p->mPosZ < -200*4096){phase=5;}
     if(phase==5 && p->mPosX > 1000*4096){phase=6;}
@@ -2131,6 +2273,19 @@ static bool replay_owl_ride(Player *p) {
             done=true;recovered=tick;recovered_x=p->mPosX;recovered_z=p->mPosZ;
             std::fprintf(stderr,"[native owl ride] landed tick=%llu state=%s\n",static_cast<unsigned long long>(tick),state);
         }
+        if(recovered && data_0209f2f8==7 && std::getenv("SM64DS_PC_TEST_OWL_CAGE_STAR")) {
+            static bool at_entrance=false;
+            if(p->mIsAirborne || p->mIsControlDisabled || p->mIsNoControl ||
+               std::abs(p->mPosY-4100*4096)>15*4096)return controls();
+            const double dx=4460*4096.0-p->mPosX;
+            const double dz=(at_entrance?-150:245)*4096.0-p->mPosZ;
+            if(std::hypot(dx,dz)<30*4096.0) {
+                at_entrance=true;
+                return controls();
+            }
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            return controls(0,static_cast<int16_t>(std::sin(angle)*14500),static_cast<int16_t>(-std::cos(angle)*14500));
+        }
         if(recovered && tick<recovered+24){
             if(full_flight){
                 const double angle=std::atan2(3100*4096.0-p->mPosX,4400*4096.0-p->mPosZ)-GetAngleToCamera(0)*6.283185307179586/65536.0;
@@ -2153,7 +2308,531 @@ static bool replay_owl_ride(Player *p) {
     const double magnitude=distance>35*4096.0?18000:0;
     return controls(tick<jump_until?2:0,static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));
 }
-static uint16_t chomp_replay_button(unsigned action);
+static bool replay_fortress_sliding_crossed;
+
+static bool replay_king_whomp_encounter(Player *player) {
+    if(!std::getenv("SM64DS_PC_TEST_KING_WHOMP"))return false;
+    const auto tick=ntr::rt_frame();
+    auto *king=static_cast<daBtn_c *>(dActor_c::FindWithActorID(165,nullptr));
+    auto controls=[](uint16_t keys=0,int16_t x=0,int16_t y=0) {
+        ntr::input_test_controls(true,keys,x,y);
+        return true;
+    };
+    static int last_state=-1,last_phase=-1,last_hp=-1;
+    static uint64_t mount=0,jump=0,pound=0;
+    if(king && king->aliveState==1 &&
+       (last_state!=king->mState || last_phase!=king->mSubState || last_hp!=king->mHitPoints)) {
+        std::fprintf(stderr,"[native King Whomp] tick=%llu uid=%u state=%d phase=%u hp=%u pitch=%d yaw=%d player=%d,%d,%d boss=%d,%d,%d\n",
+                     static_cast<unsigned long long>(tick),king->uniqueID,king->mState,
+                     unsigned(king->mSubState),unsigned(king->mHitPoints),int(king->mAngleX),int(king->mAngleY),
+                     player->mPosX,player->mPosY,player->mPosZ,king->mPosX,king->mPosY,king->mPosZ);
+        if(last_hp!=king->mHitPoints || king->mState!=6)mount=jump=pound=0;
+        last_state=king->mState;
+        last_phase=king->mSubState;
+        last_hp=king->mHitPoints;
+    }
+    if(data_0209d660)return controls(tick%42<5?1:0);
+    if(player->mIsNoControl || player->mIsControlDisabled || player->mPosY<3400*4096)return controls();
+    auto aim=[&](double x,double z,uint16_t keys=0) {
+        const double dx=x-player->mPosX,dz=z-player->mPosZ;
+        const double distance=std::hypot(dx,dz)/4096.0;
+        if(distance<40)return controls(keys);
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        const double speed=std::clamp(distance*145.0,12000.0,28500.0);
+        return controls(keys,static_cast<int16_t>(std::sin(angle)*speed),
+                        static_cast<int16_t>(-std::cos(angle)*speed));
+    };
+    if(!king || king->aliveState!=1) {
+        if(last_hp==0) {
+            for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;actor=dActor_c::FindWithActorID(178,actor)) {
+                auto *star=static_cast<daStar_c *>(actor);
+                if(star->aliveState!=1 || star->param1!=0x41 || star->mState!=4)continue;
+                const bool within_jump_range=std::hypot(double(star->mPosX)-player->mPosX,
+                                                        double(star->mPosZ)-player->mPosZ)<190*4096.0;
+                const auto jump_key=within_jump_range && star->mPosY>player->mPosY+90*4096 && tick%75<35
+                    ? chomp_replay_button(2) : 0;
+                return aim(star->mPosX,star->mPosZ,jump_key);
+            }
+        }
+        return controls();
+    }
+    const double direction=uint16_t(king->mAngleY)*6.283185307179586/65536.0;
+    const double x=king->mPosX,z=king->mPosZ;
+    if((king->mState==0 && king->mSubState==0) || king->mState==1 || king->mState==2) {
+        if(std::hypot(x-player->mPosX,z-player->mPosZ)>310*4096.0)return aim(x,z);
+    } else if((king->mState>=3 && king->mState<=5) ||
+              (king->mState==6 && king->mSubState>0 && king->mHitPoints>0)) {
+        // Move across the facing direction while the original slam winds up.
+        const double side=std::cos(direction)<0?-1.0:1.0;
+        const double forward_x=x+std::sin(direction)*340*4096;
+        const double forward_z=z+std::cos(direction)*340*4096;
+        const double right_x=side*std::cos(direction)*420*4096;
+        const double right_z=-side*std::sin(direction)*420*4096;
+        if(king->mHitPoints==3)return aim(forward_x+right_x,forward_z+right_z);
+        // Choose the side with more room inside the summit's floor.
+        const auto outside=[](double x,double z) {
+            return std::hypot(x-std::clamp(x,-350*4096.0,1200*4096.0),
+                              z-std::clamp(z,-200*4096.0,1250*4096.0));
+        };
+        const double sign=outside(forward_x+right_x,forward_z+right_z)<=
+                          outside(forward_x-right_x,forward_z-right_z)?1.0:-1.0;
+        return aim(std::clamp(forward_x+sign*right_x,-350*4096.0,1200*4096.0),
+                   std::clamp(forward_z+sign*right_z,-200*4096.0,1250*4096.0));
+    } else if(king->mState==6 && king->mSubState==0) {
+        const auto target=king->OnAimedAtWithEggReturnVec();
+        const auto distance=std::hypot(double(target.x)-player->mPosX,double(target.z)-player->mPosZ);
+        const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+        const auto *floor=grounded?static_cast<dBgPi *>(player->mMeshClsn.GetFloorResult()):nullptr;
+        const bool on_back=floor && floor->colliderIdx<24 && floor->owner==king;
+        if(!mount && grounded && distance<400*4096.0)mount=tick;
+        if(!jump && on_back && distance<145*4096.0 &&
+           (std::strcmp(pc_player_state_name(player),"St_Walk_Main")==0 ||
+            std::strcmp(pc_player_state_name(player),"St_Wait_Main")==0)) {
+            jump=tick;
+            std::fprintf(stderr,"[native King Whomp] back jump tick=%llu uid=%u\n",
+                         static_cast<unsigned long long>(tick),king->uniqueID);
+        }
+        if(jump && !pound && tick-jump>=16 && distance<95*4096.0 &&
+           player->mIsAirborne && std::strcmp(pc_player_state_name(player),"St_Jump_Main")==0) {
+            pound=tick;
+            std::fprintf(stderr,"[native King Whomp] ground pound tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        }
+        if(pound)return controls(tick-pound<8?chomp_replay_button(0x400):0);
+        const auto takeoff=jump?jump:mount;
+        return aim(target.x,target.z,takeoff && tick-takeoff<40?chomp_replay_button(2):0);
+    }
+    return controls();
+}
+
+static bool replay_fortress_buddy_lane() {
+    if(data_0209f2f8!=7 || !std::getenv("SM64DS_PC_TEST_FORTRESS_BUDDY_LANE"))return false;
+    auto *p=static_cast<Player *>(data_0209f394[0]);
+    if(!p || p->aliveState!=1)return false;
+    static bool jumped=false, reached_lane=false;
+    static size_t waypoint=0;
+    const auto tick=ntr::rt_frame();
+    const bool grounded=p->mMeshClsn.IsOnGround() && !p->mIsAirborne;
+    auto input=[](uint16_t keys=0,int16_t sx=0,int16_t sy=0) {
+        ntr::input_test_controls(true,keys,sx,sy);
+        return true;
+    };
+    auto aim=[&](int x,int z,int speed,uint16_t keys=0) {
+        const auto angle=std::atan2(x*4096.0-p->mPosX,z*4096.0-p->mPosZ)
+                         -GetAngleToCamera(0)*6.283185307179586/65536.0;
+        return input(keys,static_cast<int16_t>(std::sin(angle)*speed),
+                          static_cast<int16_t>(-std::cos(angle)*speed));
+    };
+    if(data_0209d660)return input(tick%42<4?1:0);
+    const auto *mode=std::getenv("SM64DS_PC_TEST_CANNON");
+    const bool wild_blue=mode && !std::strcmp(mode,"whomp-wild-blue");
+    static uint64_t aligned_since=0;
+    static uint64_t fire_at=0;
+    static bool landed=false, on_deck=false, pole_attached=false;
+    if(wild_blue && p->mStateStep==1 &&
+       !std::strcmp(pc_player_state_name(p),"St_Cannon_Main") && data_0209f318) {
+        if(fire_at)return input(tick-fire_at<12?1:0);
+        constexpr double turns=65536.0/6.283185307179586;
+        const auto yaw=static_cast<int16_t>(std::atan2(-675.0,-3489.0)*turns);
+        const auto yaw_error=static_cast<int16_t>(GetAngleToCamera(0)+0x8000-yaw);
+        short pitch=0;
+        std::memcpy(&pitch,reinterpret_cast<const char *>(data_0209f318)+0x17e,2);
+        const int pitch_error=int(pitch)-4400;
+        auto axis=[](int error) -> int16_t {
+            if(std::abs(error)<=165)return 0;
+            const int size=std::clamp(std::abs(error)*8,12000,24000);
+            return static_cast<int16_t>(error>0?size:-size);
+        };
+        const auto sx=axis(yaw_error),sy=axis(pitch_error);
+        if(sx || sy) {
+            aligned_since=0;
+            return input(0,sx,sy);
+        }
+        if(!aligned_since)aligned_since=tick;
+        if(tick-aligned_since<60)return input();
+        fire_at=tick;
+        std::fprintf(stderr,"[native fortress cannon] fire tick=%llu yaw=%d pitch=%d pos=(%d,%d,%d)\n",
+                     static_cast<unsigned long long>(tick),int(yaw)+yaw_error,int(pitch),
+                     p->mPosX/4096,p->mPosY/4096,p->mPosZ/4096);
+        return input(1);
+    }
+    if(p->mIsNoControl || p->mIsControlDisabled)return input();
+    if(fire_at) {
+        const char *state=pc_player_state_name(p);
+        if(!landed && grounded && std::strcmp(state,"St_Cannon_Main")) {
+            landed=true;
+            std::fprintf(stderr,"[native fortress cannon] landed tick=%llu pos=(%d,%d,%d)\n",
+                         static_cast<unsigned long long>(tick),p->mPosX/4096,p->mPosY/4096,p->mPosZ/4096);
+        }
+        if(grounded && p->mPosY>=1740*4096 && p->mPosY<=1760*4096 &&
+           p->mPosZ<320*4096 && p->mPosZ>-780*4096)
+            on_deck=true;
+        if(on_deck) {
+            if(!std::strcmp(state,"St_Climb_Main")) {
+                if(!pole_attached) {
+                    pole_attached=true;
+                    std::fprintf(stderr,"[native fortress cannon] pole attached tick=%llu y=%d\n",
+                                 static_cast<unsigned long long>(tick),p->mPosY/4096);
+                }
+                return input(0,0,-27000);
+            }
+            if(grounded && p->mPosY>1700*4096)
+                return aim(-2437,-250,14500);
+            if(grounded && p->mPosY>=1290*4096 && p->mPosY<=1310*4096 &&
+               std::hypot(-2451*4096.0-p->mPosX,-687*4096.0-p->mPosZ)>15*4096.0)
+                return aim(-2451,-687,14500);
+        }
+        return input();
+    }
+    const auto jump=chomp_replay_button(2);
+    if(!reached_lane) {
+        if(p->mState==&data_ov002_0211052c && !jumped) {
+            jumped=true;
+            std::fprintf(stderr,"[native fortress Buddy] lane jump tick=%llu pos=(%d,%d,%d) yaw=%u\n",
+                         static_cast<unsigned long long>(tick),p->mPosX/4096,p->mPosY/4096,
+                         p->mPosZ/4096,unsigned(uint16_t(p->mAngleY)));
+        }
+        if(jumped) {
+            if(!grounded) {
+                if(p->mPosX<3025*4096)return input(jump);
+                return aim(3025,3850,18000,jump);
+            }
+            if(p->mPosY<900*4096 || p->mPosX>3150*4096)return input();
+            reached_lane=true;
+            std::fprintf(stderr,"[native fortress Buddy] lane landed tick=%llu pos=(%d,%d,%d)\n",
+                         static_cast<unsigned long long>(tick),p->mPosX/4096,p->mPosY/4096,p->mPosZ/4096);
+        } else {
+            if(!grounded || p->mHorzSpeed!=0)return input();
+            const auto crouch=chomp_replay_button(0x400);
+            const bool crouching=!std::strcmp(pc_player_state_name(p),"St_Crouch_Main");
+            return input(crouching?crouch|jump:crouch);
+        }
+    }
+    constexpr int lane[][2]={{2900,3630},{1000,3630},{-770,3630},{-1500,3500}};
+    if(waypoint<std::size(lane)) {
+        const int x=lane[waypoint][0],z=lane[waypoint][1];
+        if(std::hypot(x*4096.0-p->mPosX,z*4096.0-p->mPosZ)>45*4096.0)return aim(x,z,23000);
+        ++waypoint;
+        return input();
+    }
+    auto *buddy=static_cast<daRedBombhei_c *>(dActor_c::FindWithActorID(181,nullptr));
+    if(!buddy)return input();
+    if(buddy->mCannonOpened) {
+        if(wild_blue && std::hypot(-1800*4096.0-p->mPosX,3800*4096.0-p->mPosZ)>12*4096.0)
+            return aim(-1800,3800,14500);
+        return input();
+    }
+    const auto keys=tick%42<4?1:0;
+    if(std::hypot(double(buddy->mPosX)-p->mPosX,double(buddy->mPosZ)-p->mPosZ)<105*4096.0)
+        return input(keys);
+    return aim(buddy->mPosX/4096,buddy->mPosZ/4096,14000,keys);
+}
+
+static bool replay_fortress_summit_lift() {
+    if(data_0209f2f8!=7 || !std::getenv("SM64DS_PC_TEST_FORTRESS_SUMMIT_LIFT"))return false;
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    if(!player || player->aliveState!=1)return false;
+
+    enum Phase { Waiting, Boarding, Riding, Transferring, Finished };
+    static Phase phase=Waiting;
+    static unsigned lift_uid=0;
+    static uint64_t began=0;
+    const auto tick=ntr::rt_frame();
+    const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const auto *floor=grounded?static_cast<dBgPi *>(player->mMeshClsn.GetFloorResult()):nullptr;
+    const auto *owner=floor && floor->colliderIdx<24?floor->owner:nullptr;
+    auto controls=[](uint16_t keys=0,int16_t x=0,int16_t y=0) {
+        ntr::input_test_controls(true,keys,x,y);
+        return true;
+    };
+    auto aim=[&](int x,int z,uint16_t keys,int limit) {
+        const double dx=double(x)-player->mPosX, dz=double(z)-player->mPosZ;
+        const double distance=std::hypot(dx,dz)/4096.0;
+        if(distance<14)return controls(keys);
+        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+        const double speed=std::clamp(distance*145.0,12000.0,double(limit));
+        return controls(keys,static_cast<int16_t>(std::sin(angle)*speed),
+                        static_cast<int16_t>(-std::cos(angle)*speed));
+    };
+    if(phase==Finished && replay_king_whomp_encounter(player))return true;
+    if(player->mIsNoControl || player->mIsControlDisabled)return controls();
+    if(phase==Finished && std::getenv("SM64DS_PC_TEST_FORTRESS_TOWER_FIRST_STEP")) {
+        static unsigned waypoint=0;
+        static bool launched=false;
+        constexpr int route[][2]={{875,950},{475,1080},{0,1100},{0,995}};
+        if(std::getenv("SM64DS_PC_TEST_FORTRESS_TOWER_CORNER")) {
+            static bool positioned=false;
+            static uint64_t run=0, transfer=0;
+            const auto jump=chomp_replay_button(2);
+            if(transfer) {
+                static uint64_t east_run=0, east_jump=0;
+                if(east_jump) {
+                    static bool east_arrived=false;
+                    if(!east_arrived) {
+                        if(!grounded || tick-east_jump<=5)return aim(690*4096,90*4096,jump,31000);
+                        if(!owner || owner->actorID!=52 || owner->param1!=0xffff ||
+                           owner->mPosY!=3900*4096)return controls();
+                        east_arrived=true;
+                    }
+                    if(!std::getenv("SM64DS_PC_TEST_FORTRESS_TOWER_UPPER"))return controls();
+                    struct Transfer {
+                        int from_y, to_y, from_param, to_param;
+                        int setup_x, setup_z, target_x, target_z;
+                    };
+                    constexpr Transfer upper[]={
+                        {3900,4000,0xffff,0xff01, 640,-135, 490,-490},
+                        {4000,4100,0xff01,0xffff, 10,-210, 90,-690},
+                        {4100,4200,0xffff,0xff01, -135,-640, -490,-490},
+                        {4200,4300,0xff01,0xffff, -210,-10, -690,-90},
+                        {4300,4400,0xffff,0xff02, -640,135, -490,490},
+                    };
+                    static size_t leg=0;
+                    static bool staged=false;
+                    static uint64_t approach=0, launch=0;
+                    if(leg==std::size(upper)) {
+                        if(!std::getenv("SM64DS_PC_TEST_FORTRESS_TOWER_REWARD"))return controls();
+                        static bool aligned=false, roof_jump=false, roof_landed=false;
+                        static size_t roof_point=0;
+                        constexpr int roof_route[][2]={{-265,290},{0,300},{285,260},{385,85}};
+                        if(!roof_landed) {
+                            if(roof_jump) {
+                                if(owner && owner->actorID==49) {
+                                    roof_landed=true;
+                                    std::fprintf(stderr,"[native fortress tower] roof landing tick=%llu y=%d\n",
+                                                 static_cast<unsigned long long>(tick),player->mPosY/4096);
+                                    return controls();
+                                }
+                                return grounded?controls():aim(-285*4096,285*4096,jump,22000);
+                            }
+                            if(player->mState==&data_ov002_0211052c) {
+                                roof_jump=true;
+                                std::fprintf(stderr,"[native fortress tower] roof jump tick=%llu\n",
+                                             static_cast<unsigned long long>(tick));
+                                return aim(-285*4096,285*4096,jump,22000);
+                            }
+                            if(!owner || owner->actorID!=52 || owner->param1!=0xff02 ||
+                               owner->mPosY<4900*4096)return controls();
+                            if(!aligned) {
+                                if(std::abs(int(static_cast<int16_t>(player->mAngleY-0x6000)))>600)
+                                    return aim(-315*4096,315*4096,0,12000);
+                                aligned=true;
+                            }
+                            if(player->mHorzSpeed!=0)return controls();
+                            const auto crouch=chomp_replay_button(0x400);
+                            const bool crouching=!std::strcmp(pc_player_state_name(player),"St_Crouch_Main");
+                            return controls(crouching?crouch|jump:crouch);
+                        }
+                        if(roof_point<std::size(roof_route)) {
+                            const int x=roof_route[roof_point][0]*4096,z=roof_route[roof_point][1]*4096;
+                            if(std::hypot(double(x)-player->mPosX,double(z)-player->mPosZ)>24*4096)
+                                return aim(x,z,0,14500);
+                            ++roof_point;
+                            return controls();
+                        }
+                        for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;actor=dActor_c::FindWithActorID(178,actor)) {
+                            const auto *star=static_cast<const daStar_c *>(actor);
+                            if(star->aliveState==1 && star->param1==2 && star->mState==4)
+                                return aim(star->mPosX,star->mPosZ,(!grounded || tick%75<35)?jump:0,14000);
+                        }
+                        return controls();
+                    }
+                    const auto &next=upper[leg];
+                    if(launch) {
+                        if(tick-launch<=5 || !grounded)
+                            return aim(next.target_x*4096,next.target_z*4096,jump,31000);
+                        if(owner && owner->actorID==52 && owner->param1==next.to_param &&
+                           (next.to_param==0xff02 || owner->mPosY==next.to_y*4096)) {
+                            std::fprintf(stderr,"[native fortress tower] upper landing tick=%llu leg=%zu uid=%u\n",
+                                         static_cast<unsigned long long>(tick),leg+1,owner->uniqueID);
+                            ++leg;
+                            staged=false;
+                            approach=launch=0;
+                        }
+                        return controls();
+                    }
+                    if(!owner || owner->actorID!=52 || owner->param1!=next.from_param ||
+                       owner->mPosY!=next.from_y*4096)return controls();
+                    const bool moving=next.from_param==0xff01;
+                    if(!staged) {
+                        const int x=next.setup_x*4096+(moving?owner->mPosX:0);
+                        const int z=next.setup_z*4096+(moving?owner->mPosZ:0);
+                        if(std::hypot(double(x)-player->mPosX,double(z)-player->mPosZ)>25*4096)
+                            return aim(x,z,0,moving?18000:14000);
+                        staged=true;
+                    }
+                    if(!approach && next.to_param==0xff01) {
+                        for(auto *step=dActor_c::FindWithActorID(52,nullptr);step;step=dActor_c::FindWithActorID(52,step)) {
+                            if(step->param1==next.to_param && step->mPosY==next.to_y*4096 &&
+                               std::abs(step->mPosX)>=450*4096) {
+                                approach=tick;
+                                break;
+                            }
+                        }
+                        if(!approach)return controls();
+                    }
+                    if(!approach)approach=tick;
+                    if(tick-approach<8)return aim(next.target_x*4096,next.target_z*4096,0,31000);
+                    launch=tick;
+                    std::fprintf(stderr,"[native fortress tower] upper jump tick=%llu leg=%zu pos=(%d,%d,%d)\n",
+                                 static_cast<unsigned long long>(tick),leg+1,player->mPosX/4096,
+                                 player->mPosY/4096,player->mPosZ/4096);
+                    return aim(next.target_x*4096,next.target_z*4096,jump,31000);
+                }
+                if(grounded && tick-transfer>5) {
+                    if(std::getenv("SM64DS_PC_TEST_FORTRESS_TOWER_EAST") &&
+                       owner && owner->actorID==52 && owner->param1==0xff01 &&
+                       owner->mPosY==3800*4096) {
+                        const int x=owner->mPosX+210*4096,z=owner->mPosZ+10*4096;
+                        if(!east_run) {
+                            if(std::hypot(double(x)-player->mPosX,double(z)-player->mPosZ)>25*4096)
+                                return aim(x,z,0,18000);
+                            east_run=tick;
+                        }
+                        if(tick-east_run<8)return aim(690*4096,90*4096,0,31000);
+                        east_jump=tick;
+                        std::fprintf(stderr,"[native fortress tower] east jump tick=%llu pos=(%d,%d,%d)\n",
+                                     static_cast<unsigned long long>(tick),player->mPosX/4096,
+                                     player->mPosY/4096,player->mPosZ/4096);
+                        return aim(690*4096,90*4096,jump,31000);
+                    }
+                    return controls();
+                }
+                return aim(490*4096,490*4096,jump,31000);
+            }
+            if(owner && owner->actorID==52 && owner->param1==0xffff &&
+               owner->mPosZ==700*4096) {
+                if(!positioned) {
+                    if(std::hypot(135.0-player->mPosX/4096.0,640.0-player->mPosZ/4096.0)>25)
+                        return aim(135*4096,640*4096,0,14000);
+                    positioned=true;
+                }
+                if(!run) {
+                    for(auto *step=dActor_c::FindWithActorID(52,nullptr);step;step=dActor_c::FindWithActorID(52,step)) {
+                        if(step->param1==0xff01 && step->mPosY==3800*4096 && step->mPosX>=450*4096) {
+                            run=tick;
+                            break;
+                        }
+                    }
+                    if(!run)return controls();
+                }
+                if(tick-run<8)return aim(490*4096,490*4096,0,31000);
+                transfer=tick;
+                std::fprintf(stderr,"[native fortress tower] corner jump tick=%llu pos=(%d,%d,%d)\n",
+                             static_cast<unsigned long long>(tick),player->mPosX/4096,player->mPosY/4096,
+                             player->mPosZ/4096);
+                return aim(490*4096,490*4096,jump,31000);
+            }
+        }
+        if(owner && owner->actorID==52)return controls();
+        if(waypoint<std::size(route)) {
+            const int x=route[waypoint][0]*4096,z=route[waypoint][1]*4096;
+            const bool final=waypoint+1==std::size(route);
+            if(std::hypot(double(x)-player->mPosX,double(z)-player->mPosZ)>(final?25:42)*4096.0)
+                return aim(x,z,0,final?12000:18000);
+            ++waypoint;
+            return controls();
+        }
+        if(!launched && player->mState==&data_ov002_0211052c) {
+            launched=true;
+            std::fprintf(stderr,"[native fortress tower] first backflip tick=%llu pos=(%d,%d,%d) yaw=%u\n",
+                         static_cast<unsigned long long>(tick),player->mPosX/4096,player->mPosY/4096,
+                         player->mPosZ/4096,unsigned(uint16_t(player->mAngleY)));
+        }
+        if(launched)return grounded?controls():aim(0,710*4096,chomp_replay_button(2),22000);
+        if(!grounded || player->mHorzSpeed!=0)return controls();
+        const auto crouch=chomp_replay_button(0x400);
+        const bool crouching=!std::strcmp(pc_player_state_name(player),"St_Crouch_Main");
+        return controls(crouching?crouch|chomp_replay_button(2):crouch);
+    }
+    if(phase==Waiting && grounded) {
+        for(auto *actor=dActor_c::FindWithActorID(29,nullptr);actor;actor=dActor_c::FindWithActorID(29,actor)) {
+            if(actor->aliveState!=1 || (actor->param1!=2 && actor->param1!=7) ||
+               actor->mPosY>2660*4096 ||
+               std::hypot(double(actor->mPosX)-player->mPosX,double(actor->mPosZ)-player->mPosZ)>260*4096.0)continue;
+            lift_uid=actor->uniqueID;
+            began=tick;
+            phase=Boarding;
+            std::fprintf(stderr,"[native fortress lift] boarding tick=%llu uid=%u\n",
+                         static_cast<unsigned long long>(tick),lift_uid);
+            break;
+        }
+    }
+    if(phase==Boarding) {
+        if(owner && owner->uniqueID==lift_uid) {
+            phase=Riding;
+            std::fprintf(stderr,"[native fortress lift] supported tick=%llu uid=%u y=%d\n",
+                         static_cast<unsigned long long>(tick),lift_uid,player->mPosY);
+        } else if(auto *lift=dActor_c::FindWithID(lift_uid)) {
+            const auto jump=tick-began<46?chomp_replay_button(2):0;
+            if(tick-began<10)return controls(jump);
+            return aim(lift->mPosX,lift->mPosZ,jump,22000);
+        }
+    }
+    if(phase==Riding && grounded && owner && owner->uniqueID==lift_uid && player->mPosY>=3550*4096) {
+        began=tick;
+        phase=Transferring;
+        std::fprintf(stderr,"[native fortress lift] dismount tick=%llu uid=%u y=%d\n",
+                     static_cast<unsigned long long>(tick),lift_uid,player->mPosY);
+    }
+    if(phase==Transferring) {
+        if(grounded && (!owner || owner->actorID!=29) && player->mPosY>=3495*4096 &&
+           player->mPosZ>=-550*4096) {
+            phase=Finished;
+            std::fprintf(stderr,"[native fortress lift] summit tick=%llu x=%d y=%d z=%d\n",
+                         static_cast<unsigned long long>(tick),player->mPosX,player->mPosY,player->mPosZ);
+        } else {
+            return aim(850*4096,-420*4096,tick-began<55?chomp_replay_button(2):0,28500);
+        }
+    }
+    return controls();
+}
+
+static bool replay_fortress_sliding_crossing() {
+    if(data_0209f2f8!=7 || !std::getenv("SM64DS_PC_TEST_FORTRESS_SLIDING_CROSS"))return false;
+    auto *player=static_cast<Player *>(data_0209f394[0]);
+    if(!player || player->aliveState!=1)return false;
+    auto controls=[](int16_t x=0,int16_t y=0) {
+        ntr::input_test_controls(true,0,x,y);
+        return true;
+    };
+
+    // Sample the original moving platforms and drive the stick. All
+    // movement and support come from the same collision path as manual play.
+    static unsigned crossing=0;
+    static bool underway=false;
+    constexpr int platform_z[]={-750,-1750,-2750};
+    constexpr int far_bank[]={-1180,-2180,-3200};
+    if(crossing==3 || player->mIsNoControl || player->mIsControlDisabled)return controls();
+    if(player->mPosY<1000*4096)return controls();
+    const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    if(underway && grounded && player->mPosZ<=far_bank[crossing]*4096) {
+        std::fprintf(stderr,"[native fortress crossing] bank=%u tick=%llu x=%d z=%d\n",
+                     crossing+1,static_cast<unsigned long long>(ntr::rt_frame()),
+                     player->mPosX,player->mPosZ);
+        ++crossing;
+        replay_fortress_sliding_crossed=crossing==3;
+        underway=false;
+        return controls();
+    }
+    if(!underway) {
+        for(auto *actor=dActor_c::FindWithActorID(55,nullptr);actor;actor=dActor_c::FindWithActorID(55,actor)) {
+            if(actor->aliveState==1 && actor->mPosZ==platform_z[crossing]*4096 &&
+               actor->mPosX>=3630*4096 && actor->mPrevAngleY==0x4000 && grounded) {
+                underway=true;
+                std::fprintf(stderr,"[native fortress crossing] depart=%u uid=%u tick=%llu\n",
+                             crossing+1,actor->uniqueID,static_cast<unsigned long long>(ntr::rt_frame()));
+                break;
+            }
+        }
+        if(!underway)return controls();
+    }
+    const double dx=3750*4096.0-player->mPosX;
+    const double dz=far_bank[crossing]*4096.0-player->mPosZ;
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    return controls(static_cast<int16_t>(std::sin(angle)*26000),
+                    static_cast<int16_t>(-std::cos(angle)*26000));
+}
+
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -2163,7 +2842,19 @@ static bool replay_course_route(const char *route_override=nullptr) {
         if(const char *reentry_route=std::getenv("SM64DS_PC_TEST_LAVA_REENTRY_ROUTE"))route=reentry_route;
     }
     if(!automation || std::strcmp(automation,"1") || !route || !*route)return false;
+    const char *fortress_tail=!route_override && data_0209f2f8==7 && replay_fortress_sliding_crossed
+        ? std::getenv("SM64DS_PC_TEST_FORTRESS_TAIL_ROUTE") : nullptr;
+    if(fortress_tail && *fortress_tail) {
+        static bool started=false;
+        if(!started) {
+            started=true;
+            replay_course_route_waypoint=0;
+            replay_course_route_complete=false;
+        }
+        route=fortress_tail;
+    }
     if(!route_override && replay_wdw_hundred_coin_star())return true;
+    if(!route_override && replay_haunt_rear_boos(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && replay_big_boo_combat())return true;
     if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && pc_replay_crate_pound(static_cast<Player *>(data_0209f394[0])))return true;
@@ -2172,7 +2863,37 @@ static bool replay_course_route(const char *route_override=nullptr) {
     for(unsigned i=0;i<waypoint && segment;++i) {
         const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
     }
-    if(!segment){replay_course_route_complete=true;return false;}
+    if(!segment) {
+        replay_course_route_complete=true;
+        if(data_0209f2f8==46 && std::getenv("SM64DS_PC_TEST_KING_BOO_MAZE")) {
+            auto *p=static_cast<Player *>(data_0209f394[0]);
+            constexpr int route[][2]={{700,620},{900,0},{2040,0},{3500,0},{3500,-2000},
+                                      {3500,-3500},{5500,-3500},{7000,-3500},{7000,-5500}};
+            static size_t point=0;
+            int16_t sx=0,sy=0;
+            if(p && p->aliveState==1 && !p->mIsNoControl && !p->mIsControlDisabled &&
+               point<std::size(route)) {
+                const double dx=route[point][0]*4096.0-p->mPosX,dz=route[point][1]*4096.0-p->mPosZ;
+                const double distance=std::hypot(dx,dz)/4096.0;
+                if(distance<110) {
+                    std::fprintf(stderr,"[native King Boo maze] waypoint=%zu tick=%llu area=%d\n",
+                                 point,static_cast<unsigned long long>(ntr::rt_frame()),int(p->mAreaId));
+                    ++point;
+                } else {
+                    const double yaw=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    const double magnitude=std::clamp(distance*60.0,14000.0,23000.0);
+                    sx=static_cast<int16_t>(std::sin(yaw)*magnitude);
+                    sy=static_cast<int16_t>(-std::cos(yaw)*magnitude);
+                }
+            }
+            ntr::input_test_controls(true,0,sx,sy);
+            return true;
+        }
+        if(fortress_tail)return replay_fortress_summit_lift();
+        if(!route_override && replay_courtyard_boo(static_cast<Player *>(data_0209f394[0])))return true;
+        if(replay_fortress_buddy_lane())return true;
+        return !route_override && replay_fortress_sliding_crossing();
+    }
     int level=0,x=0,y=0,z=0,radius=0,consumed=0,jump=0,jump_consumed=0;
     bool has_y=false;
     // Height-aware route points are level:x:y:z:radius:jump. Keep the old
@@ -2197,11 +2918,27 @@ static bool replay_course_route(const char *route_override=nullptr) {
        (has_y && (y< -32768 || y>32767)))return false;
     auto *player=static_cast<Player *>(data_0209f394[0]);
     if(!player || player->aliveState!=1)return false;
+    if(level==12 && !route_override && replay_courtyard_boo(player))return true;
+    // The first staircase waypoint follows the main-hall approach in the
+    // campaign replay and waits for the original boss to release the stairs.
+    if(!route_override && level==12 && x==950 && y==200 && z==900 &&
+       replay_big_boo_combat(true))return true;
+    if(fortress_tail && has_y && y>=2500 && player->mPosY<2200*4096) {
+        // Let the original warp trigger while Yoshi stands at its source.
+        ntr::input_test_controls(true,0,0,0);
+        return true;
+    }
     if (data_0209f2f8 == 50 && player->mCharacter == 0 &&
         std::getenv("SM64DS_PC_TEST_MARIO_DOOR_RELOAD")) {
         // The character door brings Mario back out automatically. Stop
         // the test's approach input before it sends him back through it.
         ntr::input_test_controls(true, 0, 0, 0);
+        return true;
+    }
+    if(level==50 && data_0209f2f8==50 && x==1946 && z==-3625 && player->mCharacter==0 &&
+       std::getenv("SM64DS_PC_TEST_COURTYARD_BOO")) {
+        ++waypoint;
+        ntr::input_test_controls(true,0,0,0);
         return true;
     }
     const char *cannon_mode=std::getenv("SM64DS_PC_TEST_CANNON");
