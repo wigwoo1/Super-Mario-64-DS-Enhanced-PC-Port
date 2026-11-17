@@ -237,6 +237,54 @@ def main():
         raise ValueError('Fire Sea tilting-platform descriptor has incorrect native resource pointers')
     print('PASS: native Fire Sea tilting-platform profile, factory and resource descriptor')
 
+    lava_base, lava_rom = overlay(64)
+    expected = struct.unpack_from('<IHHIiiii', lava_rom, 0x0211bd08 - lava_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_FL_GURA'), 28))
+    if actual[0] != named('daObjFl_Gura_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Lava tilting-platform profile/factory differs from the original')
+    descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov064_0211adb0'), 12))
+    if descriptor != tuple(named(f'data_ov064_{address:08x}')
+                           for address in (0x0211c768, 0x0211c770, 0x0211bb8c)):
+        raise ValueError('Lava tilting-platform descriptor has incorrect native resource pointers')
+    surface = 0x0211bb8c - lava_base
+    if pe_bytes(args.exe, descriptor[2], 24) != lava_rom[surface:surface + 24]:
+        raise ValueError('Lava tilting-platform collision properties differ from the original')
+    print('PASS: native lava tilting-platform profile, resource descriptor and both collision surfaces')
+
+    ring_base, ring_rom = overlay(22)
+    expected = struct.unpack_from('<IHHIiiii', ring_rom, 0x02113cf4 - ring_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_lava_ring_profile'), 28))
+    if actual[0] != named('daObjFl_Ring_c_classInit') or actual[1:] != expected[1:]:
+        raise ValueError('Lava ring profile/factory differs from the original')
+    descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov022_02113cc8'), 12))
+    names = ('data_ov022_02114500', 'data_ov022_02114508', 'data_ov064_0211bbac')
+    if descriptor != tuple(named(name) for name in names):
+        raise ValueError('Lava ring resource descriptor has incorrect native pointers')
+    surface = 0x0211bbac - lava_base
+    if pe_bytes(args.exe, descriptor[2], 24) != lava_rom[surface:surface + 24]:
+        raise ValueError('Lava ring collision properties differ from the original')
+    print('PASS: native lava ring profile, resource descriptor and both collision surfaces')
+
+    for size, suffix, address in (
+        ('small', '', 0x021140ec), ('large', '_L', 0x02114108)
+    ):
+        expected = struct.unpack_from('<IHHIiiii', ring_rom, address - ring_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(f'pc_lava_float_{size}_profile'), 28))
+        if actual[0] != named(f'daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA{suffix}') or actual[1:] != expected[1:]:
+            raise ValueError(f'Lava {size} floating-platform profile/factory differs from the original')
+    floats = struct.unpack('<6I', pe_bytes(args.exe, named('data_ov022_021140d4'), 24))
+    for index, original in enumerate((0x021140d4, 0x021140e0)):
+        model, collision, clps = struct.unpack_from('<3I', ring_rom, original - ring_base)
+        names = (f'data_ov022_{model:08x}', f'data_ov022_{collision:08x}', f'data_ov064_{clps:08x}')
+        if floats[index * 3:index * 3 + 3] != tuple(named(name) for name in names):
+            raise ValueError('Lava floating-platform resource row has incorrect native pointers')
+        offset = clps - lava_base
+        count = struct.unpack_from('<H', lava_rom, offset + 6)[0]
+        span = 8 + count * 8
+        if pe_bytes(args.exe, named(names[2]), span) != lava_rom[offset:offset + span]:
+            raise ValueError('Lava floating-platform surfaces differ from the original')
+    print('PASS: both native lava floating-platform profiles, resource rows and collision surfaces')
+
     expected = struct.unpack_from('<IHHIiiii', gura_rom, 0x02112d98 - gura_base)
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_KM2_AMI_BOU'), 28))
     if actual[0] != named('daObjKm2_Ami_Bou_c_classInit') or actual[1:] != expected[1:]:
@@ -458,15 +506,21 @@ def main():
     print('PASS: native Fire Sea bobbing-platform profile, factory and resource descriptor')
 
     bully_base, bully_rom = overlay(64)
-    expected = struct.unpack_from('<IHHIiiii', bully_rom, 0x0211b818 - bully_base)
-    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_small_bully_profile'), 28))
-    if actual[0] != named('daDonketu_c_classInit') or actual[1:] != expected[1:]:
-        raise ValueError('Small Bully profile/factory differs from the original')
-    expected = struct.unpack_from('<13I', bully_rom, 0x0211b834 - bully_base)
-    actual = struct.unpack('<13I', pe_bytes(args.exe, named('pc_small_bully_config'), 52))
-    if actual != tuple(named(f'data_ov064_{address:08x}') for address in expected[:5]) + expected[5:]:
-        raise ValueError('Small Bully model/animation handles or behavior constants differ from the original')
-    print('PASS: native small Bully profile/factory and all five original resource handles')
+    for size, factory, profile, config in (
+        ('small', 'daDonketu_c_classInit', 0x0211b818, 0x0211b834),
+        ('big', 'daBDonketu_c_classInit', 0x0211b920, 0x0211b93c),
+    ):
+        expected = struct.unpack_from('<IHHIiiii', bully_rom, profile - bully_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(f'pc_{size}_bully_profile'), 28))
+        if actual[0] != named(factory) or actual[1:] != expected[1:]:
+            raise ValueError(f'{size} Bully profile/factory differs from the original')
+        expected = struct.unpack_from('<13I', bully_rom, config - bully_base)
+        actual = struct.unpack('<13I', pe_bytes(args.exe, named(f'pc_{size}_bully_config'), 52))
+        handles = tuple(named(f'data_ov064_{address:08x}') for address in expected[:5])
+        if actual != handles + expected[5:]:
+            raise ValueError(f'{size} Bully handles or behavior constants differ from the original')
+        print(f'PASS: native {size} Bully profile, factory and all five original resource handles')
+
 
     # The original common-model BSS cache occupies 0x0209cefc..0x0209d3ac:
     # 100 twelve-byte entries. A legacy 64-entry host buffer placed its count

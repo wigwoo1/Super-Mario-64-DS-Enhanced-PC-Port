@@ -6250,13 +6250,13 @@
     },
     {
       "path": "port/build-support/pc-game-link-requests.txt",
-      "sha256": "2083abde29d34f390997a020c0b15ade49e6f99e1676b63968a23ff48fee8acd",
-      "bytes": 458954
+      "sha256": "3484865375ee3b08c34fa7da4ade0986ff24dc5b4ef0cc1e5e8656f15f569f87",
+      "bytes": 459146
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "9ad4fba0cb3876cc8579c39f40a72953373c42bc7de79a6fdd31541b3d9d3e62",
-      "bytes": 254833
+      "sha256": "4c9dea5bf5d5624b429d6ac0f40db3331dde1308bb76cb226906de64c0a6e588",
+      "bytes": 254980
     },
     {
       "path": "port/build-support/README.md",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "658616e688e68a4d437bc73fdde7912bb4def9d32389b8c4a843613299ebb121",
-      "bytes": 66994
+      "sha256": "0f6c638e9e239dd183e27fea7e8f7786df88be843a929d0ffa279ae0b777362e",
+      "bytes": 68131
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "63a83844750ce2e797f95b99beaae743fc78a84cc140539dcdacc08458db284b",
-      "bytes": 697340
+      "sha256": "86f72c13a9eeb2df0815c0406ba657471146971e57923cbb793be060cce63669",
+      "bytes": 699068
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9115,8 +9115,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "b8e43098361db0c9a1583e01946995ea1b4ac1d5cec1bd11250706b789fcd7d8",
-      "bytes": 65145
+      "sha256": "06180ee5c7c3dcb523f20460f99cb6b1b56aad14504f3e9cd4e6b65f653e2731",
+      "bytes": 66552
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/bully_host.py",
-      "sha256": "474495ea0836470f8ca16e3daf0f121fd9b2dccbd6152974479e2415a0463c43",
-      "bytes": 4195
+      "sha256": "d11430aabb31c2cc0a3c9c880a97eccc595cc9dbb69e88cce39ba8c638ddbd5c",
+      "bytes": 6253
     },
     {
       "path": "port/tools/camera_host.py",
@@ -9275,8 +9275,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "d38def57ed3885085b710b8a3c602fddfa57a5c9f1e6b3ddb9393c208043d2a0",
-      "bytes": 94492
+      "sha256": "456d580e1407500ee7cfcfe204bd5ad2e9d7afe6379389a82b8db43604ca0368",
+      "bytes": 98196
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9790,8 +9790,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "c89a7c9371539f6fc4d0ec12f2d561cfbc94ea4251262641952be3617834ae57",
-      "bytes": 35134
+      "sha256": "b7de65f10c6a221636e33e7ef5aa0c756885641d876dcd58023373ecc5522faa",
+      "bytes": 40443
     },
     {
       "path": "port/tools/skeeter_host.py",

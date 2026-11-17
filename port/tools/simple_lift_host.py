@@ -329,6 +329,126 @@ extern "C" EmmYukaFiles data_ov052_021125a0 = {
                    ['mNodeIndex', 'mPathDir', 'mHorzSpeed'])
 
 
+def transform_lava_float_factory(text):
+    factory, = re.findall(r'\b(daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA(?:_L)?)\(void\)', text)
+    return ('#include "daObjFl_Ukiyuka_c.h"\n'
+            f'extern "C" void *{factory}() {{ return new daObjFl_Ukiyuka_c(); }}\n')
+
+
+def transform_lava_float(root, text):
+    level = (root / 'extracted/overlays/overlay_0022.bin').read_bytes()
+    assert struct.unpack_from('<6I', level, 0x021140d4 - 0x021111a0) == (
+        0x021145e0, 0x021145d0, 0x0211baec, 0x021145d8, 0x021145c8, 0x0211bacc
+    )
+    overlay = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()
+    for address, count in ((0x0211baec, 1), (0x0211bacc, 2)):
+        assert struct.unpack_from('<4sHH', overlay, address - 0x02115ee0) == (b'CLPS', 8, count)
+    text = lazy_handles(text, ('UkiyukaModelFilePtr', 'UkiyukaCollisionFilePtr'))
+    for kind, address in (('Model', '021145e0'), ('Collision', '021145d0'),
+                          ('Model', '021145d8'), ('Collision', '021145c8')):
+        anchor = f'Ukiyuka{kind}FilePtr data_ov022_{address}('
+        assert text.count(anchor) == 1
+        text = text.replace(anchor, 'extern "C" ' + anchor, 1)
+    anchor = 'int daObjFl_Ukiyuka_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, 'static void init_lava_float_handles();\n' + anchor +
+                        '\n    init_lava_float_handles();', 1)
+    text = text.replace('    func_ov002_020b6584(this,', '    return func_ov002_020b6584(this,', 1)
+    return text + """
+extern "C" CLPS_Block data_ov064_0211baec;
+extern "C" CLPS_Block data_ov064_0211bacc;
+extern "C" ResourceDescriptor data_ov022_021140d4[] = {
+    {&data_ov022_021145e0, &data_ov022_021145d0, &data_ov064_0211baec},
+    {&data_ov022_021145d8, &data_ov022_021145c8, &data_ov064_0211bacc}
+};
+
+static void init_lava_float_handles() {
+    static const bool ready = [] {
+        data_ov022_021145e0.Construct(0x614);
+        data_ov022_021145d0.Construct(0x615);
+        data_ov022_021145d8.Construct(0x610);
+        data_ov022_021145c8.Construct(0x611);
+        return true;
+    }();
+    (void)ready;
+}
+"""
+
+
+def transform_lava_ring(root, text):
+    level = (root / 'extracted/overlays/overlay_0022.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', level, 0x02113cf4 - base) == (
+        0x02111578, 71, 279, 2, 0, 0x780000, 0x2000000, 0
+    )
+    assert struct.unpack_from('<3I', level, 0x02113cc8 - base) == (
+        0x02114500, 0x02114508, 0x0211bbac
+    )
+    overlay = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()
+    assert struct.unpack_from('<4sHH', overlay, 0x0211bbac - 0x02115ee0) == (b'CLPS', 8, 2)
+    text = lazy_handles(text, ('RingModelFilePtr', 'RingCollisionFilePtr'))
+    anchor = 's32 daObjFl_Ring_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, """
+extern "C" unsigned char data_ov064_0211bbac[];
+extern "C" daObjFl_Ring_c_Files data_ov022_02113cc8 = {
+    &data_ov022_02114500, &data_ov022_02114508, data_ov064_0211bbac
+};
+
+""" + anchor + """
+    static const bool ready = [] {
+        data_ov022_02114500.Construct(1550);
+        data_ov022_02114508.Construct(1551);
+        return true;
+    }();
+    (void)ready;
+""", 1)
+    text = text.replace('    mModel.SetFile((BMD_File *)f, 1, -1);',
+                        '    if (!f || !mModel.SetFile((BMD_File *)f, 1, -1)) return 0;', 1)
+    text = text.replace('    void *k = dBgW_Kc::LoadFile(*data_ov022_02113cc8.mClsnFile);',
+                        '    void *k = dBgW_Kc::LoadFile(*data_ov022_02113cc8.mClsnFile);\n'
+                        '    if (!k) return 0;', 1)
+    anchor = '            s->mSpawner = this;'
+    assert text.count(anchor) == 1
+    return text.replace(anchor, '            if (!s) break;\n' + anchor, 1)
+
+
+def transform_lava_gura(root, text):
+    rom = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()
+    base = 0x02115ee0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x0211bd08 - base) == (
+        0x021180fc, 72, 280, 2, 0x80000, 0x1a0000, 0x2000000, 0
+    )
+    assert struct.unpack_from('<3I', rom, 0x0211adb0 - base) == (
+        0x0211c768, 0x0211c770, 0x0211bb8c
+    )
+    assert struct.unpack_from('<4sHH', rom, 0x0211bb8c - base) == (b'CLPS', 8, 2)
+    text = lazy_handles(text, ('FlGuraModelFilePtr', 'FlGuraCollisionFilePtr'))
+    for kind, address in (('FlGuraModelFilePtr', '0211c768'),
+                          ('FlGuraCollisionFilePtr', '0211c770')):
+        anchor = f'{kind} data_ov064_{address}('
+        assert text.count(anchor) == 1
+        text = text.replace(anchor, 'extern "C" ' + anchor, 1)
+    anchor = 's32 daObjFl_Gura_c::InitResources()\n{'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, 'extern "C" void pc_init_lava_gura_handles();\n' + anchor +
+                        '\n    pc_init_lava_gura_handles();', 1)
+    return text + """
+extern "C" CLPS_Block data_ov064_0211bb8c;
+extern "C" ResourceDescriptor data_ov064_0211adb0 = {
+    &data_ov064_0211c768, &data_ov064_0211c770, &data_ov064_0211bb8c
+};
+extern "C" void pc_init_lava_gura_handles() {
+    static bool ready = false;
+    if (!ready) {
+        data_ov064_0211c768.Construct(1523);
+        data_ov064_0211c770.Construct(1524);
+        ready = true;
+    }
+}
+"""
+
+
 def transform_firesea_gura(root, text):
     rom = (root / 'extracted/overlays/overlay_0045.bin').read_bytes()
     base = 0x021111a0

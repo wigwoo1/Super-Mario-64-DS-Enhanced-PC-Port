@@ -3846,6 +3846,27 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        const bool north_ring_exit = x == 0 && y == 300 && z == -2000;
+        const bool east_ring_exit = x == 2050 && y == 150 && z == -300;
+        if (level == 14 && has_y && (north_ring_exit || east_ring_exit) &&
+            std::getenv("SM64DS_PC_TEST_LAVA_RING_EXIT")) {
+            static bool aligned = false;
+            if (!aligned) {
+                const auto *floor = player->mMeshClsn.IsOnGround() ?
+                    static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+                const bool in_sector = east_ring_exit ?
+                    player->mPosX > 500 * 4096 && player->mPosZ < -1000 * 4096 :
+                    player->mPosZ < -990 * 4096 && player->mPosX > -920 * 4096 && player->mPosX < 0;
+                aligned = floor && floor->colliderIdx < 24 && floor->owner &&
+                    floor->owner->actorID == 71 && in_sector;
+                if (!aligned) {
+                    ntr::input_test_controls(true, 0, 0, 0);
+                    return true;
+                }
+                std::fprintf(stderr, "[native lava ring exit] aligned tick=%llu\n",
+                             static_cast<unsigned long long>(tick));
+            }
+        }
         // Input-only Whomp replay. Evade the fall, then use the flat
         // interval to climb back onto the ledge and ground-pound its back.
         if(level==39 && x==-4240 && z==-775 &&
@@ -5602,7 +5623,9 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const bool cage_backflip=level==21 && x==975 && y==600 && (z==-1510 || z==-1620) &&
             std::getenv("SM64DS_PC_TEST_WDW_HEAVE_HO_ASCENT");
         const bool castle_backflip=level==5 && x==210 && y==3100 && z==550 && jump==2;
-        if(castle_backflip || (level==21 &&
+        const bool maze_backflip=level==13 && player->mAreaId==2 &&
+            x==3250 && y==-400 && z==-6200 && jump==2;
+        if(maze_backflip || castle_backflip || (level==21 &&
            (cage_backflip || (x==-2200 && z==-2160) || (x==1110 && z==800) || (x==-3540 && z==4000) || (x==890 && z==3370) || (x==625 && (z==3370 || z==3625))) &&
            std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP"))) {
             static unsigned launched_waypoint=~0u;
@@ -5631,11 +5654,11 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 if(!launched) {
                     launched_waypoint=waypoint;
                     std::fprintf(stderr,"[native %s] tick=%llu heading=%d\n",
-                        castle_backflip ? "castle upper landing backflip" : "WDW walkway flip",
+                        maze_backflip ? "HMC exit backflip" : castle_backflip ? "castle upper landing backflip" : "WDW walkway flip",
                         static_cast<unsigned long long>(tick),int(player->mPrevAngleY));
                 }
                 const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-                const int magnitude=horizontal>75*4096.0 ? 14000 : 0;
+                const int magnitude=horizontal>(maze_backflip ? 30 : 75)*4096.0 ? 14000 : 0;
                 ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*magnitude),
                                          static_cast<int16_t>(-std::cos(angle)*magnitude));
                 return true;
@@ -6039,6 +6062,11 @@ static bool replay_course_route(const char *route_override=nullptr) {
                     std::abs(player->mPosY+2200*4096)<15*4096 &&
                     player->mHorzSpeed>0xb000 &&
                     std::abs(static_cast<int16_t>(player->mAngleY-0xc000))<2200;
+            if (level == 14 && x == 0 && y == 300 && z == -3700 &&
+                std::getenv("SM64DS_PC_TEST_LAVA_RING_EXIT")) {
+                runway = player->mPosZ < -2065 * 4096 && player->mPosZ > -2130 * 4096 &&
+                    player->mMeshClsn.IsOnGround() && player->mHorzSpeed >= 0xe000;
+            }
             const bool may_launch=(wdw_gap || downtown_roofs) ? !route3_launch : tick>=next_jump;
             if(runway && may_launch && !player->mIsAirborne && !std::strcmp(state,"St_Walk_Main")) {
                 route3_launch=tick;next_jump=tick+100;

@@ -558,6 +558,19 @@ static PcNativeActorProfile pc_dark_world_extending_profile = {(void *)&daObjSim
 extern "C" void *daLinelift2_c_classInit_KM2_SUSUMU();
 extern "C" void *daLinelift2_c_classInit_KM3_LIFT();
 extern "C" unsigned char g_profile_KM2_GURA[];
+extern "C" unsigned char g_profile_FL_GURA[];
+extern "C" void *daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA();
+extern "C" void *daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L();
+static PcNativeActorProfile pc_lava_float_small_profile = {
+    (void *)&daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA, 75, 283, 2, 0, 0x650000, 0x2000000, 0
+};
+static PcNativeActorProfile pc_lava_float_large_profile = {
+    (void *)&daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L, 76, 284, 2, 0, 0x1000000, 0x2000000, 0
+};
+extern "C" void *daObjFl_Ring_c_classInit();
+static PcNativeActorProfile pc_lava_ring_profile = {
+    (void *)&daObjFl_Ring_c_classInit, 71, 279, 2, 0, 0x780000, 0x2000000, 0
+};
 extern "C" void *daObjEmmYuka_c_classInit();
 static PcNativeActorProfile pc_emm_yuka_profile = {
     (void *)&daObjEmmYuka_c_classInit, 175, 17, 2, 0, 0x150000, 0x2000000, 0
@@ -595,6 +608,10 @@ extern "C" unsigned char g_profile_KM2_UKISHIMA[];
 extern "C" void *daDonketu_c_classInit();
 static PcNativeActorProfile pc_small_bully_profile = {
     (void *)&daDonketu_c_classInit, 215, 59, 0x10000006, 0x64000, 0x64000, 0x1000000, 0x1000000
+};
+extern "C" void *daBDonketu_c_classInit();
+static PcNativeActorProfile pc_big_bully_profile = {
+    (void *)&daBDonketu_c_classInit, 216, 60, 0x10000006, 0xc8000, 0xc8000, 0x1000000, 0x1000000
 };
 static PcNativeActorProfile pc_firesea_path_lift_profile = {
     (void *)&daLinelift2_c_classInit_KM2_SUSUMU,144,215,2,0x100000,0x300000,0x1000000,0
@@ -873,7 +890,11 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_buddy_init_resources();pc_shutter_init_resources();
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
+    data_020a4bb8_storage[71] = &pc_lava_ring_profile;
+    data_020a4bb8_storage[72] = g_profile_FL_GURA;
     data_020a4bb8_storage[73] = g_profile_FL_LONDON;
+    data_020a4bb8_storage[75] = &pc_lava_float_small_profile;
+    data_020a4bb8_storage[76] = &pc_lava_float_large_profile;
     data_020a4bb8_storage[15] = &pc_block_profile;
     data_020a4bb8_storage[16] = &pc_heavy_block_profile;
     data_020a4bb8_storage[17] = &pc_big_block_profile;
@@ -981,6 +1002,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[238] = &pc_heave_ho_profile;
     data_020a4bb8_storage[145] = g_profile_KM2_UKISHIMA;
     data_020a4bb8_storage[215] = &pc_small_bully_profile;
+    data_020a4bb8_storage[216] = &pc_big_bully_profile;
     data_020a4bb8_storage[144] = &pc_firesea_path_lift_profile;
     data_020a4bb8_storage[157] = &pc_sky_path_lift_profile;
     data_020a4bb8_storage[298] = &pc_warp_pipe_profile;

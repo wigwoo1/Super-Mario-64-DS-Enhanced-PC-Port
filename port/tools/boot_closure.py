@@ -35,7 +35,9 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjSeesaw_c_classInit_RC_SEESAW",
                  "daObjKm1_Dorifu_c_classInit", "daObjKm3_Dorifu_c_classInit",
                  "daLinelift2_c_classInit_KM2_SUSUMU", "daLinelift2_c_classInit_KM3_LIFT",
-                 "daObjKm2_Gura_c_classInit",
+                 "daObjKm2_Gura_c_classInit", "daObjFl_Gura_c_classInit", "daObjFl_Ring_c_classInit",
+                 "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA", "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L",
+                 "_ZN17daObjFl_Ukiyuka_c13InitResourcesEv",
                  "daObjKm2_Ami_Bou_c_classInit",
                  "daObjKm2_Agaru_c_classInit", "daObjKm2_Nobiru_c_classInit",
                  "daObjSimpleLift_c_classInit_KM3_DERU01", "daObjSimpleLift_c_classInit_KM3_DERU02",
@@ -45,7 +47,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daBrq_c_classInit", "daPopoi_c_classInit", "daMenbo_c_classInit", "daBtn_c_classInit_BATAN", "daHolhei_c_classInit", "daKrpa_c_classInit", "daKpFr_c_classInit", "_ZN6Player12GetHurtStateEv",
                  "_ZN6Player5ShockEj",
                  "daObjKm2_Ukishima_c_classInit",
-                 "daDonketu_c_classInit", "_ZN7daOts_c19InitResourcesCommonEv", "_ZN7daOts_c14BehaviorCommonEv",
+                 "daDonketu_c_classInit", "daBDonketu_c_classInit", "_ZN7daOts_c19InitResourcesCommonEv", "_ZN7daOts_c14BehaviorCommonEv",
                  "daBar_c_classInit",
                  "daObjWcObj01_c_classInit", "_ZN17daObjFloatBoard_c19func_ov002_020b5e58EP27daObjFloatBoard_c_Resources", "_ZN17daObjFloatBoard_c8BehaviorEv", "daObjWcObj06_c_classInit", "daObjWc_Obj02_c_classInit", "daObjWc_Obj03_c_classInit", "daObjWc_Mizu_c_classInit", "daObjSimpleLift_c_classInit_KM1_DERU", "daObjSimpleLift_c_classInit_KM2_RIFUT01", "daObjSimpleBg_c_classInit_DOKAN", "daObjWlSubmarine_c_classInit", "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
                  "daObjBSwdoor_c_classInit",
@@ -694,6 +696,23 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import simple_lift_host
                     transformed=simple_lift_host.transform_emm_yuka(transformed)
                     rewrites+=1
+                if path.name in ('d_a_obj_fl_ukiyuka_fl_ukiyuka.c', 'd_a_obj_fl_ukiyuka_fl_ukiyuka_l.c'):
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_lava_float_factory(transformed)
+                    cpp_marker=True
+                    rewrites+=1
+                if path.name == 'daObjFl_Ukiyuka_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_lava_float(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjFl_Ring_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_lava_ring(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_fl_gura.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_lava_gura(root,transformed)
+                    rewrites+=1
                 if path.name == 'd_a_obj_km2_gura.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform_firesea_gura(root,transformed)
@@ -755,6 +774,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daDonketu_c.cpp':
                     import bully_host
                     transformed=bully_host.transform_small(root,transformed)
+                    rewrites+=1
+                if path.name == 'daBDonketu_c.cpp':
+                    import bully_host
+                    transformed=bully_host.transform_big(root,transformed)
                     rewrites+=1
                 if path.name == 'daOts_c.cpp':
                     import bully_host
