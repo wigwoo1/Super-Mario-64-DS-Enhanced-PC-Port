@@ -2976,6 +2976,112 @@ static bool replay_fortress_sliding_crossing(bool northbound=true) {
                     static_cast<int16_t>(-std::cos(angle)*26000));
 }
 
+// The island route starts only after the original cap changes the active body.
+static bool replay_dorrie_island(Player *player, uint64_t tick) {
+    if (player->param1!=2 || player->mIsNoControl || player->mIsControlDisabled) return false;
+    auto *rock=dActor_c::FindWithActorID(221,nullptr);
+    while (rock && (rock->mAreaId!=5 || rock->param1!=0x104 || rock->aliveState!=1))
+        rock=dActor_c::FindWithActorID(221,rock);
+    const dActor_c *target=rock;
+    if (!target) {
+        for (auto *star=dActor_c::FindWithActorID(178,nullptr);star;star=dActor_c::FindWithActorID(178,star))
+            if (star->mAreaId==5 && (star->param1&0xf)==1 && star->aliveState==1) {target=star;break;}
+    }
+    if (!target) return false;
+
+    const double dx=double(target->mPosX)-player->mPosX;
+    const double dz=double(target->mPosZ)-player->mPosZ;
+    const double distance=std::hypot(dx,dz)/4096.0;
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+    const bool riding=floor && floor->colliderIdx<24 && floor->owner && floor->owner->actorID==168;
+    static uint64_t launch=0, on_head=0;
+    if (!on_head) {
+        // Continue the ordinary climb after the cap pickup until Dorrie's
+        // original lift animation has put Wario on her elevated head.
+        if (!riding || player->mPosY<=-4250*4096) return false;
+        on_head=tick;
+        std::fprintf(stderr,"[native Dorrie island] head ready tick=%llu\n",
+            static_cast<unsigned long long>(tick));
+    }
+    if (riding && !launch && (distance<2100 || tick-on_head>900) && player->mPosY>-4250*4096) {
+        launch=tick;
+        std::fprintf(stderr,"[native Dorrie island] launch tick=%llu distance=%.0f height=%d\n",
+            static_cast<unsigned long long>(tick),distance,player->mPosY/4096);
+    }
+    if (tick%120==0) {
+        std::fprintf(stderr,"[native Dorrie island] tick=%llu riding=%u distance=%.0f height=%d\n",
+            static_cast<unsigned long long>(tick),unsigned(riding),distance,player->mPosY/4096);
+    }
+    const bool island=grounded && !riding && player->mPosY>=-4610*4096 && distance<1150;
+    if (launch && !riding && !island && !std::strcmp(pc_player_state_name(player),"St_Swim_Main")) {
+        // Follow the same button-driven yaw and upward stroke as a manual swim.
+        const auto yaw=static_cast<int16_t>(std::atan2(dx,dz)*65536.0/6.283185307179586);
+        const auto delta=static_cast<int16_t>(yaw-player->mAngleY);
+        const int steer=int(delta)-int(player->mAngleYSpeed)*6;
+        uint16_t buttons=(steer>768 ? 0x20 : steer< -768 ? 0x10 : 0)|0x80;
+        if (std::abs(int(delta))<0x2000 && tick%24<12) buttons|=2;
+        ntr::input_test_controls(true,buttons,0,0);
+        return true;
+    }
+    const bool jumping=launch && tick-launch<42;
+    const bool attack=island && rock && distance<315;
+    const bool underneath_star=!rock && distance<65;
+    const bool jump_for_star=underneath_star && target->mPosY-player->mPosY>55*4096 && tick%70<36;
+    const auto desired_yaw=static_cast<int16_t>(std::atan2(dx,dz)*65536.0/6.283185307179586);
+    const bool turn_on_head=!launch && riding && (tick-on_head)%90<6 &&
+        std::abs(int(static_cast<int16_t>(desired_yaw-player->mAngleY)))>0x1500;
+    const int magnitude=jumping ? 32767 : turn_on_head ? 10000 :
+                        attack || underneath_star || (!launch && riding) ? 0 : distance<90 ? 9000 : 17000;
+    ntr::input_test_controls(true,jumping || jump_for_star ? 2 : attack && tick%36<4 ? 1 : 0,
+        static_cast<int16_t>(std::sin(angle)*magnitude),static_cast<int16_t>(-std::cos(angle)*magnitude));
+    return true;
+}
+
+// Opt-in HMC replay. Observe original collision and move through normal input.
+static bool replay_dorrie_cap(Player *player, uint64_t tick) {
+    if (!std::getenv("SM64DS_PC_TEST_DORRIE_CAP") || data_0209f2f8!=13 ||
+        player->mAreaId!=5 || player->mPosZ<0) return false;
+    if (replay_dorrie_island(player,tick)) return true;
+    const auto *cap=dActor_c::FindWithActorID(169,nullptr);
+    if (!cap || cap->aliveState!=1 || cap->mAreaId!=5) return false;
+    static uint64_t pound_started=0;
+    if (pound_started && tick-pound_started<50) {
+        const auto elapsed=tick-pound_started;
+        const uint16_t buttons=elapsed<12 ? 2 : elapsed<32 && player->mIsAirborne ? 0x100 : 0;
+        ntr::input_test_controls(true,buttons,0,0);
+        return true;
+    }
+    const bool grounded=player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const auto *floor=grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+    const auto *dorrie=floor && floor->colliderIdx<24 ? floor->owner : nullptr;
+    if (!dorrie || dorrie->actorID!=168) return false;
+
+    const bool head_high=cap->mPosY-player->mPosY>240*4096;
+    const auto *target=head_high ? dorrie : cap;
+    const double dx=double(target->mPosX)-player->mPosX;
+    const double dz=double(target->mPosZ)-player->mPosZ;
+    const double distance=std::hypot(dx,dz)/4096.0;
+    if (head_high && distance<45 && !pound_started) {
+        pound_started=tick;
+        std::fprintf(stderr,"[native Dorrie cap replay] ground pound begins tick=%llu\n",
+            static_cast<unsigned long long>(tick));
+        ntr::input_test_controls(true,2,0,0);
+        return true;
+    }
+    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+    const int magnitude=distance<35 ? 0 : distance<170 ? 10000 : 17000;
+    if (tick%30==0) {
+        std::fprintf(stderr,"[native Dorrie cap replay] tick=%llu dorrie=%u cap=%u head_high=%u distance=%.0f height=%d\n",
+            static_cast<unsigned long long>(tick),unsigned(dorrie->uniqueID),unsigned(cap->uniqueID),
+            unsigned(head_high),distance,(cap->mPosY-player->mPosY)/4096);
+    }
+    ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*magnitude),
+                             static_cast<int16_t>(-std::cos(angle)*magnitude));
+    return true;
+}
+
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -5642,6 +5748,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 return true;
             }
         }
+        if(!route_override && replay_dorrie_cap(player,tick))return true;
         if(has_y && swim_route && !std::strcmp(swim_route,"1") &&
             !std::strcmp(state,"St_Swim_Main")) {
             // For Mission 7, advance a Silver Star waypoint once its

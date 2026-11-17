@@ -604,6 +604,18 @@ static PcNativeActorProfile pc_sky_path_lift_profile = {
 };
 extern "C" void *daObjSimpleBg_c_classInit_DOKAN();
 extern "C" void *daObjSimpleBg_c_classInit_BK_TOWER();
+extern "C" void *daGrock_c_classInit();
+static PcNativeActorProfile pc_hmc_rock_profile = {
+    (void *)&daGrock_c_classInit,221,70,2,0,1228800,24969216,24969216
+};
+extern "C" void *daDossy_c_classInit();
+extern "C" void *daDossyCap_c_classInit();
+static PcNativeActorProfile pc_dorrie_profile = {
+    (void *)&daDossy_c_classInit,168,309,2,819200,4915200,32768000,16777216
+};
+static PcNativeActorProfile pc_dorrie_cap_profile = {
+    (void *)&daDossyCap_c_classInit,169,310,2,0,1228800,32768000,16777216
+};
 extern "C" void *daObjBk_Ukisima_c_classInit();
 static PcNativeActorProfile pc_fortress_floating_island_profile = {
     (void *)&daObjBk_Ukisima_c_classInit,50,203,2,0x3e8000,0x7d0000,0x2000000,0xcd0000
@@ -955,6 +967,9 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[190] = &pc_chuckya_profile;
     data_020a4bb8_storage[164] = &pc_whomp_profile;
     data_020a4bb8_storage[165] = &pc_king_whomp_profile;
+    data_020a4bb8_storage[221] = &pc_hmc_rock_profile;
+    data_020a4bb8_storage[168] = &pc_dorrie_profile;
+    data_020a4bb8_storage[169] = &pc_dorrie_cap_profile;
     data_020a4bb8_storage[55] = &pc_fortress_sliding_profile;
     data_020a4bb8_storage[49] = &pc_fortress_tower_profile;
     data_020a4bb8_storage[50] = &pc_fortress_floating_island_profile;
