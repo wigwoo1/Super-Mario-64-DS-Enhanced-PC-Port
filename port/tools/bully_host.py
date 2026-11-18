@@ -22,6 +22,13 @@ def transform_small(root, text):
     text = text.replace(anchor, 'extern "C" int pc_small_bully_resources();\n' + anchor, 1)
     text = text.replace('mFileTable = (int)&data_ov064_0211b834;\n    InitResourcesCommon();',
                         'mFileTable = pc_small_bully_resources();\n    return InitResourcesCommon();', 1)
+    counter = 'bigBully->mNumBulliesKilled++;'
+    assert text.count(counter) == 2
+    text = text.replace(counter, counter + r'''
+                if (std::getenv("SM64DS_PC_BULLY_TRACE"))
+                    std::fprintf(stderr, "[native Big Bully prerequisite] tick=%llu boss=%u child=%u count=%u\n",
+                                 static_cast<unsigned long long>(ntr::rt_frame()), unsigned(bigBully->uniqueID),
+                                 unsigned(uniqueID), unsigned(bigBully->mNumBulliesKilled));''')
     assert text.count('if (coin) {') == 2
     text = text.replace('if (coin) {', r'''if (coin) {
                 if (std::getenv("SM64DS_PC_BULLY_TRACE"))

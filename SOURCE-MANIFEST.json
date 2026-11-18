@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/bully_host.py",
-      "sha256": "d11430aabb31c2cc0a3c9c880a97eccc595cc9dbb69e88cce39ba8c638ddbd5c",
-      "bytes": 6253
+      "sha256": "27889ab5ffa5a6e38559a4fb87da2bd1cab502a18728cc777a776b7e4fc0a8d1",
+      "bytes": 6766
     },
     {
       "path": "port/tools/camera_host.py",
