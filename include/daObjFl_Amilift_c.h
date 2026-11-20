@@ -34,7 +34,12 @@ struct daObjFl_Amilift_c : dBgActor_c {
     u8  mRiderOn;         /* 0x33a -- set by func_ov064_02117fb4 when the player touches it; cleared each frame */
     u8  mState;           /* 0x33b */
     u8  mAutoRun;         /* 0x33c -- param1 bit 8: 1 keeps walking, 0 waits for the player */
+#ifdef SM64DS_PLATFORM_PC
+    bool mHasLiftResources;
+    u8  pad_33e[2];
+#else
     u8  pad_33d[3];
+#endif
     s32 mNodeCount;       /* 0x340 */
     s32 mNodeIndex;       /* 0x344 -- the node it is walking toward */
     s32 mFromX;           /* 0x348 -- the node it last reached */

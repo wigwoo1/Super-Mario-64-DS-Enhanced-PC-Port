@@ -11,6 +11,7 @@
 #include "daTrs_c.h"
 #include "dBgPi.h"
 #include "dBgCh_Gnd.h"
+#include "daObjFm_Battan_c.h"
 #include "daKrb_c.h"
 #include "daKuriKing_c.h"
 #include "daBombking_c.h"
@@ -18,6 +19,7 @@
 #include "daDonketu_c.h"
 #include "daObjFl_Ukiyuka_c.h"
 #include "daObjFl_Puzzle_c.h"
+#include "daObj_volcanoCannon_c.h"
 #include "daKpa_c.h"
 #include "daKpaTail_c.h"
 #include "daKirai_c.h"
@@ -246,6 +248,7 @@ extern "C" bool pc_ironball_consume_player_hurt() {
     return pending;
 }
 static bool replay_lava_bridge_reentered;
+static uint64_t replay_lava_mesh_clock_shift;
 #include "hal/ironball_replay.h"
 #include "hal/ironball_encounter_state.h"
 static bool replay_course_route_complete;
@@ -599,7 +602,7 @@ static uint16_t replay_route_window_buttons(unsigned waypoint,bool settling=fals
         const bool active=used>0 && (!s[used] || s[used]==',') && first<last && mask<=0xfff &&
             include_settle<=1 && period>0 && period<=600 && hold>0 && hold<period &&
             waypoint>=first && waypoint<last;
-        uint64_t phase=ntr::rt_frame();
+        uint64_t phase=ntr::rt_frame()-replay_lava_mesh_clock_shift;
         const bool lava_combat_window=active && first>=194 && first<=196 &&
             data_0209f2f8==14 && std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS");
         if(phase_offset>=0 || lava_combat_window) {
@@ -3262,8 +3265,11 @@ static bool replay_big_bully_combat() {
 // Platform phase continues to affect the real player and collider.
 static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
     const bool arena = waypoint == 193;
-    if (data_0209f2f8 != 14 || (!arena && (waypoint < 160 || waypoint > 167)) ||
-        !std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS"))
+    const bool east_mesh_takeoff = (waypoint == 167 || waypoint == 172) &&
+        std::getenv("SM64DS_PC_TEST_LAVA_MESH_LIFT_ROUTE");
+    const bool guarded_island = east_mesh_takeoff && waypoint == 172;
+    if (data_0209f2f8 != 14 || (!arena && !guarded_island && (waypoint < 160 || waypoint > 167)) ||
+        (!east_mesh_takeoff && !std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS")))
         return 0;
     struct Takeoff {
         unsigned actor;
@@ -3280,6 +3286,7 @@ static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
         {72, true, 2180, 1, 60}, {76, true, 3045, 1, 60},
         {76, false, 1120, -1, 60},
         {75, false, -3960, -1, 70}, {0, false, -4760, -1, 55, 295},
+        {0, true, 5950, 1, 52, 295},
     };
     static unsigned jumped_waypoint = 0;
     static unsigned last_takeoff = 0;
@@ -3291,11 +3298,12 @@ static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
     if (already_jumped && (!arena || last_takeoff == 9))
         return 0;
 
-    const unsigned index = arena ? (already_jumped ? 9 : 8) : waypoint - 160;
+    const unsigned index = guarded_island ? 10 : arena ? (already_jumped ? 9 : 8) : waypoint - 160;
     const auto &takeoff = takeoffs[index];
     const int coordinate = takeoff.use_x ? int(player->mPosX) : int(player->mPosZ);
     if (!player->mMeshClsn.IsOnGround() || player->mIsAirborne ||
         std::strcmp(pc_player_state_name(player), "St_Walk_Main") ||
+        (guarded_island && player->mHorzSpeed < 16 * 4096) ||
         takeoff.direction * (coordinate - takeoff.coordinate * 4096) < 0)
         return 0;
     const auto *floor = static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult());
@@ -3309,10 +3317,90 @@ static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
     jumped_waypoint = waypoint;
     last_takeoff = index;
     hold_until = tick + takeoff.hold;
-    std::fprintf(stderr, "[native lava platform jump] tick=%llu waypoint=%u actor=%u pos=%d,%d,%d\n",
+    std::fprintf(stderr, "[native lava platform jump] tick=%llu waypoint=%u actor=%u pos=%d,%d,%d speed=%d\n",
                  static_cast<unsigned long long>(tick), waypoint, takeoff.actor,
-                 int(player->mPosX), int(player->mPosY), int(player->mPosZ));
+                 int(player->mPosX), int(player->mPosY), int(player->mPosZ), int(player->mHorzSpeed));
     return 2;
+}
+
+static void replay_volcano_slab_contact(Player *player)
+{
+    enum class Phase { Approach, WaitForFlat, Jump, Dismount, Done };
+    static Phase phase = Phase::Approach;
+    static uint64_t jump_at = 0, departure_at = 0;
+    static double takeoff_z = 0;
+    static bool brake = false;
+    auto *slab = static_cast<daObjFm_Battan_c *>(dActor_c::FindWithActorID(84, nullptr));
+    const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const auto *floor = grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+    const bool on_slab = slab && floor && floor->owner == slab;
+    const double px = player->mPosX / 4096.0;
+    const double py = player->mPosY / 4096.0;
+    const double pz = player->mPosZ / 4096.0;
+    const auto tick = ntr::rt_frame();
+    const bool bank = grounded && !on_slab && py >= 1165 && py <= 1185;
+    const bool waiting = !std::strcmp(pc_player_state_name(player), "St_Wait_Main");
+    uint16_t keys = 0;
+    int16_t sx = 0, sy = 0;
+    auto steer = [&](double x, double z, int magnitude) {
+        constexpr double turn = 6.283185307179586 / 65536.0;
+        const double heading = std::atan2(x - px, z - pz) - GetAngleToCamera(0) * turn;
+        sx = static_cast<int16_t>(std::sin(heading) * magnitude);
+        sy = static_cast<int16_t>(-std::cos(heading) * magnitude);
+    };
+    if (phase == Phase::Approach && bank) {
+        if (px >= -140 && px <= 40 && pz >= 2318 && pz <= 2364) {
+            if (waiting && player->mHorzSpeed == 0) phase = Phase::WaitForFlat;
+        } else {
+            // The flat slab's exposed face slopes down toward this end.
+            steer(-90, 2348, pz > 2430 ? 17000 : 10500);
+        }
+    }
+    if (phase == Phase::WaitForFlat && slab && bank && waiting && slab->mState == 2 &&
+        slab->mAngleX == -0x4000 && slab->mStateTimer <= 10) {
+        Vector3 origin;
+        origin.x = -295 * 4096;
+        origin.y = 2100 * 4096;
+        origin.z = player->mPosZ;
+        dBgCh_Gnd ray;
+        ray.SetObjAndPos(origin, nullptr);
+        const bool hit = ray.DetectClsn() != 0;
+        const auto *surface = static_cast<const dBgPi *>(&ray);
+        std::fprintf(stderr, "[native volcano slab contact] jump tick=%llu x=%.1f z=%.1f ray_height=%.1f ray_owner=%u timer=%u\n",
+            static_cast<unsigned long long>(tick), px, pz, hit ? ray.clsnY / 4096.0 : 0.0,
+            hit && surface->owner ? surface->owner->actorID : 0, unsigned(slab->mStateTimer));
+        jump_at = tick;
+        takeoff_z = pz;
+        phase = Phase::Jump;
+    }
+    if (phase == Phase::Jump) {
+        if (on_slab) {
+            phase = Phase::Dismount;
+            departure_at = tick;
+            std::fprintf(stderr, "[native volcano slab contact] supported tick=%llu uid=%u x=%.1f y=%.1f z=%.1f state=%u\n",
+                static_cast<unsigned long long>(tick), slab->uniqueID, px, py, pz, unsigned(slab->mState));
+        } else if (tick - jump_at < 85) {
+            keys = tick - jump_at < 40 ? 2 : 0;
+            // A neutral press from Wait starts the native jump before steering.
+            if (player->mIsAirborne) {
+                if (!brake && px <= -155) brake = true;
+                if (!brake) steer(-330, takeoff_z, 28500);
+                else if (px < -175 || player->mHorzSpeed > 2 * 4096)
+                    steer(35, takeoff_z, 32767);
+            }
+        }
+    }
+    if (phase == Phase::Dismount) {
+        if (bank && px >= -140) {
+            phase = Phase::Done;
+            std::fprintf(stderr, "[native volcano slab contact] returned tick=%llu x=%.1f y=%.1f z=%.1f\n",
+                static_cast<unsigned long long>(tick), px, py, pz);
+        } else {
+            if (tick - departure_at < 9) keys = 2;
+            if (px < -70) steer(20, 2400, 32767);
+        }
+    }
+    ntr::input_test_controls(true, keys, sx, sy);
 }
 
 static bool replay_course_route(const char *route_override=nullptr) {
@@ -4050,8 +4138,11 @@ static bool replay_course_route(const char *route_override=nullptr) {
         std::sscanf(continuous_start,"%u",&continuous_from)==1 && waypoint>=continuous_from &&
         (!std::getenv("SM64DS_PC_TEST_WDW_BLUE_SWITCH") || waypoint<continuous_from+6);
     const bool wdw_cage_steps=wdw_timed_route && player->mCharacter==1 && x>=1600 && y<0;
+    // Keep moving past the two Bullies after clearing the island lip.
+    const bool lava_guarded_island=level==14 && (waypoint==172 || waypoint==173) &&
+        std::getenv("SM64DS_PC_TEST_LAVA_MESH_LIFT_ROUTE");
     const bool precise=route_override || (settle && !std::strcmp(settle,"1") && !slide_course && !evading &&
-        (!wdw_timed_route || wdw_cage_steps) &&
+        (!wdw_timed_route || wdw_cage_steps) && !lava_guarded_island &&
         !(replay_rainbow_course_ready && level==28));
     const char *uphill_push=std::getenv("SM64DS_PC_TEST_ROUTE_UPHILL_PUSH");
     const double approach_dx=x*4096.0-player->mPosX;
@@ -4069,6 +4160,66 @@ static bool replay_course_route(const char *route_override=nullptr) {
         (z==-2025 || z==-3650);
     if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
+    }
+    // This QA waypoint waits for the eastern lift to reach its far bank.
+    // Use the native floor hit to identify the lift, then send a normal jump.
+    if(level==14 && has_y && x==6675 && y==150 && z==6920 &&
+       std::getenv("SM64DS_PC_TEST_LAVA_MESH_LIFT_ROUTE")) {
+        const auto tick=ntr::rt_frame();
+        const auto *hit=player->mMeshClsn.IsOnGround() ?
+            static_cast<dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+        static bool lift_launched[2]{};
+        bool &launched=lift_launched[replay_lava_bridge_reentered];
+        if(!launched && hit && hit->colliderIdx<24 && hit->owner && hit->owner->actorID==69 &&
+           (hit->owner->param1&15)==1) {
+            if(hit->owner->mPosZ<6400*4096) {
+                ntr::input_test_controls(true,0,0,0);return true;
+            }
+            if(approach_horizontal<=490*4096.0) {
+                launched=true;
+                jump_until=tick+52;
+                next_jump=tick+75;
+                std::fprintf(stderr,"[native lava mesh lift replay] exit jump tick=%llu lift=%u z=%d\n",
+                    static_cast<unsigned long long>(tick),hit->owner->uniqueID,hit->owner->mPosZ);
+            }
+        }
+    }
+    // Walk down the rolling log while balancing across its live centerline.
+    // Run to the western edge for a normal jump when the raised bank is in reach.
+    if (level==14 && has_y && x==4120 && y==550 && z==4770 &&
+        std::getenv("SM64DS_PC_TEST_LAVA_MESH_LIFT_ROUTE")) {
+        static bool log_run_up[2]{}, log_launched[2]{};
+        bool &run_up=log_run_up[replay_lava_bridge_reentered];
+        bool &launched=log_launched[replay_lava_bridge_reentered];
+        const auto *floor=player->mMeshClsn.IsOnGround() ?
+            static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+        const auto *log=floor && floor->colliderIdx<24 ? floor->owner : nullptr;
+        if (!launched && log && log->actorID==70 && !player->mIsAirborne) {
+            const auto tick=ntr::rt_frame();
+            const int offset_x=player->mPosX-log->mPosX;
+            if (!run_up && log->mPosX<=4660*4096 && player->mPosZ<=5140*4096) {
+                run_up=true;
+                std::fprintf(stderr,"[native lava log replay] run-up tick=%llu log=%u x=%d z=%d\n",
+                    static_cast<unsigned long long>(tick),log->uniqueID,player->mPosX,player->mPosZ);
+            }
+            if (run_up && offset_x<=-82*4096 && player->mHorzSpeed>=7*4096 &&
+                !std::strcmp(pc_player_state_name(player),"St_Walk_Main")) {
+                launched=true;
+                jump_until=tick+56;
+                next_jump=tick+75;
+                std::fprintf(stderr,"[native lava log replay] exit jump tick=%llu log=%u x=%d y=%d z=%d speed=%d\n",
+                    static_cast<unsigned long long>(tick),log->uniqueID,player->mPosX,player->mPosY,
+                    player->mPosZ,int(player->mHorzSpeed));
+            } else {
+                const double dx=run_up ? approach_dx : std::clamp((-26*4096.0-offset_x)/(75*4096.0),-1.0,1.0);
+                const double dz=run_up ? approach_dz : std::clamp((5070*4096.0-player->mPosZ)/(150*4096.0),-1.0,1.0);
+                const double strength=run_up ? 22000.0 : (std::min)(1.0,std::hypot(dx,dz))*22000.0;
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*strength),
+                    static_cast<int16_t>(-std::cos(angle)*strength));
+                return true;
+            }
+        }
     }
     // The puzzle runs before the player reaches it. Start this replay's jump
     // from the stone apron in the observed safe phase of the retail cycle.
@@ -4101,6 +4252,240 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        if (level == 15 && x == -90 && y == 1175 && z == 2460 &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+            static uint64_t launched = 0;
+            static bool crouch_ready = false, bank_logged = false;
+            const auto *floor = player->mMeshClsn.IsOnGround() && !player->mIsAirborne ?
+                static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const bool lower_lift = floor && floor->owner && floor->owner->actorID == 31 &&
+                floor->owner->param1 == 0x1500;
+            const double px = player->mPosX / 4096.0;
+            const double py = player->mPosY / 4096.0;
+            const double pz = player->mPosZ / 4096.0;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            auto steer = [&](double direction, int strength) {
+                const double heading = direction - GetAngleToCamera(0) * turn;
+                sx = static_cast<int16_t>(std::sin(heading) * strength);
+                sy = static_cast<int16_t>(-std::cos(heading) * strength);
+            };
+            const double toward = std::atan2(x - px, z - pz);
+            if (!launched && player->mState == &data_ov002_0211052c) {
+                launched = tick;
+                std::fprintf(stderr, "[native volcano slab replay] backflip tick=%llu x=%.1f y=%.1f z=%.1f yaw=%d\n",
+                    static_cast<unsigned long long>(tick), px, py, pz, player->mPrevAngleY);
+            }
+            if (!launched && lower_lift && py >= 465 && pz >= 1560 && px < 480) {
+                const auto away = static_cast<int16_t>(static_cast<int>(toward / turn) + 0x8000);
+                const int facing_error = std::abs(static_cast<int16_t>(player->mAngleY - away));
+                if (!std::strcmp(state, "St_Crouch_Main") && crouch_ready)
+                    buttons = 0x102;
+                else if (facing_error > 1800)
+                    steer(away * turn, 10000);
+                else if (py >= 501 && pz >= 1710 && px < 255 && player->mHorzSpeed == 0) {
+                    if (!crouch_ready)
+                        std::fprintf(stderr, "[native volcano slab replay] crouch tick=%llu x=%.1f y=%.1f z=%.1f facing=%d\n",
+                            static_cast<unsigned long long>(tick), px, py, pz, facing_error);
+                    crouch_ready = true;
+                    buttons = 0x100;
+                }
+            }
+            if (launched && !bank_logged) {
+                if (floor && !lower_lift && py >= 1160 && py <= 1190 &&
+                    px >= -700 && px <= 640 && pz >= 2300 && pz <= 2840) {
+                    bank_logged = true;
+                    std::fprintf(stderr, "[native volcano slab replay] bank tick=%llu x=%.1f y=%.1f z=%.1f\n",
+                        static_cast<unsigned long long>(tick), px, py, pz);
+                } else if (player->mIsAirborne || tick - launched < 10) {
+                    if (pz < 2430) steer(toward, 32767);
+                    buttons = 2;
+                }
+            }
+            if (bank_logged && std::getenv("SM64DS_PC_TEST_VOLCANO_SLAB_CONTACT"))
+                replay_volcano_slab_contact(player);
+            else
+                ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        if (level == 15 && x == -1380 && z == 1520 && jump == 3 &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+            static bool braking = false;
+            const bool long_jump = !std::strcmp(state, "St_LongJump_Main");
+            if (!braking && long_jump && player->mPosZ >= 1210 * 4096) {
+                braking = true;
+                std::fprintf(stderr, "[native volcano interior replay] third gap brake tick=%llu z=%d speed=%d\n",
+                    static_cast<unsigned long long>(tick), player->mPosZ, player->mHorzSpeed);
+            }
+            // Luigi's full reverse stick brakes by three units per game tick
+            // during a long jump. Neutral input sheds speed much more slowly.
+            if (braking && long_jump && player->mIsAirborne) {
+                constexpr double angle_units = 6.283185307179586 / 65536.0;
+                const double heading = (player->mPrevAngleY + 0x8000 - GetAngleToCamera(0)) * angle_units;
+                const int strength = player->mHorzSpeed > 3 * 4096 ? 32767 : 0;
+                ntr::input_test_controls(true, 0, static_cast<int16_t>(std::sin(heading) * strength),
+                    static_cast<int16_t>(-std::cos(heading) * strength));
+                return true;
+            }
+            if (braking && player->mMeshClsn.IsOnGround() && !player->mIsAirborne &&
+                player->mPosY >= 90 * 4096 && player->mPosY <= 108 * 4096 &&
+                player->mPosX >= -1580 * 4096 && player->mPosX <= -1160 * 4096 &&
+                player->mPosZ >= 1475 * 4096 && player->mPosZ <= 1740 * 4096) {
+                std::fprintf(stderr, "[native volcano interior replay] third gap landed tick=%llu pos=%d,%d,%d\n",
+                    static_cast<unsigned long long>(tick), player->mPosX, player->mPosY, player->mPosZ);
+                ++waypoint;
+                ntr::input_test_controls(true, 0, 0, 0);
+                return true;
+            }
+        }
+        if (level == 14 && x == 0 && y == 150 && z == 1320 &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_FLAME_DAMAGE")) {
+            static int initial_health = 0;
+            static bool damaged = false;
+            static unsigned last_target = 0;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            const auto *floor = player->mMeshClsn.IsOnGround() ?
+                static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const auto *ring = floor && floor->owner && floor->owner->actorID == 71 ?
+                static_cast<const dActor_c *>(floor->owner) : nullptr;
+            if (ring && !initial_health) {
+                initial_health = player->GetHealth();
+                std::fprintf(stderr, "[native volcano damage replay] ready tick=%llu player=%u ring=%u health=%d\n",
+                    static_cast<unsigned long long>(tick), player->uniqueID, ring->uniqueID, initial_health);
+            }
+            if (initial_health && !damaged && player->GetHealth() < initial_health) {
+                damaged = true;
+                std::fprintf(stderr, "[native volcano damage replay] damage tick=%llu health=%d floor=%u state=%s\n",
+                    static_cast<unsigned long long>(tick), player->GetHealth(),
+                    ring ? ring->uniqueID : 0, state);
+            }
+            if (ring && !damaged && std::strcmp(state, "St_BurnFire_Main")) {
+                double best_score = 20.0;
+                double aim_x = 0, aim_z = 0;
+                unsigned target = 0;
+                // Seek a descending cylinder over the solid portion of the ring.
+                // Convert each intercept to the ring's current heading.
+                for (auto *actor = dActor_c::FindWithActorID(243, nullptr); actor;
+                     actor = dActor_c::FindWithActorID(243, actor)) {
+                    const auto *flame = static_cast<const daObj_volcanoCannon_c *>(actor);
+                    if (flame->aliveState != 1 || flame->mSpawnerId != ring->uniqueID) continue;
+                    const double angle = flame->mPrevAngleY * turn;
+                    const double vx = flame->mHorzSpeed * std::sin(angle);
+                    const double vz = flame->mHorzSpeed * std::cos(angle);
+                    int height = flame->mPosY;
+                    int speed = flame->mVertSpeed;
+                    for (int step = 1; step < flame->mKillTimer; ++step) {
+                        speed = (std::max)(speed + flame->mVertAccel, flame->mTerminalVelocity);
+                        height += speed;
+                        if (height < player->mPosY - flame->mCylinderClsn.height) break;
+                        if (speed >= 0 || height > player->mPosY + player->mdCcAcPos_c.height - 8 * 4096)
+                            continue;
+                        const double future_x = flame->mPosX + step * vx - ring->mPosX;
+                        const double future_z = flame->mPosZ + step * vz - ring->mPosZ;
+                        const double radius = std::hypot(future_x, future_z) / 4096.0;
+                        if (radius < 1010 || radius > 1450) continue;
+                        const double rotation = step * ring->mPrevAngleZ * turn;
+                        const double local_x = future_x * std::cos(rotation) - future_z * std::sin(rotation);
+                        const double local_z = future_x * std::sin(rotation) + future_z * std::cos(rotation);
+                        const double dx = ring->mPosX + local_x - player->mPosX;
+                        const double dz = ring->mPosZ + local_z - player->mPosZ;
+                        const double score = std::hypot(dx, dz) / (4096.0 * (step + 3)) -
+                            (flame->uniqueID == last_target ? 3.0 : 0.0);
+                        if (score >= best_score) continue;
+                        best_score = score;
+                        aim_x = dx;
+                        aim_z = dz;
+                        target = flame->uniqueID;
+                    }
+                }
+                if (target && target != last_target) {
+                    std::fprintf(stderr, "[native volcano damage replay] aim tick=%llu uid=%u distance=%.1f\n",
+                        static_cast<unsigned long long>(tick), target, std::hypot(aim_x, aim_z) / 4096.0);
+                }
+                last_target = target;
+                if (target && std::hypot(aim_x, aim_z) > 23 * 4096.0) {
+                    const double heading = std::atan2(aim_x, aim_z) - GetAngleToCamera(0) * turn;
+                    const double magnitude = std::hypot(aim_x, aim_z) > 100 * 4096.0 ? 25500 : 15700;
+                    sx = static_cast<int16_t>(std::sin(heading) * magnitude);
+                    sy = static_cast<int16_t>(-std::cos(heading) * magnitude);
+                }
+            }
+            if (ring && damaged && std::getenv("SM64DS_PC_TEST_VOLCANO_FLAME_RECOVERY")) {
+                static int direction = 0;
+                static uint64_t recovered = 0;
+                const double radial_x = double(player->mPosX) - ring->mPosX;
+                const double radial_z = double(player->mPosZ) - ring->mPosZ;
+                const double radial_distance = std::hypot(radial_x, radial_z);
+                const bool burning = !std::strcmp(state, "St_BurnFire_Main");
+                const bool normal = !std::strcmp(state, "St_Wait_Main") ||
+                    !std::strcmp(state, "St_Walk_Main");
+                if (burning && radial_distance > 0 && !direction) {
+                    const double yaw = player->mAngleY * turn;
+                    direction = std::sin(yaw) * radial_z - std::cos(yaw) * radial_x >= 0 ? 1 : -1;
+                    std::fprintf(stderr, "[native volcano recovery] steer tick=%llu radius=%.1f\n",
+                        static_cast<unsigned long long>(tick), radial_distance / 4096.0);
+                }
+                if (direction && normal && !recovered) {
+                    recovered = tick;
+                    std::fprintf(stderr, "[native volcano recovery] control tick=%llu ring=%u health=%d\n",
+                        static_cast<unsigned long long>(tick), ring->uniqueID, player->GetHealth());
+                }
+                // Follow the stone walkway during the native forced run. After
+                // recovery, a short deliberate pulse confirms normal movement.
+                if (direction && radial_distance > 0 && (burning || (recovered && tick - recovered < 20))) {
+                    const double radial_weight = std::clamp((1260.0 - radial_distance / 4096.0) / 100.0,
+                                                            -1.2, 1.2);
+                    const double walk_x = direction * radial_z + radial_weight * radial_x;
+                    const double walk_z = -direction * radial_x + radial_weight * radial_z;
+                    const double heading = std::atan2(walk_x, walk_z) - GetAngleToCamera(0) * turn;
+                    sx = static_cast<int16_t>(std::sin(heading) * 23000);
+                    sy = static_cast<int16_t>(-std::cos(heading) * 23000);
+                }
+            }
+            ntr::input_test_controls(true, 0, sx, sy);
+            return true;
+        }
+        if (level == 14 && x == 0 && y == 100 && z == 60 &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+            static bool approach = false;
+            static uint64_t gap_jump = 0, lip_jump = 0;
+            const auto *floor = player->mMeshClsn.IsOnGround() ?
+                static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const bool on_ring = floor && floor->owner && floor->owner->actorID == 71;
+            const double world_x = player->mPosX / 4096.0;
+            const double world_z = player->mPosZ / 4096.0;
+            if (!approach && on_ring && std::abs(world_x) < 90 && world_z > 1180) {
+                approach = true;
+                std::fprintf(stderr, "[native volcano entry replay] approach tick=%llu x=%.1f z=%.1f\n",
+                    static_cast<unsigned long long>(tick), world_x, world_z);
+            }
+            if (approach) {
+                const bool walking = !std::strcmp(state, "St_Walk_Main");
+                if (!gap_jump && on_ring && walking && world_z <= 1010 &&
+                    player->mHorzSpeed >= 14 * 4096) {
+                    gap_jump = tick;
+                    std::fprintf(stderr, "[native volcano entry replay] gap jump tick=%llu x=%.1f z=%.1f speed=%d\n",
+                        static_cast<unsigned long long>(tick), world_x, world_z, player->mHorzSpeed);
+                }
+                if (gap_jump && !lip_jump && floor && !on_ring && !player->mIsAirborne &&
+                    player->mPosY > 115 * 4096 && world_z > 212 && world_z < 570 &&
+                    tick - gap_jump > 35) {
+                    lip_jump = tick;
+                    std::fprintf(stderr, "[native volcano entry replay] lip jump tick=%llu x=%.1f z=%.1f y=%d state=%s\n",
+                        static_cast<unsigned long long>(tick), world_x, world_z, player->mPosY, state);
+                }
+                const bool jumping = (gap_jump && tick - gap_jump < 26) ||
+                    (lip_jump && tick - lip_jump < 22);
+                buttons = jumping ? 2 : 0;
+                if (std::hypot(world_x, world_z - 60) > 75) {
+                    constexpr double turn = 6.283185307179586 / 65536.0;
+                    const double heading = std::atan2(-world_x, 60 - world_z) - GetAngleToCamera(0) * turn;
+                    sx = static_cast<int16_t>(std::sin(heading) * 30000);
+                    sy = static_cast<int16_t>(-std::cos(heading) * 30000);
+                }
+            }
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
         if (!route_override && level == 14 && waypoint == 191 &&
             std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS")) {
             static bool runway_open = false;
@@ -4122,7 +4507,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const bool east_ring_exit = x == 2050 && y == 150 && z == -300;
         if (level == 14 && has_y && (north_ring_exit || east_ring_exit) &&
             std::getenv("SM64DS_PC_TEST_LAVA_RING_EXIT")) {
-            static bool aligned = false;
+            static bool aligned_by_visit[2]{};
+            bool &aligned=aligned_by_visit[replay_lava_bridge_reentered];
             if (!aligned) {
                 const auto *floor = player->mMeshClsn.IsOnGround() ?
                     static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
@@ -6339,6 +6725,12 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 runway = player->mPosZ < -2065 * 4096 && player->mPosZ > -2130 * 4096 &&
                     player->mMeshClsn.IsOnGround() && player->mHorzSpeed >= 0xe000;
             }
+            if (level == 15 && std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY") &&
+                ((x == -1490 && z == 525) || (x == -1380 && z == 1520))) {
+                const int takeoff_z = z == 525 ? -323 : 675;
+                runway = player->mPosZ >= takeoff_z * 4096 &&
+                    player->mMeshClsn.IsOnGround() && player->mHorzSpeed >= 14 * 4096;
+            }
             const bool may_launch=(wdw_gap || downtown_roofs) ? !route3_launch : tick>=next_jump;
             if(runway && may_launch && !player->mIsAirborne && !std::strcmp(state,"St_Walk_Main")) {
                 route3_launch=tick;next_jump=tick+100;
@@ -6492,6 +6884,21 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const char *trapdoor_recovery=std::getenv("SM64DS_PC_TEST_TRAPDOOR_RECOVERY");
         const bool trapdoor_mode=level==46 && jump==3 && trapdoor_recovery && !std::strcmp(trapdoor_recovery,"1");
         if(horizontal_reached && height_reached && !trapdoor_mode) {
+            if (level==14 && waypoint==151 &&
+                std::getenv("SM64DS_PC_TEST_LAVA_MESH_LIFT_ROUTE") &&
+                std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE")) {
+                // Keep ordinary recorded input synchronized with each visit
+                // once Luigi reaches the same position at the course entrance.
+                static uint64_t first_entry=0;
+                if (!replay_lava_bridge_reentered) first_entry=tick;
+                else if (first_entry) {
+                    replay_lava_mesh_clock_shift=tick-first_entry;
+                    ntr::input_test_button_schedule_shift(replay_lava_mesh_clock_shift);
+                    std::fprintf(stderr,"[native lava log replay] re-entry clock tick=%llu shift=%llu\n",
+                        static_cast<unsigned long long>(tick),
+                        static_cast<unsigned long long>(replay_lava_mesh_clock_shift));
+                }
+            }
             if(has_y)
                 std::fprintf(stderr,"[native course route] reached waypoint=%u level=%d target=%d,%d,%d tick=%llu\n",
                     waypoint,level,x,y,z,static_cast<unsigned long long>(ntr::rt_frame()));
@@ -6593,6 +7000,29 @@ static bool replay_course_route(const char *route_override=nullptr) {
     // Records are first:last:hex-mask:period:hold[:include-settle]; last is exclusive.
     buttons|=replay_route_window_buttons(waypoint);
     buttons|=replay_lava_platform_jump(player, waypoint);
+    if (level == 15 && jump == 0 && std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+        static uint64_t launch_tick[5]{};
+        const int gap = x == -1680 && z == -445 ? 0 :
+            x == -1490 && z == 525 ? 1 : x == -1380 && z == 1520 ? 2 :
+            x == -750 && z == 1650 ? 3 : x == -60 && z == -1435 ? 4 : -1;
+        if (gap >= 0) {
+            const auto frame = ntr::rt_frame();
+            const bool at_edge = gap == 0 ? player->mPosX <= -1090 * 4096 && player->mPosZ >= -935 * 4096 :
+                gap == 1 ? player->mPosZ >= -340 * 4096 :
+                gap == 2 ? player->mPosZ >= 670 * 4096 :
+                gap == 3 ? player->mPosX >= -1210 * 4096 :
+                player->mPosX >= -635 * 4096 && player->mPosZ <= -1160 * 4096;
+            if (!launch_tick[gap] && at_edge && player->mMeshClsn.IsOnGround() &&
+                player->mHorzSpeed >= 14 * 4096 &&
+                !std::strcmp(pc_player_state_name(player), "St_Walk_Main")) {
+                launch_tick[gap] = frame;
+                std::fprintf(stderr, "[native volcano interior replay] jump=%d tick=%llu pos=%d,%d,%d speed=%d\n",
+                    gap + 1, static_cast<unsigned long long>(frame), player->mPosX,
+                    player->mPosY, player->mPosZ, player->mHorzSpeed);
+            }
+            if (launch_tick[gap] && frame - launch_tick[gap] < 36) buttons |= 2;
+        }
+    }
     ntr::input_test_controls(true,buttons,sx,sy);
     return true;
 }

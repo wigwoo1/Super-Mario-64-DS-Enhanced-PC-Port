@@ -570,6 +570,16 @@ static PcNativeActorProfile pc_lava_float_large_profile = {
 extern "C" void *daObjFl_Ring_c_classInit();
 extern "C" void *daObjFlMaruta_c_classInit();
 extern "C" void *daObj_volcanoCannon_c_classInit();
+extern "C" void *daObjFl_Amilift_c_classInit();
+extern "C" unsigned char g_profile_FM_BATTAN[];
+extern "C" unsigned char g_profile_LAVA[];
+extern "C" void *daBbl_c_classInit();
+static PcNativeActorProfile pc_lava_bubble_profile = {
+    (void *)&daBbl_c_classInit, 214, 58, 2, 0x64000, 0x64000, 0x1000000, 0x640000
+};
+static PcNativeActorProfile pc_lava_mesh_lift_profile = {
+    (void *)&daObjFl_Amilift_c_classInit, 69, 303, 2, 0x80000, 0x1d0000, 0x2000000, 0x2000000
+};
 static PcNativeActorProfile pc_lava_log_profile = {
     (void *)&daObjFlMaruta_c_classInit, 70, 278, 2, 0, 0x500000, 0x2000000, 0
 };
@@ -892,6 +902,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[4] = &pc_star_select_profile;
 #endif
     data_020a4bb8_storage[191] = &pc_player_profile;
+    data_020a4bb8_storage[196] = g_profile_LAVA;
+    data_020a4bb8_storage[214] = &pc_lava_bubble_profile;
     /* CAMERA is the built-in ARM9 actor profile 332 (0x14c). Stage's
        LoadViewObjects publishes this actor through data_0209f318; without a
        native profile, that global stays null and camera consumers fault. */
@@ -905,8 +917,10 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_buddy_init_resources();pc_shutter_init_resources();
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
+    data_020a4bb8_storage[69] = &pc_lava_mesh_lift_profile;
     data_020a4bb8_storage[70] = &pc_lava_log_profile;
     data_020a4bb8_storage[71] = &pc_lava_ring_profile;
+    data_020a4bb8_storage[84] = g_profile_FM_BATTAN;
     data_020a4bb8_storage[243] = &pc_volcano_flame_profile;
     data_020a4bb8_storage[72] = g_profile_FL_GURA;
     data_020a4bb8_storage[73] = g_profile_FL_LONDON;

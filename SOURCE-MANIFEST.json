@@ -4470,8 +4470,8 @@
     },
     {
       "path": "include/daObjFl_Amilift_c.h",
-      "sha256": "dba03412fe84ca8144c575072f560df0b01b38747fde9ffc6cfb42444bf6b27a",
-      "bytes": 3387
+      "sha256": "54c593e3103cea91257139bcc1438dff5d0820c0adfefd7e77ac24650bc7e188",
+      "bytes": 3474
     },
     {
       "path": "include/daObjFl_Block_c.h",
@@ -4550,8 +4550,8 @@
     },
     {
       "path": "include/daObjFm_Battan_c.h",
-      "sha256": "fcb80fd3b49b2f14572660b65e0b3c0b33fceee360da764e7d579e70700d4f4d",
-      "bytes": 1963
+      "sha256": "14e4031a4dd7a7735bb34622d6e7e312198c39d35ac092ef77ea0e736951adb4",
+      "bytes": 2026
     },
     {
       "path": "include/daObjGuragura_c.h",
@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "eef525d5f156430dab4dd57bb0163164ad45d6afbe98c7d291cb02c7836026d5",
-      "bytes": 255813
+      "sha256": "53dd72fb708ea84f3edacef47da74a0d7a572f11a549d0f678de60f36f534bd5",
+      "bytes": 255911
     },
     {
       "path": "port/build-support/README.md",
@@ -7505,8 +7505,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "50857b30d3cd90475263b37381e6fae0d4dde4dd7b6e4dbaaa6d3230f5b1ea13",
-      "bytes": 21215
+      "sha256": "5bd8b84316a072325725d8ec56b089e7c33b99e9eb2f26946fcad29eda653fc5",
+      "bytes": 22818
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "96e6020c9175d9299b69cd2dbd93acca6fd007bf52fc53d04982b0e399fe6402",
-      "bytes": 69132
+      "sha256": "56f60b51845d50ae92428b1905f117a447d4099d4e923169cf8d29ba653e459b",
+      "bytes": 69824
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "5cc644deea3fb3b91ea40172eb95461094708c932c7e8ee8c7d6859fdf2f2336",
-      "bytes": 713008
+      "sha256": "a34cfb135f628de99602520adcd556e4d005cff06486825adc27b70faef544a4",
+      "bytes": 739110
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8220,8 +8220,8 @@
     },
     {
       "path": "port/ntr/include/ntr/input.h",
-      "sha256": "95efb2c3a5d4efd3d6c4f57a03d24008dc55380946f939c8f374a192ff7fb746",
-      "bytes": 3762
+      "sha256": "7fb6d3e7f3d9e95db5b2cb008b7ca1c01a0b95e0cc0dadbda17893f570458164",
+      "bytes": 3817
     },
     {
       "path": "port/ntr/include/ntr/input_bindings.h",
@@ -8325,8 +8325,8 @@
     },
     {
       "path": "port/ntr/input.cpp",
-      "sha256": "14ae6b8ed38c58edd25f1cbdb413429ed542bf0677b9c01cba72511f35f4793a",
-      "bytes": 22842
+      "sha256": "19704507b979611b882fdb23ea3fc832a49ff5998773ba4ef784d86ccf8b0ebf",
+      "bytes": 23310
     },
     {
       "path": "port/ntr/io.cpp",
@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "f05a167d0d58302a33bc382e230fa6726c1eed0ed3cbf5acacdc69357010676a",
-      "bytes": 67659
+      "sha256": "27d75cf67cf6e2ed515e02581db71a7099c1b30af595e5da980fab8b3665af07",
+      "bytes": 68672
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9290,8 +9290,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "51a9aa463e686901177e38e5195553544d8f94585661e50fa1e939f9f5613415",
-      "bytes": 101908
+      "sha256": "f89da81c177d9d94957a91354c984eecd5b187a9705f23311bfc5e2326edd57b",
+      "bytes": 104775
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9620,8 +9620,8 @@
     },
     {
       "path": "port/tools/lava_volcano_host.py",
-      "sha256": "5b8b889bd96b35a4d85b51db4e23fd4452116c6421b1487d3a5b201031b0aeea",
-      "bytes": 9062
+      "sha256": "51ce8ac81ed33116e2b617b11c1a638d16b363ac104bb24cd1de5bd40bc01b02",
+      "bytes": 20429
     },
     {
       "path": "port/tools/level_overlay_data.py",
@@ -9640,8 +9640,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "4d1ba8f2151e27328622d5b62b051e73f627873a8332e74b6cd280cc2530160e",
-      "bytes": 31737
+      "sha256": "7bed4dc1dc11c325a8fe4dc6124218e57191af1d44403fc292ed674a2eaf737b",
+      "bytes": 31836
     },
     {
       "path": "port/tools/linkage.py",
@@ -9815,8 +9815,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "ccfaf7646b5b5f276f7e6879ef853d405507a3dd9d14150736a71835e1fb7c01",
-      "bytes": 41099
+      "sha256": "94023c64c239f9b453efcde3274958e81753e8890961b82b515a98f7b14201bf",
+      "bytes": 45523
     },
     {
       "path": "port/tools/skeeter_host.py",

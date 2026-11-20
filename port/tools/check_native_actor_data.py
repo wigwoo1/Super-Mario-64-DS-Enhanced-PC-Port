@@ -108,6 +108,45 @@ def main():
             raise ValueError(f'Volcano flame {method} does not reach native code')
     print('PASS: native rolling log profiles, resource bindings, and volcano flight callbacks')
 
+    interior_base, interior_rom = overlay(23)
+    expected = struct.unpack_from('<IHHIiiii', interior_rom, 0x02111fc0 - interior_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_FM_BATTAN'), 28))
+    if actual != (named('daObjFm_Battan_c_classInit'), *expected[1:]):
+        raise ValueError('Volcano slamming slab profile differs from the original')
+    battan_surface = 0x0211ba4c - lava_base
+    if pe_bytes(args.exe, named('data_ov064_0211ba4c'), 16) != lava_rom[battan_surface:battan_surface+16]:
+        raise ValueError('Volcano slamming slab collision surface differs from the original')
+    for address, resource in ((0x02111af8, 1558), (0x02111b08, 1559)):
+        if struct.unpack_from('<I', interior_rom, address - interior_base) != (resource,):
+            raise ValueError('Volcano slamming slab retail resource ID mismatch')
+    for name in ('data_ov023_02112088', 'data_ov023_02112080'):
+        if pe_bytes(args.exe, named(name), 8, allow_zero_tail=True) != bytes(8):
+            raise ValueError('Volcano slamming slab handles must start empty for native ID resolution')
+    print('PASS: volcano slamming slab profile, authored resource IDs, and collision surface')
+
+    emitter_base, emitter_rom = overlay(2)
+    expected = struct.unpack_from('<IHHIiiii', emitter_rom, 0x021093bc - emitter_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('g_profile_LAVA'), 28))
+    if actual != (named('daObjLava_c_classInit'), *expected[1:]):
+        raise ValueError('Lava effect actor profile differs from the original')
+    named('func_02022c3c')
+    for method in ('SpawnParticles', 'OnUpdate'):
+        if not any(name.startswith(f'?{method}@checkYoganCallback_c@level_c@dPa_c@@') for name in symbols):
+            raise ValueError(f'Lava particle surface callback {method} is missing')
+    print('PASS: lava effect profile, original emitter wrapper and native lava surface callbacks')
+
+    expected = struct.unpack_from('<IHHIiiii', lava_rom, 0x0211bc44 - lava_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_lava_mesh_lift_profile'), 28))
+    if actual != (named('daObjFl_Amilift_c_classInit'), *expected[1:]):
+        raise ValueError('Lava mesh lift profile differs from the original')
+    mesh_surface = 0x0211bb6c - lava_base
+    if pe_bytes(args.exe, named('data_ov064_0211bb6c'), 24) != lava_rom[mesh_surface:mesh_surface+24]:
+        raise ValueError('Lava mesh lift collision surface differs from the original')
+    for name, resource in (('data_ov064_0211c730', 1519), ('data_ov064_0211c728', 1520)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(name), 8)) != (resource, 0):
+            raise ValueError('Lava mesh lift initial resource handle mismatch')
+    print('PASS: native lava mesh lift profile, initial handles, and two collision properties')
+
     bowser_base, bowser_rom = overlay(60)
     tilt = bowser_rom[0x02119294-bowser_base:0x021192dc-bowser_base]
     if len(tilt) != 72 or tilt[-2:] != b'\0\0' or pe_bytes(

@@ -212,10 +212,33 @@ Audio listening accuracy and complete gameplay remain unverified.
   with working collision for repeat crossings. These results use isolated
   test saves and selected courses; other course and mountain warp points were
   not tested.
-  In a selected Luigi replay the rolling log spawns and renders at its
-  original location. The volcano ring launches visible flame particles and
-  the flame actors retire during play. Boarding the log and player damage
-  from the flames still need gameplay checks.
+  The volcano ring launches visible flame particles. A Mission 1 replay
+  verifies that a falling flame hits Luigi on the ring, starts his burn
+  animation, and removes one health wedge before he touches the lava.
+  The flame actor retires after the hit. A follow-up replay steers Luigi
+  along the ring during the burn and verifies that he regains normal
+  movement and stops safely on the walkway.
+  Another Luigi replay jumps from the stone ring to the crater and enters
+  the volcano interior through the original transition. Luigi lands on the
+  interior entry platform and crosses the lower stepping stones. One
+  replay rides the first lift to the end of its rising path. Another
+  backflips off the lift earlier, lands safely on the slamming slab's
+  ledge, and triggers its full tip, hold, rise and reset cycle. The slab
+  draws with its original collider enabled. Additional replays verify
+  side collision and Luigi landing on the deployed slab. Walking off
+  and attempting a jump back both led to a downhill slide. A safe
+  return remains unverified. The native lava surface effect produces
+  bubbling particles around Luigi in the exterior and inside the volcano.
+  The jumping lava-bubble enemy has an experimental native binding. Its
+  jump and hit behavior still need gameplay verification. The volcano's
+  flamethrowers remain unimplemented.
+  Both original Lethal Lava Land mesh lifts spawn. A selected Luigi replay
+  clears the guarded island, boards the east lift, rides its entire route
+  and jumps onto the far bank. The west lift cycles through both original
+  endpoints. Luigi then balances along the rolling log, jumps onto the
+  raised stone bank and walks farther across it. After Exit Course and
+  re-entry through the castle painting, both mesh lifts and the log spawn
+  fresh. Luigi repeats the full east lift ride and safe log dismount.
   Selected Luigi replays verify Lethal Lava Land puzzle tile contact, all
   14 bonus coins spawning, and a route that collects all eight red coins.
   Luigi collects the revealed Power Star, saves, and reloads with the new

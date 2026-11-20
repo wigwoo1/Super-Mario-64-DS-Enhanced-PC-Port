@@ -30,6 +30,7 @@ bool input_binding_cancel();
 // Isolated adaptive replays send the same raw DS buttons/stick as schedules.
 // Accepted only with both AUTOMATION_ONLY=1 and TEST_BOSS_BOT=1.
 void input_test_controls(bool enabled, uint16_t buttons, int16_t x, int16_t y);
+void input_test_button_schedule_shift(uint64_t polls);
 InputState input_state();
 // Retain a host click across the scene's intervening VBlank(s), consume once.
 bool input_take_camera_zoom();

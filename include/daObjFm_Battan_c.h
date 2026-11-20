@@ -17,6 +17,9 @@ struct daObjFm_Battan_c : dBgActor_c {
     u8 mState;                    /* 0x322 */
     dExtShadowModel_c mShadowModel;     /* 0x324 -- 1-byte alignment pad after mState is implicit */
     Matrix4x3 mShadowMat;         /* 0x34c */
+#ifdef SM64DS_PLATFORM_PC
+    bool mHasBattanResources;
+#endif
 
     /* InitResources is deliberately the first out-of-line virtual/key
      * function. mwccarm then owns this class's RTTI/vtable and emits the

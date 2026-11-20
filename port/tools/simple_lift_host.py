@@ -375,6 +375,99 @@ static void init_lava_float_handles() {
 """
 
 
+def transform_lava_mesh_lift(root, text):
+    """Bind the original two-path lift to native resources and collision."""
+    rom = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()
+    base = 0x02115ee0
+    assert struct.unpack_from('<IHHIiiii', rom, 0x0211bc44 - base) == (
+        0x02117fe8, 69, 303, 2, 0x80000, 0x1d0000, 0x2000000, 0x2000000
+    )
+    assert struct.unpack_from('<4sHH', rom, 0x0211bb6c - base) == (b'CLPS', 8, 2)
+    assert struct.unpack_from('<6I', rom, 0x0211bc0c - base) == (
+        0x02117c24, 0, 0x02117bdc, 0, 0x02117b8c, 0
+    )
+
+    def replace(old, new):
+        nonlocal text
+        assert text.count(old) == 1, old
+        text = text.replace(old, new, 1)
+
+    assert text.count('    u32 id; void *ptr;') == 2
+    text = text.replace('    u32 id; void *ptr;', '    u32 words[2];')
+    text = lazy_handles(text, ('AmiliftModelFilePtr', 'AmiliftClsnFilePtr'))
+    declaration = 'extern LiftState data_ov064_0211c750[];\n'
+    replace(declaration, '')
+    start = text.index('/* Lets Behavior call the state table')
+    end = text.index('struct BMD_File;', start)
+    text = text[:start] + text[end:]
+    start = text.index('/* The three-entry state dispatch table:')
+    end = text.index('// @symbol func_ov064_02117fb4', start)
+    text = text[:start] + text[end:]
+    replace('    (this->*data_ov064_0211c750[idx].pmf)();', '''    switch (idx) {
+    case STATE_WAIT: func_ov064_02117c24(); break;
+    case STATE_FORWARD: func_ov064_02117bdc(); break;
+    case STATE_BACKWARD: func_ov064_02117b8c(); break;
+    }''')
+
+    replace('    data_ov064_0211c730.Release();\n    data_ov064_0211c728.Release();', '''    if (mHasLiftResources) {
+        data_ov064_0211c730.Release();
+        data_ov064_0211c728.Release();
+        mHasLiftResources = false;
+    }''')
+    replace('s32 daObjFl_Amilift_c::InitResources() {', '''extern PathDef *PATH_DEFS;
+extern int NUM_PATHS;
+s32 daObjFl_Amilift_c::InitResources() {
+    mHasLiftResources = false;
+    const unsigned pathId = param1 & 0xf;
+    if (!PATH_DEFS || !PathPtr::GetNodeTable() || int(pathId) >= NUM_PATHS)
+        return 0;
+    mPathPtr.FromID(pathId);
+    mNodeCount = mPathPtr.NumNodes();
+    if (mNodeCount < 2)
+        return 0;
+    static const bool handlesReady = [] {
+        data_ov064_0211c730.Construct(1519);
+        data_ov064_0211c728.Construct(1520);
+        return true;
+    }();
+    (void)handlesReady;''')
+    replace('    mModel.SetFile(bmd, 1, -1);', '''    if (!bmd || !mModel.SetFile(bmd, 1, -1)) {
+        if (bmd) data_ov064_0211c730.Release();
+        return 0;
+    }''')
+    replace('    kcl = _ZN7dBgW_Kc8LoadFileER13SharedFilePtr(data_ov064_0211c728);',
+            '''    kcl = _ZN7dBgW_Kc8LoadFileER13SharedFilePtr(data_ov064_0211c728);
+    if (!kcl) {
+        data_ov064_0211c730.Release();
+        return 0;
+    }''')
+    callbacks = '''    func_020393d4(&mMeshCollider, (void *)&_ZN4dBgW22UpdatePosWithTransformERS_P8dActor_cR5dBgPiR7Vector3P10Vector3_16S8_);
+    func_020393c4(&mMeshCollider, (void *)&func_ov064_02117fd4);
+
+    mPathPtr.FromID(param1 & 0xf);
+    mNodeCount = mPathPtr.NumNodes();'''
+    replace(callbacks, '''    mMeshCollider.beforeClsnCallback = [](dBgW *collider, dActor_c *actor,
+            dBgPi *result, Vector3 *position, Vector3_16 *motion, Vector3_16 *angles) {
+        dBgW::UpdatePosWithTransform(*collider, actor, *result, *position, motion, angles);
+    };
+    // The floor-result commit reports riders even before the lift moves.
+    func_020393c4(&mMeshCollider, reinterpret_cast<void *>(&func_ov064_02117fd4));
+    mHasLiftResources = true;''')
+    replace('extern "C" daObjFl_Amilift_c *daObjFl_Amilift_c_classInit(void)\n{\n    return new daObjFl_Amilift_c;\n}',
+            '''extern "C" void *daObjFl_Amilift_c_classInit()
+{
+    void *storage = _ZN7fBase_cnwEj(sizeof(daObjFl_Amilift_c));
+    return storage ? ::new (storage) daObjFl_Amilift_c{} : nullptr;
+}''')
+    replace('    mPosY = saved;\n    mRiderOn = 0;', '''    mPosY = saved;
+    const bool hadRider = mRiderOn != 0;
+    mRiderOn = 0;''')
+    replace('s32 daObjFl_Amilift_c::Render() {', 's32 daObjFl_Amilift_c::Render()\n{')
+    text = observe(text, 'daObjFl_Amilift_c', 'state,node,auto_run,rider,sink',
+                   ('mState', 'mNodeIndex', 'mAutoRun', 'hadRider', 'mSinkOffset'), return_type='s32')
+    return '#include <new>\nextern "C" void *_ZN7fBase_cnwEj(unsigned int);\n' + text
+
+
 def transform_lava_ring(root, text):
     level = (root / 'extracted/overlays/overlay_0022.bin').read_bytes()
     base = 0x021111a0

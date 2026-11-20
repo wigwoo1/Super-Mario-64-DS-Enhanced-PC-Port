@@ -27,6 +27,7 @@ std::array<bool,256> g_raw_keys{};
 bool g_touch = false;
 uint16_t g_touch_x = 0, g_touch_y = 0;
 unsigned long long g_input_poll_count = 0;
+uint64_t g_test_button_schedule_shift = 0;
 bool g_auto_confirm_logged = false;
 bool g_menu_navigation = true;
 bool g_camera_zoom_pending = false;
@@ -266,6 +267,11 @@ void input_poll() {
         }
     }
     pressed |= scripted_buttons(g_input_poll_count, std::getenv("SM64DS_PC_TEST_BUTTONS"));
+    if (automation_only && std::strcmp(automation_only, "1")==0 && g_test_button_schedule_shift &&
+        g_input_poll_count>=g_test_button_schedule_shift) {
+        pressed |= scripted_buttons(g_input_poll_count-g_test_button_schedule_shift,
+                                    std::getenv("SM64DS_PC_TEST_BUTTONS"));
+    }
     const char *bot_controls=std::getenv("SM64DS_PC_TEST_BOSS_BOT");
     const char *route_controls=std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
     const char *star_controls=std::getenv("SM64DS_PC_TEST_POWER_STAR");
@@ -345,6 +351,10 @@ void input_poll() {
         previous=g_state;previous_menu=g_menu_navigation;
     }
 #endif
+}
+
+void input_test_button_schedule_shift(uint64_t polls) {
+    g_test_button_schedule_shift=polls;
 }
 
 void input_test_controls(bool enabled,uint16_t buttons,int16_t x,int16_t y) {
