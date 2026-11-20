@@ -14,7 +14,8 @@ bool gpu_render(const Framebuffer &base, const uint32_t *minimap,
                 const DualScreenLayout *screens = nullptr, const Framebuffer *sub = nullptr,
                 bool engine_a_on_top = true, bool cache_gameplay = false,
                 const uint32_t *minimap_hud = nullptr, unsigned hud_width = 0,
-                unsigned hud_height = 0, uint64_t hud_revision = 0);
+                unsigned hud_height = 0, uint64_t hud_revision = 0, bool motion_gameplay = false,
+                unsigned map_width=SCREEN_W,unsigned map_height=SCREEN_H);
 // Screen-authored menus use their original full-frame projection.
 void gpu_set_menu_scene(bool active);
 void gpu_set_letter_overlay(bool active);
@@ -27,6 +28,9 @@ unsigned gpu_triangle_count();
 struct GpuFrameStats {
     uint64_t hash_texels=0,upload_bytes=0,uploads=0,identity_uses=0,cache_hits=0,cpu_us=0;
     uint64_t cache_bytes=0,cache_budget=0,evictions=0,replacement_attempts=0,replacement_uploads=0,staging_peak_bytes=0;
+    bool motion_blur_applied=false;
+    float camera_prediction=0;
+    unsigned camera_predicted_triangles=0;
 };
 GpuFrameStats gpu_frame_stats();
 // Diagnostic A/B comparison; normal rendering uses immutable decoded identities.

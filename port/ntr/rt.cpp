@@ -40,6 +40,7 @@ struct Runtime {
     bool game_done = false;
     bool stop = false;
     uint32_t target_fps = 60;
+    float presentation_phase = 0;
     uint32_t cpsr_i = 0;     // 0x80 when interrupts are masked
     IrqHandler irq_handlers[IRQ_COUNT]{};
     uint64_t irq_dispatches[IRQ_COUNT]{};
@@ -147,6 +148,7 @@ void rt_set_target_fps(uint32_t fps) {
 }
 
 uint32_t rt_target_fps() { return g.target_fps; }
+float rt_presentation_phase() { return g.presentation_phase; }
 
 uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames, void (*before_present)()) {
 #if !defined(_WIN32)
@@ -165,13 +167,6 @@ uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames, void (*befo
     g.entry = game;
     g.hook = hook;
     g.max_frames = max_frames;
-    LARGE_INTEGER frequency{}, next_frame{};
-    QueryPerformanceFrequency(&frequency);
-    QueryPerformanceCounter(&next_frame);
-    LARGE_INTEGER next_game_tick = next_frame;
-    const LONGLONG game_tick_period = (frequency.QuadPart + 30) / 60;
-    next_game_tick.QuadPart += game_tick_period;
-    bool run_game = true;
     uint64_t presentation_frame = 0;
 
     g.host_fiber = ConvertThreadToFiber(nullptr);
@@ -193,7 +188,41 @@ uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames, void (*befo
     reg32(REG_IME) = 1;
     reg32(REG_IE) = IRQ_VBLANK;
 
+    const HANDLE frame_timer = CreateWaitableTimerExW(
+        nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_MODIFY_STATE | SYNCHRONIZE);
+    LARGE_INTEGER frequency{}, first_tick{};
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&first_tick);
+    const LONGLONG game_tick_period = (frequency.QuadPart + 30) / 60;
+    const LONGLONG wait_margin = frequency.QuadPart / 2500;
+    const LONGLONG minimum_draw_budget = frequency.QuadPart / 1000;
+    LONGLONG game_tick_start = first_tick.QuadPart;
+    LONGLONG extra_draw_cost = 0;
+    unsigned presentation_slot = 0;
+
+    auto wait_until = [&](LARGE_INTEGER &now,LONGLONG deadline) {
+        while (now.QuadPart < deadline) {
+            const LONGLONG remaining = deadline - now.QuadPart;
+            if (remaining > wait_margin && frame_timer) {
+                LARGE_INTEGER relative{};
+                relative.QuadPart = -1 - (remaining - wait_margin) * 10000000 / frequency.QuadPart;
+                if (SetWaitableTimer(frame_timer, &relative, 0, nullptr, nullptr, FALSE))
+                    WaitForSingleObject(frame_timer, INFINITE);
+                else
+                    SwitchToThread();
+            } else if (!frame_timer && remaining > frequency.QuadPart / 500) {
+                Sleep(1);
+            } else {
+                SwitchToThread();
+            }
+            QueryPerformanceCounter(&now);
+        }
+    };
+
     while (!g.game_done && !g.stop) {
+        const bool run_game = presentation_slot == 0;
+        LARGE_INTEGER draw_start{};
+        if (!run_game) QueryPerformanceCounter(&draw_start);
         if (run_game) {
             input_poll();
             SwitchToFiber(g.game_fiber);      // run until the game blocks
@@ -210,40 +239,55 @@ uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames, void (*befo
             if (g.max_frames && g.frame >= g.max_frames) g.stop = true;
         }
 
-        // At 120/240 Hz the game fiber stays parked between 60 Hz simulation
-        // ticks. The frame hook can redraw/present the most recent state at
-        // the requested host rate without advancing gameplay faster.
+        // The game fiber stays parked between VBlanks. Only the renderer
+        // consumes the fractional phase on these host presentations.
+        g.presentation_phase = presentation_slot / 4.0f;
         ++presentation_frame;
-        if (before_present) before_present();
-        if (run_game) run_scanlines();
+        if (run_game) {
+            if (before_present) before_present();
+            run_scanlines();
+        }
         if (video_is_open() && !video_present_frame()) g.stop = true;
         if (g.hook && !g.hook(presentation_frame)) g.stop = true;
         if (g.stop) break;
 
-        // Pace host presentation at the selected rate. Game animation still
-        // advances in DS frames; rates above 60 present repeated game states.
-        next_frame.QuadPart += (frequency.QuadPart + g.target_fps / 2) / g.target_fps;
         LARGE_INTEGER now{};
         QueryPerformanceCounter(&now);
-        while (now.QuadPart < next_frame.QuadPart) {
-            const LONGLONG remaining = next_frame.QuadPart - now.QuadPart;
-            const DWORD sleep_ms = (DWORD)((remaining * 1000) / frequency.QuadPart);
-            if (sleep_ms > 1) Sleep(sleep_ms - 1);
-            else SwitchToThread();
-            QueryPerformanceCounter(&now);
+        if (run_game) {
+            // Let a costly draw age out even if it left no room to render
+            // another sample. A temporary stall must not pin us at 60 Hz.
+            extra_draw_cost = extra_draw_cost * 7 / 8;
+        } else {
+            const auto cost = now.QuadPart - draw_start.QuadPart;
+            if (cost > extra_draw_cost) extra_draw_cost = cost;
         }
 
-        if (now.QuadPart >= next_game_tick.QuadPart) {
-            run_game = true;
-            // Keep the simulation deadline on its original 60 Hz timeline.
-            // Resetting it to "now + period" accumulated tiny sleep overruns,
-            // skipped alternate updates at 60 FPS, and made higher display
-            // rates appear to speed up the game. Skip missed deadlines only
-            // after a genuinely slow frame; never accumulate pacing jitter.
-            do { next_game_tick.QuadPart += game_tick_period; }
-            while(next_game_tick.QuadPart <= now.QuadPart);
+        // A slightly late extra draw can still fit. Let it start within
+        // half its nominal interval, with the recent draw cost and a wait
+        // margin reserved before simulation resumes.
+        const unsigned slot_step = 240 / g.target_fps;
+        const auto late_allowance = game_tick_period * slot_step / 8;
+        const auto tick_deadline = game_tick_start + game_tick_period;
+        const auto draw_budget = (extra_draw_cost > minimum_draw_budget
+            ? extra_draw_cost : minimum_draw_budget) + wait_margin;
+        unsigned next_slot = (presentation_slot / slot_step + 1) * slot_step;
+        for (; next_slot < 4; next_slot += slot_step) {
+            const auto planned_start = game_tick_start + game_tick_period * next_slot / 4;
+            if (planned_start + draw_budget > tick_deadline) continue;
+            wait_until(now,planned_start);
+            if (now.QuadPart <= planned_start + late_allowance &&
+                now.QuadPart + draw_budget <= tick_deadline) break;
+        }
+        if (next_slot == 4) wait_until(now,tick_deadline);
+
+        const auto elapsed = now.QuadPart - game_tick_start;
+        if (elapsed >= game_tick_period) {
+            // Retain the 60 Hz timeline after a stall without queuing a burst
+            // of simulation steps or catching up stale render-only draws.
+            game_tick_start += (elapsed / game_tick_period) * game_tick_period;
+            presentation_slot = 0;
         } else {
-            run_game = false;
+            presentation_slot = next_slot;
         }
 
     }
@@ -259,6 +303,7 @@ uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames, void (*befo
     DeleteFiber(g.game_fiber);
     g.game_fiber = nullptr;
     ConvertFiberToThread();
+    if (frame_timer) CloseHandle(frame_timer);
     return g.frame;
 #endif
 }

@@ -1,12 +1,15 @@
 #include "hal/pc_pause_settings_state.h"
+#include "ntr/audio.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
 
 namespace pc_pause {
 static constexpr Page pages[]={Page::Display,Page::Graphics,Page::Map,
-    Page::Position,Page::Save,Page::Screens,Page::Camera,Page::Gameplay};
+    Page::Position,Page::Save,Page::Screens,Page::Audio,Page::Camera,Page::Gameplay};
 static constexpr unsigned page_count=sizeof(pages)/sizeof(pages[0]);
+static constexpr unsigned binding_offsets[]={0,5,10,ntr::camera_turn_left_binding,ntr::binding_count};
+static constexpr unsigned binding_banks=sizeof(binding_offsets)/sizeof(binding_offsets[0])-1;
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks) {
     uint16_t pressed = keys & ~previous;
     previous = keys;
@@ -24,11 +27,12 @@ unsigned Menu::rows() const {
     if(page==Page::Display) return 4;
     if(page==Page::Map) return 5;
     if(page==Page::Position || page==Page::Save) return 2;
-    if(page==Page::Graphics) return 3;
+    if(page==Page::Graphics) return 4;
     if(page==Page::Screens) return 1;
+    if(page==Page::Audio) return 2;
     if(page==Page::Gameplay)return 5;
     if(page==Page::Controls)return 5;
-    if(binding_page())return std::min(5u,ntr::binding_count-binding_bank*5);
+    if(binding_page())return binding_offsets[binding_bank+1]-binding_offsets[binding_bank];
     return page==Page::Camera ? 4 : 3;
 }
 
@@ -37,7 +41,7 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
     const auto edge = events(keys, previous, repeat, ticks);
     if(binding_page()) {
         if(edge&(2|8)){page=Page::Controls;row=0;return Action::None;}
-        if(edge&0x300){binding_bank=(binding_bank+(edge&0x100?1:2))%3;row=0;return Action::None;}
+        if(edge&0x300){binding_bank=(binding_bank+(edge&0x100?1:binding_banks-1))%binding_banks;row=0;return Action::None;}
         if(edge&0x40)row=(row+rows()-1)%rows();
         if(edge&0x80)row=(row+1)%rows();
         if(edge&1){capture=1;capture_ticks=0;}
@@ -90,6 +94,11 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         if (row == 2) s.minimap_rotate_with_player = !s.minimap_rotate_with_player;
         break;
     case Page::Graphics: {
+        if(row==3) {
+            if(s.renderer!=ntr::VideoRenderer::D3D11)return Action::None;
+            s.motion_blur=!s.motion_blur;
+            break;
+        }
         if(row==1) {
             s.renderer=s.renderer==ntr::VideoRenderer::D3D11?ntr::VideoRenderer::OpenGLSoftware:ntr::VideoRenderer::D3D11;
             break;
@@ -113,6 +122,10 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         break;
     case Page::Screens:
         s.minigame_layout=static_cast<ntr::MinigameLayout>((static_cast<unsigned>(s.minigame_layout)+(direction>0?1:2))%3);
+        break;
+    case Page::Audio:
+        if(row==0)s.audio_layout=static_cast<ntr::AudioLayout>((static_cast<unsigned>(s.audio_layout)+(direction>0?1:2))%3);
+        else s.remastered_music=!s.remastered_music;
         break;
     case Page::Gameplay:
         if(row==0) s.stay_in_stage_after_star = !s.stay_in_stage_after_star;
@@ -152,7 +165,7 @@ Action Menu::binding_sample(uint32_t value,bool cancel,ntr::VideoSettings &s) {
     if(!capture)return Action::None;
     if(cancel || ++capture_ticks>600) {capture=0;previous=0xffff;return Action::None;}
     if(capture==1){if(!value)capture=2;return Action::None;}
-    const unsigned index=binding_bank*5+row;
+    const unsigned index=binding_offsets[binding_bank]+row;
     if(page==Page::Gamepad) {
         if(!ntr::valid_pad_binding(value))return Action::None;
         ntr::swap_binding(s.bindings.pad,index,value);
@@ -173,8 +186,9 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
             else std::snprintf(out,size,"RESOLUTION %uX%u",s.width,s.height);
         }
         if (i==1) std::snprintf(out,size,"FRAME RATE %u FPS",s.target_fps);
-        if (i==2) std::snprintf(out,size,"TEXTURES %s%s",ntr::texture_quality_name(s.texture_quality),
-            s.texture_quality==ntr::TextureQuality::Upscaled?" - NO PACK":"");
+        if (i==2) std::snprintf(out,size,"%s%s%s",
+            s.texture_quality>=ntr::TextureQuality::Upscaled?"":"TEXTURES ",
+            ntr::texture_quality_name(s.texture_quality),ntr::texture_pack_status(s.texture_quality));
         if (i==3) std::snprintf(out,size,"2D SCALING %s",s.upscale_2d?"CRISP":"SMOOTH");
         break;
     case Page::Visual:
@@ -183,6 +197,12 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         if (i==2) std::snprintf(out,size,"MAP ROTATION %s",s.minimap_rotate_with_player?"CAMERA":"UPRIGHT");
         break;
     case Page::Graphics:
+        if(i==3) {
+            if(s.renderer==ntr::VideoRenderer::D3D11)
+                std::snprintf(out,size,"MOTION BLUR %s",s.motion_blur?on:off);
+            else std::snprintf(out,size,"MOTION BLUR D3D11 ONLY");
+            break;
+        }
         if(i==1) {std::snprintf(out,size,"RENDERER %s",s.renderer==ntr::VideoRenderer::OpenGLSoftware?"OPENGL CPU":"D3D11");break;}
         if(i==2) { static const char *names[]={"MINIMUM","LOW","MEDIUM","ENTIRE MAP"};
             std::snprintf(out,size,"RENDER DISTANCE %s",names[static_cast<unsigned>(s.render_distance)]); break; }
@@ -204,6 +224,10 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         std::snprintf(out,size,"%s",i==0?"SAVE CURRENT FILE":"BACK");break;
     case Page::Screens:
         std::snprintf(out,size,"MINIGAME VIEW %s",ntr::screen_layout_name(s.minigame_layout));break;
+    case Page::Audio:
+        if(i==0)std::snprintf(out,size,"OUTPUT %s",ntr::audio_layout_name(s.audio_layout));
+        else std::snprintf(out,size,"MUSIC %s",s.remastered_music?"REMASTERED":"ORIGINAL");
+        break;
     case Page::Gameplay:
         if(i==0) std::snprintf(out,size,"STAY AFTER STAR %s",s.stay_in_stage_after_star?on:off);
         else if(i==1) std::snprintf(out,size,"CAMERA ZOOM %s",s.camera_zoom==1?"0.75X":s.camera_zoom==2?"0.5X":s.camera_zoom==3?"0.25X":"ORIGINAL");
@@ -218,7 +242,7 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         break;
     case Page::Keyboard: case Page::Gamepad: {
         if(capture && i==row){std::snprintf(out,size,"%s",capture==1?"RELEASE BUTTONS":page==Page::Keyboard?"PRESS NEW KEY":"PRESS NEW BUTTON");break;}
-        const unsigned index=binding_bank*5+i;char value[24];
+        const unsigned index=binding_offsets[binding_bank]+i;char value[24];
         ntr::binding_name(page==Page::Gamepad,page==Page::Gamepad?s.bindings.pad[index]:s.bindings.keys[index],value,sizeof(value));
         std::snprintf(out,size,"%s  %s",ntr::binding_action(index),value);break;
     }
@@ -387,14 +411,20 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     if (m.page==Page::Options) line("OPTIONS",0);
     else {
         unsigned index=0;while(index<page_count && pages[index]!=m.page)++index;
-        const char *names[]={"DISPLAY","GRAPHICS","MINIMAP","MAP POSITION","SAVE","SCREENS","FREE CAMERA","GAMEPLAY"};
-        if(m.binding_page())std::snprintf(label,sizeof(label),"%s %u/3",m.page==Page::Keyboard?"KEYBOARD":"CONTROLLER",m.binding_bank+1);
+        const char *names[]={"DISPLAY","GRAPHICS","MINIMAP","MAP POSITION","SAVE","SCREENS","AUDIO","FREE CAMERA","GAMEPLAY"};
+        if(m.binding_page())std::snprintf(label,sizeof(label),"%s %u/%u",m.page==Page::Keyboard?"KEYBOARD":"CONTROLLER",m.binding_bank+1,binding_banks);
         else if(m.page==Page::Controls)std::snprintf(label,sizeof(label),"CONTROLS");
         else std::snprintf(label,sizeof(label),"%s %u/%u",index<page_count?names[index]:"VISUAL",index+1,page_count);
         line(label,0);
     }
     if(m.page==Page::Camera) line("L3 FREE / R3 ZOOM",15);
     if(m.page==Page::Screens) line("TOP 75%  BOTTOM 25%",15);
+    if(m.page==Page::Audio) {
+        const auto output=ntr::audio_output_status();
+        std::snprintf(label,sizeof(label),"ACTIVE %s%s",ntr::audio_output_name(output),
+            output==ntr::AudioOutput::Stereo && s.audio_layout!=ntr::AudioLayout::Stereo?" FALLBACK":"");
+        line(label,10);
+    }
     if(m.page==Page::Graphics && ntr::video_renderer_notice()[0])line(ntr::video_renderer_notice(),15);
     // The caller caches a complete four-row button from its native position.
     // Keep its top and bottom bevels; omit the two middle rows to fit16px.

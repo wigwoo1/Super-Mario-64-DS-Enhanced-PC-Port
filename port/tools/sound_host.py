@@ -76,7 +76,18 @@ def transform(text,name):
     # that held voice at END; remove the older arbitrary pickup timeout.
     start=text.index('        /* SSAR event 0x11 is the red/yellow coin pickup.')
     end=text.index('        else ntr::audio_effect(j1,j2,bank);',start)+len('        else ntr::audio_effect(j1,j2,bank);')
-    text=text[:start]+'        ntr::audio_effect(j1,j2,bank);'+text[end:]
+    text=text[:start]+'        ntr::audio_effect_at(j1,j2,bank,{v.x,v.y,v.z});'+text[end:]
+    for old,new in (
+        ('if(ntr::audio_ready())return ntr::audio_long_effect(handle,a,b,a==3?data_0208e428:-1);',
+         'if(ntr::audio_ready()) {\n'
+         '        const ntr::AudioPosition listener_space{pos.x,pos.y,pos.z};\n'
+         '        return ntr::audio_long_effect(handle,a,b,a==3?data_0208e428:-1,&listener_space);\n'
+         '    }'),
+        ('if(ntr::audio_ready())return ntr::audio_effect(1,b+data_02075250[a]);',
+         'if(ntr::audio_ready())return ntr::audio_effect_at(1,b+data_02075250[a],-1,{v.x,v.y,v.z});'),
+    ):
+        if text.count(old)!=1:raise ValueError('Positional sound hook changed')
+        text=text.replace(old,new,1)
     anchor='extern "C" void func_0201251c(int a, int b, int c, int d)\n{'
     if text.count(anchor)!=1:raise ValueError('Motion sound helper anchor changed')
     # Original func_02048a18 is a four-byte BX LR identity: sound ID b is
@@ -84,7 +95,10 @@ def transform(text,name):
     branch='''
 #if defined(SM64DS_PLATFORM_PC)
     if(ntr::audio_ready()) {
-        ntr::audio_effect(a,b,a==3?data_0208e428:-1);
+        const auto *pos=reinterpret_cast<const Vector3 *>(c);
+        const int bank=a==3?data_0208e428:-1;
+        if(pos)ntr::audio_effect_at(a,b,bank,{pos->x,pos->y,pos->z});
+        else ntr::audio_effect(a,b,bank);
         return;
     }
 #endif

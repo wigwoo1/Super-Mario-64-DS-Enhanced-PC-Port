@@ -135,7 +135,7 @@ endif()
 # The ntr platform layer: imported host DS hardware (see ntr/README.md).
 # Compiled as its own lib so every gate binary can link the pieces it needs.
 add_library(ntr STATIC
-    ntr/sdat.cpp ntr/audio.cpp
+    ntr/sdat.cpp ntr/audio.cpp ntr/remastered_music.cpp
     third_party/sseqplayer/Player.cpp third_party/sseqplayer/Track.cpp
     third_party/sseqplayer/Channel.cpp third_party/sseqplayer/SSEQ.cpp
     third_party/sseqplayer/SBNK.cpp third_party/sseqplayer/SWAR.cpp
@@ -150,7 +150,7 @@ target_include_directories(ntr PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 if(MSVC)
     target_include_directories(ntr PRIVATE "${SDL3_SDK}/include")
     target_compile_options(ntr PRIVATE /wd4311 /wd4312)
-    target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 dxgi d3dcompiler winmm)
+    target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 dxgi d3dcompiler winmm mfuuid)
 endif()
 
 # Controller-input smoke: verify the native stick's radial deadzone and its
@@ -191,8 +191,8 @@ add_test(NAME smoke_rebinding COMMAND smoke_rebinding)
 add_executable(smoke_camera_controls tests/smoke_camera_controls.cpp)
 target_include_directories(smoke_camera_controls PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 add_test(NAME smoke_camera_controls COMMAND smoke_camera_controls)
-add_executable(smoke_minimap_hud tests/smoke_minimap_hud.cpp ntr/minimap_hud.cpp)
-target_include_directories(smoke_minimap_hud PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
+add_executable(smoke_minimap_hud tests/smoke_minimap_hud.cpp)
+target_link_libraries(smoke_minimap_hud PRIVATE ntr)
 add_test(NAME smoke_minimap_hud COMMAND smoke_minimap_hud)
 add_executable(smoke_render_distance tests/smoke_render_distance.cpp)
 target_include_directories(smoke_render_distance PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -1028,6 +1028,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/warp_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/chomp_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_puzzle_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/crate_host.py"
@@ -1128,6 +1129,7 @@ if(NOT EXISTS "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/warp_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/chomp_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_bridge_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
+   OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_puzzle_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/seesaw_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/block_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
    OR "${CMAKE_CURRENT_SOURCE_DIR}/tools/crate_host.py" IS_NEWER_THAN "${BOOT_CLOSURE_CMAKE}"
@@ -1265,6 +1267,7 @@ add_custom_command(OUTPUT "${BOOT_LINK_DATA_CPP}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/minigame_data.py"
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/dsmt_host.py"
               "${CMAKE_CURRENT_SOURCE_DIR}/tools/sound_host.py"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/lava_puzzle_host.py"
             "${PORT_REPO_ROOT_ABS}/config/arm9/symbols.txt"
             "${PORT_REPO_ROOT_ABS}/extracted/arm9_dec.bin"
             "${BOOT_LINK_LOG}"

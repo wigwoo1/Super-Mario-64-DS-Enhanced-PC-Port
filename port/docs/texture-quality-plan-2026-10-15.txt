@@ -4,9 +4,19 @@ The SUPIR Upscaled option covers all game texture categories, including eligible
 character textures. A separate AI Generated 4K option creates replacements that
 closely match their individual source textures, but only for eligible level and
 object textures. Do not generate character textures for AI Generated 4K;
-characters in that mode must use the SUPIR-upscaled versions. Existing code
-still has one placeholder Upscaled choice and no production art pack; adding the
-second choice and routing by asset role are future implementation milestones.
+characters in that mode must use the SUPIR-upscaled versions.
+
+2026-11-19 update. Both saved choices now appear in the native menu. Classified
+level/object draws in AI Generated 4K try the generated pack, then SUPIR, then
+original. Character draws in both modes try only SUPIR before original. The
+existing textures/4k directory remains available for level/object content
+through SUPIR Upscaled. See the renderer README for local folder names. This
+work covers classified 3D assets. SUPIR Upscaled also supports the native HUD
+sprites through a separate local PNG directory. The original alpha mask
+limits the new art's opacity, and the sprite layout stays the same.
+The live minimap accepts a replacement background keyed by the decoded atlas.
+Markers, opacity and visible bounds follow the original map compositor.
+Production packs, unclassified materials and remaining 2D coverage are open.
 
 SUPIR delivery milestones:
 - Check official SUPIR setup, model availability/license, local GPU memory needs,

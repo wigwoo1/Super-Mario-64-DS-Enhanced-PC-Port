@@ -3,6 +3,7 @@
 #define NTR_VIDEO_H
 
 #include <stdint.h>
+#include "ntr/audio_layout.h"
 #include "ntr/texture.h"
 #include "ntr/input_bindings.h"
 #include "ntr/screen_layout.h"
@@ -39,13 +40,18 @@ struct VideoSettings {
     bool stay_in_stage_after_star = false; // retain original castle exit by default
     bool brain_rot_text = false; // opt-in dialogue replacement mode; missing entries fall back to original
     bool pause_music_rec_room = false; // optional pause-menu theme; retain original by default
+    AudioLayout audio_layout = AudioLayout::Stereo;
+    bool remastered_music = false;
     RenderDistance render_distance = RenderDistance::Minimum;
+    bool motion_blur = false;
 };
 
 // Create a resizable native window. Resolution and minimap layout are changed
 // through video_set_settings, so a game settings menu can bind to this API.
 bool video_open(const char *title = "Super Mario 64 DS");
 void video_close();
+// Consume relative motion accumulated during a right-button camera drag.
+void video_take_camera_mouse_motion(bool camera_allowed,int &dx,int &dy);
 bool video_is_open();
 VideoSettings video_get_settings();
 void video_set_settings(const VideoSettings &settings);

@@ -42,6 +42,12 @@ int main() {
     NTR_MMIO(uint32_t,0x04001000)=0x00010c03;
     scan_transparent();
     if(frame.px[0][0]!=0xff0000ff || frame.px[0][8]!=0xff0000ff) return 13;
+    uint8_t visible_map[ntr::SCREEN_W*ntr::SCREEN_H]{};
+    NTR_MMIO(uint8_t,0x06200040)=0;
+    ntr::ppu_scanout(ntr::ENGINE_B,frame,true,0x0f,visible_map);
+    if(frame.px[0][0]!=0xffff0000 || visible_map[0]!=1 ||
+       frame.px[0][1]!=0xff0000ff || visible_map[1]!=0) return 35;
+    NTR_MMIO(uint8_t,0x06200040)=3;
     ntr::ppu_scanout(ntr::ENGINE_B, frame, true, 0x0b);
     if(frame.px[0][0]!=0xffff0000 || frame.px[0][8]!=0xff00ff00 ||
        NTR_MMIO(uint32_t,0x04001000)!=0x00010c03) return 14;

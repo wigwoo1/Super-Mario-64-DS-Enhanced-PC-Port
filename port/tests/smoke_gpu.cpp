@@ -70,6 +70,15 @@ int main(int argc,char **argv) {
         CHECK(ntr::gpu_render(base,nullptr,s,false,nullptr,nullptr,nullptr,true,true));
         CHECK(ntr::gpu_readback_gameplay(cached,cw,ch));
         CHECK(cw==256 && ch==192 && cached.back()==0xff101820); // Resize replaces cache correctly.
+        preview.width=1024;preview.height=768;
+        constexpr unsigned map_width=512,map_height=384;
+        std::vector<uint32_t> packed(size_t(map_width)*map_height,0xffb040e0);
+        for(unsigned y=0;y<map_height;++y)std::fill_n(packed.data()+size_t(y)*map_width+256,256,0xff3070d0);
+        CHECK(ntr::gpu_render(base,packed.data(),preview,false,nullptr,nullptr,nullptr,true,false,
+                              nullptr,0,0,0,false,map_width,map_height));
+        CHECK(ntr::gpu_readback(pixels,width,height));
+        CHECK(width==1024 && height==768 && pixels[384*1024+320]==0xffb040e0 &&
+              pixels[384*1024+640]==0xff3070d0 && pixels[0]==0xff101820);
     }
     setup();triangle();
     CHECK(ntr::gpu_render(base,nullptr,s,true));CHECK(ntr::gpu_readback(pixels,width,height));

@@ -68,6 +68,8 @@ HWND context_window=nullptr,game_window=nullptr;
 HDC context_dc=nullptr;HGLRC context=nullptr;
 GLuint framebuffer=0,color_target=0,depth_target=0,program=0,base_image=0,map_image=0,white_image=0,hud_image=0;
 unsigned hud_image_width=0,hud_image_height=0;uint64_t hud_image_revision=~uint64_t(0);
+GLuint packed_map_image=0;
+unsigned packed_map_width=0,packed_map_height=0;
 GLuint gameplay_image=0,gameplay_framebuffer=0;
 unsigned gameplay_width=0,gameplay_height=0;
 GLint u_polygon=-1,u_alpha=-1,u_pass=-1,u_mode=-1,u_toon=-1,u_highlight=-1;
@@ -80,7 +82,7 @@ GpuFrameStats stats;
 struct Texture {GLuint id=0;bool partial=false;uint64_t bytes=0,used=0;};
 using Key=std::tuple<bool,uint64_t,uint32_t>;
 std::map<Key,Texture> cache;
-std::set<uint64_t> missing;
+std::set<Key> missing;
 uint64_t cache_bytes=0,cache_budget=256ull*1024*1024,use_counter=0;
 uint32_t epoch=0;
 bool ok(const char *operation) {
@@ -141,24 +143,25 @@ struct Material {const uint32_t *pixels;int width,height;TexturePixelsInfo info;
 Texture *resolve(const Material &m) {
     if(!m.pixels){static Texture white;white={white_image,false,4,0};return &white;}
     const auto &r=m.replacement;
-    if(texture_upscaled()&&r.eligible&&(r.role==TextureRole::Level||r.role==TextureRole::Object)) {
-        Key k{true,r.key,epoch};auto it=cache.find(k);
+    const auto route=texture_replacement_route(texture_quality(),r.role);
+    if(r.eligible&&r.key&&route!=TextureReplacementRoute::None) {
+        Key k{true,r.key,static_cast<uint32_t>(route)};auto it=cache.find(k);
         if(it!=cache.end()){it->second.used=++use_counter;++stats.cache_hits;return &it->second;}
-        if(!missing.count(r.key)) {
+        if(!missing.count(k)) {
             ++stats.replacement_attempts;std::vector<uint32_t> p;int w=0,h=0;
-            if(texture_load_replacement_pixels(r.key,p,w,h)) {
+            if(texture_load_replacement_pixels(r.key,route,p,w,h)) {
                 stats.staging_peak_bytes=std::max<uint64_t>(stats.staging_peak_bytes,p.size()*4);
                 bool partial=false;for(auto color:p)partial|=(color>>24)>0&&(color>>24)<255;
                 if(auto *t=upload(k,p.data(),w,h,partial)){++stats.replacement_uploads;return t;}
             }
-            missing.insert(r.key);
+            missing.insert(k);
         }
     }
     Key k{false,m.info.key,0};auto it=cache.find(k);
     if(it!=cache.end()){it->second.used=++use_counter;++stats.cache_hits;return &it->second;}
     return upload(k,m.pixels,m.width,m.height,m.info.partial_alpha);
 }
-bool geometry(bool dual) {
+bool geometry(bool dual,const GxCameraPrediction &prediction) {
     using FrameKey=std::tuple<const uint32_t *,int,int,uint64_t,TextureRole,bool>;
     std::map<FrameKey,Material> materials;
     struct Draw {GxVertex v[3];Material *material;uint32_t attributes;int x,y,w,h;uint8_t address;};
@@ -169,6 +172,7 @@ bool geometry(bool dual) {
     gl.Uniform3fv(u_toon,32,colors);gl.Uniform1i(u_highlight,highlight?1:0);
     for(size_t i=0;i<count;++i) {
         auto t=source[i];GxVertex clipped[12];
+        if(gx_apply_camera_prediction(t,prediction))++stats.camera_predicted_triangles;
         if(t.perspective&&!menu_scene&&!dual) {
             const float aspect=float(SCREEN_W)*target_height/(float(SCREEN_H)*target_width);
             for(auto &v:t.v)v.clip_x*=aspect;
@@ -364,6 +368,7 @@ void close_worker() {
         gl.MakeCurrent(context_dc,context);
         for(auto &t:cache)gl.DeleteTextures(1,&t.second.id);
         if(base_image)gl.DeleteTextures(1,&base_image);if(map_image)gl.DeleteTextures(1,&map_image);
+        if(packed_map_image)gl.DeleteTextures(1,&packed_map_image);
         if(hud_image)gl.DeleteTextures(1,&hud_image);
         if(white_image)gl.DeleteTextures(1,&white_image);if(color_target)gl.DeleteTextures(1,&color_target);
         if(framebuffer&&gl.DeleteFramebuffers)gl.DeleteFramebuffers(1,&framebuffer);
@@ -378,6 +383,7 @@ void close_worker() {
     if(context_window)DestroyWindow(context_window);context_window=nullptr;
     if(library)FreeLibrary(library);library=nullptr;
     gl={};game_window=nullptr;framebuffer=color_target=depth_target=program=base_image=map_image=white_image=hud_image=0;
+    packed_map_image=0;packed_map_width=packed_map_height=0;
     hud_image_width=hud_image_height=0;hud_image_revision=~uint64_t(0);
     gameplay_image=gameplay_framebuffer=0;gameplay_width=gameplay_height=0;
     target_width=target_height=triangle_count=0;adapter_name[0]=0;cache.clear();missing.clear();cache_bytes=use_counter=0;
@@ -390,8 +396,10 @@ uint8_t glsw_anisotropic_filtering(){return anisotropic;}
 bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,
                    const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,
                    bool engine_a_on_top,bool cache_gameplay,const uint32_t *hud,
-                   unsigned hud_width,unsigned hud_height,uint64_t hud_revision) {
+                   unsigned hud_width,unsigned hud_height,uint64_t hud_revision,unsigned map_width,unsigned map_height,
+                   const GxCameraPrediction &prediction) {
     stats={};auto start=std::chrono::steady_clock::now();
+    stats.camera_prediction=prediction.fraction;
     if(!context||s.width<256||s.height<192||s.width>3840||s.height>2160||!resize(s.width,s.height))return false;
     if(hud && (hud_width!=s.width || hud_height!=s.height))return false;
     readback_ready=false;gl.UseProgram(program);gl.BindFramebuffer(FBO,framebuffer);
@@ -407,7 +415,7 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
     for(unsigned y=0;y<SCREEN_H;++y)for(unsigned x=0;x<SCREEN_W;++x)opaque.px[y][x]=base.px[y][x]|0xff000000u;
     gl.BindTexture(GL_TEXTURE_2D,base_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,opaque.px);
     overlay_state(false);quad(base_image,!s.upscale_2d);triangle_count=0;
-    if(draw_geometry&&!geometry(screens!=nullptr))return false;
+    if(draw_geometry&&!geometry(screens!=nullptr,prediction))return false;
     if(draw_geometry&&foreground){
         gl.BindTexture(GL_TEXTURE_2D,base_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,foreground);
         const float aspect=letter_overlay && !screens && !menu_scene
@@ -431,10 +439,21 @@ bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettin
         gl.CopyTexSubImage2D(GL_TEXTURE_2D,0,0,0,0,0,target_width,target_height);
     }
     if(!screens&&map&&s.minimap){
-        gl.BindTexture(GL_TEXTURE_2D,map_image);gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,SCREEN_W,SCREEN_H,BGRA,GL_UNSIGNED_BYTE,map);
+        GLuint minimap=map_image;
+        if(map_width!=SCREEN_W || map_height!=SCREEN_H) {
+            if(!packed_map_image || packed_map_width!=map_width || packed_map_height!=map_height) {
+                if(packed_map_image)gl.DeleteTextures(1,&packed_map_image);
+                packed_map_image=image(nullptr,int(map_width),int(map_height));
+                if(!packed_map_image)return false;
+                packed_map_width=map_width;packed_map_height=map_height;
+            }
+            minimap=packed_map_image;
+        }
+        gl.BindTexture(GL_TEXTURE_2D,minimap);
+        gl.TexSubImage2D(GL_TEXTURE_2D,0,0,0,map_width,map_height,BGRA,GL_UNSIGNED_BYTE,map);
         overlay_state(true);
         const float x=s.minimap_x/1000.f,y=s.minimap_y/1000.f,size=s.minimap_scale/1000.f;
-        quad(map_image,false,x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2);
+        quad(minimap,false,x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2);
     }
     if(!screens&&hud){
         if(hud_image_width!=hud_width||hud_image_height!=hud_height||!hud_image) {
@@ -518,9 +537,10 @@ void glsw_close() {
 bool glsw_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool geometry,
                  const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,
                  bool top,bool cache_gameplay,const uint32_t *hud,unsigned hud_width,
-                 unsigned hud_height,uint64_t hud_revision) {
+                 unsigned hud_height,uint64_t hud_revision,unsigned map_width,unsigned map_height,
+                 const GxCameraPrediction &prediction) {
     bool result=false;return submit([&]{result=render_worker(base,map,s,geometry,foreground,screens,sub,
-        top,cache_gameplay,hud,hud_width,hud_height,hud_revision);})&&result;
+        top,cache_gameplay,hud,hud_width,hud_height,hud_revision,map_width,map_height,prediction);})&&result;
 }
 bool glsw_present(unsigned width,unsigned height,bool aspect) {
     bool result=false;return submit([&]{result=present_worker(width,height,aspect);})&&result;

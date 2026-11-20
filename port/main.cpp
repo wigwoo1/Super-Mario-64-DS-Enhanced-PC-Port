@@ -14,6 +14,9 @@
 #include "daKrb_c.h"
 #include "daKuriKing_c.h"
 #include "daBombking_c.h"
+#include "daBDonketu_c.h"
+#include "daDonketu_c.h"
+#include "daObjFl_Ukiyuka_c.h"
 #include "daKpa_c.h"
 #include "daKpaTail_c.h"
 #include "daKirai_c.h"
@@ -574,16 +577,23 @@ static uint16_t replay_route_window_buttons(unsigned waypoint,bool settling=fals
             include_settle<=1 && period>0 && period<=600 && hold>0 && hold<period &&
             waypoint>=first && waypoint<last;
         uint64_t phase=ntr::rt_frame();
-        if(phase_offset>=0) {
+        const bool lava_combat_window=active && first>=194 && first<=196 &&
+            data_0209f2f8==14 && std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS");
+        if(phase_offset>=0 || lava_combat_window) {
+            // Align the starting phase of each encounter with the verified run.
+            constexpr uint64_t lava_combat_phase[]={16769,17033,17475};
+            const auto offset=lava_combat_window ? lava_combat_phase[first-194] :
+                static_cast<uint64_t>(phase_offset);
             if(clocks.size()<=index)clocks.resize(index+1);
             auto &clock=clocks[index];
             if(active && !clock.active) {
                 clock.began=phase;
-                std::fprintf(stderr,"[native route window] tick=%llu level=%d waypoint=%u phase=%ld period=%u\n",
-                    static_cast<unsigned long long>(phase),int(data_0209f2f8),waypoint,phase_offset,period);
+                std::fprintf(stderr,"[native route window] tick=%llu level=%d waypoint=%u phase=%llu period=%u\n",
+                    static_cast<unsigned long long>(phase),int(data_0209f2f8),waypoint,
+                    static_cast<unsigned long long>(offset),period);
             }
             clock.active=active;
-            phase=phase-clock.began+static_cast<unsigned>(phase_offset);
+            phase=phase-clock.began+offset;
         }
         if(active && (!settling || include_settle) && phase%period<hold)
             buttons|=static_cast<uint16_t>(mask);
@@ -3082,6 +3092,206 @@ static bool replay_dorrie_cap(Player *player, uint64_t tick) {
     return true;
 }
 
+// Drive the existing encounter through ordinary controller input for QA.
+static bool replay_big_bully_combat() {
+    const bool fight_small_bullies = std::getenv("SM64DS_PC_TEST_SMALL_BULLY_COMBAT") != nullptr;
+    if (data_0209f2f8 != 14 || replay_course_route_waypoint < (fight_small_bullies ? 193u : 197u) ||
+        !std::getenv("SM64DS_PC_TEST_BIG_BULLY_COMBAT"))
+        return false;
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1 || player->mIsControlDisabled || player->mIsNoControl)
+        return false;
+
+    static unsigned boss_uid = 0;
+    static uint64_t dodge_until = 0, jump_until = 0, attack_until = 0, next_attack = 0;
+    static double dodge_heading = 0;
+    const auto tick = ntr::rt_frame();
+    if (fight_small_bullies && !boss_uid &&
+        (player->mPosZ > -5150 * 4096 || player->mPosY < 295 * 4096 ||
+         !player->mMeshClsn.IsOnGround() || player->mIsAirborne))
+        return false;
+    auto *boss = static_cast<daBDonketu_c *>(boss_uid ? dActor_c::FindWithID(boss_uid) : nullptr);
+    if (!boss_uid) {
+        for (auto *actor = dActor_c::FindWithActorID(216, nullptr); actor;
+             actor = dActor_c::FindWithActorID(216, actor)) {
+            auto *candidate = static_cast<daBDonketu_c *>(actor);
+            if (candidate->aliveState == 1 && (fight_small_bullies ?
+                candidate->mNumBulliesKilled <= 4 : candidate->mNumBulliesKilled == 4) &&
+                candidate->mPosX > 2500 * 4096 && candidate->mPosZ < -4400 * 4096) {
+                boss = candidate;
+                boss_uid = candidate->uniqueID;
+                break;
+            }
+        }
+    }
+    if (!boss_uid)
+        return false;
+
+    uint16_t buttons = 0;
+    double heading = 0, magnitude = 0;
+    const double x = player->mPosX / 4096.0, z = player->mPosZ / 4096.0;
+    const char *state = pc_player_state_name(player);
+    const bool ready = !player->mIsAirborne &&
+        (!std::strcmp(state, "St_Walk_Main") || !std::strcmp(state, "St_Wait_Main") ||
+         !std::strcmp(state, "St_Land_Main"));
+    constexpr double angle_unit = 6.283185307179586 / 65536.0;
+    constexpr double center_x = 3750, center_z = -5500;
+    const bool waiting_for_boss = fight_small_bullies && boss && boss->mNumBulliesKilled < 4;
+    daOts_c *enemy = waiting_for_boss ? nullptr : boss;
+    if (waiting_for_boss) {
+        double nearest = 2000;
+        for (auto *actor = dActor_c::FindWithActorID(215, nullptr); actor;
+             actor = dActor_c::FindWithActorID(215, actor)) {
+            auto *candidate = static_cast<daDonketu_c *>(actor);
+            if (candidate->aliveState != 1 || unsigned(candidate->mBigBullyID) != boss_uid ||
+                candidate->tail().mState >= daOts_c::STATE_DYING)
+                continue;
+            const double distance = std::hypot(candidate->mPosX / 4096.0 - x,
+                                               candidate->mPosZ / 4096.0 - z);
+            if (distance < nearest) {
+                nearest = distance;
+                enemy = candidate;
+            }
+        }
+    }
+    const bool small = waiting_for_boss && enemy;
+    if (enemy && enemy->aliveState == 1 && enemy->tail().mState < daOts_c::STATE_DYING) {
+        const double bx = enemy->mPosX / 4096.0, bz = enemy->mPosZ / 4096.0;
+        const double dx = bx - x, dz = bz - z;
+        const double distance = std::hypot(dx, dz);
+        const double bearing = std::atan2(dx, dz);
+        const double center_distance = std::hypot(center_x - x, center_z - z);
+        const auto desired = static_cast<int>(bearing / angle_unit);
+        const bool facing = std::abs(int(static_cast<s16>(desired - player->mAngleY))) < 0x1000;
+        const bool charging = enemy->tail().mState == daOts_c::STATE_CHASE &&
+            enemy->mHorzSpeed >= 12 * 4096 &&
+            std::abs(int(static_cast<s16>(desired + 0x8000 - enemy->mPrevAngleY))) < 0x2400;
+        const bool attack_ready = ready && facing && !player->mPunchKickCooldown &&
+            tick >= next_attack && enemy->tail().mState != daOts_c::STATE_KNOCKED_BACK;
+        const double strike_range = small ? (charging ? 325 : 225) : (charging ? 365 : 250);
+
+        if (ready && tick >= dodge_until && tick >= attack_until &&
+            charging && distance < (small ? 310 : 430) &&
+            (center_distance > 660 || !facing || distance < (small ? 135 : 200))) {
+            const double side = (center_x - x) * std::cos(bearing) - (center_z - z) * std::sin(bearing);
+            dodge_heading = bearing + (side >= 0 ? 1.570796326794897 : -1.570796326794897);
+            dodge_until = tick + 34;
+            jump_until = tick + 27;
+            std::fprintf(stderr, "[native Big Bully replay] dodge tick=%llu enemy=%u distance=%.1f\n",
+                         static_cast<unsigned long long>(tick), unsigned(enemy->uniqueID), distance);
+        }
+        if (tick < dodge_until) {
+            heading = dodge_heading;
+            magnitude = 25500;
+            if (tick < jump_until) buttons = 2;
+        } else if (tick < attack_until) {
+            heading = bearing;
+            magnitude = 10000;
+            buttons = 1;
+        } else if (attack_ready && distance < strike_range) {
+            heading = bearing;
+            magnitude = 10000;
+            buttons = 1;
+            // The game samples input less often than the renderer. Keep the
+            // press long enough for the next gameplay update to see its edge.
+            attack_until = tick + 6;
+            next_attack = tick + 12;
+            std::fprintf(stderr, "[native Big Bully replay] attack tick=%llu enemy=%u distance=%.1f\n",
+                         static_cast<unsigned long long>(tick), unsigned(enemy->uniqueID), distance);
+        } else {
+            heading = bearing;
+            magnitude = distance > 345 ? 24500 : 14000;
+            const double enemy_radius = std::hypot(bx - center_x, bz - center_z);
+            if (small && distance > 270 && center_distance > enemy_radius + 100) {
+                heading = std::atan2(center_x - x, center_z - z);
+                magnitude = 25000;
+            } else if (center_distance > 690 && distance > 360) {
+                heading = std::atan2(center_x - x, center_z - z);
+                magnitude = 25000;
+            }
+        }
+    } else if (!waiting_for_boss) {
+        for (auto *star = dActor_c::FindWithActorID(178, nullptr); star;
+             star = dActor_c::FindWithActorID(178, star)) {
+            if (star->aliveState != 1 || star->mPosX < 2500 * 4096 ||
+                star->mPosZ > -4400 * 4096)
+                continue;
+            const double dx = star->mPosX / 4096.0 - x, dz = star->mPosZ / 4096.0 - z;
+            const double distance = std::hypot(dx, dz);
+            heading = std::atan2(dx, dz);
+            magnitude = distance > 180 ? 20000 : distance > 45 ? 11000 : 0;
+            if (ready && distance < 260 && star->mPosY - player->mPosY > 100 * 4096 &&
+                tick >= dodge_until) {
+                jump_until = tick + 35;
+                dodge_until = tick + 85;
+            }
+            if (tick < jump_until) buttons = 2;
+            break;
+        }
+    }
+    heading -= GetAngleToCamera(0) * angle_unit;
+    ntr::input_test_controls(true, buttons, static_cast<int16_t>(std::sin(heading) * magnitude),
+                             static_cast<int16_t>(-std::cos(heading) * magnitude));
+    return true;
+}
+
+// Use the contact and takeoff positions observed in the successful route.
+// Platform phase continues to affect the real player and collider.
+static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
+    const bool arena = waypoint == 193;
+    if (data_0209f2f8 != 14 || (!arena && (waypoint < 160 || waypoint > 167)) ||
+        !std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS"))
+        return 0;
+    struct Takeoff {
+        unsigned actor;
+        bool use_x;
+        int coordinate;
+        int direction;
+        unsigned hold;
+        int minimum_y = 0;
+    };
+    constexpr Takeoff takeoffs[] = {
+        {0, false, 2920, -1, 48, 145},
+        {72, false, 2320, -1, 48}, {72, true, 1465, -1, 48},
+        {72, false, 1850, -1, 58}, {71, false, -620, 1, 58},
+        {72, true, 2180, 1, 60}, {76, true, 3045, 1, 60},
+        {76, false, 1120, -1, 60},
+        {75, false, -3960, -1, 70}, {0, false, -4760, -1, 55, 295},
+    };
+    static unsigned jumped_waypoint = 0;
+    static unsigned last_takeoff = 0;
+    static uint64_t hold_until = 0;
+    const auto tick = ntr::rt_frame();
+    const bool already_jumped = jumped_waypoint == waypoint;
+    if (already_jumped && tick < hold_until)
+        return 2;
+    if (already_jumped && (!arena || last_takeoff == 9))
+        return 0;
+
+    const unsigned index = arena ? (already_jumped ? 9 : 8) : waypoint - 160;
+    const auto &takeoff = takeoffs[index];
+    const int coordinate = takeoff.use_x ? int(player->mPosX) : int(player->mPosZ);
+    if (!player->mMeshClsn.IsOnGround() || player->mIsAirborne ||
+        std::strcmp(pc_player_state_name(player), "St_Walk_Main") ||
+        takeoff.direction * (coordinate - takeoff.coordinate * 4096) < 0)
+        return 0;
+    const auto *floor = static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult());
+    if (!floor)
+        return 0;
+    const auto *owner = floor->colliderIdx < 24 ? floor->owner : nullptr;
+    if ((takeoff.actor && (!owner || owner->actorID != takeoff.actor)) ||
+        (!takeoff.actor && (owner || player->mPosY < takeoff.minimum_y * 4096)))
+        return 0;
+
+    jumped_waypoint = waypoint;
+    last_takeoff = index;
+    hold_until = tick + takeoff.hold;
+    std::fprintf(stderr, "[native lava platform jump] tick=%llu waypoint=%u actor=%u pos=%d,%d,%d\n",
+                 static_cast<unsigned long long>(tick), waypoint, takeoff.actor,
+                 int(player->mPosX), int(player->mPosY), int(player->mPosZ));
+    return 2;
+}
+
 static bool replay_course_route(const char *route_override=nullptr) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
     const char *route=route_override?route_override:std::getenv("SM64DS_PC_TEST_COURSE_ROUTE");
@@ -3158,6 +3368,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
         if(fortress_reward_started)route=fortress_reward;
     }
     if(!route_override && replay_wdw_hundred_coin_star())return true;
+    if(!route_override && replay_big_bully_combat())return true;
     if(!route_override && replay_haunt_rear_boos(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && replay_big_boo_combat())return true;
     if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
@@ -3846,6 +4057,23 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        if (!route_override && level == 14 && waypoint == 191 &&
+            std::getenv("SM64DS_PC_TEST_LAVA_PLATFORM_JUMPS")) {
+            static bool runway_open = false;
+            if (!runway_open) {
+                const auto *platform = static_cast<daObjFl_Ukiyuka_c *>(
+                    dActor_c::FindWithActorID(75, nullptr));
+                const auto phase = platform ? static_cast<u16>(platform->mBobPhase) : 0;
+                // Leave enough time for the measured run-up before takeoff.
+                if (phase < 48384 || phase >= 48896) {
+                    ntr::input_test_controls(true, 0, 0, 0);
+                    return true;
+                }
+                runway_open = true;
+                std::fprintf(stderr, "[native lava float runway] tick=%llu phase=%u\n",
+                             static_cast<unsigned long long>(tick), unsigned(phase));
+            }
+        }
         const bool north_ring_exit = x == 0 && y == 300 && z == -2000;
         const bool east_ring_exit = x == 2050 && y == 150 && z == -300;
         if (level == 14 && has_y && (north_ring_exit || east_ring_exit) &&
@@ -6320,6 +6548,7 @@ static bool replay_course_route(const char *route_override=nullptr) {
     // door animations cannot shift combat inputs onto a different encounter.
     // Records are first:last:hex-mask:period:hold[:include-settle]; last is exclusive.
     buttons|=replay_route_window_buttons(waypoint);
+    buttons|=replay_lava_platform_jump(player, waypoint);
     ntr::input_test_controls(true,buttons,sx,sy);
     return true;
 }
@@ -10785,8 +11014,10 @@ static bool replay_chomp_controls() {
     ntr::input_test_controls(true,buttons,sx,sy);return true;
 }
 
-static bool trace_script_progress(uint64_t frame)
+static bool trace_script_progress(uint64_t)
 {
+    if(ntr::rt_presentation_phase()!=0)return true;
+    const auto frame=ntr::rt_frame();
     if(const char *path=std::getenv("SM64DS_PC_DRAIN_CAPTURE")) {
         static FILE *file=nullptr;static uint64_t previous=~uint64_t(0);
         const auto tick=ntr::rt_frame();
@@ -10871,8 +11102,6 @@ static bool trace_script_progress(uint64_t frame)
             std::fflush(file);
         }
     }
-    // The host callback is paced at presentation FPS (and may repeat a game
-    // state), while route diagnostics are specified in simulation ticks.
     trace_actor_census(ntr::rt_frame());
     // Explicit QA placement only: keep course geometry/ROM and ordinary play
     // intact while exercising the original Power Star pickup and exit path.
@@ -11544,7 +11773,7 @@ static bool trace_script_progress(uint64_t frame)
     }
     if (trace_enabled() && (frame == 1 || frame % 120 == 0)) {
         auto *fader = data_0209f5bc;
-        std::fprintf(stderr, "[script progress] presentation=%llu script=%p movie_frame=%u fade=%d speed=%d pending_level=%d current_level=%d\n",
+        std::fprintf(stderr, "[script progress] tick=%llu script=%p movie_frame=%u fade=%d speed=%d pending_level=%d current_level=%d\n",
                      static_cast<unsigned long long>(frame), data_0209fc48,
                      static_cast<unsigned>(data_0209b274),
                      fader ? static_cast<int>(fader->currInterp) : -1,

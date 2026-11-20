@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -13,8 +14,8 @@ int failures;
 #define CHECK(x) do {if(!(x)){std::fprintf(stderr,"FAIL %d: %s\n",__LINE__,#x);++failures;}}while(0)
 constexpr uint64_t first_key=0x5a00000000000000ull;
 uint32_t original[64];
-std::string filename(uint64_t key) {
-    char path[96];std::snprintf(path,sizeof(path),"textures/4k/%016llx.png",key);return path;
+std::string filename(uint64_t key,const char *directory="textures/4k") {
+    char path[96];std::snprintf(path,sizeof(path),"%s/%016llx.png",directory,key);return path;
 }
 uint32_t color(unsigned i) {return 0xff000000u|((32+i*5)<<16)|((210-i*4)<<8)|(40+i*3);}
 void quad(int left,int right,ntr::TextureReplacementRef r) {
@@ -91,9 +92,10 @@ int main() {
     texture_set_quality(TextureQuality::Original);texture_set_quality(TextureQuality::Upscaled);
     CHECK(gpu_render(base,nullptr,settings,true));CHECK(gpu_readback(rendered,width,height));
     CHECK(close_rgb(rendered[96*256+128],0xff5678ab));
-    // Role is checked again at the GPU boundary, including malicious eligible refs.
+    // A legacy image for the same key cannot replace Character or Unknown.
     for(auto role:{TextureRole::Character,TextureRole::Unknown}) {
-        scene(1,role,absent);CHECK(gpu_render(base,nullptr,settings,true));CHECK(gpu_frame_stats().replacement_attempts==0);
+        scene(1,role,absent);CHECK(gpu_render(base,nullptr,settings,true));
+        CHECK(gpu_frame_stats().replacement_attempts==(role==TextureRole::Character?1:0));
         CHECK(gpu_readback(rendered,width,height));CHECK(close_rgb(rendered[96*256+128],0xffffffff));
     }
     // Invalid data and decoded size limits fail safely, before a large allocation.
@@ -101,7 +103,7 @@ int main() {
     scene(1,TextureRole::Object,invalid);CHECK(gpu_render(base,nullptr,settings,true));CHECK(gpu_readback(rendered,width,height));
     CHECK(close_rgb(rendered[96*256+128],0xffffffff));
     std::vector<uint32_t> decoded;int tw=0,th=0;
-    CHECK(!texture_load_replacement_pixels(first_key,decoded,tw,th,1024));CHECK(decoded.empty());
+    CHECK(!texture_load_replacement_pixels(first_key,TextureReplacementRoute::SupirThenLegacy,decoded,tw,th,1024));CHECK(decoded.empty());
     // Native register decode retains 8x8 originals and passes replacement identity.
     gx_reset();auto *vram=reinterpret_cast<unsigned short *>(0x06800000u);
     for(unsigned i=0;i<64;++i)vram[i]=0x801f;
@@ -113,7 +115,7 @@ int main() {
         CHECK(t[0].tw==8 && t[0].th==8 && t[0].replacement.eligible && t[0].replacement.role==TextureRole::Object);
         CHECK(gx_texture_cache_bytes()==256);
     }
-    // CPU tooling remains eager; software runtime explicitly retains originals.
+    // Submitted geometry retains small original pixels and the original draw role.
     texture_model_register(model,64,"ARCHIVE/arc0.narc#5");
     for(auto consumer:{TextureRole::Object,TextureRole::Character,TextureRole::Unknown}) {
         gx_reset();TextureConsumerScope owner(consumer);TextureModelScope source(model);
@@ -121,13 +123,41 @@ int main() {
         for(int i=0;i<3;++i){gx_write_port(0x0400048c,uint16_t(i*512));gx_write_port(0x0400048c,0);}
         gx_write_port(0x04000504,0);size_t n=0;const auto *tri=gx_polygons(n);CHECK(n==1);
         CHECK(tri[0].tw==8 && tri[0].th==8);
-        CHECK(tri[0].replacement.eligible==(consumer==TextureRole::Object));
+        CHECK(tri[0].replacement.eligible==(consumer!=TextureRole::Unknown));
         CHECK(tri[0].replacement.role==consumer);
     }
     TextureDesc d;d.width=d.height=8;d.format=7;d.data=reinterpret_cast<unsigned char *>(vram);d.data_len=128;d.role=TextureRole::Object;
     CHECK(texture_write_png(texture_replacement_filename(d).c_str(),std::vector<uint32_t>(256,0xff123456),16,16));
     CHECK(texture_decode(d,decoded,&tw,&th));CHECK(tw==16);
     d.defer_replacement=true;CHECK(texture_decode(d,decoded,&tw,&th));CHECK(tw==8);
+    // The same source key can be used by a level material and a character.
+    // Both render in one frame to catch cache and negative-cache collisions.
+    constexpr const char *supir="textures/supir",*generated="textures/ai-generated-4k";
+    fs::create_directories(supir);fs::create_directories(generated);
+    const uint64_t shared=first_key+102;
+    constexpr uint32_t supir_pixel=0xff2757a2,generated_pixel=0xffdb4a34;
+    CHECK(texture_write_png(filename(shared,generated).c_str(),std::vector<uint32_t>(64,generated_pixel),8,8));
+    texture_set_quality(TextureQuality::Generated4K);
+    CHECK(!std::strcmp(texture_pack_status(TextureQuality::Generated4K),""));
+    gx_reset();quad(-4096,0,{shared,TextureRole::Character,true});quad(0,4096,{shared,TextureRole::Level,true});
+    const auto expect_shared=[&](uint32_t character,uint32_t level){
+        CHECK(gpu_render(base,nullptr,settings,true));CHECK(gpu_readback(rendered,width,height));
+        CHECK(close_rgb(rendered[96*256+64],character));
+        CHECK(close_rgb(rendered[96*256+192],level));
+    };
+    expect_shared(0xffffffff,generated_pixel);
+    CHECK(texture_write_png(filename(shared,supir).c_str(),std::vector<uint32_t>(64,supir_pixel),8,8));
+    expect_shared(0xffffffff,generated_pixel); // Missing SUPIR memo lasts for this epoch.
+    texture_set_quality(TextureQuality::Upscaled);
+    expect_shared(supir_pixel,supir_pixel);      // Both use SUPIR in the upscaled mode.
+    texture_set_quality(TextureQuality::Generated4K);
+    expect_shared(supir_pixel,generated_pixel);
+    fs::remove(filename(shared,generated));
+    std::ofstream(filename(shared,generated))<<"invalid generated PNG";
+    texture_set_quality(TextureQuality::Original);texture_set_quality(TextureQuality::Generated4K);
+    expect_shared(supir_pixel,supir_pixel);      // Invalid generated data falls back to SUPIR.
+    gx_reset();quad(-4096,4096,{shared,TextureRole::Unknown,true});
+    expect_shared(0xffffffff,0xffffffff);      // An unresolved draw cannot use either pack.
     texture_model_clear();gx_reset();gpu_close();texture_set_backend(TextureBackend::CpuDecode);texture_set_quality(TextureQuality::Original);
     fs::current_path(old);fs::remove_all(temp);
     if(failures)return 1;

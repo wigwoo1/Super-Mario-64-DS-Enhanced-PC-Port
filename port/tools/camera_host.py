@@ -112,6 +112,12 @@ def transform(text):
     if text.count(anchor) != 1:
         raise ValueError('Camera render coordinate conversion changed')
     text = text.replace(anchor, '    pc_camera_zoom(this, sp);\n\n' + anchor)
+    behavior = '// @symbol _ZN9dCamera_c8BehaviorEv'
+    step = '            func_0200ca50(c);'
+    if text.count(behavior) != 1 or text.count(step) != 1:
+        raise ValueError('Camera behavior dispatch changed')
+    text = text.replace(behavior, 'static void pc_camera_preset_step(dCamera_c *);\n\n' + behavior)
+    text = text.replace(step, '            pc_camera_preset_step(this);')
     text = text.replace('// @symbol _ZN9dCamera_c6RenderEv',
                         'static bool pc_camera_gameplay(const dCamera_c *);\n'
                         'static void pc_camera_zoom(dCamera_c *, s32 *);\n\n// @symbol _ZN9dCamera_c6RenderEv')
@@ -124,12 +130,24 @@ def transform(text):
         raise ValueError('Camera movement lens blend changed')
     text = text.replace(lens,
         's32 t = pc_camera_gameplay(self) ? 0x1000 : *(s32 *)((char *)self + 0x168);')
-    text = ('#include "ntr/video.h"\n#include "ntr/input.h"\n#include "ntr/rt.h"\n#include "ntr/camera_controls.h"\n'
+    presentation = '    dView_c::Render();'
+    if text.count(presentation) != 1:
+        raise ValueError('Camera presentation hook changed')
+    text = text.replace(presentation, '''    if(pc_camera_gameplay(self)) {
+        const auto *player=reinterpret_cast<const unsigned char *>(self->mTargetPlayer);
+        ntr::gx_motion_camera(reinterpret_cast<const s32 *>(reinterpret_cast<const char *>(self)+0x50),
+                              sp+3,reinterpret_cast<uintptr_t>(self),
+                              (static_cast<unsigned>(data_0209f2f8)<<8)|player[0xcc]);
+    } else ntr::gx_motion_camera(nullptr,nullptr,0,0);
+''' + presentation,1)
+    text = ('#include "ntr/video.h"\n#include "ntr/input.h"\n#include "ntr/rt.h"\n#include "ntr/gx.h"\n#include "ntr/camera_controls.h"\n'
             '#include <algorithm>\n#include <cmath>\n#include <climits>\n' + text)
     text += r'''
 extern "C" int pc_chomp_release_target(int *);
 extern "C" bool pc_camera_on_vertical_lift(const void *);
 extern "C" void pc_camera_set_movement_yaw_offset(short, int);
+extern "C" u16 data_0209f49c[], data_0209f49e[];
+extern "C" u8 gActivePlayerSlot;
 
 static bool pc_camera_gameplay(const dCamera_c *camera)
 {
@@ -138,6 +156,30 @@ static bool pc_camera_gameplay(const dCamera_c *camera)
         !player[0x6f6] && !player[0x709] &&
         !data_0209fc48 && !data_0209f294 && !data_0209f20c && !data_0209f2c4 &&
         camera->mState!=reinterpret_cast<const dCamera_c::State *>(&data_0209b098);
+}
+
+static void pc_camera_preset_step(dCamera_c *camera)
+{
+    static dCamera_c *previous_camera=nullptr;
+    static u16 previous_turn=0;
+    const u16 turn=pc_camera_gameplay(camera) && !ntr::video_pause_screen()
+        ? ntr::input_state().camera_preset_turn : 0;
+    const u16 edge=previous_camera==camera ? u16(turn & ~previous_turn) : turn;
+    previous_camera=camera;
+    previous_turn=turn;
+    if(!turn || gActivePlayerSlot!=0) {
+        func_0200ca50(camera);
+        return;
+    }
+
+    // The camera worker reads the mapped logical controls. Scope the extra
+    // turn to this call so the same bits never reach player or menu input.
+    const u16 saved_held=data_0209f49c[0],saved_pressed=data_0209f49e[0];
+    data_0209f49c[0]=u16((saved_held&~0x300u)|turn);
+    data_0209f49e[0]=u16((saved_pressed&~0x300u)|edge);
+    func_0200ca50(camera);
+    data_0209f49c[0]=saved_held;
+    data_0209f49e[0]=saved_pressed;
 }
 
 // Native distance zoom, using the camera's own background collision filter.
@@ -263,6 +305,8 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
                 mode_handled,settings.camera_mode?"free":"preset",int(saved));
         }
     }
+    int mouse_dx=0,mouse_dy=0;
+    ntr::video_take_camera_mouse_motion(settings.camera_mode==1 && pc_camera_gameplay(camera),mouse_dx,mouse_dy);
     if (!allowed) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; response.reset(); control_tick=~0ull; return; }
     const auto input = ntr::input_state();
     if(settings.camera_mode!=1) { pc_camera_set_movement_yaw_offset(0,0); orbit_active=false; orbit_initialized=false; response.reset(); control_tick=~0ull; }
@@ -293,11 +337,15 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
         const auto tick=ntr::rt_frame();
         const double elapsed=control_tick==~0ull || tick<control_tick?1.0/30.0:double(tick-control_tick)/60.0;
         control_tick=tick;
-        const auto turn=response.update(input.right_x,input.right_y,settings,elapsed);
-        orbit_yaw += turn.yaw;
-        orbit_pitch += turn.pitch;
+        const auto turn=response.update(input.right_x,input.right_y,settings,elapsed,input.camera_turn);
+        const auto mouse_turn=ntr::mouse_camera_orbit(mouse_dx,mouse_dy,settings);
+        orbit_yaw += turn.yaw+mouse_turn.yaw;
+        orbit_pitch += turn.pitch+mouse_turn.pitch;
         orbit_pitch=std::clamp(orbit_pitch,-1.15,1.15);
-        orbit_active=turn.yaw!=0 || turn.pitch!=0;
+        orbit_active=turn.yaw!=0 || turn.pitch!=0 || mouse_turn.yaw!=0 || mouse_turn.pitch!=0;
+        if((mouse_dx || mouse_dy) && std::getenv("SM64DS_PC_CAMERA_ORBIT_TRACE"))
+            std::fprintf(stderr,"[camera mouse] tick=%llu counts=%d,%d turn=%.8f,%.8f\n",
+                static_cast<unsigned long long>(tick),mouse_dx,mouse_dy,mouse_turn.yaw,mouse_turn.pitch);
         if(std::getenv("SM64DS_PC_CAMERA_ORBIT_TRACE") && tick%30==0)
             std::fprintf(stderr,"[camera response] tick=%llu elapsed=%.6f turn=%.8f,%.8f sensitivity=%u invert=%u,%u acceleration=%u\n",
                 static_cast<unsigned long long>(tick),elapsed,turn.yaw,turn.pitch,unsigned(settings.camera_sensitivity),

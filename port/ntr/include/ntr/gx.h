@@ -19,6 +19,7 @@
 #define NTR_GX_H
 
 #include <stdint.h>
+#include <array>
 
 #include "ntr/ppu.h"
 #include "ntr/texture.h"
@@ -48,7 +49,8 @@ struct GxTriangle {
     TexturePixelsInfo pixels_info;
     TextureReplacementRef replacement;
     uint8_t texture_address=3; // TEXIMAGE bits16..19: repeat S/T, flip S/T.
-    uint8_t texture_address_reserved[7]={}; // Deterministic geometry hashes/pump comparisons.
+    bool camera_space=false;
+    uint8_t texture_address_reserved[6]={}; // Deterministic geometry hashes/pump comparisons.
 };
 
 // Feed the engine. `gx_write_port` takes a geometry-port address in
@@ -101,6 +103,24 @@ const GxTriangle *gx_polygons(size_t &count);
 
 // Last completed display list, or the current list before the first swap.
 const GxTriangle *gx_display_polygons(size_t &count);
+// Camera for the same completed geometry frame, before D3D widescreen/depth
+// adjustments. Missing data makes optional temporal effects pass through.
+struct GxCameraFrame {
+    std::array<float,16> view_projection{};
+    std::array<float,3> eye{},forward{};
+    uint64_t serial=0,tick=0;
+    uintptr_t owner=0;
+    unsigned scene=0;
+};
+void gx_motion_camera(const int32_t *view,const int32_t *eye,uintptr_t owner,unsigned scene);
+GxCameraFrame gx_display_camera();
+struct GxCameraPrediction {
+    std::array<float,16> clip_transform{};
+    float fraction=0;
+};
+GxCameraPrediction gx_predict_camera(const GxCameraFrame &previous,const GxCameraFrame &current,float tick_age);
+GxCameraPrediction gx_camera_prediction();
+bool gx_apply_camera_prediction(GxTriangle &triangle,const GxCameraPrediction &prediction);
 // Shared homogeneous clipping for the software and native GPU rasterizers.
 // out must hold 12 vertices. Returns the clipped polygon's vertex count.
 unsigned gx_clip_polygon(const GxTriangle &triangle, GxVertex *out);

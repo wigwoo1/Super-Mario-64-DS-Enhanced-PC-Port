@@ -251,6 +251,19 @@ void input_poll() {
             }
             const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
         }
+        segment=std::getenv("SM64DS_PC_TEST_TRIGGER_SCHEDULE");
+        while(segment && *segment) {
+            unsigned long long begin=0,end=0;
+            unsigned left=0,right=0;
+            int consumed=0;
+            if(std::sscanf(segment,"%llu:%llu:%u:%u%n",&begin,&end,&left,&right,&consumed)==4 &&
+               (!segment[consumed] || segment[consumed]==',') && left<=255 && right<=255 &&
+               g_input_poll_count>=begin && g_input_poll_count<end) {
+                g_state.left_trigger=static_cast<uint8_t>(left);
+                g_state.right_trigger=static_cast<uint8_t>(right);
+            }
+            const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
+        }
     }
     pressed |= scripted_buttons(g_input_poll_count, std::getenv("SM64DS_PC_TEST_BUTTONS"));
     const char *bot_controls=std::getenv("SM64DS_PC_TEST_BOSS_BOT");
@@ -265,11 +278,12 @@ void input_poll() {
         const unsigned key=scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_HOST_KEYS"),255);
         if(key)g_raw_keys[key]=true;
     }
-    const auto &bindings=video_get_settings().bindings;
-    const uint32_t raw_pad=g_state.buttons | (g_state.left_trigger>128?0x10000u:0) | (g_state.right_trigger>128?0x20000u:0);
+    const auto settings=video_get_settings();
+    const auto &bindings=settings.bindings;
+    const uint32_t raw_pad=pad_with_triggers(g_state.buttons,g_state.left_trigger,g_state.right_trigger);
     static bool previous_zoom=false,previous_camera_mode=false;
-    bool zoom_down=(raw_pad & bindings.pad[12]) || g_raw_keys[bindings.keys[12]];
-    bool mode_down=(raw_pad & bindings.pad[13]) || g_raw_keys[bindings.keys[13]];
+    bool zoom_down=binding_down(bindings,12,g_raw_keys,raw_pad);
+    bool mode_down=binding_down(bindings,13,g_raw_keys,raw_pad);
     if(automation_only && automation_only[0]=='1')
         zoom_down=zoom_down || scripted_buttons(g_input_poll_count,std::getenv("SM64DS_PC_TEST_CAMERA_ZOOM"))!=0;
     if(automation_only && automation_only[0]=='1')
@@ -288,6 +302,21 @@ void input_poll() {
     // A-confirm/B-back view independent of the gameplay jump/attack swap.
     g_menu_keys=static_cast<uint16_t>(pressed | mapped_buttons(ui_bindings(),g_raw_keys,raw_pad));
     pressed |= mapped_buttons(g_menu_navigation?ui_bindings():bindings,g_raw_keys,raw_pad);
+    g_state.camera_turn=0;
+    g_state.camera_preset_turn=0;
+    if(!g_menu_navigation && !video_pause_screen()) {
+        if(settings.camera_mode==1) {
+            const auto strength=[&](unsigned binding){
+                return camera_turn_strength(bindings,binding,g_raw_keys,g_state.buttons,
+                                            g_state.left_trigger,g_state.right_trigger);
+            };
+            g_state.camera_turn=strength(camera_turn_right_binding)-strength(camera_turn_left_binding);
+        } else {
+            g_state.camera_preset_turn=camera_preset_buttons(
+                binding_down(bindings,camera_turn_left_binding,g_raw_keys,raw_pad),
+                binding_down(bindings,camera_turn_right_binding,g_raw_keys,raw_pad));
+        }
+    }
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);
 
     g_state.touch = g_touch;
@@ -297,15 +326,20 @@ void input_poll() {
         static FILE *trace=nullptr;
         static InputState previous{};
         static bool previous_menu=false;
-        if(!trace && *path){trace=std::fopen(path,"w");if(trace)std::fputs("poll,menu,pad,game_keys,ui_keys,left_x,left_y,right_x,right_y,zoom_edge,mode_edge,touch\n",trace);}
+        if(!trace && *path){trace=std::fopen(path,"w");if(trace)std::fputs("poll,menu,pad,game_keys,ui_keys,left_x,left_y,right_x,right_y,zoom_edge,mode_edge,touch,lt,rt,camera_turn,camera_preset_turn\n",trace);}
         if(trace && (g_state.buttons!=previous.buttons || g_state.left_x!=previous.left_x ||
             g_state.left_y!=previous.left_y || g_state.right_x!=previous.right_x ||
-            g_state.right_y!=previous.right_y || g_menu_navigation!=previous_menu ||
+            g_state.right_y!=previous.right_y || g_state.left_trigger!=previous.left_trigger ||
+            g_state.right_trigger!=previous.right_trigger || g_state.camera_turn!=previous.camera_turn ||
+            g_state.camera_preset_turn!=previous.camera_preset_turn ||
+            g_menu_navigation!=previous_menu ||
             g_input_poll_count%60==0)) {
-            std::fprintf(trace,"%llu,%u,%u,%u,%u,%d,%d,%d,%d,%u,%u,%u\n",g_input_poll_count,
+            std::fprintf(trace,"%llu,%u,%u,%u,%u,%d,%d,%d,%d,%u,%u,%u,%u,%u,%.5f,%u\n",g_input_poll_count,
                 unsigned(g_menu_navigation),unsigned(g_state.buttons),unsigned(pressed),unsigned(g_menu_keys),
                 int(g_state.left_x),int(g_state.left_y),int(g_state.right_x),int(g_state.right_y),
-                unsigned(g_state.camera_zoom_pressed),unsigned(g_state.camera_mode_pressed),unsigned(g_touch));
+                unsigned(g_state.camera_zoom_pressed),unsigned(g_state.camera_mode_pressed),unsigned(g_touch),
+                unsigned(g_state.left_trigger),unsigned(g_state.right_trigger),g_state.camera_turn,
+                unsigned(g_state.camera_preset_turn));
             std::fflush(trace);
         }
         previous=g_state;previous_menu=g_menu_navigation;
@@ -326,7 +360,7 @@ void input_test_controls(bool enabled,uint16_t buttons,int16_t x,int16_t y) {
 InputState input_state() { return g_state; }
 uint32_t input_binding_candidate(bool pad) {
     if(pad) {
-        const uint32_t value=g_state.buttons | (g_state.left_trigger>128?0x10000u:0) | (g_state.right_trigger>128?0x20000u:0);
+        const uint32_t value=pad_with_triggers(g_state.buttons,g_state.left_trigger,g_state.right_trigger);
         return value && (value&(value-1))?0xffffffffu:value;
     }
     unsigned result=0;

@@ -22,6 +22,7 @@
 #include <d3d11.h>
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
+#include <DirectXMath.h>
 #include <wrl/client.h>
 
 namespace ntr {
@@ -44,24 +45,33 @@ ComPtr<ID3D11RenderTargetView> window_view, target_view;
 ComPtr<ID3D11Texture2D> target, depth, staging;
 ComPtr<ID3D11Texture2D> gameplay_cache;
 ComPtr<ID3D11DepthStencilView> depth_view;
-ComPtr<ID3D11ShaderResourceView> target_sample;
+ComPtr<ID3D11ShaderResourceView> target_sample, depth_sample;
 ComPtr<ID3D11VertexShader> vertex_shader;
 ComPtr<ID3D11PixelShader> pixel_shader;
+ComPtr<ID3D11PixelShader> motion_shader;
 ComPtr<ID3D11InputLayout> layout;
 ComPtr<ID3D11Buffer> vertex_buffer;
 ComPtr<ID3D11Buffer> toon_params;
 ComPtr<ID3D11Buffer> draw_params;
+ComPtr<ID3D11Buffer> motion_params;
 ComPtr<ID3D11Query> retirement_query;
 ComPtr<ID3D11SamplerState> texture_samplers[16],anisotropic_samplers[4][16],nearest_clamp,linear_clamp;
 ComPtr<ID3D11DepthStencilState> depth_on,depth_off;
 ComPtr<ID3D11DepthStencilState> normal_depth[2][2],translucent_depth[2][2],shadow_mask[2],shadow_draw[2],shadow_exclude,shadow_clear;
 ComPtr<ID3D11BlendState> blend_on,blend_off,color_off;
 ComPtr<ID3D11RasterizerState> rasterizer,wireframe;
-Texture base_texture,map_texture,white_texture,hud_texture;
+Texture base_texture,map_texture,packed_map_texture,white_texture,hud_texture;
+Texture motion_source;
+struct MotionHistory {
+    GxCameraFrame current{};
+    DirectX::XMFLOAT4X4 reprojection{};
+    float exposure=0;
+} motion_history;
+bool motion_failed=false;
 uint64_t hud_texture_revision=~uint64_t(0);
 using CacheKey=std::tuple<bool,uint64_t,uint32_t>;
 std::map<CacheKey,Texture> texture_cache;
-std::set<uint64_t> unavailable_replacements;
+std::set<CacheKey> unavailable_replacements;
 uint64_t cache_bytes=0,cache_budget=256ull*1024*1024,use_counter=0;
 uint32_t cache_epoch=0;
 GpuFrameStats frame_stats;
@@ -97,7 +107,8 @@ bool resize_target(unsigned width,unsigned height) {
     ID3D11ShaderResourceView *null_view=nullptr;
     context->PSSetShaderResources(0,1,&null_view);
     target.Reset(); target_view.Reset(); target_sample.Reset();
-    depth.Reset(); depth_view.Reset(); staging.Reset();
+    depth.Reset(); depth_view.Reset(); depth_sample.Reset(); staging.Reset();
+    motion_source={};motion_history={};
     target_width=target_height=0;
     D3D11_TEXTURE2D_DESC desc{};
     desc.Width=width; desc.Height=height; desc.MipLevels=desc.ArraySize=1;
@@ -107,9 +118,24 @@ bool resize_target(unsigned width,unsigned height) {
     if (!hr_ok(device->CreateTexture2D(&desc,nullptr,&target),"render target") ||
         !hr_ok(device->CreateRenderTargetView(target.Get(),nullptr,&target_view),"render view") ||
         !hr_ok(device->CreateShaderResourceView(target.Get(),nullptr,&target_sample),"render sample")) return false;
-    desc.Format=DXGI_FORMAT_D24_UNORM_S8_UINT; desc.BindFlags=D3D11_BIND_DEPTH_STENCIL;
-    if (!hr_ok(device->CreateTexture2D(&desc,nullptr,&depth),"depth target") ||
-        !hr_ok(device->CreateDepthStencilView(depth.Get(),nullptr,&depth_view),"depth view")) return false;
+    desc.Format=DXGI_FORMAT_R24G8_TYPELESS;
+    desc.BindFlags=D3D11_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE;
+    D3D11_DEPTH_STENCIL_VIEW_DESC dsv{};
+    dsv.Format=DXGI_FORMAT_D24_UNORM_S8_UINT;
+    dsv.ViewDimension=D3D11_DSV_DIMENSION_TEXTURE2D;
+    if(SUCCEEDED(device->CreateTexture2D(&desc,nullptr,&depth)) &&
+       SUCCEEDED(device->CreateDepthStencilView(depth.Get(),&dsv,&depth_view))) {
+        D3D11_SHADER_RESOURCE_VIEW_DESC srv{};
+        srv.Format=DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+        srv.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2D;
+        srv.Texture2D.MipLevels=1;
+        if(FAILED(device->CreateShaderResourceView(depth.Get(),&srv,&depth_sample)))depth_sample.Reset();
+    } else {
+        depth.Reset();depth_view.Reset();
+        desc.Format=DXGI_FORMAT_D24_UNORM_S8_UINT;desc.BindFlags=D3D11_BIND_DEPTH_STENCIL;
+        if(!hr_ok(device->CreateTexture2D(&desc,nullptr,&depth),"depth target") ||
+           !hr_ok(device->CreateDepthStencilView(depth.Get(),nullptr,&depth_view),"depth view"))return false;
+    }
     target_width=width; target_height=height;
     std::fprintf(stderr,"[native GPU] raster target %ux%u, adapter %s\n",width,height,adapter_name);
     return true;
@@ -153,6 +179,122 @@ bool quad(ID3D11ShaderResourceView *view,ID3D11SamplerState *sampler,
         vertex(right,top,0,1,1,0,0xffffffff),vertex(right,bottom,0,1,1,1,0xffffffff)};
     if (!upload(v)) return false;
     parameters();bind_texture(view,sampler); context->Draw(6,0); return true;
+}
+
+bool prepare_motion_pass() {
+    if(motion_failed || !depth_sample)return false;
+    if(motion_shader && motion_params && motion_source.resource)return true;
+    if(!motion_shader) {
+        constexpr char shader[]=R"(
+Texture2D scene_color : register(t0);
+Texture2D<float> scene_depth : register(t1);
+SamplerState linear_color : register(s0);
+cbuffer MotionParameters : register(b2) {
+    row_major float4x4 current_to_previous;
+    float2 dimensions;
+    float exposure;
+    float max_pixels;
+};
+float4 main(float4 pixel:SV_POSITION) : SV_TARGET {
+    const float2 uv=pixel.xy/dimensions;
+    const float4 center=scene_color.Sample(linear_color,uv);
+    const float depth=scene_depth.Load(int3(int2(pixel.xy),0));
+    if(depth>=0.9999999) return center;
+    const float4 projected=mul(float4(uv*float2(2,-2)+float2(-1,1),depth,1),current_to_previous);
+    if(projected.w<=0.0001) return center;
+    float2 velocity=(projected.xy/projected.w*float2(0.5,-0.5)+0.5-uv)*exposure;
+    const float length_pixels=length(velocity*dimensions);
+    if(length_pixels<0.65) return center;
+    velocity*=min(1.0,max_pixels/length_pixels);
+    float4 total=center*5;
+    float weight=5;
+    [unroll] for(int i=1;i<=4;++i) {
+        const float2 at=uv+velocity*(i/4.0);
+        if(any(at<=0.0) || any(at>=1.0)) continue;
+        const float z=scene_depth.Load(int3(int2(at*dimensions),0));
+        if(z>=0.9999999 || abs(z-depth)>max(0.0008,(1-depth)*0.12)) continue;
+        total+=scene_color.Sample(linear_color,at)*(5-i);
+        weight+=5-i;
+    }
+    return total/weight;
+})";
+        ComPtr<ID3DBlob> code,errors;
+        if(FAILED(D3DCompile(shader,sizeof(shader)-1,nullptr,nullptr,nullptr,"main","ps_4_0",
+                             D3DCOMPILE_OPTIMIZATION_LEVEL3,0,&code,&errors))) {
+            if(errors)std::fprintf(stderr,"[motion blur] %s",static_cast<const char *>(errors->GetBufferPointer()));
+        } else device->CreatePixelShader(code->GetBufferPointer(),code->GetBufferSize(),nullptr,&motion_shader);
+        D3D11_BUFFER_DESC desc{};
+        desc.ByteWidth=80;desc.Usage=D3D11_USAGE_DEFAULT;desc.BindFlags=D3D11_BIND_CONSTANT_BUFFER;
+        if(FAILED(device->CreateBuffer(&desc,nullptr,&motion_params)))motion_params.Reset();
+    }
+    if(!motion_shader || !motion_params || !texture(motion_source,nullptr,target_width,target_height)) {
+        motion_failed=true;
+        motion_source={};
+        std::fprintf(stderr,"[motion blur] unavailable on this device\n");
+        return false;
+    }
+    return true;
+}
+
+void update_motion_history(const GxCameraFrame &camera) {
+    if(camera.serial==motion_history.current.serial)return;
+    const auto previous=motion_history.current;
+    motion_history.current=camera;
+    motion_history.exposure=0;
+    if(!camera.owner || camera.owner!=previous.owner || camera.scene!=previous.scene ||
+       camera.tick<=previous.tick || camera.tick-previous.tick>8 ||
+       camera.view_projection==previous.view_projection)return;
+    float distance=0,alignment=0;
+    for(unsigned i=0;i<3;++i){
+        const float delta=camera.eye[i]-previous.eye[i];distance+=delta*delta;
+        alignment+=camera.forward[i]*previous.forward[i];
+    }
+    if(distance>64*64 || alignment<0.85f)return; // Camera cut.
+    const float aspect=float(SCREEN_W)*target_height/(float(SCREEN_H)*target_width);
+    const auto adjusted=[aspect](const GxCameraFrame &frame){
+        DirectX::XMFLOAT4X4 m;
+        std::memcpy(m.m,frame.view_projection.data(),sizeof(m.m));
+        for(auto &row:m.m) {
+            row[0]*=aspect;
+            row[2]=(row[2]+row[3])*0.5f;
+        }
+        return DirectX::XMLoadFloat4x4(&m);
+    };
+    DirectX::XMVECTOR determinant;
+    const auto inverse=DirectX::XMMatrixInverse(&determinant,adjusted(camera));
+    const float det=DirectX::XMVectorGetX(determinant);
+    if(!std::isfinite(det) || std::fabs(det)<1e-8f)return;
+    DirectX::XMStoreFloat4x4(&motion_history.reprojection,DirectX::XMMatrixMultiply(inverse,adjusted(previous)));
+    motion_history.exposure=std::min(0.75f,1.0f/float(camera.tick-previous.tick));
+}
+
+void draw_motion_blur(bool enabled) {
+    if(!enabled) {
+        motion_history={};motion_source={};
+        return;
+    }
+    update_motion_history(gx_display_camera());
+    if(motion_history.exposure==0 || !prepare_motion_pass())return;
+    context->OMSetRenderTargets(0,nullptr,nullptr);
+    context->CopyResource(motion_source.resource.Get(),target.Get());
+    ID3D11RenderTargetView *rt=target_view.Get();
+    context->OMSetRenderTargets(1,&rt,nullptr);
+    context->OMSetDepthStencilState(depth_off.Get(),0);
+    context->OMSetBlendState(blend_off.Get(),nullptr,~0u);
+    context->PSSetShader(motion_shader.Get(),nullptr,0);
+    ID3D11ShaderResourceView *z=depth_sample.Get();
+    context->PSSetShaderResources(1,1,&z);
+    struct Parameters {DirectX::XMFLOAT4X4 matrix;float width,height,exposure,max_pixels;};
+    static_assert(sizeof(Parameters)==80,"Motion shader constant layout");
+    const Parameters values{motion_history.reprojection,float(target_width),float(target_height),
+                            motion_history.exposure,std::max(4.0f,target_height/48.0f)};
+    context->UpdateSubresource(motion_params.Get(),0,nullptr,&values,0,0);
+    ID3D11Buffer *buffer=motion_params.Get();
+    context->PSSetConstantBuffers(2,1,&buffer);
+    frame_stats.motion_blur_applied=quad(motion_source.view.Get(),linear_clamp.Get());
+    ID3D11ShaderResourceView *null_views[2]={nullptr,nullptr};
+    context->PSSetShaderResources(0,2,null_views);
+    context->PSSetShader(pixel_shader.Get(),nullptr,0);
 }
 bool retire_commands() {
     ID3D11ShaderResourceView *null_view=nullptr;context->PSSetShaderResources(0,1,&null_view);
@@ -213,17 +355,17 @@ Texture *cache_upload(const CacheKey &key,const uint32_t *pixels,int width,int h
 Texture *resolve_material(const FrameMaterial &m) {
     if(!m.pixels)return &white_texture;
     const auto &r=m.replacement;
-    if(texture_backend()==TextureBackend::NativeGpu && texture_upscaled() && r.eligible &&
-       (r.role==TextureRole::Level || r.role==TextureRole::Object)) {
-        const CacheKey key{true,r.key,cache_epoch};
+    const auto route=texture_replacement_route(texture_quality(),r.role);
+    if(texture_backend()==TextureBackend::NativeGpu && r.eligible && r.key && route!=TextureReplacementRoute::None) {
+        const CacheKey key{true,r.key,static_cast<uint32_t>(route)};
         auto cached=texture_cache.find(key);
         if(cached!=texture_cache.end()) {
             cached->second.last_used=++use_counter;++frame_stats.cache_hits;return &cached->second;
         }
-        if(!unavailable_replacements.count(r.key)) {
+        if(!unavailable_replacements.count(key)) {
             ++frame_stats.replacement_attempts;
             std::vector<uint32_t> staging_pixels;int width=0,height=0;
-            if(texture_load_replacement_pixels(r.key,staging_pixels,width,height)) {
+            if(texture_load_replacement_pixels(r.key,route,staging_pixels,width,height)) {
                 frame_stats.staging_peak_bytes=std::max(frame_stats.staging_peak_bytes,
                     static_cast<uint64_t>(staging_pixels.size())*4);
                 if(auto *result=cache_upload(key,staging_pixels.data(),width,height)) {
@@ -232,7 +374,7 @@ Texture *resolve_material(const FrameMaterial &m) {
             }
             // Missing, invalid, over-limit or failed uploads use original art.
             // A settings change starts a fresh epoch and retries these keys.
-            unavailable_replacements.insert(r.key);
+            unavailable_replacements.insert(key);
         }
     }
     const CacheKey key{false,m.info.key,0};auto cached=texture_cache.find(key);
@@ -260,7 +402,7 @@ FrameMaterial *material(const GxTriangle &t,std::map<FrameKey,FrameMaterial> &fr
     return &frame_cache.emplace(pointer,m).first->second;
 }
 bool menu_scene=false,letter_overlay=false;
-bool geometry(bool dual_screen=false) {
+bool geometry(bool dual_screen,const GxCameraPrediction &prediction) {
     if(const char *path=std::getenv("SM64DS_PC_POLYGON_DUMP")) {
         static bool dumped=false;
         const char *when=std::getenv("SM64DS_PC_POLYGON_DUMP_TICK");
@@ -300,6 +442,7 @@ bool geometry(bool dual_screen=false) {
     }
     for(size_t i=0;i<count;++i) {
         auto t=source[i]; GxVertex clipped[12];
+        if(gx_apply_camera_prediction(t,prediction))++frame_stats.camera_predicted_triangles;
         if(t.perspective && !menu_scene && !dual_screen) {
             // Keep vertical FOV and original proportions. Widen the horizontal
             // frustum before clipping so widescreen reveals real extra geometry.
@@ -570,8 +713,9 @@ void gpu_close() {
     glsw_close();using_gl_software=false;
     if(context) { context->ClearState();context->Flush(); }
     texture_cache.clear();cache_bytes=0;use_counter=0;cache_epoch=0;unavailable_replacements.clear();
-    base_texture={};map_texture={};white_texture={};hud_texture={};hud_texture_revision=~uint64_t(0);
-    gameplay_cache.Reset();target_sample.Reset();staging.Reset();target_view.Reset();target.Reset();depth_view.Reset();depth.Reset();
+    base_texture={};map_texture={};packed_map_texture={};white_texture={};hud_texture={};hud_texture_revision=~uint64_t(0);
+    gameplay_cache.Reset();target_sample.Reset();staging.Reset();target_view.Reset();target.Reset();depth_view.Reset();depth.Reset();depth_sample.Reset();
+    motion_source={};motion_history={};motion_shader.Reset();motion_params.Reset();motion_failed=false;
     retirement_query.Reset();window_view.Reset();swap.Reset();vertex_shader.Reset();pixel_shader.Reset();layout.Reset();vertex_buffer.Reset();draw_params.Reset();toon_params.Reset();
     for(auto &sampler:texture_samplers)sampler.Reset();
     for(auto &level:anisotropic_samplers) for(auto &sampler:level) sampler.Reset();
@@ -598,10 +742,15 @@ void gpu_set_anisotropic_filtering(uint8_t level) {
 uint8_t gpu_anisotropic_filtering() {return using_gl_software?glsw_anisotropic_filtering():anisotropic_level;}
 bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,const uint32_t *foreground,
                 const DualScreenLayout *screens,const Framebuffer *sub,bool engine_a_on_top,bool cache_gameplay,
-                const uint32_t *hud,unsigned hud_width,unsigned hud_height,uint64_t hud_revision) {
+                const uint32_t *hud,unsigned hud_width,unsigned hud_height,uint64_t hud_revision,bool motion_gameplay,
+                unsigned map_width,unsigned map_height) {
+    if(map && (!map_width || !map_height || map_width>s.width || map_height>s.height))return false;
+    const bool gameplay_camera=motion_gameplay && draw_geometry && !screens && !menu_scene && !letter_overlay;
+    const auto prediction=gameplay_camera && s.target_fps>60?gx_camera_prediction():GxCameraPrediction{};
     if(using_gl_software)return glsw_render(base,map,s,draw_geometry,foreground,screens,sub,
-        engine_a_on_top,cache_gameplay,hud,hud_width,hud_height,hud_revision);
+        engine_a_on_top,cache_gameplay,hud,hud_width,hud_height,hud_revision,map_width,map_height,prediction);
     frame_stats={};
+    frame_stats.camera_prediction=prediction.fraction;
     struct Timer {
         std::chrono::steady_clock::time_point start=std::chrono::steady_clock::now();
         ~Timer() {frame_stats.cache_bytes=cache_bytes;frame_stats.cache_budget=cache_budget;frame_stats.cpu_us=static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count());}
@@ -634,7 +783,8 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
     context->UpdateSubresource(base_texture.resource.Get(),0,nullptr,opaque_base.px,SCREEN_W*4,0);
     if(!quad(base_texture.view.Get(),s.upscale_2d?nearest_clamp.Get():linear_clamp.Get())) return false;
     triangles_drawn=0;
-    if(draw_geometry && !geometry(screens!=nullptr)) return false;
+    if(draw_geometry && !geometry(screens!=nullptr,prediction)) return false;
+    draw_motion_blur(s.motion_blur && gameplay_camera);
     if(draw_geometry && foreground) {
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
         context->UpdateSubresource(base_texture.resource.Get(),0,nullptr,foreground,SCREEN_W*4,0);
@@ -662,11 +812,17 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
         context->CopyResource(gameplay_cache.Get(),target.Get());
     }
     if(!screens && map && s.minimap) {
+        auto *minimap=&map_texture;
+        if(map_width!=SCREEN_W || map_height!=SCREEN_H) {
+            if(packed_map_texture.width!=map_width || packed_map_texture.height!=map_height)
+                if(!texture(packed_map_texture,nullptr,map_width,map_height))return false;
+            minimap=&packed_map_texture;
+        }
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
-        context->UpdateSubresource(map_texture.resource.Get(),0,nullptr,map,SCREEN_W*4,0);
+        context->UpdateSubresource(minimap->resource.Get(),0,nullptr,map,map_width*4,0);
         const float x=s.minimap_x/1000.0f,y=s.minimap_y/1000.0f,size=s.minimap_scale/1000.0f;
         // Preserve the old overlay's proportional layout in both dimensions.
-        if(!quad(map_texture.view.Get(),nearest_clamp.Get(),x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2)) return false;
+        if(!quad(minimap->view.Get(),nearest_clamp.Get(),x*2-1,1-y*2,(x+size)*2-1,1-(y+size)*2)) return false;
     }
     if(!screens && hud) {
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
@@ -739,7 +895,8 @@ void gpu_close() {}
 void gpu_set_anisotropic_filtering(uint8_t) {}
 uint8_t gpu_anisotropic_filtering() { return 0; }
 bool gpu_render(const Framebuffer &,const uint32_t *,const VideoSettings &,bool,const uint32_t *,
-                const DualScreenLayout *,const Framebuffer *,bool,bool,const uint32_t *,unsigned,unsigned,uint64_t) { return false; }
+                const DualScreenLayout *,const Framebuffer *,bool,bool,const uint32_t *,unsigned,unsigned,uint64_t,bool,
+                unsigned,unsigned) { return false; }
 void gpu_set_menu_scene(bool) {}
 void gpu_set_letter_overlay(bool) {}
 bool gpu_present(unsigned,unsigned,bool) { return false; }

@@ -1,5 +1,6 @@
 #include "ntr/video.h"
 
+#include "ntr/audio.h"
 #include "ntr/gx.h"
 #include "ntr/gpu.h"
 #include "ntr/input.h"
@@ -42,6 +43,8 @@ Framebuffer g_bottom;
 Framebuffer g_minimap;
 Framebuffer g_editor_map;
 Framebuffer g_editor_map_full;
+std::array<uint8_t,SCREEN_W*SCREEN_H> g_editor_bg3_hidden,g_editor_bg3_full;
+PpuMinimapView g_editor_map_view;
 std::vector<uint32_t> g_editor_background;
 unsigned g_editor_width=0,g_editor_height=0,g_editor_axis=0;
 bool g_editor_active=false,g_editor_dirty=false,g_editor_redraw=false,g_editor_map_ready=false;
@@ -71,6 +74,7 @@ bool g_gpu = false;
 bool g_forced_software = false,g_renderer_failed = false;
 VideoRenderer g_active_renderer=VideoRenderer::D3D11;
 unsigned g_output_width=SCREEN_W,g_output_height=SCREEN_H;
+uint64_t g_scanout_revision=0;
 
 // The retail dialogue glyphs are a transparent PPU foreground layer. Add a
 // contrasting panel only to transparent pixels in that layer, so
@@ -159,12 +163,47 @@ const char *aspect_name(uint32_t width, uint32_t height) {
     return "16:9";
 }
 
+bool mouse_camera_gameplay() {
+    return g_settings.camera_mode==1 && g_minimap_gameplay && !g_menu_open &&
+        !g_pause_screen && !g_minigame_active && !g_credits_active &&
+        !g_course_clear_active && !g_dialogue_card_active && !g_cannon_sight &&
+        !g_cutscene_letter;
+}
+
 #if defined(_WIN32)
 HWND g_window = nullptr;
 const char *kWindowClass = "SM64DSNativeVideoWindow";
+bool g_mouse_camera_drag = false;
+int g_mouse_camera_dx = 0, g_mouse_camera_dy = 0;
+
+bool mouse_camera_context() {
+    return mouse_camera_gameplay() && g_window && GetForegroundWindow()==g_window;
+}
+
+void clear_mouse_camera_drag() {
+    g_mouse_camera_drag=false;
+    g_mouse_camera_dx=g_mouse_camera_dy=0;
+}
 
 LRESULT CALLBACK video_window_proc(HWND window, UINT message, WPARAM wparam,
                                    LPARAM lparam) {
+    if(message==WM_RBUTTONDOWN) g_mouse_camera_drag=mouse_camera_context();
+    if(message==WM_RBUTTONUP) g_mouse_camera_drag=false;
+    if(message==WM_KILLFOCUS || message==WM_CANCELMODE || message==WM_DESTROY)
+        clear_mouse_camera_drag();
+    if(message==WM_INPUT && g_mouse_camera_drag) {
+        RAWINPUT raw{};
+        UINT size=sizeof(raw);
+        if(GetRawInputData(reinterpret_cast<HRAWINPUT>(lparam),RID_INPUT,&raw,&size,
+                           sizeof(RAWINPUTHEADER))==sizeof(raw) &&
+           raw.header.dwType==RIM_TYPEMOUSE && !(raw.data.mouse.usFlags&MOUSE_MOVE_ABSOLUTE)) {
+            constexpr int64_t max_counts=2048;
+            g_mouse_camera_dx=static_cast<int>(std::clamp(g_mouse_camera_dx+int64_t(raw.data.mouse.lLastX),
+                                                          -max_counts,max_counts));
+            g_mouse_camera_dy=static_cast<int>(std::clamp(g_mouse_camera_dy+int64_t(raw.data.mouse.lLastY),
+                                                          -max_counts,max_counts));
+        }
+    }
     if(message==WM_SIZE && g_open) {
         if(wparam==SIZE_MAXIMIZED)g_window_preferences.maximized=true;
         else if(wparam==SIZE_RESTORED && LOWORD(lparam) && HIWORD(lparam)) {
@@ -203,6 +242,11 @@ bool create_window(const char *title) {
                              rect.right - rect.left, rect.bottom - rect.top,
                              nullptr, nullptr, instance, nullptr);
     if (!g_window) return false;
+    // Keep legacy mouse messages for the touch-screen pointer and right-button
+    // latch. Raw input supplies relative movement beyond the desktop edges.
+    const RAWINPUTDEVICE mouse{0x01,0x02,0,g_window};
+    if(!RegisterRawInputDevices(&mouse,1,sizeof(mouse)))
+        std::fprintf(stderr,"[video] mouse free look unavailable (Win32 error %lu)\n",GetLastError());
     ShowWindow(g_window, g_window_preferences.maximized?SW_SHOWMAXIMIZED:SW_SHOW);
     UpdateWindow(g_window);
     g_open = true;
@@ -260,7 +304,7 @@ void draw_settings_menu(HDC dc) {
     draw_menu_text(dc, 28, 215, line, RGB(245, 248, 255));
     wsprintfA(line, "Texture quality: %s%s   [T cycles]",
               texture_quality_name(s.texture_quality),
-              s.texture_quality==TextureQuality::Upscaled?" - no pack installed":"");
+              texture_pack_status(s.texture_quality));
     draw_menu_text(dc, 28, 245, line, RGB(245, 248, 255));
     wsprintfA(line, "Map orientation: %s   [O toggles]",
               s.minimap_rotate_with_player ? "Rotate with camera" : "Upright");
@@ -275,25 +319,34 @@ void draw_settings_menu(HDC dc) {
     DeleteObject(font);
 }
 
-const char *capture_name(const char *base, uint64_t tick, char (&buffer)[1024]) {
+const char *capture_name(const char *base, uint64_t tick, char (&buffer)[1024], unsigned slot=0) {
     if (!base || !base[0] || !tick) return base;
     size_t length = std::strlen(base);
     if (length>=4 && std::strcmp(base+length-4,".bmp")==0) length-=4;
-    const int written=std::snprintf(buffer,sizeof(buffer),"%.*s-%llu.bmp",
-        static_cast<int>(length),base,static_cast<unsigned long long>(tick));
+    const int written=slot?
+        std::snprintf(buffer,sizeof(buffer),"%.*s-%llu-p%u.bmp",int(length),base,
+                      static_cast<unsigned long long>(tick),slot):
+        std::snprintf(buffer,sizeof(buffer),"%.*s-%llu.bmp",int(length),base,
+                      static_cast<unsigned long long>(tick));
     return written>0 && static_cast<size_t>(written)<sizeof(buffer) ? buffer : nullptr;
 }
 void capture_framebuffer_if_requested() {
     static bool captured = false;
     static uint64_t presentation_count = 0;
     static uint64_t last_scheduled_tick = 0;
+    static unsigned last_scheduled_slot = 0;
+    static const bool capture_subframes=std::getenv("SM64DS_PC_FRAME_CAPTURE_SUBFRAMES")!=nullptr;
     const char *schedule = std::getenv("SM64DS_PC_FRAME_CAPTURE_TICKS");
     uint64_t shot_tick=0;
+    const unsigned slot=capture_subframes && schedule?unsigned(rt_presentation_phase()*4):0;
     if (schedule && schedule[0]) {
         while (*schedule) {
             char *end=nullptr;
             const auto candidate=std::strtoull(schedule,&end,10);
-            if (end!=schedule && (!*end || *end==',') && candidate>last_scheduled_tick &&
+            const bool next_subframe=slot>last_scheduled_slot && candidate==last_scheduled_tick &&
+                candidate==rt_frame();
+            if (end!=schedule && (!*end || *end==',') &&
+                (candidate>last_scheduled_tick || next_subframe) &&
                 candidate<=rt_frame() && (!shot_tick || candidate<shot_tick)) shot_tick=candidate;
             const char *next=std::strchr(schedule,',');
             if (!next) break;
@@ -305,7 +358,7 @@ void capture_framebuffer_if_requested() {
     const bool keep_latest = latest && latest[0] && latest[0] != '0';
     if (captured && !keep_latest && !shot_tick) return;
     char filename[1024];
-    const char *path = capture_name(std::getenv("SM64DS_PC_FRAME_CAPTURE"),shot_tick,filename);
+    const char *path = capture_name(std::getenv("SM64DS_PC_FRAME_CAPTURE"),shot_tick,filename,slot);
     if (!path || !path[0]) return;
     ++presentation_count;
     const char *after_value = std::getenv("SM64DS_PC_FRAME_CAPTURE_AFTER");
@@ -343,12 +396,15 @@ void capture_framebuffer_if_requested() {
             static_cast<unsigned long long>(rt_frame()),g_output_width,g_output_height,
             g_gpu?gpu_triangle_count():0,g_gpu?gpu_adapter():"software 256x192");
         captured = true;
-        if (shot_tick) last_scheduled_tick=shot_tick;
+        if (shot_tick) {
+            last_scheduled_tick=shot_tick;
+            last_scheduled_slot=slot;
+        }
         char additional[1024];
         if (const char *sub = std::getenv("SM64DS_PC_SUB_CAPTURE"))
-            if (const char *name=capture_name(sub,shot_tick,additional)) ppu_write_bmp(name, g_bottom);
+            if (const char *name=capture_name(sub,shot_tick,additional,slot)) ppu_write_bmp(name, g_bottom);
         if (const char *map = std::getenv("SM64DS_PC_MAP_CAPTURE"))
-            if (const char *name=capture_name(map,shot_tick,additional))
+            if (const char *name=capture_name(map,shot_tick,additional,slot))
                 ppu_write_bmp(name, g_settings.minimap && !g_pause_screen && g_minimap_gameplay &&
                     g_settings.minimap_hide_touch_target ? g_minimap : g_bottom);
     }
@@ -396,10 +452,18 @@ void render_minimap_editor() {
     const auto placement=minimap_visible_placement(g_settings,bounds);
     const int left=w*placement.minimap_x/1000,top=h*placement.minimap_y/1000;
     const int mw=std::max(1,w*g_settings.minimap_scale/1000),mh=std::max(1,h*g_settings.minimap_scale/1000);
+    static std::vector<uint32_t> packed;
+    const bool use_pack=ppu_minimap_pack_ready(g_editor_map_view,g_settings.texture_quality==TextureQuality::Upscaled);
+    if(use_pack) {
+        const auto &visible_bg3=g_settings.minimap_hide_touch_target?g_editor_bg3_hidden:g_editor_bg3_full;
+        ppu_minimap_pack_draw(g_editor_map_view,&map.px[0][0],visible_bg3.data(),mw,mh,packed);
+    }
     for(int y=0;y<mh && top+y<h;++y)for(int x=0;x<mw && left+x<w;++x) {
         const int sy=y*SCREEN_H/mh,sx=x*SCREEN_W/mw;
-        if(!transparent[sy*SCREEN_W+sx])
-            blend_minimap(&g_output[size_t(top+y)*w+left+x],map.px[sy][sx],g_settings.minimap_opacity);
+        if(!transparent[sy*SCREEN_W+sx]) {
+            const auto color=use_pack?packed[size_t(y)*mw+x]:map.px[sy][sx];
+            blend_minimap(&g_output[size_t(top+y)*w+left+x],color,g_settings.minimap_opacity);
+        }
     }
     const uint32_t border=g_editor_drag.active?0xff80ffff:0xffffdc40;
     const int edge_left=std::min(w-1,left+mw*int(bounds.left)/1000);
@@ -436,15 +500,24 @@ void clamp_settings(VideoSettings &s) {
     if(s.camera_zoom>3) s.camera_zoom=0;
     s.camera_sensitivity=std::clamp<uint16_t>(s.camera_sensitivity,25,300);
     if(s.camera_acceleration>2)s.camera_acceleration=1;
+    if(static_cast<unsigned>(s.audio_layout)>2)s.audio_layout=AudioLayout::Stereo;
     const InputBindings defaults;
     for(unsigned i=0;i<binding_count;++i) {
-        if(!valid_key_binding(s.bindings.keys[i]))s.bindings.keys[i]=defaults.keys[i];
-        if(!valid_pad_binding(s.bindings.pad[i]))s.bindings.pad[i]=defaults.pad[i];
+        if(s.bindings.keys[i] && !valid_key_binding(s.bindings.keys[i]))s.bindings.keys[i]=defaults.keys[i];
+        if(s.bindings.pad[i] && !valid_pad_binding(s.bindings.pad[i]))s.bindings.pad[i]=defaults.pad[i];
+        if(i>=camera_turn_left_binding) {
+            // Existing settings could already assign the new default inputs.
+            // Give the saved older binding priority over the new default.
+            const auto key=s.bindings.keys.begin()+i;
+            const auto pad=s.bindings.pad.begin()+i;
+            if(std::find(s.bindings.keys.begin(),key,*key)!=key)*key=0;
+            if(std::find(s.bindings.pad.begin(),pad,*pad)!=pad)*pad=0;
+        }
     }
     s.left_stick_deadzone=std::min<uint8_t>(s.left_stick_deadzone,50);
     s.right_stick_deadzone=std::min<uint8_t>(s.right_stick_deadzone,50);
     if(static_cast<unsigned>(s.render_distance)>3) s.render_distance=RenderDistance::Minimum;
-    if(static_cast<unsigned>(s.texture_quality)>5) s.texture_quality=TextureQuality::Original;
+    if(s.texture_quality>TextureQuality::Generated4K) s.texture_quality=TextureQuality::Original;
     if(s.anisotropic_filtering!=2 && s.anisotropic_filtering!=4 &&
        s.anisotropic_filtering!=8 && s.anisotropic_filtering!=16) s.anisotropic_filtering=0;
     s.width = std::max(256u, std::min(s.width, 3840u));
@@ -498,10 +571,52 @@ void video_close() {
     g_star_select_active = false;
     video_set_cutscene_letter(false);
     g_output.clear();
+    ++g_scanout_revision;
 }
 
 bool video_is_open() { return g_open; }
 VideoSettings video_get_settings() { return g_settings; }
+
+void video_take_camera_mouse_motion(bool camera_allowed,int &dx,int &dy) {
+    dx=dy=0;
+    const bool gameplay=camera_allowed && mouse_camera_gameplay();
+    const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(automation && std::strcmp(automation,"1")==0) {
+        // Isolated replay supplies relative counts at the window input boundary,
+        // without moving the desktop pointer or bypassing scene/mode checks.
+        static uint64_t last_sample=~uint64_t(0);
+        const auto tick=rt_frame();
+        if(!gameplay || tick==last_sample) return;
+        last_sample=tick;
+        const char *segment=std::getenv("SM64DS_PC_TEST_MOUSE_LOOK");
+        while(segment && *segment) {
+            unsigned long long begin=0,end=0;
+            int x=0,y=0,count=0;
+            if(std::sscanf(segment,"%llu:%llu:%d:%d%n",&begin,&end,&x,&y,&count)==4 &&
+                (!segment[count] || segment[count]==',') && tick>=begin && tick<end) {
+                dx=std::clamp(x,-2048,2048);
+                dy=std::clamp(y,-2048,2048);
+                return;
+            }
+            const char *next=std::strchr(segment,',');
+            segment=next?next+1:nullptr;
+        }
+        return;
+    }
+#if defined(_WIN32)
+    if(!gameplay || !g_window || GetForegroundWindow()!=g_window) {
+        clear_mouse_camera_drag();
+        return;
+    }
+    // A release outside the client may skip WM_RBUTTONUP. End the drag
+    // while preserving movement already received before that release.
+    const int physical_button=GetSystemMetrics(SM_SWAPBUTTON)?VK_LBUTTON:VK_RBUTTON;
+    if(!(GetAsyncKeyState(physical_button)&0x8000)) g_mouse_camera_drag=false;
+    dx=g_mouse_camera_dx;
+    dy=g_mouse_camera_dy;
+    g_mouse_camera_dx=g_mouse_camera_dy=0;
+#endif
+}
 const char *video_renderer_notice() {return g_renderer_failed?"OPENGL CPU UNAVAILABLE":"";}
 
 bool video_load_settings(const char *path) {
@@ -523,12 +638,12 @@ bool video_load_settings(const char *path) {
         if (end == equals) continue;
         unsigned binding_index=0;int consumed=0;
         if(std::sscanf(line,"key_bind_%u%n",&binding_index,&consumed)==1 && line[consumed]==0 && binding_index<binding_count) {
-            if(valid_key_binding(value))loaded.bindings.keys[binding_index]=static_cast<uint16_t>(value);
+            if(value==0 || valid_key_binding(value))loaded.bindings.keys[binding_index]=static_cast<uint16_t>(value);
             continue;
         }
         consumed=0;
         if(std::sscanf(line,"pad_bind_%u%n",&binding_index,&consumed)==1 && line[consumed]==0 && binding_index<binding_count) {
-            if(value<=0x3ffff && valid_pad_binding(value))loaded.bindings.pad[binding_index]=static_cast<uint32_t>(value);
+            if(value==0 || (value<=0x3ffff && valid_pad_binding(value)))loaded.bindings.pad[binding_index]=static_cast<uint32_t>(value);
             continue;
         }
         if (std::strcmp(line, "width") == 0) loaded.width = static_cast<uint32_t>(value);
@@ -550,6 +665,9 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line, "stay_in_stage_after_star") == 0) loaded.stay_in_stage_after_star = value == 1;
         else if (std::strcmp(line, "brain_rot_text") == 0) loaded.brain_rot_text = value == 1;
         else if (std::strcmp(line,"pause_music_rec_room")==0) loaded.pause_music_rec_room=value==1;
+        else if (std::strcmp(line,"audio_layout")==0) loaded.audio_layout=value<=2?static_cast<AudioLayout>(value):AudioLayout::Stereo;
+        else if (std::strcmp(line,"music_remastered")==0) loaded.remastered_music=value==1;
+        else if (std::strcmp(line,"motion_blur")==0) loaded.motion_blur=value==1;
         else if (std::strcmp(line, "anisotropic_filtering") == 0) loaded.anisotropic_filtering=static_cast<uint8_t>(std::min(value,255ul));
         else if (std::strcmp(line, "renderer") == 0) loaded.renderer=value==1?VideoRenderer::OpenGLSoftware:VideoRenderer::D3D11;
         else if (std::strcmp(line, "minigame_layout") == 0) loaded.minigame_layout=value<=2?static_cast<MinigameLayout>(value):MinigameLayout::TopBottom;
@@ -564,7 +682,8 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line, "hd_textures") == 0) legacy_upscaled = value != 0;
         else if (std::strcmp(line, "texture_quality") == 0) {
             has_quality=true;
-            loaded.texture_quality=value<=5?static_cast<TextureQuality>(value):TextureQuality::Original;
+            loaded.texture_quality=value<=static_cast<unsigned>(TextureQuality::Generated4K)
+                ?static_cast<TextureQuality>(value):TextureQuality::Original;
         }
     }
     const bool read_ok = !std::ferror(file);
@@ -576,6 +695,9 @@ bool video_load_settings(const char *path) {
     if (loaded.target_fps != 60 && loaded.target_fps != 120 && loaded.target_fps != 240)
         loaded.target_fps = 60;
     g_settings = loaded;
+    ++g_scanout_revision;
+    audio_set_layout(g_settings.audio_layout);
+    audio_set_remastered_music(g_settings.remastered_music);
     loaded_window.width=std::max(320u,loaded_window.width);
     loaded_window.height=std::max(240u,loaded_window.height);
     g_window_preferences=loaded_window;
@@ -597,7 +719,7 @@ bool video_save_settings(const char *path) {
         "window_width=%u\nwindow_height=%u\nwindow_maximized=%u\nwidth=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
         "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\nbrain_rot_text=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n"
-        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\nleft_stick_deadzone=%u\nright_stick_deadzone=%u\npause_music_rec_room=%u\n",
+        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\nleft_stick_deadzone=%u\nright_stick_deadzone=%u\npause_music_rec_room=%u\naudio_layout=%u\nmusic_remastered=%u\nmotion_blur=%u\n",
         g_window_preferences.width,g_window_preferences.height,g_window_preferences.maximized?1u:0u,
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
@@ -609,7 +731,7 @@ bool video_save_settings(const char *path) {
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
         static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,g_settings.brain_rot_text ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance),
-        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.left_stick_deadzone),unsigned(g_settings.right_stick_deadzone),unsigned(g_settings.pause_music_rec_room)) >= 0;
+        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.left_stick_deadzone),unsigned(g_settings.right_stick_deadzone),unsigned(g_settings.pause_music_rec_room),unsigned(g_settings.audio_layout),unsigned(g_settings.remastered_music),unsigned(g_settings.motion_blur)) >= 0;
     for(unsigned i=0;i<binding_count;++i)
         write_ok=(std::fprintf(file,"key_bind_%u=%u\npad_bind_%u=%u\n",i,unsigned(g_settings.bindings.keys[i]),i,unsigned(g_settings.bindings.pad[i]))>=0) && write_ok;
     const bool close_ok = std::fclose(file) == 0;
@@ -627,8 +749,11 @@ bool video_save_settings(const char *path) {
 
 void video_set_settings(const VideoSettings &settings) {
     g_settings = settings;
+    ++g_scanout_revision;
     if(g_editor_active)g_editor_redraw=true;
     clamp_settings(g_settings);
+    audio_set_layout(g_settings.audio_layout);
+    audio_set_remastered_music(g_settings.remastered_music);
     if(g_editor_map_ready)g_settings=minimap_visible_placement(g_settings,g_minimap_bounds);
     if (g_settings.target_fps != 60 && g_settings.target_fps != 120 &&
         g_settings.target_fps != 240) g_settings.target_fps = 60;
@@ -654,10 +779,18 @@ found:
 }
 
 uint16_t video_minimap_angle(uint16_t camera_heading) {
-    // Use the original map convention: camera look-at -> eye angle. This
-    // places the world in the same orientation as the current camera view.
-    return g_settings.minimap_rotate_with_player
-        ? camera_heading : 0;
+    if(!g_settings.minimap_rotate_with_player)return 0;
+    if(g_settings.camera_mode==1) {
+        // Free Camera changes the render view without changing the original
+        // camera actor's heading. Both map layers use the last completed view.
+        const auto camera=gx_display_camera();
+        const float x=-camera.forward[0],z=-camera.forward[2];
+        if(camera.owner && rt_frame()-camera.tick<=8 && x*x+z*z>0.0001f) {
+            constexpr double turns_per_radian=65536.0/6.283185307179586;
+            return static_cast<uint16_t>(std::lround(std::atan2(double(x),double(z))*turns_per_radian));
+        }
+    }
+    return camera_heading;
 }
 
 void video_set_minimap_gameplay(bool active) {
@@ -812,11 +945,235 @@ void video_minimap_transparency_mask(const uint32_t *pixels, uint8_t *mask,
     }
 }
 
+#if defined(_WIN32)
+namespace {
+struct PreparedScanout {
+    bool geometry_visible=false;
+    bool cache_gameplay=false;
+    const uint32_t *foreground=nullptr;
+    const uint32_t *map=nullptr;
+    unsigned map_width=SCREEN_W,map_height=SCREEN_H;
+    VideoSettings map_settings;
+    const uint32_t *hud=nullptr;
+    unsigned hud_width=0,hud_height=0;
+    uint64_t hud_revision=0;
+};
+
+PreparedScanout prepare_scanout(bool dual,bool engine_a_on_top,const DualScreenLayout &screens) {
+    ppu_scanout(ENGINE_A, g_top);
+    ppu_scanout_obj(ENGINE_A, g_top);
+    const bool geometry_visible=!g_pause_screen && ppu_geometry_active();
+    if(std::getenv("SM64DS_PC_BACKGROUND_TRACE")) {
+        static bool observed=false;static uint32_t previous[5]{};
+        const uint32_t values[]={static_cast<uint32_t>(io_read(0x04000000,4)),
+            static_cast<uint32_t>(io_read(0x04000008,2)),
+            static_cast<uint32_t>(io_read(0x04000350,4)),
+            static_cast<uint32_t>(io_read(0x05000000,2)),unsigned(geometry_visible)};
+        if(!observed || std::memcmp(previous,values,sizeof(values))) {
+            observed=true;std::memcpy(previous,values,sizeof(values));
+            std::fprintf(stderr,"[native background] tick=%llu display=%08x bg0=%04x clear=%08x palette0=%04x geometry=%u\n",
+                static_cast<unsigned long long>(rt_frame()),values[0],values[1],values[2],values[3],values[4]);
+        }
+    }
+    uint8_t foreground_mask=ppu_backgrounds_above_3d();
+    ppu_scanout(ENGINE_A,g_foreground,true,foreground_mask);
+    const bool dialogue_card=(g_dialogue_card_active || g_course_clear_active) && !g_pause_screen && !g_minigame_active &&
+        !g_cutscene_letter && !g_menu_open && !dual;
+    const bool dark_text=!g_course_clear_active && g_dialogue_card_dark_text;
+    const auto dialogue_bounds=dialogue_card?dialogue_card_bounds(g_foreground,g_course_clear_active):DialogueCardBounds{};
+    if(dialogue_card && g_gpu) dialogue_card_on_foreground(g_foreground,dialogue_bounds,dark_text);
+    if (!g_gpu && geometry_visible) {
+        gx_render(g_top);
+        if(dialogue_card) dialogue_card_on_scene(g_top,dialogue_bounds,dark_text);
+        for(int y=0;y<SCREEN_H;++y)for(int x=0;x<SCREEN_W;++x)
+            if(g_foreground.px[y][x]>>24)g_top.px[y][x]=g_foreground.px[y][x];
+    }
+    const bool map_gameplay=g_minimap_gameplay && !g_pause_screen && !dual;
+    const bool cache_gameplay=map_gameplay && geometry_visible && g_editor_cache_tick!=rt_frame();
+    const auto map_view=map_gameplay?ppu_minimap_view():PpuMinimapView{};
+    static std::array<uint8_t,SCREEN_W*SCREEN_H> live_bg3;
+    auto *full_visible_bg3=map_view.key?live_bg3.data():nullptr;
+    ppu_scanout(ENGINE_B,g_bottom,true,0x0f,full_visible_bg3);
+    if(video_bottom_objects_visible())ppu_scanout_obj(ENGINE_B,g_bottom,full_visible_bg3);
+    if(g_focus_left>=0) {
+        auto draw_focus=[&](Framebuffer &frame) {
+            draw_menu_focus(frame,g_focus_left,g_focus_top,g_focus_right,g_focus_bottom);
+        };
+        if(engine_a_on_top)draw_focus(g_bottom);
+        else {draw_focus(g_top);draw_focus(g_foreground);foreground_mask|=1;}
+    }
+
+    if(g_star_select_active) {
+        star_select_overlay(g_bottom,g_foreground);foreground_mask|=1;
+        if(!g_gpu)star_select_overlay(g_bottom,g_top);
+    }
+    const Framebuffer &main_view = g_pause_screen && !dual ? g_bottom : g_top;
+    g_output.assign(&main_view.px[0][0], &main_view.px[0][0] + SCREEN_W * SCREEN_H);
+    g_output_width=SCREEN_W;g_output_height=SCREEN_H;
+    if(cache_gameplay) {
+        g_editor_map_full=g_bottom;
+        if(map_view.key)g_editor_bg3_full=live_bg3;
+        auto *hidden_visible_bg3=map_view.key?g_editor_bg3_hidden.data():nullptr;
+        ppu_scanout(ENGINE_B,g_editor_map,true,0x0b,hidden_visible_bg3);
+        ppu_scanout_obj(ENGINE_B,g_editor_map,hidden_visible_bg3);
+        g_editor_map_view=map_view;
+        g_editor_map_ready=true;
+        if(!g_gpu) {
+            g_editor_background=g_output;g_editor_width=SCREEN_W;g_editor_height=SCREEN_H;
+        }
+        g_editor_cache_tick=rt_frame();
+    }
+    if(dual && !g_gpu) {
+        screen_compose(engine_a_on_top?g_top:g_bottom,engine_a_on_top?g_bottom:g_top,
+                       screens,g_settings.width,g_settings.height,g_output);
+        g_output_width=g_settings.width;g_output_height=g_settings.height;
+    }
+    static std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_map_pixels;
+    static std::vector<uint32_t> packed_minimap;
+    const uint32_t *map_pixels=nullptr;
+    unsigned map_width=SCREEN_W,map_height=SCREEN_H;
+    static std::vector<uint32_t> gpu_hud_pixels;
+    MinimapHudBounds hud_map_bounds{};
+    VideoSettings map_settings=minimap_visible_placement(g_settings,g_minimap_bounds);
+
+    if (video_minimap_visible()) {
+        const bool use_pack=ppu_minimap_pack_ready(map_view,g_gpu && g_settings.texture_quality==TextureQuality::Upscaled);
+        const uint8_t *visible_bg3=full_visible_bg3;
+        const Framebuffer *map = &g_bottom;
+        if(g_settings.minimap_hide_touch_target && cache_gameplay) {
+            map=&g_editor_map;
+            visible_bg3=g_editor_bg3_hidden.data();
+        } else if(g_settings.minimap_hide_touch_target) {
+            // Gameplay BG2 is the independent touch-control target; BG3 is
+            // the map. Filter the overlay scanout only, leaving raw DS output
+            // and the input registers untouched. Other screens keep all layers.
+            ppu_scanout(ENGINE_B,g_minimap,true,0x0b,use_pack?live_bg3.data():nullptr);
+            ppu_scanout_obj(ENGINE_B,g_minimap,use_pack?live_bg3.data():nullptr);
+            map = &g_minimap;
+        }
+        std::array<uint8_t, SCREEN_W * SCREEN_H> transparent{};
+        video_minimap_transparency_mask(&map->px[0][0], transparent.data(),
+                                       SCREEN_W, SCREEN_H);
+        hud_map_bounds=minimap_visible_bounds(transparent.data(),SCREEN_W,SCREEN_H);
+        g_minimap_bounds=hud_map_bounds;
+        map_settings=minimap_visible_placement(g_settings,hud_map_bounds);
+        if (g_gpu) {
+            for (size_t i=0;i<gpu_map_pixels.size();++i) {
+                const uint32_t pixel=(&map->px[0][0])[i];
+                const uint32_t alpha=transparent[i]?0:((pixel>>24)*g_settings.minimap_opacity/255);
+                gpu_map_pixels[i]=(pixel&0x00ffffffu)|(alpha<<24);
+            }
+            map_pixels=gpu_map_pixels.data();
+            if(use_pack) {
+                map_width=std::max(1u,(g_settings.width*g_settings.minimap_scale+500u)/1000);
+                map_height=std::max(1u,(g_settings.height*g_settings.minimap_scale+500u)/1000);
+                ppu_minimap_pack_draw(map_view,map_pixels,visible_bg3,map_width,map_height,packed_minimap);
+                map_pixels=packed_minimap.data();
+            }
+        }
+        const int map_w = std::max(1, SCREEN_W * g_settings.minimap_scale / 1000);
+        const int map_h = std::max(1, map_w * SCREEN_H / SCREEN_W);
+        const int left = std::min(SCREEN_W - 1, SCREEN_W * map_settings.minimap_x / 1000);
+        const int top = std::min(SCREEN_H - 1, SCREEN_H * map_settings.minimap_y / 1000);
+        const int draw_w = std::min(map_w, SCREEN_W - left);
+        const int draw_h = std::min(map_h, SCREEN_H - top);
+        for (int y = 0; y < draw_h; ++y) {
+            const int sy = y * SCREEN_H / map_h;
+            for (int x = 0; x < draw_w; ++x) {
+                const int sx = x * SCREEN_W / map_w;
+                if (transparent[sy * SCREEN_W + sx]) continue;
+                uint32_t &dst = g_output[static_cast<size_t>(top + y) * SCREEN_W + left + x];
+                blend_minimap(&dst, map->px[sy][sx], g_settings.minimap_opacity);
+            }
+        }
+        if (const char *trace = std::getenv("SM64DS_PC_TRACE_MINIMAP")) {
+            static bool reported = false;
+            if (!reported && trace[0] && trace[0] != '0' && rt_frame() >= 5000) {
+                size_t transparent_pixels = 0;
+                for (uint8_t value : transparent) transparent_pixels += value != 0;
+                const int sample_x = std::min(SCREEN_W - 1, left + draw_w / 2);
+                const int sample_y = std::min(SCREEN_H - 1, top + draw_h / 2);
+                const int source_x = (sample_x - left) * SCREEN_W / map_w;
+                const int source_y = (sample_y - top) * SCREEN_H / map_h;
+                std::fprintf(stderr,
+                    "[minimap trace] tick=%llu enabled=%d opacity=%u scale=%u pos=%u,%u size=%dx%d transparent=%zu sample_mask=%u src=%08x dst=%08x\n",
+                    static_cast<unsigned long long>(rt_frame()),
+                    g_settings.minimap, g_settings.minimap_opacity,
+                    g_settings.minimap_scale, g_settings.minimap_x, g_settings.minimap_y,
+                    draw_w, draw_h, transparent_pixels,
+                    transparent[source_y * SCREEN_W + source_x],
+                    map->px[source_y][source_x],
+                    g_output[static_cast<size_t>(sample_y) * SCREEN_W + sample_x]);
+                std::fflush(stderr);
+                reported = true;
+            }
+        }
+    }
+
+    const bool hud_visible=g_minimap_counters.active && !g_pause_screen && !dual &&
+        !g_minigame_active && !g_cutscene_letter;
+    const bool sight_visible=g_cannon_sight && g_minimap_gameplay && !g_pause_screen && !dual &&
+        !g_minigame_active && !g_cutscene_letter;
+    const bool overlay_visible=hud_visible || sight_visible;
+    const unsigned hud_width=g_gpu?g_settings.width:SCREEN_W;
+    const unsigned hud_height=g_gpu?g_settings.height:SCREEN_H;
+    static std::array<uint32_t,20> previous_hud_key{};
+    static bool have_hud_key=false;
+    static uint64_t hud_revision=0;
+    const std::array<uint32_t,20> hud_key{{
+        unsigned(hud_visible),unsigned(sight_visible),hud_width,hud_height,map_settings.minimap_x,map_settings.minimap_y,
+        g_settings.minimap_scale,g_minimap_counters.stars,g_minimap_counters.coins,
+        g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character,
+        hud_map_bounds.left,hud_map_bounds.top,hud_map_bounds.right,hud_map_bounds.bottom,
+        unsigned(g_minimap_timer.active),g_minimap_timer.hundredths,texture_replacement_epoch(),minimap_hud_art_revision()}};
+    if(!have_hud_key||hud_key!=previous_hud_key) {
+        previous_hud_key=hud_key;have_hud_key=true;
+        if(++hud_revision==0)++hud_revision;
+        if(overlay_visible) {
+            gpu_hud_pixels.resize(size_t(hud_width)*hud_height);
+            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,map_settings,hud_visible,
+                g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,
+                g_minimap_counters.health,g_minimap_counters.character,hud_map_bounds,
+                g_minimap_timer.active,g_minimap_timer.hundredths);
+            if(sight_visible)cannon_sight_build(gpu_hud_pixels.data(),hud_width,hud_height,g_settings.texture_quality);
+        } else gpu_hud_pixels.clear();
+    }
+    if(!g_gpu&&overlay_visible)
+        minimap_hud_blend(g_output.data(),gpu_hud_pixels.data(),SCREEN_W,SCREEN_H);
+    if(const char *path=std::getenv("SM64DS_PC_CANNON_SIGHT_TRACE")) {
+        static FILE *file=nullptr;static int previous=-1;static unsigned pw=0,ph=0;
+        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,visible,width,height,center_x,center_y\n",file);}
+        if(file && (previous!=int(sight_visible)||pw!=hud_width||ph!=hud_height)){
+            std::fprintf(file,"%llu,%u,%u,%u,%u,%u\n",static_cast<unsigned long long>(rt_frame()),
+                unsigned(sight_visible),hud_width,hud_height,hud_width/2,hud_height/2);std::fflush(file);
+            previous=int(sight_visible);pw=hud_width;ph=hud_height;
+        }
+    }
+    if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_COUNTERS_TRACE")) {
+        static bool reported=false;
+        if(!reported&&trace[0]&&trace[0]!='0'&&rt_frame()>=1800&&hud_visible) {
+            std::fprintf(stderr,"[minimap counters] tick=%llu stars=%u coins=%u lives=%u scale=%u enabled=%d\n",
+                static_cast<unsigned long long>(rt_frame()),g_minimap_counters.stars,
+                g_minimap_counters.coins,g_minimap_counters.lives,g_settings.minimap_scale,int(g_settings.minimap));
+            std::fflush(stderr);reported=true;
+        }
+    }
+
+    return {geometry_visible,cache_gameplay,foreground_mask?&g_foreground.px[0][0]:nullptr,
+        map_pixels,map_width,map_height,map_settings,
+        overlay_visible?gpu_hud_pixels.data():nullptr,hud_width,hud_height,hud_revision};
+}
+}  // namespace
+#endif
+
 bool video_present_frame() {
 #if defined(_WIN32)
     if (!g_window || !g_open) return false;
+    static const char *profile_path=std::getenv("SM64DS_PC_GPU_PROFILE");
+    const auto video_start=profile_path?std::chrono::steady_clock::now():std::chrono::steady_clock::time_point{};
     if(!g_forced_software && g_active_renderer!=g_settings.renderer) {
         gpu_close();g_renderer_failed=false;
+        ++g_scanout_revision;
         g_gpu=gpu_open(g_window,false,g_settings.renderer);
         if(!g_gpu&&g_settings.renderer==VideoRenderer::OpenGLSoftware) {
             g_renderer_failed=true;g_settings.renderer=VideoRenderer::D3D11;
@@ -842,6 +1199,8 @@ bool video_present_frame() {
     const bool menu_pressed = (GetAsyncKeyState(VK_F1) & 0x8000) != 0;
     if (menu_pressed && !g_menu_was_pressed) g_menu_open = !g_menu_open;
     g_menu_was_pressed = menu_pressed;
+    if((g_mouse_camera_drag || g_mouse_camera_dx || g_mouse_camera_dy) &&
+       !mouse_camera_context()) clear_mouse_camera_drag();
     if (g_menu_open) {
         VideoSettings s = video_get_settings();
         if (GetAsyncKeyState('M') & 1) { s.minimap = !s.minimap; video_set_settings(s); }
@@ -992,52 +1351,7 @@ bool video_present_frame() {
         return true;
     }
 
-    ppu_scanout(ENGINE_A, g_top);
-    ppu_scanout_obj(ENGINE_A, g_top);
-    const bool geometry_visible=!g_pause_screen && ppu_geometry_active();
-    if(std::getenv("SM64DS_PC_BACKGROUND_TRACE")) {
-        static bool observed=false;static uint32_t previous[5]{};
-        const uint32_t values[]={static_cast<uint32_t>(io_read(0x04000000,4)),
-            static_cast<uint32_t>(io_read(0x04000008,2)),
-            static_cast<uint32_t>(io_read(0x04000350,4)),
-            static_cast<uint32_t>(io_read(0x05000000,2)),unsigned(geometry_visible)};
-        if(!observed || std::memcmp(previous,values,sizeof(values))) {
-            observed=true;std::memcpy(previous,values,sizeof(values));
-            std::fprintf(stderr,"[native background] tick=%llu display=%08x bg0=%04x clear=%08x palette0=%04x geometry=%u\n",
-                static_cast<unsigned long long>(rt_frame()),values[0],values[1],values[2],values[3],values[4]);
-        }
-    }
-    uint8_t foreground_mask=ppu_backgrounds_above_3d();
-    ppu_scanout(ENGINE_A,g_foreground,true,foreground_mask);
-    const bool dialogue_card=(g_dialogue_card_active || g_course_clear_active) && !g_pause_screen && !g_minigame_active &&
-        !g_cutscene_letter && !g_menu_open && !dual;
-    const bool dark_text=!g_course_clear_active && g_dialogue_card_dark_text;
-    const auto dialogue_bounds=dialogue_card?dialogue_card_bounds(g_foreground,g_course_clear_active):DialogueCardBounds{};
-    if(dialogue_card && g_gpu) dialogue_card_on_foreground(g_foreground,dialogue_bounds,dark_text);
-    if (!g_gpu && geometry_visible) {
-        gx_render(g_top);
-        if(dialogue_card) dialogue_card_on_scene(g_top,dialogue_bounds,dark_text);
-        for(int y=0;y<SCREEN_H;++y)for(int x=0;x<SCREEN_W;++x)
-            if(g_foreground.px[y][x]>>24)g_top.px[y][x]=g_foreground.px[y][x];
-    }
-    ppu_scanout(ENGINE_B, g_bottom, true);
-    if(video_bottom_objects_visible()) ppu_scanout_obj(ENGINE_B, g_bottom);
-    if(g_focus_left>=0) {
-        auto draw_focus=[&](Framebuffer &frame) {
-            draw_menu_focus(frame,g_focus_left,g_focus_top,g_focus_right,g_focus_bottom);
-        };
-        if(engine_a_on_top)draw_focus(g_bottom);
-        else {draw_focus(g_top);draw_focus(g_foreground);foreground_mask|=1;}
-    }
-
-    if(g_star_select_active) {
-        star_select_overlay(g_bottom,g_foreground);foreground_mask|=1;
-        if(!g_gpu)star_select_overlay(g_bottom,g_top);
-    }
-    RECT client{};
-    GetClientRect(g_window, &client);
-    const int width = std::max(1L, client.right - client.left);
-    const int height = std::max(1L, client.bottom - client.top);
+    const int width = touch_w, height = touch_h;
     if(const char *path=std::getenv("SM64DS_PC_WINDOW_CAPTURE")) {
         static FILE *file=nullptr;static long previous[11]{};static bool observed=false;
         RECT bounds{};GetWindowRect(g_window,&bounds);
@@ -1049,163 +1363,60 @@ bool video_present_frame() {
             if(file){std::fprintf(file,"%llu",static_cast<unsigned long long>(rt_frame()));for(long value:state)std::fprintf(file,",%ld",value);std::fputc('\n',file);std::fflush(file);}
         }
     }
+
+    const bool motion_gameplay=g_minimap_gameplay && !g_pause_screen && !g_editor_active &&
+        !g_menu_open && !g_cutscene_letter && !g_dialogue_card_active && !g_course_clear_active && !g_cannon_sight;
+    static const bool bypass_reuse=[] {
+        const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+        const char *disabled=std::getenv("SM64DS_PC_TEST_DISABLE_SCANOUT_REUSE");
+        return automation && automation[0]=='1' && disabled && disabled[0]=='1';
+    }();
+    static PreparedScanout prepared;
+    static uint64_t prepared_tick=0,prepared_revision=0;
+    static bool reusable=false;
+    const bool allow_reuse=g_gpu && motion_gameplay && !dual && !bypass_reuse;
+    const bool reuse=allow_reuse && reusable && rt_presentation_phase()>0 &&
+        prepared_tick==rt_frame() && prepared_revision==g_scanout_revision;
+    const auto prepare_start=profile_path?std::chrono::steady_clock::now():video_start;
+    if(!reuse) {
+        prepared=prepare_scanout(dual,engine_a_on_top,screens);
+        prepared_tick=rt_frame();
+        prepared_revision=g_scanout_revision;
+        reusable=allow_reuse && prepared.geometry_visible;
+    }
     const Framebuffer &main_view = g_pause_screen && !dual ? g_bottom : g_top;
-    g_output.assign(&main_view.px[0][0], &main_view.px[0][0] + SCREEN_W * SCREEN_H);
-    g_output_width=SCREEN_W;g_output_height=SCREEN_H;
-    const bool cache_gameplay=g_minimap_gameplay && !g_pause_screen && !dual && geometry_visible && g_editor_cache_tick!=rt_frame();
-    if(cache_gameplay) {
-        g_editor_map_full=g_bottom;
-        ppu_scanout(ENGINE_B,g_editor_map,true,0x0b);ppu_scanout_obj(ENGINE_B,g_editor_map);
-        g_editor_map_ready=true;
-        if(!g_gpu) {
-            g_editor_background=g_output;g_editor_width=SCREEN_W;g_editor_height=SCREEN_H;
-        }
-        g_editor_cache_tick=rt_frame();
-    }
-    if(dual && !g_gpu) {
-        screen_compose(engine_a_on_top?g_top:g_bottom,engine_a_on_top?g_bottom:g_top,
-                       screens,g_settings.width,g_settings.height,g_output);
-        g_output_width=g_settings.width;g_output_height=g_settings.height;
-    }
-    std::array<uint32_t,SCREEN_W*SCREEN_H> gpu_map_pixels{};
-    static std::vector<uint32_t> gpu_hud_pixels;
-    MinimapHudBounds hud_map_bounds{};
-    VideoSettings map_settings=minimap_visible_placement(g_settings,g_minimap_bounds);
-
-    if (video_minimap_visible()) {
-        const Framebuffer *map = &g_bottom;
-        if (g_minimap_gameplay && g_settings.minimap_hide_touch_target) {
-            // Gameplay BG2 is the independent touch-control target; BG3 is
-            // the map. Filter the overlay scanout only, leaving raw DS output
-            // and the input registers untouched. Other screens keep all layers.
-            ppu_scanout(ENGINE_B, g_minimap, true, 0x0b);
-            ppu_scanout_obj(ENGINE_B, g_minimap);
-            map = &g_minimap;
-        }
-        std::array<uint8_t, SCREEN_W * SCREEN_H> transparent{};
-        video_minimap_transparency_mask(&map->px[0][0], transparent.data(),
-                                       SCREEN_W, SCREEN_H);
-        hud_map_bounds=minimap_visible_bounds(transparent.data(),SCREEN_W,SCREEN_H);
-        g_minimap_bounds=hud_map_bounds;
-        map_settings=minimap_visible_placement(g_settings,hud_map_bounds);
-        if (g_gpu) for (size_t i=0;i<gpu_map_pixels.size();++i) {
-            const uint32_t pixel=(&map->px[0][0])[i];
-            const uint32_t alpha=transparent[i]?0:((pixel>>24)*g_settings.minimap_opacity/255);
-            gpu_map_pixels[i]=(pixel&0x00ffffffu)|(alpha<<24);
-        }
-        const int map_w = std::max(1, SCREEN_W * g_settings.minimap_scale / 1000);
-        const int map_h = std::max(1, map_w * SCREEN_H / SCREEN_W);
-        const int left = std::min(SCREEN_W - 1, SCREEN_W * map_settings.minimap_x / 1000);
-        const int top = std::min(SCREEN_H - 1, SCREEN_H * map_settings.minimap_y / 1000);
-        const int draw_w = std::min(map_w, SCREEN_W - left);
-        const int draw_h = std::min(map_h, SCREEN_H - top);
-        for (int y = 0; y < draw_h; ++y) {
-            const int sy = y * SCREEN_H / map_h;
-            for (int x = 0; x < draw_w; ++x) {
-                const int sx = x * SCREEN_W / map_w;
-                if (transparent[sy * SCREEN_W + sx]) continue;
-                uint32_t &dst = g_output[static_cast<size_t>(top + y) * SCREEN_W + left + x];
-                blend_minimap(&dst, map->px[sy][sx], g_settings.minimap_opacity);
-            }
-        }
-        if (const char *trace = std::getenv("SM64DS_PC_TRACE_MINIMAP")) {
-            static bool reported = false;
-            if (!reported && trace[0] && trace[0] != '0' && rt_frame() >= 5000) {
-                size_t transparent_pixels = 0;
-                for (uint8_t value : transparent) transparent_pixels += value != 0;
-                const int sample_x = std::min(SCREEN_W - 1, left + draw_w / 2);
-                const int sample_y = std::min(SCREEN_H - 1, top + draw_h / 2);
-                const int source_x = (sample_x - left) * SCREEN_W / map_w;
-                const int source_y = (sample_y - top) * SCREEN_H / map_h;
-                std::fprintf(stderr,
-                    "[minimap trace] tick=%llu enabled=%d opacity=%u scale=%u pos=%u,%u size=%dx%d transparent=%zu sample_mask=%u src=%08x dst=%08x\n",
-                    static_cast<unsigned long long>(rt_frame()),
-                    g_settings.minimap, g_settings.minimap_opacity,
-                    g_settings.minimap_scale, g_settings.minimap_x, g_settings.minimap_y,
-                    draw_w, draw_h, transparent_pixels,
-                    transparent[source_y * SCREEN_W + source_x],
-                    map->px[source_y][source_x],
-                    g_output[static_cast<size_t>(sample_y) * SCREEN_W + sample_x]);
-                std::fflush(stderr);
-                reported = true;
-            }
-        }
-    }
-
-    const bool hud_visible=g_minimap_counters.active && !g_pause_screen && !dual &&
-        !g_minigame_active && !g_cutscene_letter;
-    const bool sight_visible=g_cannon_sight && g_minimap_gameplay && !g_pause_screen && !dual &&
-        !g_minigame_active && !g_cutscene_letter;
-    const bool overlay_visible=hud_visible || sight_visible;
-    const unsigned hud_width=g_gpu?g_settings.width:SCREEN_W;
-    const unsigned hud_height=g_gpu?g_settings.height:SCREEN_H;
-    static std::array<uint32_t,18> previous_hud_key{};
-    static bool have_hud_key=false;
-    static uint64_t hud_revision=0;
-    const std::array<uint32_t,18> hud_key{{
-        unsigned(hud_visible),unsigned(sight_visible),hud_width,hud_height,map_settings.minimap_x,map_settings.minimap_y,
-        g_settings.minimap_scale,g_minimap_counters.stars,g_minimap_counters.coins,
-        g_minimap_counters.lives,g_minimap_counters.health,g_minimap_counters.character,
-        hud_map_bounds.left,hud_map_bounds.top,hud_map_bounds.right,hud_map_bounds.bottom,
-        unsigned(g_minimap_timer.active),g_minimap_timer.hundredths}};
-    if(!have_hud_key||hud_key!=previous_hud_key) {
-        previous_hud_key=hud_key;have_hud_key=true;
-        if(++hud_revision==0)++hud_revision;
-        if(overlay_visible) {
-            gpu_hud_pixels.resize(size_t(hud_width)*hud_height);
-            minimap_hud_build(gpu_hud_pixels.data(),hud_width,hud_height,map_settings,hud_visible,
-                g_minimap_counters.stars,g_minimap_counters.coins,g_minimap_counters.lives,
-                g_minimap_counters.health,g_minimap_counters.character,hud_map_bounds,
-                g_minimap_timer.active,g_minimap_timer.hundredths);
-            if(sight_visible)cannon_sight_build(gpu_hud_pixels.data(),hud_width,hud_height);
-        } else gpu_hud_pixels.clear();
-    }
-    if(!g_gpu&&overlay_visible)
-        minimap_hud_blend(g_output.data(),gpu_hud_pixels.data(),SCREEN_W,SCREEN_H);
-    if(const char *path=std::getenv("SM64DS_PC_CANNON_SIGHT_TRACE")) {
-        static FILE *file=nullptr;static int previous=-1;static unsigned pw=0,ph=0;
-        if(!file){file=std::fopen(path,"w");if(file)std::fputs("tick,visible,width,height,center_x,center_y\n",file);}
-        if(file && (previous!=int(sight_visible)||pw!=hud_width||ph!=hud_height)){
-            std::fprintf(file,"%llu,%u,%u,%u,%u,%u\n",static_cast<unsigned long long>(rt_frame()),
-                unsigned(sight_visible),hud_width,hud_height,hud_width/2,hud_height/2);std::fflush(file);
-            previous=int(sight_visible);pw=hud_width;ph=hud_height;
-        }
-    }
-    if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_COUNTERS_TRACE")) {
-        static bool reported=false;
-        if(!reported&&trace[0]&&trace[0]!='0'&&rt_frame()>=1800&&hud_visible) {
-            std::fprintf(stderr,"[minimap counters] tick=%llu stars=%u coins=%u lives=%u scale=%u enabled=%d\n",
-                static_cast<unsigned long long>(rt_frame()),g_minimap_counters.stars,
-                g_minimap_counters.coins,g_minimap_counters.lives,g_settings.minimap_scale,int(g_settings.minimap));
-            std::fflush(stderr);reported=true;
-        }
-    }
 
     if (g_gpu) {
-        const auto submit_start=std::chrono::steady_clock::now();
-        if (!gpu_render(main_view,video_minimap_visible()?gpu_map_pixels.data():nullptr,
-                        map_settings,geometry_visible,foreground_mask?&g_foreground.px[0][0]:nullptr,
-                        dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,cache_gameplay,
-                        overlay_visible?gpu_hud_pixels.data():nullptr,hud_width,hud_height,hud_revision) ||
+        const auto submit_start=profile_path?std::chrono::steady_clock::now():video_start;
+        if (!gpu_render(main_view,prepared.map,prepared.map_settings,prepared.geometry_visible,prepared.foreground,
+                        dual?&screens:nullptr,dual?&g_bottom:nullptr,engine_a_on_top,prepared.cache_gameplay && !reuse,
+                        prepared.hud,prepared.hud_width,prepared.hud_height,prepared.hud_revision,motion_gameplay,
+                        prepared.map_width,prepared.map_height) ||
             !gpu_present(width,height,dual)) {
             std::fprintf(stderr,"[video] native GPU presentation failed; reverting to software on the next frame\n");
             gpu_close();g_gpu=false;
             texture_set_backend(TextureBackend::SoftwareReference);
             return true;
         }
-        if(const char *path=std::getenv("SM64DS_PC_GPU_PROFILE")) {
+        if(profile_path && profile_path[0]) {
             static FILE *profile=nullptr;
-            if(!profile && path[0]) {
-                profile=std::fopen(path,"wb");
-                if(profile)std::fputs("tick,render_cpu_us,render_present_us,hashed_texels,upload_bytes,uploads,identity_uses,cache_hits,metadata_calls,metadata_texels,cache_bytes,cache_budget,evictions,replacement_attempts,replacement_uploads,staging_peak_bytes,gx_cache_bytes\n",profile);
+            if(!profile) {
+                profile=std::fopen(profile_path,"wb");
+                if(profile)std::fputs("tick,render_cpu_us,render_present_us,hashed_texels,upload_bytes,uploads,identity_uses,cache_hits,metadata_calls,metadata_texels,cache_bytes,cache_budget,evictions,replacement_attempts,replacement_uploads,staging_peak_bytes,gx_cache_bytes,motion_blur_applied,presentation_phase,camera_prediction,camera_predicted_triangles,video_pre_submit_us,scanout_prepare_us,scanout_reused,video_start_monotonic_us\n",profile);
             }
             if(profile) {
                 const auto stats=gpu_frame_stats();const auto work=texture_pixel_work_reset();
                 const auto total=std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-submit_start).count();
-                std::fprintf(profile,"%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu\n",
+                std::fprintf(profile,"%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu,%u,%.4f,%.4f,%u,%llu,%llu,%u,%lld\n",
                     static_cast<unsigned long long>(rt_frame()),stats.cpu_us,static_cast<unsigned long long>(total),
                     stats.hash_texels,stats.upload_bytes,stats.uploads,stats.identity_uses,stats.cache_hits,work.calls,work.texels,stats.cache_bytes,stats.cache_budget,stats.evictions,
-                    stats.replacement_attempts,stats.replacement_uploads,stats.staging_peak_bytes,gx_texture_cache_bytes());
+                    stats.replacement_attempts,stats.replacement_uploads,stats.staging_peak_bytes,gx_texture_cache_bytes(),
+                    unsigned(stats.motion_blur_applied),double(rt_presentation_phase()),double(stats.camera_prediction),
+                    stats.camera_predicted_triangles,
+                    static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::microseconds>(submit_start-video_start).count()),
+                    static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::microseconds>(submit_start-prepare_start).count()),
+                    unsigned(reuse),
+                    static_cast<long long>(std::chrono::duration_cast<std::chrono::microseconds>(video_start.time_since_epoch()).count()));
                 if(rt_frame()%120==0)std::fflush(profile);
             }
         }

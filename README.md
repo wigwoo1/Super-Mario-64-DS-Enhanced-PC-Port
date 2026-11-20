@@ -212,6 +212,10 @@ Audio listening accuracy and complete gameplay remain unverified.
   with working collision for repeat crossings. These results use isolated
   test saves and selected courses; other course and mountain warp points were
   not tested.
+  A selected Luigi replay also lands on the Lethal Lava Land puzzle and
+  registers tile contact. All 14 tiles advance through their movement scripts.
+  The stationary replay later falls when its tile moves away. The continued
+  route, coin sequence and puzzle Star remain diagnostic.
   A selected open-ground camera test confirms that stopping Yoshi no longer
   pulls the original camera closer. Free-camera movement has software replay
   checks; physical Nintendo Switch Pro behavior remains unverified.
@@ -223,9 +227,10 @@ Audio listening accuracy and complete gameplay remain unverified.
   layer now renders at the selected internal resolution, including 4K; original
   DS icon detail and the minimap itself remain source-resolution. Selected
   English/Yoshi coin collection, contact damage, large-map and map-off checks
-  pass with muted output; other character/language coverage remains incomplete. HD texture packs, online VS and browser Download Play
-  remain planned; requested AI texture generation and replacement also remain
-  future work.
+  pass with muted output; other character/language coverage remains incomplete.
+  Local SUPIR and AI Generated 4K pack loading is available for supported
+  materials. Production packs, broader asset coverage, online VS and browser
+  Download Play remain open.
 
 ## Downloading a development build
 

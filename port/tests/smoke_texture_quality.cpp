@@ -34,8 +34,8 @@ int main() {
     std::vector<uint32_t> original,decoded;int width=0,height=0;
     texture_set_quality(TextureQuality::Original);
     CHECK(texture_decode(d,original,&width,&height));
-    const int sizes[]={8,6,4,2,8,8};
-    for(unsigned mode=0;mode<6;++mode) {
+    const int sizes[]={8,6,4,2,8,8,8};
+    for(unsigned mode=0;mode<7;++mode) {
         const auto quality=static_cast<TextureQuality>(mode);
         texture_set_quality(quality);
         CHECK(texture_decode(d,decoded,&width,&height));
@@ -47,7 +47,7 @@ int main() {
             }
         } else if(quality==TextureQuality::None) {
             for(unsigned i=0;i<64;++i) CHECK(decoded[i]==((original[i]&0xff000000u)|0x00ffffffu));
-        } else CHECK(decoded==original); // Unclassified Upscaled must remain original.
+        } else CHECK(decoded==original); // Unclassified textures keep original pixels.
         CHECK(texture_cycle_quality(texture_cycle_quality(quality),-1)==quality);
     }
     // Original alpha levels, including partial effects, survive No Textures.
@@ -67,7 +67,7 @@ int main() {
     auto *vram=reinterpret_cast<unsigned short *>(0x06800000u);
     for(unsigned i=0;i<64;++i) vram[i]=static_cast<unsigned short>(0x8000|i);
     const uint32_t param=7u<<26;
-    for(unsigned mode=0;mode<6;++mode) {
+    for(unsigned mode=0;mode<7;++mode) {
         texture_set_quality(static_cast<TextureQuality>(mode));
         gx_teximage_param(param);gx_pltt_base(0);triangle();
         size_t count=0;const auto *polys=gx_polygons(count);
@@ -89,7 +89,7 @@ int main() {
     VideoSettings settings;settings.width=256;settings.height=192;
     settings.minimap=false;settings.upscale_2d=true;
     Framebuffer base;for(auto &row:base.px)for(auto &p:row)p=0xff102030;
-    for(unsigned mode=0;mode<6;++mode) {
+    for(unsigned mode=0;mode<7;++mode) {
         gx_reset();texture_set_quality(static_cast<TextureQuality>(mode));
         auto *encoded=reinterpret_cast<unsigned char *>(0x06800000u);
         for(unsigned i=0;i<64;++i)encoded[i]=static_cast<unsigned char>((i%8<4?0:7)<<5|1);

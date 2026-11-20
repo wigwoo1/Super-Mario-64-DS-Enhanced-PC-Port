@@ -76,7 +76,8 @@ hardware references and bounded game evidence.
 
 ## Texture quality
 
-Native PC Settings and F1 T cycle Original /75% /50% /25% /No Textures /Upscaled.
+Native PC Settings and F1 T cycle Original / 75% / 50% / 25% / No Textures /
+SUPIR Upscaled / AI Generated 4K.
 Reduced modes scale each dimension down with a one-texel minimum and deterministic
 center sampling. No Textures keeps the full original alpha mask and uses white
 RGB with material/vertex lighting. Decal materials switch to modulation in that
@@ -84,18 +85,59 @@ mode. Original logical texel coordinates scale with decoded dimensions, so lower
 resolution does not move the texture. Native output resolution and 2D layers are
 independent of this choice. Settings migrate the earlier hd_textures flag.
 
-The Upscaled art pack is not present. The menu says NO PACK. Decoder ownership
-roles block Character/Unknown replacements; native model scopes now provide roles; unresolved models remain Unknown
-until their ownership is verified. Existing PNG load
-support for explicit Level/Object descriptors is a foundation, not complete game
-coverage. See texture-quality-plan-2026-10-15.txt and the checkpoint notes.
+Optional local packs use lowercase 16-digit texture keys and PNG files, relative
+to the game's working directory.
+
+| Mode or draw role | Search order |
+| --- | --- |
+| SUPIR Upscaled, level and object | `textures/supir`, `textures/4k` (legacy), original |
+| AI Generated 4K, level and object | `textures/ai-generated-4k`, `textures/supir`, original |
+| Character in either pack mode | `textures/supir`, original |
+| Unresolved role | Original |
+
+The menu marks absent packs and SUPIR-only fallback. Individual missing or
+invalid images use the next source in the table. The build ships without
+production packs. Current routing covers classified 3D draws, native HUD
+sprites and the live minimap. Other 2D artwork, unclassified materials and
+full inventory coverage remain open.
+
+### HUD pack sprites
+
+SUPIR Upscaled can use sprite PNGs from `textures/supir/hud/<key>.png`. The
+sprites cover the Star and coin symbols, four life icons, nine health states,
+ten timer digits and the cannon sight. The local diagnostic option
+`SM64DS_PC_HUD_PACK_TRACE=1` lists the content keys and original dimensions
+once the game decodes the active language's HUD art. Keep the same aspect
+ratio and transparent regions when preparing PNGs. The renderer preserves
+the original placement and limits opacity to the original sprite mask.
+
+HUD images decode when first needed and are cached at up to 512 pixels on
+their long side, sized for the on-screen icons. Change the texture mode and
+back to reload edits. A missing, invalid or incorrectly shaped image uses the
+original sprite. AI Generated 4K keeps the original HUD art. Counter numerals
+and menu graphics use their existing rendering paths.
+
+### Minimap pack artwork
+
+SUPIR Upscaled can replace the live gameplay map background with a square PNG
+in `textures/supir/minimap/<key>.png`. The opt-in local trace
+`SM64DS_PC_MINIMAP_PACK_TRACE=1` logs the current map key and source size.
+The key describes the decoded art before scrolling and rotation. Use the
+same atlas layout and leave any unused regions transparent. The original
+background mask, selected opacity, and sprite priorities control what is
+visible. The live HUD and touch layers use their own existing paths.
+
+D3D11 and OpenGL CPU upload the replacement at the minimap's display size.
+Absent or incompatible images use the original map. The position editor
+uses the same pack with the last gameplay map view and marker positions.
+Changing Texture Quality while paused also updates the editor preview.
 
 ### Model ownership and source inventory
 
 texture_assets.cpp registers505 explicit model identities/roles. Native FS loads
 record origin before relocation; PC-generated ModelComponents::Render scopes
-select it, and heap/free hooks remove expired origins. Character/Unknown always
-retain original textures in Upscaled mode, including cache sharing/nested draws.
+select it, and heap/free hooks remove expired origins. Character draws use
+SUPIR only. Unresolved draws retain original textures even with shared keys.
 The VRAM cache includes role, quality and current content, with frame-safe history
 pruning. Canonical texture keys hash referenced palette entries rather than VRAM
 padding. texture_inventory exports validated TSVs and original-reference PNGs from
@@ -128,10 +170,11 @@ draw time, including the second partial-alpha pass. Cache eviction/settings epoc
 retirement waits for queued GPU commands before releasing referenced images;
 there is no such wait when the working set fits. Oversized working sets can stall
 or repeatedly decode. Missing/invalid/upload-failed PNGs use original art and are
-memoized until a quality/backend change. Toggle Original then Upscaled to reload
-edited pack files. Character/Unknown exclusions apply again at the GPU boundary.
+memoized until a quality/backend change. Toggle a different quality and back
+to reload edited pack files. Renderers check the same per-role search policy
+during drawing and keep different search routes separate in their caches.
 
-Software runtime rendering retains original art in Upscaled mode; reduced/none
+The reference software rasterizer retains original art in pack modes; reduced/none
 modes remain supported. Offline tooling's default CpuDecode path remains eager.
 Profile CSV adds retained cache bytes/budget, evictions, replacement attempts/
 uploads, staging peak payload and GX CPU cache bytes. These are decoded pixel

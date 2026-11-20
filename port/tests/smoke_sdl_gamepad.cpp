@@ -57,6 +57,12 @@ int main(int argc,char **argv) {
     CHECK(SDL_SetJoystickVirtualButton(joy,SDL_GAMEPAD_BUTTON_START,true));
     CHECK(ntr::sdl_gamepad_poll(state));CHECK(state.buttons==(0x2000|0x8000|0x80|0x1|0x10));
     CHECK(ntr::controller_face_buttons(state.buttons,false)==(1|0x400));
+    CHECK(SDL_SetJoystickVirtualAxis(joy,SDL_GAMEPAD_AXIS_LEFT_TRIGGER,32767));
+    CHECK(ntr::sdl_gamepad_poll(state));
+    CHECK(state.left_trigger==255 && state.right_trigger==255);
+    CHECK(SDL_SetJoystickVirtualAxis(joy,SDL_GAMEPAD_AXIS_RIGHT_TRIGGER,-32768));
+    CHECK(ntr::sdl_gamepad_poll(state));
+    CHECK(state.left_trigger==255 && state.right_trigger==0);
     SDL_CloseGamepad(pad);SDL_CloseJoystick(joy);CHECK(SDL_DetachVirtualJoystick(id));
     state={};CHECK(!ntr::sdl_gamepad_poll(state));CHECK(!state.buttons && !state.left_x);
     ntr::sdl_gamepad_shutdown();SDL_QuitSubSystem(SDL_INIT_GAMEPAD);

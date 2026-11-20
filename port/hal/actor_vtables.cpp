@@ -571,6 +571,13 @@ extern "C" void *daObjFl_Ring_c_classInit();
 static PcNativeActorProfile pc_lava_ring_profile = {
     (void *)&daObjFl_Ring_c_classInit, 71, 279, 2, 0, 0x780000, 0x2000000, 0
 };
+extern "C" void *daObjFl_Puzzle_c_classInit(), *daObjFl_Coin_c_classInit();
+static PcNativeActorProfile pc_lava_puzzle_piece_profile = {
+    (void *)&daObjFl_Puzzle_c_classInit, 78, 286, 2, 0, 0x180000, 0x2000000, 0x2000000
+};
+static PcNativeActorProfile pc_lava_puzzle_manager_profile = {
+    (void *)&daObjFl_Coin_c_classInit, 79, 287, 0, 0, 0x400000, 0x2000000, 0x2000000
+};
 extern "C" void *daObjEmmYuka_c_classInit();
 static PcNativeActorProfile pc_emm_yuka_profile = {
     (void *)&daObjEmmYuka_c_classInit, 175, 17, 2, 0, 0x150000, 0x2000000, 0
@@ -895,6 +902,8 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[73] = g_profile_FL_LONDON;
     data_020a4bb8_storage[75] = &pc_lava_float_small_profile;
     data_020a4bb8_storage[76] = &pc_lava_float_large_profile;
+    data_020a4bb8_storage[78] = &pc_lava_puzzle_piece_profile;
+    data_020a4bb8_storage[79] = &pc_lava_puzzle_manager_profile;
     data_020a4bb8_storage[15] = &pc_block_profile;
     data_020a4bb8_storage[16] = &pc_heavy_block_profile;
     data_020a4bb8_storage[17] = &pc_big_block_profile;

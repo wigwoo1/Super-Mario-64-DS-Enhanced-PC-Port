@@ -36,15 +36,17 @@ void rt_irq_set_handler(uint32_t mask, IrqHandler handler);
 IrqHandler rt_irq_get_handler(uint32_t mask);
 
 // Select host presentation pacing. Only 60, 120, and 240 Hz are accepted.
-// The DS game still advances one simulation frame per VBlank; above 60 Hz
-// the host repeats the latest game frame.
+// The DS game still advances one simulation frame per VBlank.
 void rt_set_target_fps(uint32_t fps);
 uint32_t rt_target_fps();
+// Presentation progress since the latest VBlank, in fractions of one tick.
+float rt_presentation_phase();
 
 // Run `game` on its own fiber at 60 simulation ticks per second, presenting at
 // the selected host rate until it returns or `hook` asks to stop. `max_frames`
 // and the return value count completed game simulation ticks.
-// Optional before_present uploads game graphics state before host scanout.
+// Optional before_present uploads game graphics state once per VBlank,
+// before the first scanout for that tick.
 uint64_t rt_run(void (*game)(), FrameHook hook, uint64_t max_frames = 0,
                 void (*before_present)() = nullptr);
 

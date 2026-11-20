@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include "ntr/audio_layout.h"
 
 namespace ntr {
+struct MusicClip;
 // Native sequencer/mixer. Reads only caller-supplied local asset bytes; no DS
 // driver, game objects, device callbacks or save state are involved here.
 class SdatEngine {
@@ -27,8 +29,10 @@ public:
     void volume(uint32_t slot,int value,int fade_frames=0);
     void tick();
     void variable(uint32_t slot,unsigned variable,int value);
+    void effect_position(uint32_t slot,AudioPosition position);
+    bool music_replacement(uint32_t slot,std::shared_ptr<const MusicClip> clip);
     bool active(uint32_t slot) const;
-    void render(int16_t *stereo,size_t frames);
+    void render(int16_t *output,size_t frames,AudioLayout layout=AudioLayout::Stereo);
     unsigned sequence_slots() const;
     unsigned effect_archives() const;
     unsigned effect_slots(unsigned archive) const;

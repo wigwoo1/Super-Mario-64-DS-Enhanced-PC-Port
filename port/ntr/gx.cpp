@@ -13,6 +13,7 @@
 #include <set>
 
 #include <cmath>
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -20,6 +21,9 @@
 #include <map>
 #include <tuple>
 #include <vector>
+#if defined(_WIN32)
+#include <DirectXMath.h>
+#endif
 
 namespace ntr {
 namespace {
@@ -101,6 +105,9 @@ struct State {
     std::vector<GxTriangle> tris;
     std::vector<GxTriangle> presented_tris;
     bool has_presented_frame = false;
+    GxCameraFrame pending_camera,presented_camera,previous_camera;
+    Mat camera_projection{};
+    uint64_t frame_serial=0;
 };
 
 State g;
@@ -159,6 +166,8 @@ void emit_tri(const GxVertex &a, const GxVertex &b, const GxVertex &c) {
     t.viewport_x = g.vp_x; t.viewport_y = g.vp_y;
     t.viewport_w = g.vp_w; t.viewport_h = g.vp_h;
     t.perspective = std::fabs(g.proj.m[11])>1e-6f && std::fabs(g.proj.m[15])<1e-6f;
+    t.camera_space=t.perspective && g.pending_camera.owner &&
+        std::memcmp(g.camera_projection.m,g.proj.m,sizeof(g.proj.m))==0;
     g.tris.push_back(t);
 }
 
@@ -451,6 +460,10 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
             g.presented_tris.swap(g.tris);
             g.tris.clear();
             g.has_presented_frame = true;
+            g.previous_camera=g.presented_camera;
+            g.presented_camera=g.pending_camera;
+            g.presented_camera.serial=++g.frame_serial;
+            g.pending_camera={};
             prune_vram_cache();
             break;
         case 0x60:                                               // VIEWPORT
@@ -628,8 +641,7 @@ void bind_from_vram() {
     }
     TextureReplacementRef replacement;
     replacement.key=content;replacement.role=d.role;
-    replacement.eligible=texture_backend()==TextureBackend::NativeGpu &&
-        (d.role==TextureRole::Level || d.role==TextureRole::Object);
+    replacement.eligible=texture_backend()==TextureBackend::NativeGpu && d.role!=TextureRole::Unknown;
     gx_bind_texture(it->second.pixels.data(),it->second.width,it->second.height,d.width,d.height,it->second.info,replacement);
 }
 
@@ -781,6 +793,81 @@ const GxTriangle *gx_display_polygons(size_t &count) {
     count = triangles.size();
     return triangles.empty() ? nullptr : triangles.data();
 }
+void gx_motion_camera(const int32_t *view,const int32_t *eye,uintptr_t owner,unsigned scene) {
+    g.pending_camera={};
+    if(!view || !eye || !owner || std::fabs(g.proj.m[11])<1e-6f || std::fabs(g.proj.m[15])>1e-6f)
+        return;
+    Mat camera=Mat::identity();
+    for(unsigned row=0;row<4;++row)
+        for(unsigned col=0;col<3;++col)camera.m[row*4+col]=view[row*3+col]*FX12;
+    const auto transform=mul(camera,g.proj);
+    g.camera_projection=g.proj;
+    std::copy_n(transform.m,16,g.pending_camera.view_projection.begin());
+    for(unsigned i=0;i<3;++i) {
+        g.pending_camera.eye[i]=eye[i]*FX12;
+        g.pending_camera.forward[i]=-camera.m[i*4+2];
+    }
+    g.pending_camera.owner=owner;
+    g.pending_camera.scene=scene;
+    g.pending_camera.tick=rt_frame();
+}
+GxCameraFrame gx_display_camera() { return g.presented_camera; }
+
+GxCameraPrediction gx_predict_camera(const GxCameraFrame &previous,const GxCameraFrame &current,float tick_age) {
+    GxCameraPrediction result;
+#if defined(_WIN32)
+    if(!current.owner || current.owner!=previous.owner || current.scene!=previous.scene ||
+       current.tick<=previous.tick || current.tick-previous.tick>4 || tick_age<=0 || tick_age>4 ||
+       current.view_projection==previous.view_projection)return result;
+    float distance=0,alignment=0;
+    for(unsigned i=0;i<3;++i) {
+        const float step=current.eye[i]-previous.eye[i];
+        distance+=step*step;
+        alignment+=current.forward[i]*previous.forward[i];
+    }
+    if(distance>64*64 || alignment<0.98f)return result;
+
+    using namespace DirectX;
+    XMFLOAT4X4 previous_matrix,current_matrix,delta;
+    std::memcpy(previous_matrix.m,previous.view_projection.data(),sizeof(previous_matrix.m));
+    std::memcpy(current_matrix.m,current.view_projection.data(),sizeof(current_matrix.m));
+    XMVECTOR determinant;
+    const auto inverse=XMMatrixInverse(&determinant,XMLoadFloat4x4(&current_matrix));
+    const auto det=XMVectorGetX(determinant);
+    if(!std::isfinite(det) || std::fabs(det)<1e-8f)return result;
+    XMStoreFloat4x4(&delta,XMMatrixMultiply(inverse,XMLoadFloat4x4(&previous_matrix)));
+    // Predict only within the next camera interval. The renderer borrows
+    // camera motion without advancing the world or adding an input delay.
+    result.fraction=std::min(0.95f,tick_age/float(current.tick-previous.tick));
+    for(unsigned i=0;i<4;++i)for(unsigned j=0;j<4;++j) {
+        const float identity=i==j?1.0f:0.0f;
+        result.clip_transform[i*4+j]=identity+result.fraction*(identity-delta.m[i][j]);
+    }
+#endif
+    return result;
+}
+
+GxCameraPrediction gx_camera_prediction() {
+    const auto frame=rt_frame();
+    if(frame<=g.presented_camera.tick || frame-g.presented_camera.tick>5)return {};
+    const float age=float(frame-g.presented_camera.tick-1)+rt_presentation_phase();
+    return gx_predict_camera(g.previous_camera,g.presented_camera,age);
+}
+
+bool gx_apply_camera_prediction(GxTriangle &triangle,const GxCameraPrediction &prediction) {
+    if(!triangle.camera_space || prediction.fraction==0)return false;
+    Mat transform;
+    std::copy_n(prediction.clip_transform.begin(),16,transform.m);
+    for(auto &vertex:triangle.v) {
+        const auto clip=mul(Vec4{vertex.clip_x,vertex.clip_y,vertex.clip_z,vertex.w},transform);
+        vertex.clip_x=clip.x;
+        vertex.clip_y=clip.y;
+        vertex.clip_z=clip.z;
+        vertex.w=clip.w;
+    }
+    return true;
+}
+
 unsigned gx_clip_polygon(const GxTriangle &triangle, GxVertex *out) {
     std::array<GxVertex,12> vertices;
     const unsigned count = clip_triangle(triangle,vertices);

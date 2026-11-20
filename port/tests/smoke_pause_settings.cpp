@@ -84,10 +84,10 @@ int main() {
     press(0x20); if (settings.target_fps!=120) return 8;
     press(0x80); press(1);
     if (settings.texture_quality!=ntr::TextureQuality::Percent75) return 9;
-    // All six values wrap both directions and fit the original menu.
-    const char *names[]={"ORIGINAL","75%","50%","25%","NO TEXTURES","UPSCALED"};
+    // All seven values wrap both directions and fit the original menu.
+    const char *names[]={"ORIGINAL","75%","50%","25%","NO TEXTURES","SUPIR UPSCALED","AI GENERATED 4K"};
     press(0x20);
-    for(unsigned i=0;i<6;++i) {
+    for(unsigned i=0;i<7;++i) {
         if(static_cast<unsigned>(settings.texture_quality)!=i) return 33;
         char label[64];menu.line(2,settings,label,sizeof(label));
         if(!std::strstr(label,names[i]) || std::strlen(label)>30) return 34;
@@ -95,13 +95,13 @@ int main() {
     }
     if(settings.texture_quality!=ntr::TextureQuality::Original) return 35;
     press(0x20);
-    if(settings.texture_quality!=ntr::TextureQuality::Upscaled) return 36;
+    if(settings.texture_quality!=ntr::TextureQuality::Generated4K) return 36;
     press(0x80);
     if(menu.rows()!=4 || menu.row!=3)return 10;
     press(1);
     if(!settings.upscale_2d)return 11;
     press(0x100);
-    if(menu.page!=Page::Graphics || menu.rows()!=3)return 43;
+    if(menu.page!=Page::Graphics || menu.rows()!=4)return 43;
     const uint8_t filters[]={2,4,8,16,0};
     for(uint8_t filter:filters) {
         if(press(0x10)!=Action::Changed || settings.anisotropic_filtering!=filter)return 44;
@@ -125,6 +125,17 @@ int main() {
     }
     if(settings.render_distance!=ntr::RenderDistance::Minimum)return 82;
     if(press(0x20)!=Action::Changed || settings.render_distance!=ntr::RenderDistance::EntireMap)return 83;
+    press(0x80);
+    menu.line(3,settings,filter_label,sizeof(filter_label));
+    if(menu.row!=3 || settings.motion_blur || std::strcmp(filter_label,"MOTION BLUR OFF"))return 117;
+    if(press(1)!=Action::Changed || !settings.motion_blur)return 118;
+    menu.line(3,settings,filter_label,sizeof(filter_label));
+    if(std::strcmp(filter_label,"MOTION BLUR ON"))return 119;
+    settings.renderer=ntr::VideoRenderer::OpenGLSoftware;
+    menu.line(3,settings,filter_label,sizeof(filter_label));
+    if(std::strcmp(filter_label,"MOTION BLUR D3D11 ONLY") ||
+       press(1)!=Action::None || !settings.motion_blur)return 120;
+    settings.renderer=ntr::VideoRenderer::D3D11;
     press(0x100);
     if(menu.page!=Page::Map)return 47;
     settings.minimap_opacity=250; press(0x10);
@@ -221,10 +232,36 @@ int main() {
     if(press(2)!=Action::BackPause)return 105;
     menu.page=Page::Camera;menu.row=3;
     press(0x200);
+    if(menu.page!=Page::Audio || menu.rows()!=2)return 106;
+    if(press(1)!=Action::Changed || settings.audio_layout!=ntr::AudioLayout::Surround51)return 107;
+    if(press(1)!=Action::Changed || settings.audio_layout!=ntr::AudioLayout::Surround71)return 108;
+    menu.line(0,settings,free_label,sizeof(free_label));
+    if(std::strcmp(free_label,"OUTPUT 7.1"))return 109;
+    press(0x80);
+    if(press(1)!=Action::Changed || !settings.remastered_music)return 114;
+    menu.line(1,settings,free_label,sizeof(free_label));
+    if(std::strcmp(free_label,"MUSIC REMASTERED"))return 115;
+    ntr::video_set_settings(settings);
+    constexpr const char *audio_settings="smoke-pause-audio.ini";
+    if(!ntr::video_save_settings(audio_settings))return 110;
+    ntr::video_set_settings(ntr::VideoSettings{});
+    const bool read_audio=ntr::video_load_settings(audio_settings);
+    std::remove(audio_settings);
+    if(!read_audio || ntr::video_get_settings().audio_layout!=ntr::AudioLayout::Surround71 ||
+       !ntr::video_get_settings().remastered_music)return 111;
+    if(!ntr::video_get_settings().motion_blur)return 121;
+    if(ntr::video_get_settings().texture_quality!=ntr::TextureQuality::Generated4K)return 122;
+    ntr::video_set_settings(ntr::VideoSettings{});
+    if(press(1)!=Action::Changed || settings.remastered_music)return 116;
+    press(0x40);
+    if(press(1)!=Action::Changed || settings.audio_layout!=ntr::AudioLayout::Stereo)return 112;
+    press(0x200);
     if(menu.page!=Page::Screens)return 41;
     const ntr::MinigameLayout layouts[]={ntr::MinigameLayout::LeftRight,ntr::MinigameLayout::RightLeft,ntr::MinigameLayout::TopBottom};
     for(auto layout:layouts) {if(press(1)!=Action::Changed || settings.minigame_layout!=layout)return 49;}
     if(press(0x20)!=Action::Changed || settings.minigame_layout!=ntr::MinigameLayout::RightLeft)return 50;
+    press(0x100);
+    if(menu.page!=Page::Audio)return 113;
     press(0x100);
     if(menu.page!=Page::Camera)return 93;
     press(0x100);

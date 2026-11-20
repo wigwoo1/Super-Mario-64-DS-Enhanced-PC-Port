@@ -13,7 +13,10 @@
 
 #include "ntr/mmio.h"
 #include "ntr/rt.h"
+#include "ntr/texture.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -126,21 +129,7 @@ inline uint32_t screen_entry_addr(const BgConfig &c, int tx, int ty) {
     return c.screen + block * 0x800 + (((ty & 31) * 32 + (tx & 31)) * 2);
 }
 
-// Returns false where the background is transparent at this pixel.
-bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &out) {
-    int px, py;
-    if (c.affine) {
-        px = (c.ref_x + c.pa * x + c.pb * y) >> 8;
-        py = (c.ref_y + c.pc * x + c.pd * y) >> 8;
-        if (!c.wrap && (px < 0 || py < 0 || px >= c.tiles_w * 8 || py >= c.tiles_h * 8))
-            return false;
-        px &= c.tiles_w * 8 - 1;
-        py &= c.tiles_h * 8 - 1;
-    } else {
-        px = (x + c.hofs) & (c.tiles_w * 8 - 1);
-        py = (y + c.vofs) & (c.tiles_h * 8 - 1);
-    }
-
+bool sample_bg_tiles(const BgConfig &c,int px,int py,uint32_t &out) {
     const uint32_t entry = c.affine ? c.screen + ((py >> 3) * c.tiles_w + (px >> 3)) * (c.map16 ? 2 : 1)
                                     : screen_entry_addr(c, px >> 3, py >> 3);
     const uint16_t se = c.map16 || !c.affine ? rd16(entry) :
@@ -165,6 +154,36 @@ bool sample_bg(const EngineMap &em, const BgConfig &c, int x, int y, uint32_t &o
     out = bgr555(rd16(c.palette + index * 2));
     return true;
 }
+
+// Returns false where the background is transparent at this pixel.
+bool sample_bg(const EngineMap &, const BgConfig &c, int x, int y, uint32_t &out) {
+    int px, py;
+    if (c.affine) {
+        px = (c.ref_x + c.pa * x + c.pb * y) >> 8;
+        py = (c.ref_y + c.pc * x + c.pd * y) >> 8;
+        if (!c.wrap && (px < 0 || py < 0 || px >= c.tiles_w * 8 || py >= c.tiles_h * 8))
+            return false;
+        px &= c.tiles_w * 8 - 1;
+        py &= c.tiles_h * 8 - 1;
+    } else {
+        px = (x + c.hofs) & (c.tiles_w * 8 - 1);
+        py = (y + c.vofs) & (c.tiles_h * 8 - 1);
+    }
+    return sample_bg_tiles(c,px,py,out);
+}
+
+struct MinimapAtlas {
+    uint32_t content_revision=0,screen=0,chars=0,palette=0;
+    int side=0;
+    uint64_t key=0;
+} minimap_atlas;
+struct MinimapPack {
+    uint32_t epoch=0;
+    uint64_t key=0;
+    int width=0,height=0;
+    std::vector<uint32_t> pixels;
+} minimap_pack;
+uint32_t minimap_content_revision=0;
 
 // Window controls are latched per visible line because HBlank handlers can
 // change WIN0H/WIN1H between lines (Wanted's expanding iris does this).
@@ -239,7 +258,8 @@ bool ppu_geometry_active() {
 }
 
 void ppu_scanout(Engine eng, Framebuffer &fb, bool transparent_backdrop,
-                 uint8_t background_mask) {
+                 uint8_t background_mask,uint8_t *visible_bg3) {
+    if(visible_bg3)std::fill_n(visible_bg3,SCREEN_W*SCREEN_H,0);
     const EngineMap &em = kEngines[eng];
     const uint32_t dispcnt = rd32(em.reg_base);
 
@@ -366,31 +386,44 @@ void ppu_scanout(Engine eng, Framebuffer &fb, bool transparent_backdrop,
     }
 #endif
 
+    // Evaluate only enabled layers, front to back. A transparent texel
+    // falls through to the next layer; BG number breaks priority ties.
+    int ordered[4], layer_count=0;
+    for(int priority=0;priority<4;++priority)
+        for(int bg=0;bg<4;++bg)
+            if((bgs[bg].enabled && bgs[bg].priority==priority) ||
+               (bg==0 && opaque_rear_plane && rear_priority==unsigned(priority)))
+                ordered[layer_count++]=bg;
+    const bool has_obj_window=layer_count && (dispcnt&0x9000)==0x9000;
     ObjPlane objects;
-    raster_objects(eng,objects);
+    if(has_obj_window)raster_objects(eng,objects);
     last_bg_frame[eng]=&fb;
     last_bg_mask[eng]=background_mask;
     const uint32_t backdrop = bgr555(rd16(em.pltt_base));
     const uint32_t uncovered = transparent_backdrop ? (backdrop & 0x00FFFFFFu) : backdrop;
 
-    for (int y = 0; y < SCREEN_H; ++y) {
-        const WindowState windows=windows_at(eng,y);
-        for (int x = 0; x < SCREEN_W; ++x) {
-            const uint8_t layers=window_mask(windows,x,y,objects.window[y][x]);
-            uint32_t c = uncovered;
-            // Lower priority value wins; ties break toward the lower BG number,
-            // so walk priorities 3..0 and let later writes overwrite.
-            for (int prio = 3; prio >= 0; --prio) {
-                for (int bg = 3; bg >= 0; --bg) {
-                    if (bg == 0 && opaque_rear_plane && (layers & 1u) &&
-                        rear_priority == static_cast<unsigned>(prio) &&
-                        ((x + rear_scroll) & 511u) < SCREEN_W) c = rear_color;
-                    if (!(layers & (1u<<bg)) || !bgs[bg].enabled || bgs[bg].priority != prio) continue;
-                    uint32_t s;
-                    if (sample_bg(em, bgs[bg], x, y, s)) c = s;
+    for(int y=0;y<SCREEN_H;++y) {
+        if(!layer_count) {
+            std::fill_n(fb.px[y],SCREEN_W,uncovered);
+            continue;
+        }
+        const auto windows=windows_at(eng,y);
+        for(int x=0;x<SCREEN_W;++x) {
+            const auto visible=window_mask(windows,x,y,has_obj_window && objects.window[y][x]);
+            uint32_t color=uncovered;
+            for(int i=0;i<layer_count;++i) {
+                const int bg=ordered[i];
+                if(!(visible&(1u<<bg)))continue;
+                if(bg==0 && opaque_rear_plane) {
+                    if(((x+rear_scroll)&511u)>=SCREEN_W)continue;
+                    color=rear_color;
+                } else if(!sample_bg(em,bgs[bg],x,y,color)) {
+                    continue;
                 }
+                if(visible_bg3)visible_bg3[y*SCREEN_W+x]=bg==3;
+                break;
             }
-            fb.px[y][x] = c;
+            fb.px[y][x]=color;
         }
     }
     if (eng == ENGINE_B && (dispcnt & 7) == 3) {
@@ -607,7 +640,7 @@ void raster_objects(Engine eng, ObjPlane &out) {
 
 } // namespace
 
-void ppu_scanout_obj(Engine eng,Framebuffer &fb) {
+void ppu_scanout_obj(Engine eng,Framebuffer &fb,uint8_t *visible_bg3) {
     ObjPlane objects;
     raster_objects(eng,objects);
     const EngineMap &em=kEngines[eng];
@@ -633,7 +666,99 @@ void ppu_scanout_obj(Engine eng,Framebuffer &fb) {
                    bgs[bg].priority<objects.priority[y][x] &&
                    sample_bg(em,bgs[bg],x,y,ignored)) { covered=true;break; }
             }
-            if(!covered) fb.px[y][x]=objects.color[y][x];
+            if(!covered) {
+                fb.px[y][x]=objects.color[y][x];
+                if(visible_bg3)visible_bg3[y*SCREEN_W+x]=0;
+            }
+        }
+    }
+}
+
+void ppu_minimap_content_changed() {
+    ++minimap_content_revision;
+    minimap_pack={};
+}
+
+PpuMinimapView ppu_minimap_view() {
+    const char *trace=std::getenv("SM64DS_PC_MINIMAP_PACK_TRACE");
+    const bool inventory=trace && trace[0]=='1';
+    if(!texture_minimap_pack_available() && !inventory)return {};
+    const auto &engine=kEngines[ENGINE_B];
+    const uint32_t display=rd32(engine.reg_base);
+    const auto bg=read_bg(engine,3,display);
+    if(!bg.enabled || !bg.affine || !bg.map16 || !bg.bpp8 ||
+       (bg.tiles_w!=16 && bg.tiles_w!=32) || (display&0x30080)!=0x10000)return {};
+
+    const int side=bg.tiles_w*8;
+    if(minimap_atlas.content_revision!=minimap_content_revision || minimap_atlas.screen!=bg.screen ||
+       minimap_atlas.chars!=bg.chars || minimap_atlas.palette!=bg.palette || minimap_atlas.side!=side) {
+        std::vector<uint32_t> original(size_t(side)*side,0);
+        for(int y=0;y<side;++y)for(int x=0;x<side;++x)
+            sample_bg_tiles(bg,x,y,original[size_t(y)*side+x]);
+        const auto key=texture_pixels_key(original.data(),side,side);
+        minimap_atlas={minimap_content_revision,bg.screen,bg.chars,bg.palette,side,key};
+        if(inventory)std::fprintf(stderr,"[minimap pack] key=%016llx size=%dx%d screen=%08x revision=%u\n",
+            static_cast<unsigned long long>(key),side,side,bg.screen,minimap_content_revision);
+    }
+    return {minimap_atlas.key,side,bg.pa,bg.pb,bg.pc,bg.pd,bg.ref_x,bg.ref_y,bg.wrap};
+}
+
+bool ppu_minimap_pack_ready(const PpuMinimapView &view,bool enabled) {
+    const auto epoch=texture_replacement_epoch();
+    if(minimap_pack.epoch!=epoch || minimap_pack.key!=view.key)
+        minimap_pack={epoch,0,0,0,{}};
+    if(!enabled || !view.key)return false;
+    if(minimap_pack.key==view.key)return !minimap_pack.pixels.empty();
+    minimap_pack.key=view.key;
+    if(!texture_load_replacement_pixels(view.key,TextureReplacementRoute::MinimapSupir,
+        minimap_pack.pixels,minimap_pack.width,minimap_pack.height))return false;
+    if(minimap_pack.width<view.side || minimap_pack.height!=minimap_pack.width) {
+        minimap_pack.pixels.clear();
+        return false;
+    }
+    return true;
+}
+
+void ppu_minimap_pack_draw(const PpuMinimapView &view,const uint32_t *original,const uint8_t *visible_bg3,
+                           unsigned width,unsigned height,std::vector<uint32_t> &out) {
+    const auto &image=minimap_pack;
+    if(!original || !visible_bg3 || !width || !height || image.pixels.empty() || image.key!=view.key || !view.side){
+        out.clear();
+        return;
+    }
+    const float u=float(SCREEN_W)/width,v=float(SCREEN_H)/height;
+    const float scale=float(image.width)/view.side/256.0f;
+    out.resize(size_t(width)*height);
+    for(unsigned y=0;y<height;++y) {
+        const float sy=(y+0.5f)*v;
+        const size_t row=std::min(unsigned(sy),unsigned(SCREEN_H-1))*SCREEN_W;
+        const float ref_x=(view.ref_x+view.pb*sy)*scale;
+        const float ref_y=(view.ref_y+view.pd*sy)*scale;
+        for(unsigned x=0;x<width;++x) {
+            const float sx=(x+0.5f)*u;
+            const size_t source=row+std::min(unsigned(sx),unsigned(SCREEN_W-1));
+            const uint32_t color=original[source];
+            auto &pixel=out[size_t(y)*width+x];
+            pixel=color;
+            if(!visible_bg3[source] || !(color>>24))continue;
+            int tx=int(std::floor(ref_x+view.pa*sx*scale)),ty=int(std::floor(ref_y+view.pc*sx*scale));
+            if(view.wrap) {
+                tx=((tx%image.width)+image.width)%image.width;
+                ty=((ty%image.height)+image.height)%image.height;
+            } else {
+                tx=std::clamp(tx,0,image.width-1);
+                ty=std::clamp(ty,0,image.height-1);
+            }
+            const uint32_t replacement=image.pixels[size_t(ty)*image.width+tx];
+            const uint32_t alpha=replacement>>24;
+            if(alpha==255)pixel=(color&0xff000000u)|(replacement&0xffffffu);
+            else if(alpha) {
+                pixel=color&0xff000000u;
+                for(unsigned shift=0;shift<24;shift+=8) {
+                    const unsigned a=(color>>shift)&255,b=(replacement>>shift)&255;
+                    pixel|=((a*(255-alpha)+b*alpha+127)/255)<<shift;
+                }
+            }
         }
     }
 }

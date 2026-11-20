@@ -14,6 +14,8 @@ struct InputState {
     int16_t right_y = 0;
     uint8_t left_trigger = 0;
     uint8_t right_trigger = 0;
+    float camera_turn = 0;  // Dedicated free-camera horizontal input, [-1, 1].
+    uint16_t camera_preset_turn = 0;  // Original camera direction bits, scoped to camera only.
     bool camera_zoom_pressed = false; // rising edge of Xbox right-stick click
     bool camera_mode_pressed = false; // rising edge of Xbox left-stick click
     bool touch = false;

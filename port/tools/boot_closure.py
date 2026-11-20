@@ -25,6 +25,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daRedBombhei_c_classInit", "daObjCannonShutter_c_classInit",
                  "daWanwan_c_classInit", "daObjPile_c_classInit", "daObjWanwanShutter_c_classInit",
                  "daObjFl_London_c_classInit",
+                 "daObjFl_Puzzle_c_classInit", "daObjFl_Coin_c_classInit",
                  "daObjFl_Seesaw_c_classInit", "daObjRc_Tikuwa_c_classInit", "daObjRcBuranko_c_classInit",
                  "daObjSeesaw_c_classInit_KM1_SEESAW",
                  "daObjSeesaw_c_classInit_KM2_YOKOSEESAW",
@@ -935,6 +936,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import lava_bridge_host
                     transformed = lava_bridge_host.transform(transformed)
                     rewrites += 1
+                if path.name == 'daObjFl_Coin_c.cpp':
+                    import lava_puzzle_host
+                    transformed = lava_puzzle_host.transform(root, transformed)
+                    rewrites += 1
                 if path.name == 'daObjFl_Seesaw_c.cpp':
                     import seesaw_host
                     transformed = seesaw_host.transform(transformed)
@@ -989,8 +994,13 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     projection = projection.replace('this->mAngle', 'pcDisplayAngle')
                     projection = projection.replace(', mAngle);', ', pcDisplayAngle);')
                     behavior = internal + 'L4d8:\n' + projection
-                    transformed = ('#include "ntr/video.h"\n' + transformed[:render_start] +
-                                   render + behavior + transformed[behavior_end:])
+                    resources = transformed[behavior_end:]
+                    anchor = '    mScale = ((mMapWidth) << 12) / (mScale) / 10;'
+                    if resources.count(anchor) != 1:
+                        raise ValueError('Minimap resource invalidation hook changed')
+                    resources = resources.replace(anchor, anchor + '\n    ntr::ppu_minimap_content_changed();')
+                    transformed = ('#include "ntr/video.h"\n#include "ntr/ppu.h"\n' + transformed[:render_start] +
+                                   render + behavior + resources)
                     rewrites += 1
                 if rel == "src/engine/fader/dFader_c.cpp":
                     guard = "#ifndef _MSC_VER"

@@ -59,6 +59,28 @@ def main():
         base = int(re.search(r'\.text\s+start:0x([\da-f]+)', text)[1], 16)
         return base, (ROOT / f'extracted/overlays/overlay_{number:04d}.bin').read_bytes()
 
+    from lava_puzzle_host import COLLISION_SURFACE, STATE_METHODS, tables as lava_puzzle_tables
+    lava_base, lava_rom = overlay(64)
+    model_addresses, script_addresses = lava_puzzle_tables(ROOT)
+    for symbol, addresses, span in (
+            ('data_ov064_0211adc8', model_addresses, 0),
+            ('data_ov064_0211c198', script_addresses, 27)):
+        native = struct.unpack('<14I', pe_bytes(args.exe, named(symbol), 56))
+        for target, guest in zip(native, addresses):
+            if target != named(f'data_ov064_{guest:08x}'):
+                raise ValueError(f'{symbol}: lava puzzle pointer rebinding mismatch')
+            if span and pe_bytes(args.exe, target, span) != lava_rom[guest-lava_base:guest-lava_base+span]:
+                raise ValueError(f'{symbol}: lava puzzle script differs from original')
+    states = struct.unpack('<6I', pe_bytes(args.exe, named('data_ov064_0211c904'), 24))
+    for address, method in zip(states, STATE_METHODS):
+        if not any(pc == address and name.startswith(f'?{method}@daObjFl_Puzzle_c@@')
+                   for name, pc in symbols.items()):
+            raise ValueError(f'Lava puzzle callback {method} does not reach native code')
+    if pe_bytes(args.exe, named(f'data_ov064_{COLLISION_SURFACE:08x}'), 16) != \
+            lava_rom[COLLISION_SURFACE-lava_base:COLLISION_SURFACE-lava_base+16]:
+        raise ValueError('Lava puzzle collision surface differs from original')
+    print('PASS: native lava puzzle handles/callbacks and all fourteen original movement scripts')
+
     bowser_base, bowser_rom = overlay(60)
     tilt = bowser_rom[0x02119294-bowser_base:0x021192dc-bowser_base]
     if len(tilt) != 72 or tilt[-2:] != b'\0\0' or pe_bytes(
@@ -591,6 +613,8 @@ def main():
             ('g_profile_WANWAN', 'daWanwan_c_classInit', 14, 0x02114750),
             ('g_profile_PILE', 'daObjPile_c_classInit', 91, 0x02135298),
             ('g_profile_FL_LONDON', 'daObjFl_London_c_classInit', 22, 0x02113f4c),
+            ('pc_lava_puzzle_piece_profile', 'daObjFl_Puzzle_c_classInit', 64, 0x0211c160),
+            ('pc_lava_puzzle_manager_profile', 'daObjFl_Coin_c_classInit', 64, 0x0211c17c),
             ('pc_fl_seesaw_profile', 'daObjFl_Seesaw_c_classInit', 22, 0x02114010),
             ('pc_floor_switch_profile', 'daObjSwitch_c_classInit_HANSWITCH', 2, 0x02109900),
             ('pc_star_switch_profile', 'daObjSwitch_c_classInit_STAR_SWITCH', 2, 0x0210991c),

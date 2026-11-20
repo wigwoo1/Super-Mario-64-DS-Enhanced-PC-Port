@@ -204,6 +204,28 @@ int main(void)
     for (int y = 0; y < ntr::SCREEN_H; ++y)
         for (int x = 0; x < ntr::SCREEN_W; ++x) CHECK(fb.px[y][x] == 0xFF101820u);
 
+    ntr::GxCameraFrame previous;
+    previous.owner=1;previous.scene=7;previous.tick=10;previous.forward={0,0,1};
+    previous.view_projection={1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
+    auto current=previous;
+    current.tick=12;current.view_projection[12]=-0.25f;current.eye[0]=1;
+    const auto halfway=ntr::gx_predict_camera(previous,current,1);
+    CHECK(halfway.fraction==0.5f);
+    ntr::GxTriangle triangle{};
+    triangle.v[0].w=1;
+    CHECK(!ntr::gx_apply_camera_prediction(triangle,halfway)); // Overlay geometry.
+    triangle.camera_space=true;
+    CHECK(ntr::gx_apply_camera_prediction(triangle,halfway));
+    CHECK(std::fabs(triangle.v[0].clip_x+0.125f)<1e-6f && triangle.v[0].w==1);
+    CHECK(ntr::gx_predict_camera(previous,current,0).fraction==0);
+    CHECK(ntr::gx_predict_camera(previous,current,3).fraction==0.95f);
+    current.scene=8;
+    CHECK(ntr::gx_predict_camera(previous,current,1).fraction==0);
+    current.scene=7;current.eye[0]=300;
+    CHECK(ntr::gx_predict_camera(previous,current,1).fraction==0);
+    current.eye[0]=1;current.forward={0,1,0};
+    CHECK(ntr::gx_predict_camera(previous,current,1).fraction==0);
+
     if (g_failures) {
         fprintf(stderr, "smoke_gx: %d FAILURE(S)\n", g_failures);
         return 1;

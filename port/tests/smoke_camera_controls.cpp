@@ -37,5 +37,25 @@ int main() {
     if(response.update(9000,0,settings,1.0/60).yaw!=0)return 12;
     response.reset();
     if(response.update(16000,0,settings,1.0/60).yaw<=0)return 13;
-    std::puts("PASS free-camera sensitivity, independent inversion, gentle ramp, deadzone, immediate stop, and 30/60/240 update-rate invariance");
+    settings=ntr::VideoSettings{};
+    const auto mouse=ntr::mouse_camera_orbit(100,50,settings);
+    if(std::abs(mouse.yaw-0.3)>1e-10 || std::abs(mouse.pitch+0.15)>1e-10)return 14;
+    const auto part=ntr::mouse_camera_orbit(50,25,settings);
+    if(std::abs(part.yaw*2-mouse.yaw)>1e-10 || std::abs(part.pitch*2-mouse.pitch)>1e-10)return 15;
+    settings.camera_sensitivity=200;settings.camera_invert_x=true;
+    const auto mouse_invert_x=ntr::mouse_camera_orbit(100,50,settings);
+    if(std::abs(mouse_invert_x.yaw+0.6)>1e-10 || std::abs(mouse_invert_x.pitch+0.3)>1e-10)return 16;
+    settings.camera_invert_x=false;settings.camera_invert_y=true;
+    const auto mouse_invert_y=ntr::mouse_camera_orbit(100,50,settings);
+    if(std::abs(mouse_invert_y.yaw-0.6)>1e-10 || std::abs(mouse_invert_y.pitch-0.3)>1e-10)return 17;
+    const auto mouse_idle=ntr::mouse_camera_orbit(0,0,settings);
+    if(mouse_idle.yaw!=0 || mouse_idle.pitch!=0)return 18;
+    settings=ntr::VideoSettings{};
+    settings.camera_acceleration=0;
+    const auto trigger=response.update(0,0,settings,1.0/60,0.5);
+    if(std::abs(trigger.yaw-0.013)>1e-10 || trigger.pitch!=0)return 19;
+    if(response.update(32767,0,settings,1.0/60,-1).yaw!=0)return 20;
+    settings.camera_invert_x=true;
+    if(response.update(0,0,settings,1.0/60,-1).yaw<=0)return 21;
+    std::puts("PASS stick response and mouse sensitivity, inversion, batching and stop");
 }

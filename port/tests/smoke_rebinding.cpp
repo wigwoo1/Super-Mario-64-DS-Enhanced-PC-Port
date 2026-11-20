@@ -25,6 +25,12 @@ int main() {
     menu.row=0;press(1);menu.binding_sample(0,true,settings);
     if(menu.capture || settings.bindings.pad[0]!=0x2000)return 7;
     press(0x100);press(0x100);if(menu.binding_bank!=2 || menu.rows()!=4)return 8;
+    press(0x100);if(menu.binding_bank!=3 || menu.rows()!=2)return 25;
+    menu.row=0;press(1);menu.binding_sample(0,false,settings);
+    if(menu.binding_sample(ntr::pad_right_trigger,false,settings)!=Action::Changed ||
+       settings.bindings.pad[ntr::camera_turn_left_binding]!=ntr::pad_right_trigger ||
+       settings.bindings.pad[ntr::camera_turn_right_binding]!=ntr::pad_left_trigger)return 26;
+    press(0x100);if(menu.binding_bank!=0)return 27;
     press(2);if(menu.page!=Page::Controls)return 9;
     menu.row=2;press(1);if(menu.page!=Page::Keyboard)return 10;
     menu.row=1;press(1);menu.binding_sample(0,false,settings);
@@ -42,7 +48,7 @@ int main() {
     std::remove("smoke-rebinding.ini");
     // Invalid serialized values must not truncate into another valid binding.
     if(FILE *f=std::fopen("smoke-rebinding.ini","w")) {
-        std::fputs("key_bind_1=65568\npad_bind_1=12288\nkey_bind_14=74\nleft_stick_deadzone=999\nright_stick_deadzone=0\n",f);std::fclose(f);
+        std::fputs("key_bind_1=65568\npad_bind_1=12288\nkey_bind_16=74\nleft_stick_deadzone=999\nright_stick_deadzone=0\n",f);std::fclose(f);
     } else return 20;
     if(!ntr::video_load_settings("smoke-rebinding.ini"))return 21;
     auto invalid=ntr::video_get_settings();std::remove("smoke-rebinding.ini");
@@ -50,6 +56,18 @@ int main() {
     std::array<bool,256> no_keys{};
     auto trigger=settings.bindings;trigger.pad[1]=0x10000;
     if(ntr::mapped_buttons(trigger,no_keys,0x10000)!=2 || ntr::mapped_buttons(trigger,no_keys,0))return 23;
+    if(FILE *f=std::fopen("smoke-rebinding.ini","w")) {
+        std::fputs("pad_bind_1=65536\nkey_bind_8=221\n",f);
+        std::fclose(f);
+    } else return 28;
+    if(!ntr::video_load_settings("smoke-rebinding.ini"))return 29;
+    auto legacy=ntr::video_get_settings();
+    std::remove("smoke-rebinding.ini");
+    if(legacy.bindings.pad[1]!=ntr::pad_left_trigger ||
+       legacy.bindings.pad[ntr::camera_turn_left_binding]!=0 ||
+       legacy.bindings.pad[ntr::camera_turn_right_binding]!=ntr::pad_right_trigger ||
+       legacy.bindings.keys[8]!=221 ||
+       legacy.bindings.keys[ntr::camera_turn_right_binding]!=0)return 30;
     ntr::video_set_settings(settings);
 #ifdef _WIN32
     _putenv_s("SM64DS_PC_AUTOMATION_ONLY","1");
@@ -63,6 +81,15 @@ int main() {
         if(poll==1 && (ui!=0x400 || ntr::input_binding_candidate(true)!=0x4000))return 16;
         if(ntr::input_take_camera_zoom()!=(poll==8))return 17;
     }
+    ntr::video_set_settings(ntr::VideoSettings{});
+    _putenv_s("SM64DS_PC_TEST_TRIGGER_SCHEDULE","21:22:255:0,22:23:255:255,23:24:0:255,24:25:16:0,25:26:0:255");
+    ntr::input_poll();if(ntr::input_keyinput()!=0xfff || ntr::input_state().camera_preset_turn!=0x100)return 31;
+    ntr::input_poll();if(ntr::input_keyinput()!=0xfff || ntr::input_state().camera_preset_turn!=0)return 32;
+    ntr::input_poll();if(ntr::input_keyinput()!=0xfff || ntr::input_state().camera_preset_turn!=0x200)return 33;
+    auto free=ntr::VideoSettings{};free.camera_mode=1;ntr::video_set_settings(free);
+    ntr::input_poll();if(ntr::input_state().camera_turn!=0)return 34;
+    ntr::input_poll();if(ntr::input_state().camera_turn!=1 || ntr::input_keyinput()!=0xfff)return 35;
+    ntr::input_poll();if(ntr::input_state().camera_turn!=0)return 36;
 #endif
     menu.page=Page::Controls;menu.row=4;press(1);
     if(!menu.reset_confirm || settings.bindings.keys[1]!='J')return 18;

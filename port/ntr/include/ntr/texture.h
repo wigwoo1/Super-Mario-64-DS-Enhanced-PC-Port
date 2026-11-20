@@ -8,8 +8,9 @@
 
 namespace ntr {
 
-enum class TextureQuality : uint8_t { Original, Percent75, Percent50, Percent25, None, Upscaled };
+enum class TextureQuality : uint8_t { Original, Percent75, Percent50, Percent25, None, Upscaled, Generated4K };
 enum class TextureRole : uint8_t { Unknown, Level, Object, Character };
+enum class TextureReplacementRoute : uint8_t { None, Supir, SupirThenLegacy, GeneratedThenSupir, HudSupir, MinimapSupir };
 enum class TextureBackend : uint8_t { CpuDecode, NativeGpu, SoftwareReference };
 void texture_set_backend(TextureBackend backend);
 TextureBackend texture_backend();
@@ -40,6 +41,9 @@ TextureQuality texture_quality();
 void texture_set_quality(TextureQuality quality);
 TextureQuality texture_cycle_quality(TextureQuality quality, int direction = 1);
 const char *texture_quality_name(TextureQuality quality);
+const char *texture_pack_status(TextureQuality quality);
+bool texture_minimap_pack_available();
+TextureReplacementRoute texture_replacement_route(TextureQuality quality,TextureRole role);
 
 struct TextureDesc {
     const uint8_t *data = nullptr;   int32_t data_len = 0;
@@ -48,7 +52,7 @@ struct TextureDesc {
     int width = 0, height = 0;
     int format = 0;                  // TEXIMAGE_PARAM bits 26..28
     bool color0_transparent = false;
-    // Unknown/shared ownership must retain original art in Upscaled mode.
+    // Unknown/shared ownership retains original art in both pack modes.
     // Native model scopes supply roles; unresolved assets remain Unknown.
     TextureRole role = TextureRole::Unknown;
     bool defer_replacement = false;
@@ -67,7 +71,8 @@ void texture_set_upscaled(bool enabled);
 bool texture_upscaled();
 // Tooling exports original references/test fixtures through the same PNG codec.
 bool texture_write_png(const char *path,const std::vector<uint32_t> &pixels,int width,int height);
-bool texture_load_replacement_pixels(uint64_t key,std::vector<uint32_t> &pixels,int &width,int &height,
+bool texture_load_replacement_pixels(uint64_t key,TextureReplacementRoute route,
+                                     std::vector<uint32_t> &pixels,int &width,int &height,
                                      uint64_t max_bytes=64ull*1024*1024);
 
 }  // namespace ntr

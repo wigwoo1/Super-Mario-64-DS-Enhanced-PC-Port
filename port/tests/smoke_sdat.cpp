@@ -1,5 +1,6 @@
 #include "ntr/sdat.h"
 #include "ntr/audio_ramp.h"
+#include "ntr/remastered_music.h"
 #include "../third_party/sseqplayer/Player.h"
 #include <cstdio>
 #include <stdexcept>
@@ -48,6 +49,28 @@ static std::vector<uint8_t> player_fixture(){
     put32(result,8,unsigned(result.size()));return result;
 }
 int main(){
+    using ntr::AudioLayout;
+    CHECK(ntr::audio_channel_count(AudioLayout::Stereo)==2);
+    CHECK(ntr::audio_channel_mask(AudioLayout::Surround51)==0x60f);
+    CHECK(ntr::audio_channel_mask(AudioLayout::Surround71)==0x63f);
+    CHECK(ntr::audio_channel_count(AudioLayout::Surround51)==6);
+    CHECK(ntr::audio_channel_count(AudioLayout::Surround71)==8);
+    const auto center=ntr::audio_speaker_gains(AudioLayout::Surround71,{0,0,-1000});
+    CHECK(center[2]>0.9999 && center[3]==0 && center[4]==0);
+    const auto right=ntr::audio_speaker_gains(AudioLayout::Surround71,{1000,0,0});
+    CHECK(right[7]>0.9999 && right[0]==0 && right[6]==0);
+    const auto back=ntr::audio_speaker_gains(AudioLayout::Surround71,{0,0,1000});
+    CHECK(std::abs(back[4]-0.70710678)<1e-6 && std::abs(back[5]-back[4])<1e-6 && back[3]==0);
+    const auto five_back=ntr::audio_speaker_gains(AudioLayout::Surround51,{0,0,1000});
+    CHECK(std::abs(five_back[4]-0.70710678)<1e-6 && std::abs(five_back[5]-five_back[4])<1e-6);
+    const auto invalid_position=ntr::audio_speaker_gains(AudioLayout::Surround71,{2147483647,0,0});
+    CHECK(invalid_position==ntr::SpeakerGains{});
+    std::array<int32_t,8> impulse{};
+    ntr::audio_mix_frame(impulse.data(),1000,-500,8,nullptr);
+    CHECK(impulse[0]==1000 && impulse[1]==-500 && impulse[2]==0 && impulse[7]==0);
+    ntr::audio_mix_frame(impulse.data(),500,500,8,&right);
+    CHECK(impulse[0]==1000 && impulse[1]==-500 && impulse[3]==0 && impulse[6]==0 && impulse[7]==500);
+
     ntr::AudioVolumeRamp ramp;
     ramp.set(0,4);CHECK(ramp.value()==127 && !ramp.done());
     ramp.tick();CHECK(ramp.value()==95);
@@ -146,6 +169,26 @@ int main(){
     CHECK(!admission.play_sequence(5,203) && admission.errors()==0); // Disabled player.
     std::vector<int16_t> stereo(2048);admission.render(stereo.data(),1024);
     CHECK(admission.active(103) && admission.active(201) && admission.active(202));
+    auto clip=std::make_shared<ntr::MusicClip>();
+    clip->stereo={600,100,1100,-500,1200,-500,1300,-500};
+    clip->loop_begin=1;clip->loop_end=4;
+    CHECK(clip->valid() && clip->frame_at(0)==0 && clip->frame_at(4)==1 && clip->frame_at(12)==3);
+    CHECK(admission.music_replacement(103,clip));
+    admission.render(stereo.data(),1024);
+    CHECK(stereo[0]>0 && stereo[0]<5 && stereo[2047]==-500); // Fade-in over 20 ms.
+    admission.pause(103,true);
+    admission.render(stereo.data(),1024);
+    for(const auto sample:stereo)CHECK(sample==0);
+    CHECK(admission.active(103));
+    admission.pause(103,false);
+    admission.render(stereo.data(),1024);
+    CHECK(stereo[0]==1200 && stereo[1]==-500); // Sample cursor resumed in place.
+    CHECK(admission.music_replacement(103,{}));
+    admission.render(stereo.data(),1024);
+    CHECK(stereo[0]>0 && stereo[2047]==0 && admission.active(103));
+    admission.stop(103,2);
+    admission.tick();CHECK(admission.active(103));
+    admission.tick();CHECK(!admission.active(103));
     // Corrupt the PLAYER table pointer: parser must reject it before playback.
     put32(archive,64+8+4*4,unsigned(archive.size()-2));
     ntr::SdatEngine malformed;CHECK(!malformed.load(archive.data(),archive.size()));

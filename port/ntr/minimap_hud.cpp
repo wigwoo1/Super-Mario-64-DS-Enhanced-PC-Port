@@ -4,13 +4,21 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <map>
+#include <utility>
 
 namespace ntr {
 namespace {
 constexpr uint32_t kText = 0xfffff2beu;
 constexpr uint32_t kTextOutline = 0xd0000000u;
 MinimapHudArt art;
+uint32_t art_revision=0;
+uint32_t replacement_epoch=0;
+// Cache only display-sized images. A 4K PNG is decoded as a temporary and
+// discarded after sampling to at most 512 pixels on its long side.
+std::map<const HudSprite *,HudSprite> replacements;
 constexpr std::array<std::array<unsigned char,7>,10> kDigits7{{
     {{14,17,19,21,25,17,14}},{{4,12,4,4,4,4,14}},{{14,17,1,2,4,8,31}},
     {{30,1,1,14,1,1,30}},{{2,6,10,18,31,2,2}},{{31,16,16,30,1,1,30}},
@@ -63,10 +71,72 @@ void number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,unsigned
 }
 
 void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
-          int target_width,int target_height,const HudSprite &sprite,bool smooth);
+          int target_width,int target_height,const HudSprite &source,bool smooth,TextureQuality quality);
+
+uint32_t sample(const HudSprite &sprite,int x,int y,int width,int height) {
+    const double fx=std::clamp((x+0.5)*sprite.width/width-0.5,0.0,double(sprite.width-1));
+    const double fy=std::clamp((y+0.5)*sprite.height/height-0.5,0.0,double(sprite.height-1));
+    const unsigned x0=unsigned(fx),y0=unsigned(fy),x1=std::min(x0+1,sprite.width-1),y1=std::min(y0+1,sprite.height-1);
+    const double tx=fx-x0,ty=fy-y0;
+    const uint32_t samples[4]={sprite.pixels[size_t(y0)*sprite.width+x0],sprite.pixels[size_t(y0)*sprite.width+x1],
+                               sprite.pixels[size_t(y1)*sprite.width+x0],sprite.pixels[size_t(y1)*sprite.width+x1]};
+    const double weights[4]={(1-tx)*(1-ty),tx*(1-ty),(1-tx)*ty,tx*ty};
+    double a=0,r=0,g=0,b=0;
+    for(unsigned i=0;i<4;++i) {
+        const double alpha=weights[i]*(samples[i]>>24);
+        a+=alpha;
+        r+=alpha*((samples[i]>>16)&255);
+        g+=alpha*((samples[i]>>8)&255);
+        b+=alpha*(samples[i]&255);
+    }
+    if(a==0)return 0;
+    return (unsigned(std::lround(a))<<24)|(unsigned(std::lround(r/a))<<16)|
+           (unsigned(std::lround(g/a))<<8)|unsigned(std::lround(b/a));
+}
+
+const HudSprite &pack_sprite(const HudSprite &source,TextureQuality quality) {
+    const auto epoch=texture_replacement_epoch();
+    if(replacement_epoch!=epoch) {
+        replacements.clear();
+        replacement_epoch=epoch;
+    }
+    if(quality!=TextureQuality::Upscaled || !source.width || !source.height ||
+       source.pixels.size()!=size_t(source.width)*source.height)return source;
+    auto result=replacements.try_emplace(&source);
+    auto &prepared=result.first->second;
+    if(!result.second)return prepared.pixels.empty()?source:prepared;
+
+    const auto key=texture_pixels_key(source.pixels.data(),source.width,source.height);
+    HudSprite decoded;
+    int width=0,height=0;
+    if(!texture_load_replacement_pixels(key,TextureReplacementRoute::HudSupir,decoded.pixels,width,height) ||
+       width<int(source.width) || height<int(source.height) ||
+       uint64_t(width)*source.height!=uint64_t(height)*source.width)return source;
+    decoded.width=unsigned(width);
+    decoded.height=unsigned(height);
+    const unsigned scale=std::min(decoded.width/source.width,512u/std::max(source.width,source.height));
+    if(!scale)return source;
+    prepared.width=source.width*scale;
+    prepared.height=source.height*scale;
+    prepared.pixels.resize(size_t(prepared.width)*prepared.height);
+    bool visible=false;
+    for(unsigned y=0;y<prepared.height;++y)for(unsigned x=0;x<prepared.width;++x) {
+        const auto paint=sample(decoded,x,y,prepared.width,prepared.height);
+        const auto mask=sample(source,x,y,prepared.width,prepared.height);
+        const auto alpha=std::min(paint>>24,mask>>24);
+        auto &pixel=prepared.pixels[size_t(y)*prepared.width+x];
+        pixel=alpha?(alpha<<24)|(paint&0xffffffu):0;
+        visible|=alpha!=0;
+    }
+    if(!visible) {
+        prepared={};
+        return source;
+    }
+    return prepared;
+}
 
 void timer_number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
-                  unsigned hundredths,int cell_width,int cell_height) {
+                  unsigned hundredths,int cell_width,int cell_height,TextureQuality quality) {
     const unsigned capped=std::min(hundredths,599999u);
     const unsigned minutes=capped/6000,seconds=(capped/100)%60,cs=capped%100;
     char text[9]{};std::snprintf(text,sizeof(text),"%02u:%02u.%02u",minutes,seconds,cs);
@@ -87,7 +157,7 @@ void timer_number(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
             if(*ch>='0'&&*ch<='9') {
                 const auto &digit=art.timer_digits[*ch-'0'];
                 const int draw_w=int(digit.width)*scale,draw_h=int(digit.height)*scale;
-                icon(pixels,width,height,cursor,top,draw_w,draw_h,digit,false);
+                icon(pixels,width,height,cursor,top,draw_w,draw_h,digit,false,quality);
                 cursor+=draw_w;
             } else {
                 const int block=std::max(1,scale);
@@ -170,32 +240,47 @@ void over_pixel(uint32_t *pixels,unsigned width,unsigned height,int x,int y,uint
 }
 
 void icon(uint32_t *pixels,unsigned width,unsigned height,int x,int y,
-          int target_width,int target_height,const HudSprite &sprite,bool smooth) {
+          int target_width,int target_height,const HudSprite &source,bool smooth,TextureQuality quality) {
+    const auto &sprite=pack_sprite(source,quality);
     if(!sprite.width || !sprite.height || sprite.pixels.size()!=size_t(sprite.width)*sprite.height)return;
     const int w=std::max(1,std::min(target_width,int(width)-x));
     const int h=std::max(1,std::min(target_height,int(height)-y));
+    const auto nearest=[w,h](const HudSprite &image,int px,int py){
+        return image.pixels[size_t(py)*image.height/h*image.width+px*image.width/w];
+    };
+    const bool replaced=&sprite!=&source;
     for(int py=0;py<h;++py)for(int px=0;px<w;++px) {
-        uint32_t color=0;
-        if(!smooth) {
-            color=sprite.pixels[size_t(py)*sprite.height/h*sprite.width+px*sprite.width/w];
-        } else {
-            const double fx=std::clamp((px+0.5)*sprite.width/w-0.5,0.0,double(sprite.width-1));
-            const double fy=std::clamp((py+0.5)*sprite.height/h-0.5,0.0,double(sprite.height-1));
-            const unsigned x0=unsigned(fx),y0=unsigned(fy),x1=std::min(x0+1,sprite.width-1),y1=std::min(y0+1,sprite.height-1);
-            const double tx=fx-x0,ty=fy-y0;
-            const uint32_t samples[4]={sprite.pixels[size_t(y0)*sprite.width+x0],sprite.pixels[size_t(y0)*sprite.width+x1],
-                                       sprite.pixels[size_t(y1)*sprite.width+x0],sprite.pixels[size_t(y1)*sprite.width+x1]};
-            const double weights[4]={(1-tx)*(1-ty),tx*(1-ty),(1-tx)*ty,tx*ty};
-            double a=0,r=0,g=0,b=0;
-            for(unsigned i=0;i<4;++i){const double alpha=samples[i]>>24;a+=weights[i]*alpha;r+=weights[i]*alpha*((samples[i]>>16)&255);g+=weights[i]*alpha*((samples[i]>>8)&255);b+=weights[i]*alpha*(samples[i]&255);}
-            if(a>0)color=(unsigned(std::lround(a))<<24)|(unsigned(std::lround(r/a))<<16)|(unsigned(std::lround(g/a))<<8)|unsigned(std::lround(b/a));
+        auto color=smooth||replaced?sample(sprite,px,py,w,h):nearest(sprite,px,py);
+        if(replaced && color>>24) {
+            const auto original=smooth?sample(source,px,py,w,h):nearest(source,px,py);
+            color=(color&0xffffffu)|(std::min(color>>24,original>>24)<<24);
         }
         if(color>>24)over_pixel(pixels,width,height,x+px,y+py,color);
     }
 }
 }
 
-void minimap_hud_set_art(MinimapHudArt value) {art=std::move(value);}
+void minimap_hud_set_art(MinimapHudArt value) {
+    art=std::move(value);
+    replacements.clear();
+    ++art_revision;
+    if(const char *trace=std::getenv("SM64DS_PC_HUD_PACK_TRACE");trace && trace[0]=='1') {
+        const auto report=[](const char *group,unsigned index,const HudSprite &sprite) {
+            if(sprite.pixels.empty())return;
+            const auto key=texture_pixels_key(sprite.pixels.data(),sprite.width,sprite.height);
+            std::fprintf(stderr,"[HUD pack] %s=%u key=%016llx size=%ux%u\n",
+                group,index,static_cast<unsigned long long>(key),sprite.width,sprite.height);
+        };
+        report("star",0,art.star);
+        report("coin",0,art.coin);
+        report("cannon",0,art.cannon_sight);
+        for(unsigned i=0;i<4;++i)report("life",i,art.lives[i]);
+        for(unsigned i=0;i<9;++i)report("health",i,art.health[i]);
+        for(unsigned i=0;i<10;++i)report("timer",i,art.timer_digits[i]);
+    }
+}
+
+uint32_t minimap_hud_art_revision(){return art_revision;}
 
 bool minimap_hud_decode(HudSprite &out,const uint8_t *attributes,size_t bytes,
                        const uint8_t *tiles,size_t tile_bytes,const uint8_t *palette,size_t palette_bytes) {
@@ -235,11 +320,11 @@ bool minimap_hud_decode(HudSprite &out,const uint8_t *attributes,size_t bytes,
     out=std::move(result);return true;
 }
 
-void cannon_sight_build(uint32_t *pixels,unsigned width,unsigned height) {
+void cannon_sight_build(uint32_t *pixels,unsigned width,unsigned height,TextureQuality quality) {
     if(!pixels||!width||!height)return;
     const int size=std::max(1,int(std::lround(double(height)*32.0/192.0)));
     icon(pixels,width,height,(int(width)-size)/2,(int(height)-size)/2,
-         size,size,art.cannon_sight,true);
+         size,size,art.cannon_sight,true,quality);
 }
 
 void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
@@ -280,7 +365,8 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     };
     const auto draw_card=[&](int x,int y,unsigned index) {
         const int iy=y+(row_height-icon_height)/2;
-        icon(pixels,width,height,x+pad_x,iy,icon_width,icon_height,*icons[index],width>256||height>192);
+        icon(pixels,width,height,x+pad_x,iy,icon_width,icon_height,*icons[index],
+             width>256||height>192,settings.texture_quality);
         number(pixels,width,height,x+2*pad_x+icon_width,
                y+(row_height-glyph_height)/2,counts[index],digit_width,digit_height);
     };
@@ -302,7 +388,7 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     if(timer_visible) {
         const int timer_cell_w=std::max(2,2*digit_width);
         const int timer_cell_h=std::max(2,2*digit_height);
-        timer_number(pixels,width,height,0,0,timer_hundredths,timer_cell_w,timer_cell_h);
+        timer_number(pixels,width,height,0,0,timer_hundredths,timer_cell_w,timer_cell_h,settings.texture_quality);
     }
 
     const int health_width=card_width(counts[2]),life_width=card_width(counts[3]);

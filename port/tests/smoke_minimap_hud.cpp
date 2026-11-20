@@ -1,7 +1,9 @@
 #include "ntr/minimap_hud.h"
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstdio>
+#include <filesystem>
 #include <cmath>
 #include <vector>
 
@@ -140,5 +142,55 @@ int main() {
            std::abs(int(box[1]+box[3])-int(size[1]))>1)return 26;
         if(!sight[size_t(size[1]/2)*size[0]+size[0]/2])return 27;
     }
+#if defined(_WIN32)
+    namespace fs=std::filesystem;
+    const auto previous=fs::current_path();
+    const auto temporary=previous/("hud-pack-smoke-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+    fs::create_directories(temporary/"textures/supir/hud");
+    fs::create_directories(temporary/"textures/ai-generated-4k");
+    fs::current_path(temporary);
+    const auto filename=[](const HudSprite &sprite){
+        char name[24];
+        std::snprintf(name,sizeof(name),"%016llx.png",static_cast<unsigned long long>(
+            texture_pixels_key(sprite.pixels.data(),sprite.width,sprite.height)));
+        return std::string(name);
+    };
+    const auto supir=fs::path("textures/supir/hud")/filename(art.star);
+    const auto generated=fs::path("textures/ai-generated-4k")/filename(art.star);
+    const std::vector<uint32_t> paint(64*64,0xffaa55cc);
+    int error=0;
+    if(!texture_write_png(generated.string().c_str(),paint,64,64) ||
+       !texture_write_png(supir.string().c_str(),std::vector<uint32_t>(64*32,0xffaa55cc),64,32))error=36;
+    const auto build=[&](TextureQuality quality) {
+        s.texture_quality=quality;
+        texture_set_quality(quality);
+        minimap_hud_build(timed_high.data(),rw,rh,s,true,21,47,6,8,3);
+    };
+    build(TextureQuality::Upscaled);
+    if(timed_high!=high)error=37; // Wrong aspect falls back to the original.
+    build(TextureQuality::Generated4K);
+    if(timed_high!=high)error=38; // Neither the generated nor the SUPIR path applies.
+    fs::remove(supir);
+    if(!texture_write_png(supir.string().c_str(),paint,64,64))error=39;
+    build(TextureQuality::Upscaled);
+    if(std::count(timed_high.begin(),timed_high.end(),0xffaa55ccu)<20)error=40;
+    for(size_t i=0;i<high.size();++i) {
+        if((timed_high[i]>>24)>(high[i]>>24))error=41;
+    }
+    const auto timer=fs::path("textures/supir/hud")/filename(art.timer_digits[0]);
+    const auto cannon=fs::path("textures/supir/hud")/filename(art.cannon_sight);
+    if(!texture_write_png(timer.string().c_str(),std::vector<uint32_t>(64*64,0xff136da2),64,64) ||
+       !texture_write_png(cannon.string().c_str(),std::vector<uint32_t>(64*64,0xff04aa55),64,64))error=43;
+    minimap_hud_build(timed_high.data(),rw,rh,s,true,21,47,6,8,3,{},true,1420);
+    if(std::count(timed_high.begin(),timed_high.end(),0xff136da2u)<20)error=44;
+    std::fill(timed_high.begin(),timed_high.end(),0u);
+    cannon_sight_build(timed_high.data(),rw,rh,s.texture_quality);
+    if(timed_high[(rh/2)*rw+rw/2]!=0xbf04aa55u)error=45;
+    build(TextureQuality::Original);
+    if(timed_high!=high)error=42;
+    fs::current_path(previous);
+    fs::remove_all(temporary);
+    if(error)return error;
+#endif
     std::puts("PASS original OBJ decode, centered top timer at720p/4K, counter composition and centered square cannon sight at native/360p/720p/4K/4:3");
 }

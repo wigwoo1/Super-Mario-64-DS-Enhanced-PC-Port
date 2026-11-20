@@ -1,4 +1,5 @@
 #include "ntr/sdat.h"
+#include "ntr/remastered_music.h"
 #include "ntr/audio_ramp.h"
 #include "../third_party/sseqplayer/Player.h"
 #include <algorithm>
@@ -32,11 +33,21 @@ struct Voice {
     bool stopping=false;
     bool paused=false;
     bool suspended=false;
+    bool spatial=false;
+    bool music=false;
+    AudioPosition position{};
     unsigned player_id=0;
     unsigned priority=0;
     std::shared_ptr<SSEQ> sequence;
     std::unique_ptr<PcSdatPlayer> player;
+    // Keep the original sequencer timeline as the authority for completion.
+    // A replacement follows that timeline and fades in or out at the device.
+    uint64_t music_frame=0;
+    std::shared_ptr<const MusicClip> replacement;
+    unsigned replacement_weight=0;
+    bool replacement_enabled=false;
 };
+constexpr unsigned replacement_fade_frames=music_sample_rate/50; // 20 ms.
 }
 
 struct SdatEngine::Impl {
@@ -182,6 +193,7 @@ struct SdatEngine::Impl {
             // Shared hardware-channel arbitration remains a separate check.
             if(voices.size()-removed>=32)throw std::runtime_error("SDAT concurrent player limit");
             Voice v;v.slot=slot;v.volume.set(bounded_volume(volume),0);v.sequence=found->second;v.player_id=e.player;v.priority=e.priority;
+            v.music=group<0;
             v.player=std::make_unique<PcSdatPlayer>();v.player->sampleRate=rate;
             v.player->prio=uint8_t(e.channel_priority);v.player->interpolation=INTERPOLATION_LINEAR;
             v.player->sseqVol=Cnv_Sust(uint8_t(e.volume));
@@ -233,25 +245,56 @@ void SdatEngine::tick(){
     voices.erase(std::remove_if(voices.begin(),voices.end(),[](const Voice &v){return v.stopping && v.volume.done();}),voices.end());
 }
 void SdatEngine::variable(uint32_t slot,unsigned index,int value){if(index<32)for(auto &v:impl_->voices)if(v.slot==slot)v.player->variables[index]=int16_t(value);}
+void SdatEngine::effect_position(uint32_t slot,AudioPosition position){
+    for(auto &v:impl_->voices)if(v.slot==slot){v.spatial=true;v.position=position;return;}
+}
+bool SdatEngine::music_replacement(uint32_t slot,std::shared_ptr<const MusicClip> clip) {
+    if(clip && (impl_->rate!=music_sample_rate || !clip->valid()))return false;
+    for(auto &v:impl_->voices)if(v.slot==slot && v.music) {
+        v.replacement_enabled=bool(clip);
+        if(clip)v.replacement=std::move(clip);
+        return true;
+    }
+    return false;
+}
 bool SdatEngine::active(uint32_t slot)const{for(const auto &v:impl_->voices)if(v.slot==slot)return true;return false;}
-void SdatEngine::render(int16_t *stereo,size_t frames) {
-    if(!stereo || frames>192000)throw std::invalid_argument("SDAT render span");
-    auto &m=*impl_;m.mix.assign(frames*2,0);m.scratch.resize(frames*4);
+void SdatEngine::render(int16_t *output,size_t frames,AudioLayout layout) {
+    if(!output || frames>192000)throw std::invalid_argument("SDAT render span");
+    const unsigned channels=audio_channel_count(layout);
+    auto &m=*impl_;m.mix.assign(frames*channels,0);m.scratch.resize(frames*4);
     for(auto it=m.voices.begin();it!=m.voices.end();) {
         bool remove=false;
         if(!it->paused && !it->suspended) {
             try {
                 it->player->GenerateSamples(m.scratch,0,unsigned(frames));
-                for(size_t i=0;i<frames*2;++i) {
-                    const int sample=int16_t(unsigned(m.scratch[i*2])|(unsigned(m.scratch[i*2+1])<<8));
-                    m.mix[i]+=sample*it->volume.value()/127;
+                const bool spatial=channels>2 && it->spatial;
+                const auto gains=spatial?audio_speaker_gains(layout,it->position):SpeakerGains{};
+                const int volume=it->volume.value();
+                for(size_t i=0;i<frames;++i) {
+                    const size_t offset=i*4;
+                    int left=int16_t(unsigned(m.scratch[offset])|(unsigned(m.scratch[offset+1])<<8));
+                    int right=int16_t(unsigned(m.scratch[offset+2])|(unsigned(m.scratch[offset+3])<<8));
+                    if(it->replacement) {
+                        const unsigned target=it->replacement_enabled?replacement_fade_frames:0;
+                        if(it->replacement_weight<target)++it->replacement_weight;
+                        else if(it->replacement_weight>target)--it->replacement_weight;
+                        const int weight=static_cast<int>(it->replacement_weight);
+                        const int original=static_cast<int>(replacement_fade_frames)-weight;
+                        const auto frame=it->replacement->frame_at(it->music_frame+i)*2;
+                        left=(left*original+it->replacement->stereo[frame]*weight)/static_cast<int>(replacement_fade_frames);
+                        right=(right*original+it->replacement->stereo[frame+1]*weight)/static_cast<int>(replacement_fade_frames);
+                        if(!it->replacement_enabled && !weight)it->replacement.reset();
+                    }
+                    audio_mix_frame(m.mix.data()+i*channels,left*volume/127,right*volume/127,
+                                    channels,spatial?&gains:nullptr);
                 }
+                if(it->music)it->music_frame+=frames;
                 remove=m.finished(*it);
             } catch(const std::exception &e) {m.last_error=e.what();++m.error_count;remove=true;}
         }
         if(remove)it=m.voices.erase(it);else ++it;
     }
-    for(size_t i=0;i<frames*2;++i)stereo[i]=int16_t(std::max(-32768,std::min(32767,m.mix[i])));
+    for(size_t i=0;i<frames*channels;++i)output[i]=int16_t(std::clamp(m.mix[i],-32768,32767));
 }
 unsigned SdatEngine::sequence_slots()const{return unsigned(impl_->sequences.size());}
 unsigned SdatEngine::effect_archives()const{return unsigned(impl_->effects.size());}

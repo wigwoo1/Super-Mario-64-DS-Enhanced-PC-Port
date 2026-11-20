@@ -342,6 +342,12 @@ These are planned additions; they are not implemented or verified yet.
 - Motion blur: add an Off/On option only after identifying a suitable native
   post-processing path. Keep it off by default, avoid blurring UI/minimap, save
   the preference, and verify motion, pause/menu clarity and frame-time impact.
+  Implemented on the Graphics page on 2026-11-19. D3D11 uses camera motion and
+  scene depth to blur the 3D view before the minimap and HUD are composited.
+  The preference defaults to Off and OpenGL CPU skips the effect. Matched
+  muted 720p replays verified visible blur during a turn, matching stationary
+  and paused frames, and matching simulation state. A 4K preview replay
+  verified toggling with a controller and saving the preference.
 
 Organize these controls into the existing Display, Minimap and other settings
 pages (or add a Clothing submenu) without crowding the readable native menu.
@@ -553,3 +559,74 @@ smooth continuous rotation using camera sensitivity in free-camera mode.
 Keep right-stick camera control, stick-click mode/zoom actions, and menu
 navigation working. Verify press/hold/release and simultaneous triggers on
 Xbox and Switch Pro mappings, with muted tests and screenshots.
+
+2026-11-19 update. Trigger camera controls are implemented and tested in muted
+castle replays. Controller and keyboard binding page 4 offers TURN LEFT and
+TURN RIGHT. Defaults are LT/RT or ZL/ZR on Switch Pro, and the square bracket
+keys on keyboard. Prior custom assignments take priority when loading older
+settings. Preset turns use the existing camera worker and never feed crouch.
+Free Camera scales with trigger pressure beyond its deadzone and uses the
+existing sensitivity, acceleration and horizontal inversion. Equal trigger
+pressure cancels. Six focused CTests and the local F: preview passed. Physical
+Xbox and Switch Pro verification is pending.
+
+2026-11-19 surround update. The native mixer now routes camera-relative
+effects to separate 5.1 or 7.1 speaker channels in isolated muted tests.
+Music and UI stay on the front stereo pair. The LFE channel carries no
+authored effects. Two castle replays verify positional sounds reach the
+center and surround channels without full-scale peaks. Windows device
+selection, fallback, the Audio setting and hardware playback remain open.
+
+2026-11-19 surround update. The native Audio page now saves Stereo, 5.1
+and 7.1 and displays the active layout. Windows output checks the default
+endpoint speaker mask and falls back to stereo for unsupported devices.
+Six focused tests and muted F: replays verified changing choices, the
+fallback display, persisted 7.1 after restart and isolated save safety.
+Physical multichannel playback and hardware reconnect are pending.
+
+2026-11-19 music update. The Audio page now saves Original or Remastered.
+It looks for wanted.mp3, coincentration.mp3, wing-cap.mp3, castle.mp3, and
+dire-dire-docks.mp3 in the music-remastered folder beside the executable.
+An optional same-stem .loop file contains start and end milliseconds.
+The Windows decoder runs off the mixer thread. A missing or invalid file
+uses the original track. Muted Castle replays verified decoding, repeated
+loop playback, live switching, reload, and both fallbacks. The user-supplied
+files and their real loop points remain pending.
+
+2026-11-19 high-refresh camera update. The 120 and 240 FPS settings can
+draw extra gameplay camera views using the last two game-rendered camera
+samples. The game clock still runs at 60 VBlanks per second and retains
+the original scene-update intervals. UI, pause and camera discontinuities
+use the original view. D3D11 screenshots show two camera positions inside
+one simulation tick and the castle replay matches all 721 sampled game
+states across the three FPS settings. CPU OpenGL exercises the prediction
+path but could not fit extra draws in the tested gameplay interval.
+Sustained high-refresh output, 4K performance and higher-rate actor
+animation remain open.
+
+2026-11-19 high-refresh scanout update. Native render-only gameplay draws can
+reuse the unchanged background, foreground, minimap and HUD prepared for
+the current VBlank. Input and window messages run on every presentation.
+A new tick, settings change or transition to menus rebuilds the layers.
+Instrumented castle replays at the 240 FPS target rose from 121 to 176
+draws per 60 game ticks at 720p and 124 to 165 at 4K. Comparable screenshots
+and gameplay states match exactly. Sustained 240 FPS, CPU OpenGL high
+refresh and higher-rate character animation remain open.
+
+2026-11-19 background rendering update. Compose only enabled backgrounds
+in their original priority order and stop at the first visible opaque
+pixel. Raster sprite windows only when the window can affect a background.
+The three castle replays match previous screenshots and game state. On the
+sampled route at the 240 FPS setting, draws per 60 game ticks increase
+from 176 to 208 at 720p and 165 to 199 at 4K. The CPU OpenGL test at the
+120 FPS setting increases from 60 to 87 at DS resolution. Wanted matches
+its earlier poster, pause, resume and return to Rec Room screenshots.
+Sustained 240 FPS and higher-rate actor animation remain open.
+
+2026-11-19 high-refresh pacing update. The scheduler can submit a slightly
+late extra draw when it fits before the next game tick. It reserves time
+using recent draw costs and drops work after a longer stall. The 240 FPS
+setting averages about 240 draws/sec at 720p and 239 at 4K in the tested
+castle scene, with measured game time at 60 Hz. CPU OpenGL draws extra
+frames but trails its 120 FPS target. Character animation still follows
+the original scene updates. Other courses and monitor output remain open.

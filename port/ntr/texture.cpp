@@ -36,6 +36,49 @@ TexturePixelWork pixel_work;
 TextureBackend backend=TextureBackend::CpuDecode;
 uint32_t replacement_epoch=1;
 std::set<uint64_t> g_manifest_written;
+constexpr char supir_directory[]="textures/supir";
+constexpr char hud_supir_directory[]="textures/supir/hud";
+constexpr char minimap_supir_directory[]="textures/supir/minimap";
+constexpr char generated_directory[]="textures/ai-generated-4k";
+constexpr char legacy_directory[]="textures/4k";
+constexpr unsigned quality_count=static_cast<unsigned>(TextureQuality::Generated4K)+1;
+
+std::string replacement_filename(const char *directory,uint64_t key) {
+    char name[64];
+    std::snprintf(name,sizeof(name),"%s/%016llx.png",directory,static_cast<unsigned long long>(key));
+    return name;
+}
+
+bool has_pack_entries(const char *directory) {
+    std::error_code error;
+    for(auto item=std::filesystem::directory_iterator(directory,error);
+        !error && item!=std::filesystem::directory_iterator{};item.increment(error)) {
+        if(item->path().extension()!=".png")continue;
+        const auto stem=item->path().stem().native();
+        if(stem.size()==16 && std::all_of(stem.begin(),stem.end(),[](auto ch){
+            return (ch>='0' && ch<='9') || (ch>='a' && ch<='f');
+        })) {
+            std::error_code type_error;
+            if(item->is_regular_file(type_error))return true;
+        }
+    }
+    return false;
+}
+
+struct PackPresence {
+    uint32_t epoch=0;
+    bool supir=false,hud=false,minimap=false,generated=false,legacy=false;
+};
+
+const PackPresence &pack_presence() {
+    static PackPresence known;
+    if(known.epoch!=replacement_epoch) {
+        known={replacement_epoch,has_pack_entries(supir_directory),has_pack_entries(hud_supir_directory),
+               has_pack_entries(minimap_supir_directory),has_pack_entries(generated_directory),
+               has_pack_entries(legacy_directory)};
+    }
+    return known;
+}
 
 uint64_t fnv1a(uint64_t hash, const uint8_t *bytes, size_t size) {
     for (size_t i = 0; i < size; ++i) {
@@ -265,10 +308,7 @@ uint64_t texture_pixels_key(const uint32_t *pixels,int width,int height) {
 TexturePixelWork texture_pixel_work_reset() {const auto work=pixel_work;pixel_work={};return work;}
 
 std::string texture_replacement_filename(const TextureDesc &d) {
-    char name[64];
-    std::snprintf(name, sizeof(name), "textures/4k/%016llx.png",
-                  static_cast<unsigned long long>(texture_replacement_key(d)));
-    return name;
+    return replacement_filename(legacy_directory,texture_replacement_key(d));
 }
 
 TextureQuality texture_quality() { return g_texture_quality; }
@@ -276,27 +316,54 @@ void texture_set_backend(TextureBackend value) {if(backend!=value){backend=value
 TextureBackend texture_backend() {return backend;}
 uint32_t texture_replacement_epoch() {return replacement_epoch;}
 void texture_set_quality(TextureQuality quality) {
-    const auto value = static_cast<unsigned>(quality) <= static_cast<unsigned>(TextureQuality::Upscaled)
+    const auto value = static_cast<unsigned>(quality) < quality_count
         ? quality : TextureQuality::Original;
     if(value!=g_texture_quality){g_texture_quality=value;++replacement_epoch;}
 }
 TextureQuality texture_cycle_quality(TextureQuality quality, int direction) {
     const unsigned value=static_cast<unsigned>(quality);
-    return static_cast<TextureQuality>(((value<6?value:0)+(direction<0?5:1))%6);
+    return static_cast<TextureQuality>(((value<quality_count?value:0)+(direction<0?quality_count-1:1))%quality_count);
 }
 const char *texture_quality_name(TextureQuality quality) {
-    static const char *names[]={"ORIGINAL","75%","50%","25%","NO TEXTURES","UPSCALED"};
+    static const char *names[]={"ORIGINAL","75%","50%","25%","NO TEXTURES","SUPIR UPSCALED","AI GENERATED 4K"};
+    static_assert(sizeof(names)/sizeof(names[0])==quality_count,"texture mode labels");
     const unsigned index=static_cast<unsigned>(quality);
-    return names[index<6?index:0];
+    return names[index<quality_count?index:0];
+}
+const char *texture_pack_status(TextureQuality quality) {
+    if(quality!=TextureQuality::Upscaled && quality!=TextureQuality::Generated4K)return "";
+    const auto &packs=pack_presence();
+    if(quality==TextureQuality::Generated4K)return packs.generated?"":packs.supir?" - SUPIR ONLY":" - NO PACK";
+    return packs.supir || packs.hud || packs.minimap?"":packs.legacy?" - LEGACY":" - NO PACK";
+}
+bool texture_minimap_pack_available(){return pack_presence().minimap;}
+TextureReplacementRoute texture_replacement_route(TextureQuality quality,TextureRole role) {
+    if(quality!=TextureQuality::Upscaled && quality!=TextureQuality::Generated4K)
+        return TextureReplacementRoute::None;
+    if(role==TextureRole::Character)return TextureReplacementRoute::Supir;
+    if(role!=TextureRole::Level && role!=TextureRole::Object)return TextureReplacementRoute::None;
+    return quality==TextureQuality::Generated4K
+        ? TextureReplacementRoute::GeneratedThenSupir : TextureReplacementRoute::SupirThenLegacy;
 }
 void texture_set_upscaled(bool enabled) {
     texture_set_quality(enabled?TextureQuality::Upscaled:TextureQuality::Original);
 }
 bool texture_upscaled() { return g_texture_quality==TextureQuality::Upscaled; }
-bool texture_load_replacement_pixels(uint64_t key,std::vector<uint32_t> &pixels,int &width,int &height,uint64_t max_bytes) {
+bool texture_load_replacement_pixels(uint64_t key,TextureReplacementRoute route,
+                                     std::vector<uint32_t> &pixels,int &width,int &height,uint64_t max_bytes) {
 #if defined(_WIN32)
-    char name[64];std::snprintf(name,sizeof(name),"textures/4k/%016llx.png",static_cast<unsigned long long>(key));
-    return load_replacement_png(name,pixels,width,height,max_bytes);
+    if(!key || route==TextureReplacementRoute::None)return false;
+    const auto try_directory=[&](const char *directory){
+        const auto path=replacement_filename(directory,key);
+        std::error_code error;
+        return std::filesystem::is_regular_file(path,error) &&
+            load_replacement_png(path,pixels,width,height,max_bytes);
+    };
+    if(route==TextureReplacementRoute::HudSupir)return try_directory(hud_supir_directory);
+    if(route==TextureReplacementRoute::MinimapSupir)return try_directory(minimap_supir_directory);
+    if(route==TextureReplacementRoute::GeneratedThenSupir && try_directory(generated_directory))return true;
+    if(try_directory(supir_directory))return true;
+    return route==TextureReplacementRoute::SupirThenLegacy && try_directory(legacy_directory);
 #else
     return false;
 #endif
@@ -433,17 +500,18 @@ bool texture_decode(const TextureDesc &d, std::vector<uint32_t> &out,
     if (out_width) *out_width = d.width;
     if (out_height) *out_height = d.height;
 #if defined(_WIN32)
-    if (!d.defer_replacement && texture_upscaled() && (d.role==TextureRole::Level || d.role==TextureRole::Object)) {
+    const auto route=texture_replacement_route(g_texture_quality,d.role);
+    if (!d.defer_replacement && route!=TextureReplacementRoute::None) {
         const uint64_t key = texture_replacement_key(d);
-        write_pack_manifest(key, d);
+        if(route==TextureReplacementRoute::SupirThenLegacy)write_pack_manifest(key,d);
         int replacement_width = 0, replacement_height = 0;
-        if (load_replacement_png(texture_replacement_filename(d), out,
-                                 replacement_width, replacement_height)) {
+        if (texture_load_replacement_pixels(key,route,out,replacement_width,replacement_height)) {
             if (out_width) *out_width = replacement_width;
             if (out_height) *out_height = replacement_height;
             return true;
         }
-        if (!decode_native(d, out)) return false;
+        if(route!=TextureReplacementRoute::SupirThenLegacy)return decode_native(d,out);
+        if(!decode_native(d,out))return false;
         std::error_code ec;
         std::filesystem::create_directories("textures/source", ec);
         char name[64];
