@@ -273,8 +273,21 @@ Audio listening accuracy and complete gameplay remain unverified.
   full health before eventually taking damage on the unattended route.
   A controlled replay steers the shell through open lava and hops
   onto the eastern Silver Star. The mission counter advances to one,
-  and Luigi remains mounted. The other four pickups, final award,
-  and a continuous unlock playthrough remain unverified.
+  and Luigi remains mounted. A longer replay crosses the open lava,
+  clears the wall at the second island, then jumps into its Silver Star.
+  Luigi stays mounted and takes the open lane past the sliding puzzle
+  to the next ramp, where he rides into a third Silver Star. The
+  replay then follows the outer lava lane and jumps into a fourth
+  Silver Star. The replay then jumps onto the tall ramp and collects
+  the fifth Silver Star, which reveals the Power Star. Luigi regains
+  control after the reveal and rides to the reward on the same shell.
+  Luigi collects the Power Star, uses the original Save & Continue
+  screen, and regains control in the castle. The new Star is recorded
+  in an isolated save. A fresh launch restores 29 Stars and the gold
+  Mission 7 plate. Luigi repeats all five pickups, collects the same
+  Power Star, and uses Save & Continue. The total stays at 29 and both
+  isolated saves remain byte-identical. A continuous unlock playthrough
+  remains unverified.
   The native lava surface effect produces bubbling particles in the
   exterior and inside the volcano.
   The two original lava-bubble fountains in the volcano interior each
@@ -297,6 +310,15 @@ Audio listening accuracy and complete gameplay remain unverified.
   raised stone bank and walks farther across it. After Exit Course and
   re-entry through the castle painting, both mesh lifts and the log spawn
   fresh. Luigi repeats the full east lift ride and safe log dismount.
+  A Red-Hot Log Rolling replay uses a prepared prerequisite save to
+  select Mission 4 through the original menu. Luigi waits before
+  boarding the volcano ring, crosses while the flame jet is retracted,
+  rides the eastern lift and log, and walks down the narrow slope to
+  collect the original Power Star. Save & Continue records the new Star
+  and returns control in the castle. A fresh launch restores the gold
+  Mission 4 plate and the 18-coin record. Luigi repeats the route and
+  collects the Star again. Save & Continue keeps the total at 26 and
+  both isolated saves remain byte-identical.
   The November 19 Windows preview has separate Luigi replays for the three
   small Bullies, Big Bully, and the Power Star. The first pickup increases
   File A from 22 to 23 Stars. A repeat pickup keeps the total at 23 through

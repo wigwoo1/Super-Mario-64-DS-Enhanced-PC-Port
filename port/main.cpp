@@ -4174,6 +4174,30 @@ static bool replay_course_route(const char *route_override=nullptr) {
     if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
     }
+    if (level == 14 && x == 370 && y == 150 && z == 1250 &&
+        std::getenv("SM64DS_PC_TEST_LAVA_RING_BOARD_WAIT")) {
+        static bool released = false;
+        if (!released) {
+            const daObjFlamethrower_c *jet = nullptr;
+            for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
+                 actor = dActor_c::FindWithActorID(318, actor)) {
+                if (actor->aliveState == 1 && actor->mPosX == 0 && actor->mPosZ == -1875 * 4096) {
+                    jet = static_cast<const daObjFlamethrower_c *>(actor);
+                    break;
+                }
+            }
+            // Delay boarding so the rotating floor carries Luigi across the
+            // north nozzle in the measured retracted part of its next cycle.
+            if (!jet || jet->mState != 0 || jet->mActiveFlames || jet->mTimer < 40 ||
+                !player->mMeshClsn.IsOnGround() || player->mIsAirborne) {
+                ntr::input_test_controls(true, 0, 0, 0);
+                return true;
+            }
+            released = true;
+            std::fprintf(stderr, "[native rolling log replay] ring approach released tick=%llu jet=%u timer=%u\n",
+                         static_cast<unsigned long long>(ntr::rt_frame()), jet->uniqueID, unsigned(jet->mTimer));
+        }
+    }
     // Volcano QA waits on solid ground for each authored jet to retract.
     // The rest of the crossing uses the ordinary waypoint stick inputs.
     const bool west_jet_first = x == -2430 && z == -1150;
@@ -7032,6 +7056,12 @@ static bool replay_course_route(const char *route_override=nullptr) {
                                  static_cast<unsigned long long>(tick), px, pz);
                 }
                 if (hop && tick - hop < 32) buttons = 2;
+                // Keep turning around the small rock until the shell clears its west edge.
+                if (data_0209f310[0] >= 1 && px <= 6380 && pz > -2450 && std::strchr(segment, ',')) {
+                    ++waypoint;
+                    std::fprintf(stderr, "[native lava shell replay] west lane entry tick=%llu x=%.1f z=%.1f\n",
+                                 static_cast<unsigned long long>(tick), px, pz);
+                }
             }
             if (leg != ShellLeg::LeaveIsland) {
                 constexpr double turn = 6.283185307179586 / 65536.0;
@@ -7039,6 +7069,212 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 sx = static_cast<int16_t>(std::sin(heading) * 28000);
                 sy = static_cast<int16_t>(-std::cos(heading) * 28000);
             }
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        if (shell_block && x == -2900 && y == 250 && z == -2000 &&
+            !std::strcmp(state, "St_Shell_Main")) {
+            enum class ShellLeg { WestLane, NorthOfWall, Approach, ClearIsland };
+            static ShellLeg leg = ShellLeg::WestLane;
+            static uint64_t hop = 0;
+            const double px = player->mPosX / 4096.0, pz = player->mPosZ / 4096.0;
+            // Turn after the center obstacles, before reaching the island's south wall.
+            if (leg == ShellLeg::WestLane && px <= -1050) leg = ShellLeg::NorthOfWall;
+            if (leg == ShellLeg::NorthOfWall && px <= -1600 && pz >= -2290) leg = ShellLeg::Approach;
+            if (leg == ShellLeg::Approach && px <= -3000) leg = ShellLeg::ClearIsland;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            double aim_x = -1850, aim_z = -2550;
+            if (leg == ShellLeg::NorthOfWall) {
+                aim_x = -1775;
+                aim_z = -1875;
+            } else if (leg == ShellLeg::Approach) {
+                // A shell hop holds its travel direction until landing. Use a long
+                // steering lead and check where the current heading crosses the Star.
+                aim_x = px - 1150;
+                aim_z = -2130;
+                const double yaw = player->mAngleY * turn;
+                const double forward = (x - px) * std::sin(yaw) + (z - pz) * std::cos(yaw);
+                const double side = (x - px) * std::cos(yaw) - (z - pz) * std::sin(yaw);
+                if (!hop && forward >= 305 && forward <= 420 && std::abs(side) <= 65 && !player->mIsAirborne) {
+                    hop = tick;
+                    std::fprintf(stderr, "[native lava shell replay] second silver hop tick=%llu x=%.1f z=%.1f forward=%.1f side=%.1f\n",
+                                 static_cast<unsigned long long>(tick), px, pz, forward, side);
+                }
+            } else if (leg == ShellLeg::ClearIsland) {
+                aim_x = -3050;
+                aim_z = -950;
+                if (data_0209f310[0] >= 2 && !player->mIsAirborne &&
+                    px < -3500 && pz >= -1650 && std::strchr(segment, ',')) {
+                    ++waypoint;
+                }
+            }
+            if (hop && tick - hop < 32) buttons = 2;
+            const double heading = std::atan2(aim_x - px, aim_z - pz) - GetAngleToCamera(0) * turn;
+            sx = static_cast<int16_t>(std::sin(heading) * 28000);
+            sy = static_cast<int16_t>(-std::cos(heading) * 28000);
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        if (shell_block && x == -6500 && y == 250 && z == 4450 &&
+            !std::strcmp(state, "St_Shell_Main")) {
+            enum class ShellLeg { OpenLane, WestPastPuzzle, Approach, ClearIsland };
+            static ShellLeg leg = ShellLeg::OpenLane;
+            static uint64_t hop = 0;
+            const double px = player->mPosX / 4096.0, pz = player->mPosZ / 4096.0;
+            // Pass between the sliding puzzle and the raised islands before turning up the ramp.
+            if (leg == ShellLeg::OpenLane && pz >= 1740) leg = ShellLeg::WestPastPuzzle;
+            if (leg == ShellLeg::WestPastPuzzle && px <= -6100) leg = ShellLeg::Approach;
+            if (leg == ShellLeg::Approach && pz >= 4580) leg = ShellLeg::ClearIsland;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            double aim_x = -3750, aim_z = 2200;
+            if (leg == ShellLeg::WestPastPuzzle) {
+                aim_x = -6900;
+                aim_z = 2060;
+            } else if (leg == ShellLeg::Approach) {
+                aim_x = x;
+                aim_z = pz + 1150;
+                const double yaw = player->mAngleY * turn;
+                const double forward = (x - px) * std::sin(yaw) + (z - pz) * std::cos(yaw);
+                const double side = (x - px) * std::cos(yaw) - (z - pz) * std::sin(yaw);
+                if (!hop && forward >= 305 && forward <= 420 && std::abs(side) <= 65 && !player->mIsAirborne) {
+                    hop = tick;
+                    std::fprintf(stderr, "[native lava shell replay] third silver hop tick=%llu x=%.1f z=%.1f forward=%.1f side=%.1f\n",
+                                 static_cast<unsigned long long>(tick), px, pz, forward, side);
+                }
+            } else if (leg == ShellLeg::ClearIsland) {
+                aim_x = -6200;
+                aim_z = 5500;
+                if (data_0209f310[0] >= 3 && pz >= 5250 && std::strchr(segment, ',')) ++waypoint;
+            }
+            if (hop && tick - hop < 32) buttons = 2;
+            const double heading = std::atan2(aim_x - px, aim_z - pz) - GetAngleToCamera(0) * turn;
+            sx = static_cast<int16_t>(std::sin(heading) * 28000);
+            sy = static_cast<int16_t>(-std::cos(heading) * 28000);
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        if (shell_block && x == -6450 && y == 250 && z == -6500 &&
+            !std::strcmp(state, "St_Shell_Main")) {
+            enum class ShellLeg { RoundRamp, OuterLane, TurnIn, Approach, ClearIsland };
+            static ShellLeg leg = ShellLeg::RoundRamp;
+            static uint64_t hop = 0;
+            const double px = player->mPosX / 4096.0, pz = player->mPosZ / 4096.0;
+            // Go around the last ramp's high face, then use the clear outer lava lane.
+            if (leg == ShellLeg::RoundRamp && px <= -7050) leg = ShellLeg::OuterLane;
+            if (leg == ShellLeg::OuterLane && pz <= -4000) leg = ShellLeg::TurnIn;
+            if (leg == ShellLeg::TurnIn && pz <= -5100) leg = ShellLeg::Approach;
+            if (leg == ShellLeg::Approach && pz <= -6630) leg = ShellLeg::ClearIsland;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            double aim_x = -7600, aim_z = 5750;
+            if (leg == ShellLeg::OuterLane) {
+                aim_x = -7370;
+                aim_z = pz - 1450;
+            } else if (leg == ShellLeg::TurnIn) {
+                aim_x = -6350;
+                aim_z = -5500;
+            } else if (leg == ShellLeg::Approach) {
+                aim_x = -6560;
+                aim_z = pz - 1050;
+                const double yaw = player->mAngleY * turn;
+                const double forward = (x - px) * std::sin(yaw) + (z - pz) * std::cos(yaw);
+                const double side = (x - px) * std::cos(yaw) - (z - pz) * std::sin(yaw);
+                if (!hop && forward >= 305 && forward <= 420 && std::abs(side) <= 65 && !player->mIsAirborne) {
+                    hop = tick;
+                    std::fprintf(stderr, "[native lava shell replay] fourth silver hop tick=%llu x=%.1f z=%.1f forward=%.1f side=%.1f\n",
+                                 static_cast<unsigned long long>(tick), px, pz, forward, side);
+                }
+            } else if (leg == ShellLeg::ClearIsland) {
+                aim_x = -4800;
+                aim_z = -7250;
+                if (data_0209f310[0] >= 4 && px >= -5650 && std::strchr(segment, ',')) ++waypoint;
+            }
+            if (hop && tick - hop < 32) buttons = 2;
+            const double heading = std::atan2(aim_x - px, aim_z - pz) - GetAngleToCamera(0) * turn;
+            sx = static_cast<int16_t>(std::sin(heading) * 28000);
+            sy = static_cast<int16_t>(-std::cos(heading) * 28000);
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        if (shell_block && x == 6100 && y == 750 && z == -6350 &&
+            !std::strcmp(state, "St_Shell_Main")) {
+            static uint64_t hop = 0;
+            static bool clear_ramp = false;
+            const double px = player->mPosX / 4096.0, pz = player->mPosZ / 4096.0;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            double aim_x = px + 1500, aim_z = -7300;
+            if (px >= 3550) {
+                // The high ramp starts across a break in the low approach slope.
+                aim_x = px + 650;
+                aim_z = aim_x - 12300;
+                const double yaw = player->mAngleY * turn;
+                if (!hop && px >= 5310 && px <= 5400 && std::sin(yaw) > 0.6 && !player->mIsAirborne) {
+                    const double landing_z = pz + (5830 - px) * std::cos(yaw) / std::sin(yaw);
+                    if (landing_z >= -6790 && landing_z <= -6660) {
+                        hop = tick;
+                        std::fprintf(stderr, "[native lava shell replay] tall ramp hop tick=%llu x=%.1f z=%.1f projected_z=%.1f\n",
+                                     static_cast<unsigned long long>(tick), px, pz, landing_z);
+                    }
+                }
+                if (hop && !player->mIsAirborne && px >= 5780) {
+                    aim_x = px + 900;
+                    aim_z = aim_x - 12450;
+                }
+                if (px >= 6250 || data_0209f310[0] >= 5) {
+                    aim_x = 7150;
+                    aim_z = -5900;
+                }
+                // Keep riding away from the wall after the reward camera releases.
+                if (px >= 7030 && player->mPosY < 60 * 4096) clear_ramp = true;
+                if (clear_ramp) {
+                    aim_x = 7420;
+                    aim_z = pz + 1350;
+                    if (pz >= -3070 && data_0209f310[0] == 5 && std::strchr(segment, ',')) ++waypoint;
+                }
+            }
+            if (hop && tick - hop < 36) buttons = 2;
+            const double heading = std::atan2(aim_x - px, aim_z - pz) - GetAngleToCamera(0) * turn;
+            sx = static_cast<int16_t>(std::sin(heading) * 28000);
+            sy = static_cast<int16_t>(-std::cos(heading) * 28000);
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        if (shell_block && x == -5750 && y == 400 && z == 6750 &&
+            !std::strcmp(state, "St_Shell_Main")) {
+            enum class ShellLeg { LeaveEast, CrossLava, OuterLane, TurnIn, Approach };
+            static ShellLeg leg = ShellLeg::LeaveEast;
+            static uint64_t hop = 0;
+            const double px = player->mPosX / 4096.0, pz = player->mPosZ / 4096.0;
+            if (leg == ShellLeg::LeaveEast && px <= 5850) leg = ShellLeg::CrossLava;
+            if (leg == ShellLeg::CrossLava && px <= -6890) leg = ShellLeg::OuterLane;
+            if (leg == ShellLeg::OuterLane && pz >= 6370) leg = ShellLeg::TurnIn;
+            if (leg == ShellLeg::TurnIn && px >= -6780) leg = ShellLeg::Approach;
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            double aim_x = 5500, aim_z = -2325;
+            if (leg == ShellLeg::CrossLava) {
+                aim_x = px - 1250;
+                aim_z = -3360;
+            } else if (leg == ShellLeg::OuterLane) {
+                aim_x = -7420;
+                aim_z = pz + 1300;
+            } else if (leg == ShellLeg::TurnIn) {
+                aim_x = -6400;
+                aim_z = 6750;
+            } else if (leg == ShellLeg::Approach) {
+                aim_x = px + 1050;
+                aim_z = 6600;
+                const double yaw = player->mAngleY * turn;
+                const double forward = (x - px) * std::sin(yaw) + (z - pz) * std::cos(yaw);
+                const double side = (x - px) * std::cos(yaw) - (z - pz) * std::sin(yaw);
+                if (!hop && forward >= 330 && forward <= 460 && std::abs(side) <= 70 && !player->mIsAirborne) {
+                    hop = tick;
+                    std::fprintf(stderr, "[native lava shell replay] power star hop tick=%llu x=%.1f z=%.1f forward=%.1f side=%.1f\n",
+                                 static_cast<unsigned long long>(tick), px, pz, forward, side);
+                }
+            }
+            if (hop && tick - hop < 36) buttons = 2;
+            const double heading = std::atan2(aim_x - px, aim_z - pz) - GetAngleToCamera(0) * turn;
+            sx = static_cast<int16_t>(std::sin(heading) * 28000);
+            sy = static_cast<int16_t>(-std::cos(heading) * 28000);
             ntr::input_test_controls(true, buttons, sx, sy);
             return true;
         }
