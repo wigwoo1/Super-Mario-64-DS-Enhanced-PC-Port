@@ -212,10 +212,13 @@ Audio listening accuracy and complete gameplay remain unverified.
   with working collision for repeat crossings. These results use isolated
   test saves and selected courses; other course and mountain warp points were
   not tested.
-  A selected Luigi replay also lands on the Lethal Lava Land puzzle and
-  registers tile contact. All 14 tiles advance through their movement scripts.
-  The stationary replay later falls when its tile moves away. The continued
-  route, coin sequence and puzzle Star remain diagnostic.
+  Selected Luigi replays verify Lethal Lava Land puzzle tile contact, all
+  14 bonus coins spawning, and a route that collects all eight red coins.
+  Luigi collects the revealed Power Star, saves, and reloads with the new
+  credit in an isolated file. A second Luigi pickup leaves the total and
+  saved credit unchanged. A separate Mario fixture passes the eight-coin
+  route, Star pickup, Save & Continue, and a fresh reload. Yoshi and Wario
+  remain open for this puzzle.
   A selected open-ground camera test confirms that stopping Yoshi no longer
   pulls the original camera closer. Free-camera movement has software replay
   checks; physical Nintendo Switch Pro behavior remains unverified.
