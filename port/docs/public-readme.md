@@ -227,8 +227,29 @@ Audio listening accuracy and complete gameplay remain unverified.
   draws with its original collider enabled. Additional replays verify
   side collision and Luigi landing on the deployed slab. Walking off
   and attempting a jump back both led to a downhill slide. A safe
-  return remains unverified. The native lava surface effect produces
-  bubbling particles around Luigi in the exterior and inside the volcano.
+  return from the deployed slab remains unverified. A separate route
+  waits for the slab to rise, crosses on fixed ground and backflips
+  from the lower ledge to the raised west shelf. Luigi finishes standing
+  safely on the shelf with normal control and full health. A second
+  replay follows the shelf to the first coin island along the west wall.
+  A longer replay makes all five island landings and collects each
+  coin in order. Luigi finishes safely at full health after landing
+  farther west on the fifth island. A separate replay shows the first
+  interior jet hitting Luigi there, followed by his normal controls
+  returning on the stone ledge. A timed replay waits for each jet to
+  retract, walks across both paths safely, and jumps to the next raised
+  ledge. Luigi finishes grounded with full health. The north-ramp
+  replay long-jumps over the Bully, recovers from one grounded knockback
+  on the far side, then crosses the ramp gap and reaches the first
+  climbing pole at full health. Luigi grabs and climbs that pole, jumps
+  across to the next pole's platform, and stops safely on the stone.
+  A longer replay climbs the second pole, lands on the walkway, and
+  collects the Hot-Foot-It into the Volcano Star. The original Save &
+  Continue screen writes the Star to an isolated save and returns
+  control in the castle. A knockback-free Bully passage, repeat credit
+  checks, and the other volcano Star still need verification.
+  The native lava surface effect produces bubbling particles in the
+  exterior and inside the volcano.
   The two original lava-bubble fountains in the volcano interior each
   completed four launch, bounce, and retirement cycles during a Luigi
   replay. Both fire and smoke effects rendered. A second replay verifies

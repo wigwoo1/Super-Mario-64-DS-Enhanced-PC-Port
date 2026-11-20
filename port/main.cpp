@@ -12,6 +12,7 @@
 #include "dBgPi.h"
 #include "dBgCh_Gnd.h"
 #include "daObjFm_Battan_c.h"
+#include "daObjFlamethrower_c.h"
 #include "daKrb_c.h"
 #include "daKuriKing_c.h"
 #include "daBombking_c.h"
@@ -4173,6 +4174,37 @@ static bool replay_course_route(const char *route_override=nullptr) {
     if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
     }
+    // Volcano QA waits on solid ground for each authored jet to retract.
+    // The rest of the crossing uses the ordinary waypoint stick inputs.
+    const bool west_jet_first = x == -2430 && z == -1150;
+    const bool west_jet_second = x == -2120 && z == -1640;
+    if (level == 15 && has_y && y == 2215 && jump == 0 &&
+        (west_jet_first || west_jet_second) && std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+        static unsigned released_waypoint = ~0u;
+        if (released_waypoint != waypoint) {
+            const int nozzle_x = west_jet_first ? -2689 : -2409;
+            const int nozzle_z = west_jet_first ? -1079 : -1564;
+            const daObjFlamethrower_c *jet = nullptr;
+            for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
+                 actor = dActor_c::FindWithActorID(318, actor)) {
+                if (actor->aliveState == 1 && actor->mPosX == nozzle_x * 4096 &&
+                    actor->mPosZ == nozzle_z * 4096) {
+                    jet = static_cast<const daObjFlamethrower_c *>(actor);
+                    break;
+                }
+            }
+            const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            if (!jet || jet->mState != 0 || jet->mActiveFlames != 0 || jet->mTimer < 34 ||
+                !grounded || std::abs(player->mPosY - y * 4096) > 12 * 4096) {
+                ntr::input_test_controls(true, 0, 0, 0);
+                return true;
+            }
+            released_waypoint = waypoint;
+            std::fprintf(stderr, "[native volcano jet replay] cross tick=%llu jet=%u timer=%u x=%d z=%d\n",
+                static_cast<unsigned long long>(ntr::rt_frame()), jet->uniqueID,
+                unsigned(jet->mTimer), player->mPosX, player->mPosZ);
+        }
+    }
     // This QA waypoint waits for the eastern lift to reach its far bank.
     // Use the native floor hit to identify the lift, then send a normal jump.
     if(level==14 && has_y && x==6675 && y==150 && z==6920 &&
@@ -4456,6 +4488,88 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 }
             }
             if (phase == Phase::Landed && rest && std::strchr(segment, ',')) ++waypoint;
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
+        const bool first_north_pole = x == 1360 && y == 3245 && z == -1950;
+        const bool second_north_pole = x == 1870 && y == 3455 && z == -1665;
+        if (level == 15 && (first_north_pole || second_north_pole) && jump == 2 &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+            constexpr double turn = 6.283185307179586 / 65536.0;
+            struct PoleReplay {
+                bool attempted_grab = false, reported_height = false, landed = false, braking = false;
+                unsigned pole_uid = 0;
+                uint64_t dismount = 0;
+            };
+            static PoleReplay attempts[2];
+            auto &[attempted_grab, reported_height, landed, braking, pole_uid, dismount] =
+                attempts[second_north_pole];
+            const int pole_x = second_north_pole ? 1379 : 1053;
+            const int pole_z = second_north_pole ? -2139 : -2366;
+            const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto steer = [&](int target_x, int target_z, int strength) {
+                const double heading = std::atan2(target_x * 4096.0 - player->mPosX,
+                    target_z * 4096.0 - player->mPosZ) - GetAngleToCamera(0) * turn;
+                sx = static_cast<int16_t>(std::sin(heading) * strength);
+                sy = static_cast<int16_t>(-std::cos(heading) * strength);
+            };
+            if (!std::strcmp(state, "St_Climb_Main") && !dismount) {
+                dCc_c *attachment = nullptr;
+                std::memcpy(&attachment, &player->unk_37c, sizeof(attachment));
+                const auto *pole = attachment ? dActor_c::FindWithID(attachment->GetOwnerID()) : nullptr;
+                if (pole && pole->actorID == 287 && pole->mPosX == pole_x * 4096 && pole->mPosZ == pole_z * 4096) {
+                    if (!pole_uid) {
+                        pole_uid = pole->uniqueID;
+                        std::fprintf(stderr, "[native volcano north pole] grab tick=%llu uid=%u height=%d\n",
+                            static_cast<unsigned long long>(tick), pole_uid, int(player->mAttachOffsetY));
+                    }
+                    if (player->mAttachOffsetY < 790 * 4096) sy = 32767;
+                    else {
+                        if (!reported_height) {
+                            reported_height = true;
+                            std::fprintf(stderr, "[native volcano north pole] climbed tick=%llu uid=%u height=%d\n",
+                                static_cast<unsigned long long>(tick), pole_uid, int(player->mAttachOffsetY));
+                        }
+                        // The ordinary pole jump launches away from the facing direction.
+                        const auto heading = static_cast<int>(std::atan2(double(x - pole_x), double(z - pole_z)) / turn) + 0x8000;
+                        const int error = static_cast<int16_t>(heading - player->mAngleY);
+                        if (std::abs(error) > 800) sx = static_cast<int16_t>(std::clamp(error * 16, -32767, 32767));
+                        else {
+                            dismount = tick;
+                            std::fprintf(stderr, "[native volcano north pole] jump tick=%llu uid=%u yaw=%d\n",
+                                static_cast<unsigned long long>(tick), pole_uid, int(player->mAngleY));
+                        }
+                    }
+                }
+            } else if (!attempted_grab && grounded && player->mHorzSpeed == 0) {
+                buttons = 2;
+            } else if (!pole_uid && !grounded) {
+                attempted_grab = true;
+                steer(pole_x, pole_z, 22500);
+                buttons = 2;
+            }
+            if (dismount && !landed) {
+                const auto *floor = grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+                if (floor && !floor->owner && std::abs(player->mPosY - y * 4096) < 10 * 4096 &&
+                    player->mPosX >= (second_north_pole ? 1700 : 1200) * 4096 &&
+                    player->mPosX <= (second_north_pole ? 2220 : 1700) * 4096 &&
+                    player->mPosZ >= (second_north_pole ? -1900 : -2200) * 4096 &&
+                    player->mPosZ <= (second_north_pole ? -1500 : -1800) * 4096) {
+                    landed = true;
+                    std::fprintf(stderr, "[native volcano north pole] landed tick=%llu x=%d y=%d z=%d\n",
+                        static_cast<unsigned long long>(tick), player->mPosX, player->mPosY, player->mPosZ);
+                } else {
+                    buttons = tick - dismount < 24 ? 2 : 0;
+                    const int braking_distance = second_north_pole ? 130 : 175;
+                    if (std::strcmp(state, "St_Climb_Main") && horizontal < braking_distance * 4096.0) braking = true;
+                    if (braking && player->mHorzSpeed > 5 * 4096) {
+                        const double reverse = (player->mPrevAngleY + 0x8000 - GetAngleToCamera(0)) * turn;
+                        sx = static_cast<int16_t>(std::sin(reverse) * 32767);
+                        sy = static_cast<int16_t>(-std::cos(reverse) * 32767);
+                    } else if (!braking) steer(x, z, 24500);
+                }
+            }
+            if (landed && player->mHorzSpeed == 0 && std::strchr(segment, ',')) ++waypoint;
             ntr::input_test_controls(true, buttons, sx, sy);
             return true;
         }
@@ -6840,6 +6954,8 @@ static bool replay_course_route(const char *route_override=nullptr) {
         static bool route3_jump_command=false,route3_long_jump=false;
         static unsigned downtown_gap_waypoint=~0u;
         if(jump==3) {
+            const bool volcano_bully_jump = level == 15 && x == -690 && y == 2385 && z == -2500 &&
+                std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY");
             const bool wdw_gap=level==21 && x==-1550 && z==-3550 &&
                 std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP");
             const bool downtown_gap=wdw_timed_route && x==-3560 && y==-1425 && z==750;
@@ -6882,6 +6998,20 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 const int takeoff_z = z == 525 ? -323 : 675;
                 runway = player->mPosZ >= takeoff_z * 4096 &&
                     player->mMeshClsn.IsOnGround() && player->mHorzSpeed >= 14 * 4096;
+            }
+            if (volcano_bully_jump) {
+                runway = player->mMeshClsn.IsOnGround() && player->mPosX >= -1320 * 4096 &&
+                    player->mPosX < -1190 * 4096 && player->mHorzSpeed >= 16 * 4096;
+                if (player->mPosX >= -845 * 4096 && player->mIsAirborne &&
+                    !std::strcmp(state, "St_LongJump_Main")) {
+                    // Brake along the original jump heading over the widened stone.
+                    constexpr double turn = 6.283185307179586 / 65536.0;
+                    const double heading = (player->mPrevAngleY + 0x8000 - GetAngleToCamera(0)) * turn;
+                    const int strength = player->mHorzSpeed > 3 * 4096 ? 32767 : 0;
+                    ntr::input_test_controls(true, 0, static_cast<int16_t>(std::sin(heading) * strength),
+                        static_cast<int16_t>(-std::cos(heading) * strength));
+                    return true;
+                }
             }
             const bool may_launch=(wdw_gap || downtown_roofs) ? !route3_launch : tick>=next_jump;
             if(runway && may_launch && !player->mIsAirborne && !std::strcmp(state,"St_Walk_Main")) {
@@ -7152,6 +7282,19 @@ static bool replay_course_route(const char *route_override=nullptr) {
     // Records are first:last:hex-mask:period:hold[:include-settle]; last is exclusive.
     buttons|=replay_route_window_buttons(waypoint);
     buttons|=replay_lava_platform_jump(player, waypoint);
+    if (level == 14 && x == 0 && z == 3500 && !has_y &&
+        std::getenv("SM64DS_PC_TEST_VOLCANO_BRIDGE_JUMP")) {
+        static uint64_t bridge_jump = 0;
+        const auto frame = ntr::rt_frame();
+        if (!bridge_jump && player->mMeshClsn.IsOnGround() && !player->mIsAirborne &&
+            player->mPosY >= 285 * 4096 && player->mPosZ >= 3950 * 4096 &&
+            player->mPosZ <= 4050 * 4096 && !std::strcmp(pc_player_state_name(player), "St_Walk_Main")) {
+            bridge_jump = frame;
+            std::fprintf(stderr, "[native volcano bridge replay] jump tick=%llu\n",
+                         static_cast<unsigned long long>(frame));
+        }
+        if (bridge_jump && frame - bridge_jump < 36) buttons |= 2;
+    }
     if (level == 15 && jump == 0 && std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
         static uint64_t launch_tick[5]{};
         const int gap = x == -1680 && z == -445 ? 0 :
