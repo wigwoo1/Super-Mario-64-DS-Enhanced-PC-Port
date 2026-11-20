@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "53dd72fb708ea84f3edacef47da74a0d7a572f11a549d0f678de60f36f534bd5",
-      "bytes": 255911
+      "sha256": "ad2441df65d3a44eb0379b8720ab3391160083e408553fd11774d91a3ea6d227",
+      "bytes": 256058
     },
     {
       "path": "port/build-support/README.md",
@@ -7505,8 +7505,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "5bd8b84316a072325725d8ec56b089e7c33b99e9eb2f26946fcad29eda653fc5",
-      "bytes": 22818
+      "sha256": "ddf914cddd5bf0967af07dcda4d8b9487c4811ed67abfa2f3d3d37506b5d7f42",
+      "bytes": 24056
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "56f60b51845d50ae92428b1905f117a447d4099d4e923169cf8d29ba653e459b",
-      "bytes": 69824
+      "sha256": "a8306bd9351faba3baf799e54161458dd30748063240db86838051ccb6e7f41c",
+      "bytes": 70075
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "a34cfb135f628de99602520adcd556e4d005cff06486825adc27b70faef544a4",
-      "bytes": 739110
+      "sha256": "f7aca432ca805453afaa96dbda43d7960d9ecc955c131a6bba5044918afab039",
+      "bytes": 747970
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "27d75cf67cf6e2ed515e02581db71a7099c1b30af595e5da980fab8b3665af07",
-      "bytes": 68672
+      "sha256": "c043e7b67b18b9d222e7713f15cb46e9decf46d16bf64ac8e6692ea3e28d98d9",
+      "bytes": 68932
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9290,8 +9290,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "f89da81c177d9d94957a91354c984eecd5b187a9705f23311bfc5e2326edd57b",
-      "bytes": 104775
+      "sha256": "7aa5e1328a852df6dd67f03b0f119b59b9f3efbc83143d922ec0c04375b0a864",
+      "bytes": 106790
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9620,8 +9620,8 @@
     },
     {
       "path": "port/tools/lava_volcano_host.py",
-      "sha256": "51ce8ac81ed33116e2b617b11c1a638d16b363ac104bb24cd1de5bd40bc01b02",
-      "bytes": 20429
+      "sha256": "e7b18c66087072370a55dd1ae37bff740d32b8254f5519a7dc2b60744b81e6df",
+      "bytes": 26822
     },
     {
       "path": "port/tools/level_overlay_data.py",
@@ -9640,8 +9640,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "7bed4dc1dc11c325a8fe4dc6124218e57191af1d44403fc292ed674a2eaf737b",
-      "bytes": 31836
+      "sha256": "6e58bfe91f618e9c0fedab85f1bfee49c2f99145d7c9360596856c9e9f34aefd",
+      "bytes": 31879
     },
     {
       "path": "port/tools/linkage.py",

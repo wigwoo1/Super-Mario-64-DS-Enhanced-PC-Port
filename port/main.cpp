@@ -3162,23 +3162,38 @@ static bool replay_big_bully_combat() {
          !std::strcmp(state, "St_Land_Main"));
     constexpr double angle_unit = 6.283185307179586 / 65536.0;
     constexpr double center_x = 3750, center_z = -5500;
+    const auto is_charging = [](daOts_c &candidate, int bearing) {
+        return candidate.tail().mState == daOts_c::STATE_CHASE &&
+            candidate.mHorzSpeed >= 12 * 4096 &&
+            std::abs(int(static_cast<s16>(bearing + 0x8000 - candidate.mPrevAngleY))) < 0x2400;
+    };
     const bool waiting_for_boss = fight_small_bullies && boss && boss->mNumBulliesKilled < 4;
     daOts_c *enemy = waiting_for_boss ? nullptr : boss;
+    daOts_c *charge_threat = nullptr;
     if (waiting_for_boss) {
         double nearest = 2000;
+        double nearest_charge = 250;
         for (auto *actor = dActor_c::FindWithActorID(215, nullptr); actor;
              actor = dActor_c::FindWithActorID(215, actor)) {
             auto *candidate = static_cast<daDonketu_c *>(actor);
             if (candidate->aliveState != 1 || unsigned(candidate->mBigBullyID) != boss_uid ||
                 candidate->tail().mState >= daOts_c::STATE_DYING)
                 continue;
-            const double distance = std::hypot(candidate->mPosX / 4096.0 - x,
-                                               candidate->mPosZ / 4096.0 - z);
+            const double dx = candidate->mPosX / 4096.0 - x;
+            const double dz = candidate->mPosZ / 4096.0 - z;
+            const double distance = std::hypot(dx, dz);
             if (distance < nearest) {
                 nearest = distance;
                 enemy = candidate;
             }
+            // The closer Bully can still be stunned while the other charges.
+            if (boss->mNumBulliesKilled == 1 && distance < nearest_charge &&
+                is_charging(*candidate, static_cast<int>(std::atan2(dx, dz) / angle_unit))) {
+                nearest_charge = distance;
+                charge_threat = candidate;
+            }
         }
+        if (charge_threat) enemy = charge_threat;
     }
     const bool small = waiting_for_boss && enemy;
     if (enemy && enemy->aliveState == 1 && enemy->tail().mState < daOts_c::STATE_DYING) {
@@ -3189,16 +3204,13 @@ static bool replay_big_bully_combat() {
         const double center_distance = std::hypot(center_x - x, center_z - z);
         const auto desired = static_cast<int>(bearing / angle_unit);
         const bool facing = std::abs(int(static_cast<s16>(desired - player->mAngleY))) < 0x1000;
-        const bool charging = enemy->tail().mState == daOts_c::STATE_CHASE &&
-            enemy->mHorzSpeed >= 12 * 4096 &&
-            std::abs(int(static_cast<s16>(desired + 0x8000 - enemy->mPrevAngleY))) < 0x2400;
+        const bool charging = is_charging(*enemy, desired);
         const bool attack_ready = ready && facing && !player->mPunchKickCooldown &&
             tick >= next_attack && enemy->tail().mState != daOts_c::STATE_KNOCKED_BACK;
         const double strike_range = small ? (charging ? 325 : 225) : (charging ? 365 : 250);
-
         if (ready && tick >= dodge_until && tick >= attack_until &&
             charging && distance < (small ? 310 : 430) &&
-            (center_distance > 660 || !facing || distance < (small ? 135 : 200))) {
+            (charge_threat || center_distance > 660 || !facing || distance < (small ? 135 : 200))) {
             const double side = (center_x - x) * std::cos(bearing) - (center_z - z) * std::sin(bearing);
             dodge_heading = bearing + (side >= 0 ? 1.570796326794897 : -1.570796326794897);
             dodge_until = tick + 34;
@@ -4252,6 +4264,85 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const double vertical_tolerance=(std::max)(120,radius)*4096.0;
         const auto tick=ntr::rt_frame();
         const char *state=pc_player_state_name(player);
+        const bool bubble_contact = level == 15 && x == 1088 && y == 80 && z == -1520;
+        const bool grate_contact = level == 14 && x == 1375 && y == 300 && z == 3625;
+        if ((bubble_contact || grate_contact) &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+            static bool braking = false, trimming = false, staged = false;
+            static uint64_t burn_at = 0, recovered_at = 0;
+            static int previous_health = 0;
+            const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const bool burning = !std::strcmp(state, "St_BurnFire_Main");
+            const bool walking = !std::strcmp(state, "St_Walk_Main");
+            const bool waiting = !std::strcmp(state, "St_Wait_Main");
+            const char *hazard = grate_contact ? "flamethrower" : "bubble";
+            auto steer = [&](double heading, int strength) {
+                constexpr double turn = 6.283185307179586 / 65536.0;
+                heading -= GetAngleToCamera(0) * turn;
+                sx = static_cast<int16_t>(std::sin(heading) * strength);
+                sy = static_cast<int16_t>(-std::cos(heading) * strength);
+            };
+            const int health = player->GetHealth();
+            if (grate_contact && !burn_at && !burning && grounded) {
+                if (!staged) {
+                    staged = true;
+                    previous_health = health;
+                    std::fprintf(stderr, "[native %s contact replay] ready tick=%llu player=%u health=%d pos=%d,%d,%d\n",
+                        hazard, static_cast<unsigned long long>(tick), player->uniqueID, health,
+                        player->mPosX, player->mPosY, player->mPosZ);
+                }
+                if (horizontal > 12 * 4096)
+                    steer(std::atan2(dx, dz), horizontal > 110 * 4096 ? 15200 : 10500);
+            }
+            if (bubble_contact && !staged && grounded) {
+                const double px = player->mPosX / 4096.0;
+                const double speed = player->mHorzSpeed / 4096.0;
+                // Neutral stick decelerates by about one unit per update.
+                // Coast in a straight line to the contact position on the shelf.
+                if (!braking && px + speed * (speed - 1.0) / 2.0 >= x)
+                    braking = true;
+                if (braking && player->mHorzSpeed == 0) trimming = true;
+                if (trimming && std::abs(dx) <= 8 * 4096 && std::abs(dz) <= 16 * 4096) {
+                    staged = true;
+                    previous_health = health;
+                    std::fprintf(stderr, "[native bubble contact replay] ready tick=%llu player=%u health=%d pos=%d,%d,%d\n",
+                        static_cast<unsigned long long>(tick), player->uniqueID, health,
+                        player->mPosX, player->mPosY, player->mPosZ);
+                } else if (trimming) {
+                    steer(std::atan2(dx, dz), 9200);
+                } else if (!braking) {
+                    steer(std::atan2(1110 * 4096.0 - player->mPosX, dz), 18000);
+                }
+            }
+            if (staged && burning) {
+                if (!burn_at) burn_at = tick;
+                if (health < previous_health) {
+                    std::fprintf(stderr, "[native %s contact replay] damage tick=%llu health=%d state=%s\n",
+                        hazard, static_cast<unsigned long long>(tick), health, state);
+                    previous_health = health;
+                }
+                // The original fire state accepts a fresh jump on landing.
+                // Hopping limits the forced run on the narrow stone shelf.
+                if (grounded && player->mStateStep == 1) buttons = 2;
+                steer(-1.5707963267948966, 16000);
+            } else if (burn_at && grounded && (walking || waiting)) {
+                if (!recovered_at) {
+                    recovered_at = tick;
+                    std::fprintf(stderr, "[native %s contact replay] recovered tick=%llu health=%d\n",
+                        hazard, static_cast<unsigned long long>(tick), health);
+                }
+                if (grate_contact) {
+                    const double retreat_x = 1200 * 4096.0 - player->mPosX;
+                    const double retreat_z = 3550 * 4096.0 - player->mPosZ;
+                    if (std::hypot(retreat_x, retreat_z) > 34 * 4096)
+                        steer(std::atan2(retreat_x, retreat_z), 12000);
+                } else if (tick - recovered_at < 24) {
+                    steer(-1.5707963267948966, 16000);
+                }
+            }
+            ntr::input_test_controls(true, buttons, sx, sy);
+            return true;
+        }
         if (level == 15 && x == -90 && y == 1175 && z == 2460 &&
             std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
             static uint64_t launched = 0;
@@ -4303,8 +4394,69 @@ static bool replay_course_route(const char *route_override=nullptr) {
             }
             if (bank_logged && std::getenv("SM64DS_PC_TEST_VOLCANO_SLAB_CONTACT"))
                 replay_volcano_slab_contact(player);
-            else
+            else {
+                if (bank_logged && std::strchr(segment, ',')) ++waypoint;
                 ntr::input_test_controls(true, buttons, sx, sy);
+            }
+            return true;
+        }
+        if (level == 15 && x == -900 && y == 1575 && z == 2415 &&
+            std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY")) {
+            enum class Phase { Align, WaitForSlab, Cross, Face, Crouch, Air, Landed };
+            static Phase phase = Phase::Align;
+            const double px = player->mPosX / 4096.0;
+            const double py = player->mPosY / 4096.0;
+            const double pz = player->mPosZ / 4096.0;
+            const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+            const auto *floor = grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+            const bool rest = grounded && player->mHorzSpeed == 0;
+            const auto *slab = static_cast<daObjFm_Battan_c *>(dActor_c::FindWithActorID(84, nullptr));
+            auto steer = [&](double to_x, double to_z, int strength) {
+                constexpr double turn = 6.283185307179586 / 65536.0;
+                const double heading = std::atan2(to_x - px, to_z - pz) - GetAngleToCamera(0) * turn;
+                sx = static_cast<int16_t>(std::sin(heading) * strength);
+                sy = static_cast<int16_t>(-std::cos(heading) * strength);
+            };
+            if (phase == Phase::Align) {
+                if (std::abs(pz - 2415) > 21) steer(-95, 2415, 14500);
+                else if (rest) phase = Phase::WaitForSlab;
+            }
+            if (phase == Phase::WaitForSlab && slab && rest &&
+                slab->mState == 3 && slab->mAngleX >= -0x1800) {
+                phase = Phase::Cross;
+                std::fprintf(stderr, "[native volcano shelf] cross tick=%llu slab=%u angle=%d x=%.1f z=%.1f\n",
+                    static_cast<unsigned long long>(tick), slab->uniqueID, int(slab->mAngleX), px, pz);
+            }
+            if (phase == Phase::Cross) {
+                if (px > -592) steer(-635, 2415, px > -500 ? 22000 : 12500);
+                else if (rest && std::abs(py - 1175) < 18) phase = Phase::Face;
+            }
+            if (phase == Phase::Face && grounded) {
+                const int error = std::abs(int(static_cast<int16_t>(player->mAngleY - 0x4000)));
+                if (error > 1700) steer(px + 100, pz, 10000);
+                else if (rest) phase = Phase::Crouch;
+            }
+            if (phase == Phase::Crouch) {
+                buttons = std::strcmp(state, "St_Crouch_Main") ? 0x100 : 0x102;
+                if (player->mState == &data_ov002_0211052c) {
+                    phase = Phase::Air;
+                    std::fprintf(stderr, "[native volcano shelf] backflip tick=%llu x=%.1f y=%.1f z=%.1f yaw=%d\n",
+                        static_cast<unsigned long long>(tick), px, py, pz, int(player->mPrevAngleY));
+                }
+            }
+            if (phase == Phase::Air) {
+                buttons = 2;
+                if (floor && !floor->owner && std::abs(py - 1575) < 18 && px < -775) {
+                    phase = Phase::Landed;
+                    buttons = 0;
+                    std::fprintf(stderr, "[native volcano shelf] landed tick=%llu x=%.1f y=%.1f z=%.1f\n",
+                        static_cast<unsigned long long>(tick), px, py, pz);
+                } else if (px > -885) {
+                    steer(x, z, 25500);
+                }
+            }
+            if (phase == Phase::Landed && rest && std::strchr(segment, ',')) ++waypoint;
+            ntr::input_test_controls(true, buttons, sx, sy);
             return true;
         }
         if (level == 15 && x == -1380 && z == 1520 && jump == 3 &&

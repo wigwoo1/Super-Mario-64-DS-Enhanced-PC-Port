@@ -229,9 +229,19 @@ Audio listening accuracy and complete gameplay remain unverified.
   and attempting a jump back both led to a downhill slide. A safe
   return remains unverified. The native lava surface effect produces
   bubbling particles around Luigi in the exterior and inside the volcano.
-  The jumping lava-bubble enemy has an experimental native binding. Its
-  jump and hit behavior still need gameplay verification. The volcano's
-  flamethrowers remain unimplemented.
+  The two original lava-bubble fountains in the volcano interior each
+  completed four launch, bounce, and retirement cycles during a Luigi
+  replay. Both fire and smoke effects rendered. A second replay verifies
+  that a jumping bubble hits Luigi on the east stone ledge and starts the
+  original burn and health loss. Luigi recovers normal control on the ledge.
+  The original flamethrowers now run natively. A selected Luigi replay
+  shows the outdoor grate firing and verifies that the three interior
+  nozzles extend and retract on their 60-update phases. The interior
+  particle trace records both flame effects during the entrance sweep,
+  where the star transition masks the view of the jets. On the outdoor
+  grate, a second Luigi replay verifies contact, the original burn and
+  health loss, and returning to normal walking on the stone path. Other
+  flamethrower placements and variants still need contact coverage.
   Both original Lethal Lava Land mesh lifts spawn. A selected Luigi replay
   clears the guarded island, boards the east lift, rides its entire route
   and jumps onto the far bank. The west lift cycles through both original
@@ -239,6 +249,13 @@ Audio listening accuracy and complete gameplay remain unverified.
   raised stone bank and walks farther across it. After Exit Course and
   re-entry through the castle painting, both mesh lifts and the log spawn
   fresh. Luigi repeats the full east lift ride and safe log dismount.
+  The November 19 Windows preview has separate Luigi replays for the three
+  small Bullies, Big Bully, and the Power Star. The first pickup increases
+  File A from 22 to 23 Stars. A repeat pickup keeps the total at 23 through
+  the original Save & Continue flow and a fresh launch.
+  The November 20 development replay also completes the fight and saves
+  with 23 Stars and unchanged course Star flags. Its test pilot reacts to
+  a charging Bully even when a stunned Bully is closer to Luigi.
   Selected Luigi replays verify Lethal Lava Land puzzle tile contact, all
   14 bonus coins spawning, and a route that collects all eight red coins.
   Luigi collects the revealed Power Star, saves, and reloads with the new

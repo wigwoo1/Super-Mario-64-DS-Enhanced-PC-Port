@@ -39,7 +39,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjKm2_Gura_c_classInit", "daObjFl_Gura_c_classInit", "daObjFl_Ring_c_classInit",
                  "daObjFlMaruta_c_classInit", "daObj_volcanoCannon_c_classInit",
                  "daObjFl_Amilift_c_classInit", "daObjFm_Battan_c_classInit", "daObjLava_c_classInit",
-                 "daBbl_c_classInit",
+                 "daBbl_c_classInit", "daObjFlamethrower_c_classInit",
                  "_ZN13daObjMaruta_c6RenderEv", "_ZN13daObjMaruta_c15OnHitByMegaCharER6Player",
                  "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA", "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L",
                  "_ZN17daObjFl_Ukiyuka_c13InitResourcesEv",
@@ -733,6 +733,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daBbl_c.cpp':
                     import lava_volcano_host
                     transformed=lava_volcano_host.transform_lava_bubble(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjFlamethrower_c.cpp':
+                    import lava_volcano_host
+                    transformed=lava_volcano_host.transform_flamethrower(root,transformed)
                     rewrites+=1
                 if path.name == 'd_a_obj_fl_gura.cpp':
                     import simple_lift_host

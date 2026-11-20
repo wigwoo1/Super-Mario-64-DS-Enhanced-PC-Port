@@ -135,6 +135,34 @@ def main():
             raise ValueError(f'Lava particle surface callback {method} is missing')
     print('PASS: lava effect profile, original emitter wrapper and native lava surface callbacks')
 
+    expected = struct.unpack_from('<IHHIiiii', lava_rom, 0x0211bec8 - lava_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_lava_bubble_profile'), 28))
+    if actual != (named('daBbl_c_classInit'), *expected[1:]):
+        raise ValueError('Jumping lava bubble profile differs from the original')
+    for table, original_callbacks in (
+            ('data_ov064_0211c7b8', (0x0211bea0, 0x0211be90)),
+            ('data_ov064_0211c7c8', (0x0211bea8, 0x0211be98))):
+        native_callbacks = struct.unpack('<2I', pe_bytes(args.exe, named(table), 8))
+        for original, native in zip(original_callbacks, native_callbacks):
+            target, adjustment = struct.unpack_from('<II', lava_rom, original - lava_base)
+            method = f'?func_ov064_{target:08x}@daBbl_c@@'
+            if adjustment or not any(pc == native and name.startswith(method) for name, pc in symbols.items()):
+                raise ValueError(f'{table}: jumping lava bubble callback does not match {target:#x}')
+    print('PASS: jumping lava bubble profile and four original state callback identities')
+
+    flame_base, flame_rom = overlay(95)
+    expected = struct.unpack_from('<IHHIiiii', flame_rom, 0x021376cc - flame_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_flamethrower_profile'), 28))
+    if actual != (named('daObjFlamethrower_c_classInit'), *expected[1:]):
+        raise ValueError('Flamethrower actor profile differs from the original')
+    for address, size in ((0x02136f80, 24), (0x02136f98, 24), (0x02136fb0, 48)):
+        start = address - flame_base
+        if pe_bytes(args.exe, named(f'data_ov095_{address:08x}'), size) != flame_rom[start:start + size]:
+            raise ValueError(f'Flamethrower segment data at {address:#x} differs from the original')
+    for helper in ('func_02022774', 'func_020226fc', 'func_02022864', 'func_020227ec'):
+        named(helper)
+    print('PASS: flamethrower profile, three original segment tables, and four particle wrappers')
+
     expected = struct.unpack_from('<IHHIiiii', lava_rom, 0x0211bc44 - lava_base)
     actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_lava_mesh_lift_profile'), 28))
     if actual != (named('daObjFl_Amilift_c_classInit'), *expected[1:]):

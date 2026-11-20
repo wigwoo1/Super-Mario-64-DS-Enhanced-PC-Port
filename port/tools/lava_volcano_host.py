@@ -5,11 +5,157 @@ import struct
 COLLISION_SURFACE = "data_ov064_0211bbcc"
 TRAVEL_LIMIT = "data_ov022_02112c98"
 BATTAN_SURFACE = "data_ov064_0211ba4c"
+FLAMETHROWER_TABLES = ("data_ov095_02136f80", "data_ov095_02136f98", "data_ov095_02136fb0")
 
 
 def replace(text, old, new):
     assert text.count(old) == 1, old
     return text.replace(old, new, 1)
+
+
+def transform_flamethrower(root, text):
+    rom = (root / 'extracted/overlays/overlay_0095.bin').read_bytes()
+    base = 0x02135700
+    assert struct.unpack_from('<IHHIiiii', rom, 0x021376cc - base) == (
+        0x02136ed4, 318, 316, 2, 0, 0x500000, 0x1000000, 0)
+    for symbol in ('daObjFlamethrower_c_classInit', '_ZN19daObjFlamethrower_c13InitResourcesEv',
+                   '_ZN19daObjFlamethrower_c8BehaviorEv'):
+        assert f'// @symbol {symbol}\n' in text
+    return r'''//cpp
+#include "daObjFlamethrower_c.h"
+#include "Particle__System.h"
+#include "Player.h"
+#include "Sound.h"
+#include "ntr/rt.h"
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <new>
+
+extern "C" {
+extern signed char data_0209f2f8;
+extern short data_02082214[];
+extern const s16 data_ov095_02136f80[], data_ov095_02136f98[];
+extern const s32 data_ov095_02136fb0[];
+void *_ZN7fBase_cnwEj(unsigned int);
+unsigned short DecIfAbove0_Short(unsigned short *);
+void Matrix4x3_FromRotationXYZExt(void *, int, int, int);
+void MulVec3Mat4x3(const Vector3 *, const Matrix4x3 *, Vector3 *);
+void Vec3_Add(Vector3 *, const Vector3 *, const Vector3 *);
+void _ZN8dCcPos_c4InitERK7Vector35Fix12IiES4_jj(dCcPos_c *, const Vector3 *, int, int, u32, u32);
+void func_02022774(Fix12i, Fix12i, Fix12i, s16, s16);
+void func_020226fc(Fix12i, Fix12i, Fix12i, s16, s16);
+void func_02022864(Fix12i, Fix12i, Fix12i, s16, s16);
+void func_020227ec(Fix12i, Fix12i, Fix12i, s16, s16);
+}
+
+// These ARM9 wrappers keep their scale callback and shared emitter ID by offset.
+static_assert(offsetof(Particle::SysTracker, mCallback_7b4) == 0x7b4);
+static_assert(offsetof(Particle::SysTracker, mCallback_7c4) == 0x7c4);
+static_assert(offsetof(Particle::SysTracker, mCallback_7d4) == 0x7d4);
+static_assert(offsetof(Particle::SysTracker, mCallback_7e4) == 0x7e4);
+
+namespace {
+constexpr int kHaunt = 12;
+constexpr unsigned kPhaseFrames = 60;
+
+void position_segment(daObjFlamethrower_c &jet, int segment) {
+    Vector3 offset{}, rotated{};
+    offset.z = data_ov095_02136fb0[segment];
+    MulVec3Mat4x3(&offset, &jet.mTransform, &rotated);
+    const Vector3 base = {jet.mPosX, jet.mPosY, jet.mPosZ};
+    Vec3_Add(&jet.mFlamePositions[segment], segment == 0 ? &base : &jet.mFlamePositions[segment - 1], &rotated);
+}
+}
+
+// @symbol daObjFlamethrower_c_classInit
+extern "C" void *daObjFlamethrower_c_classInit() {
+    void *storage = _ZN7fBase_cnwEj(sizeof(daObjFlamethrower_c));
+    return storage ? ::new (storage) daObjFlamethrower_c{} : nullptr;
+}
+
+// @symbol _ZN19daObjFlamethrower_c13InitResourcesEv
+int daObjFlamethrower_c::InitResources() {
+    const int count = data_0209f2f8 == kHaunt ? 9 : 12;
+    Matrix4x3_FromRotationXYZExt(&mTransform, mAngleX, mAngleY, mAngleZ);
+    for (int i = 0; i < count; ++i) {
+        position_segment(*this, i);
+        const int scale = data_ov095_02136f80[i];
+        _ZN8dCcPos_c4InitERK7Vector35Fix12IiES4_jj(&mColliders[i], &mFlamePositions[i],
+            scale * 20, scale * 40, 0x200002, 0);
+    }
+    return 1;
+}
+
+// @symbol _ZN19daObjFlamethrower_c8BehaviorEv
+int daObjFlamethrower_c::Behavior() {
+    const bool in_haunt = data_0209f2f8 == kHaunt;
+    const bool fixed_pair = (param1 & 0xff) == 0xff;
+    const bool aimed = !fixed_pair || in_haunt;
+    const int count = in_haunt ? 9 : 12;
+    if (mState == 0 && mActiveFlames != 0) --mActiveFlames;
+    if (mState == 1 && mActiveFlames < count - 1) ++mActiveFlames;
+    if (DecIfAbove0_Short(&mTimer) == 0) {
+        mState ^= 1;
+        mTimer = kPhaseFrames;
+    }
+    if (mActiveFlames) {
+        const Vector3 sound_position = {mCamSpacePosX, mCamSpacePosY, mCamSpacePosZ};
+        mSoundHandle = Sound::PlayLong(mSoundHandle, 3, 0x180, sound_position, 0);
+    }
+    const bool visible = (mFlags & 8) == 0;
+    const bool trace = std::getenv("SM64DS_PC_LAVA_VOLCANO_TRACE") != nullptr;
+    const auto tick = static_cast<unsigned long long>(ntr::rt_frame());
+    if (trace && tick % 10 == 0) {
+        const auto &tip = mFlamePositions[mActiveFlames ? mActiveFlames - 1 : 0];
+        std::fprintf(stderr, "[native flamethrower] tick=%llu uid=%u level=%d phase=%u timer=%u active=%u visible=%u tip=%d,%d,%d\n",
+            tick, uniqueID, int(data_0209f2f8), unsigned(mState), unsigned(mTimer), unsigned(mActiveFlames),
+            unsigned(visible), int(tip.x), int(tip.y), int(tip.z));
+    }
+    if (!visible) return 1;
+
+    if (aimed) Matrix4x3_FromRotationXYZExt(&mTransform, mAngleX, mAngleY, mAngleZ);
+    for (int i = 0; i < count; ++i) {
+        auto &collider = mColliders[i];
+        if (i < mActiveFlames) {
+            if (aimed) {
+                position_segment(*this, i);
+                if (in_haunt) {
+                    const auto wave = data_02082214[((i * 0x1000) >> 4) * 2];
+                    mFlamePositions[i].y = mPosY + int((static_cast<long long>(wave) * -0xaa000 + 0x800) >> 12);
+                }
+                collider.pos = mFlamePositions[i];
+            }
+            if (auto *other = collider.otherOwner ? dActor_c::FindWithID(collider.otherOwner) : nullptr;
+                other && other->actorID == 191) {
+                auto *player = static_cast<Player *>(other);
+                const int health = player->GetHealth();
+                const int accepted = player->Burn();
+                if (trace && accepted) {
+                    std::fprintf(stderr, "[native flamethrower hit] tick=%llu uid=%u segment=%d player=%u health=%d\n",
+                        tick, uniqueID, i, player->uniqueID, health);
+                }
+            }
+            if (data_0209ee74 && data_0209ee74->mManager) {
+                const auto &pos = mFlamePositions[i];
+                const Fix12i y = pos.y + 0x32000;
+                const s16 scale = data_ov095_02136f80[i];
+                const s16 distortion = data_ov095_02136f98[i];
+                if (fixed_pair) {
+                    func_02022864(pos.x, y, pos.z, scale, 0);
+                    func_020227ec(pos.x, y, pos.z, scale, distortion);
+                } else {
+                    func_02022774(pos.x, y, pos.z, scale, 0);
+                    func_020226fc(pos.x, y, pos.z, scale, distortion);
+                }
+            }
+        }
+        collider.Clear();
+        if (i < mActiveFlames) collider.dCc_c::Update();
+    }
+    return 1;
+}
+'''
 
 
 def transform_lava_emitter(text):

@@ -574,6 +574,10 @@ extern "C" void *daObjFl_Amilift_c_classInit();
 extern "C" unsigned char g_profile_FM_BATTAN[];
 extern "C" unsigned char g_profile_LAVA[];
 extern "C" void *daBbl_c_classInit();
+extern "C" void *daObjFlamethrower_c_classInit();
+static PcNativeActorProfile pc_flamethrower_profile = {
+    (void *)&daObjFlamethrower_c_classInit, 318, 316, 2, 0, 0x500000, 0x1000000, 0
+};
 static PcNativeActorProfile pc_lava_bubble_profile = {
     (void *)&daBbl_c_classInit, 214, 58, 2, 0x64000, 0x64000, 0x1000000, 0x640000
 };
@@ -904,6 +908,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[191] = &pc_player_profile;
     data_020a4bb8_storage[196] = g_profile_LAVA;
     data_020a4bb8_storage[214] = &pc_lava_bubble_profile;
+    data_020a4bb8_storage[318] = &pc_flamethrower_profile;
     /* CAMERA is the built-in ARM9 actor profile 332 (0x14c). Stage's
        LoadViewObjects publishes this actor through data_0209f318; without a
        native profile, that global stays null and camera consumers fault. */
