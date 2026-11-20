@@ -7505,8 +7505,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "0d860d7a28044e7a041ca4d0f92c6cddac51e64faa525072719a1022f3820eaf",
-      "bytes": 29911
+      "sha256": "7879a202f83464e7f4d9ed9b3c26bc8d6bc9fca11cc00a6c0ec4cae024886e46",
+      "bytes": 30569
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -9680,8 +9680,8 @@
     },
     {
       "path": "port/tools/native_build_kit.py",
-      "sha256": "d18c0ccfc6becb3a61ad9d9320cbb6bce63b9b89f8d58a1b83833303d0988704",
-      "bytes": 16209
+      "sha256": "a3914aa07059d385fc9fab6442e2bb2436ac6d37566ac80145a769b9ee1f664e",
+      "bytes": 16549
     },
     {
       "path": "port/tools/native_kit_data.py",

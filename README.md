@@ -319,6 +319,15 @@ Audio listening accuracy and complete gameplay remain unverified.
   Mission 4 plate and the 18-coin record. Luigi repeats the route and
   collects the Star again. Save & Continue keeps the total at 26 and
   both isolated saves remain byte-identical.
+  A separate earned-progression run now carries one genuine File A through
+  original Missions 1, 2, 3, and 4 in order. Each mission is selected by the
+  original course menu with no mission override, and each Star is saved with
+  the game's Save & Continue. The Mission 4 run starts at 25 Stars with the
+  first three Lethal Lava Land flags, rides the original log, reaches the
+  authored Star, and saves at 26 Stars with all four flags. Its CRC-valid
+  save changes only the new course-Star flag; the existing 27-coin course
+  record and minigame save are preserved. This verifies one course's earned
+  four-mission chain, not completion of the full game.
   The November 19 Windows preview has separate Luigi replays for the three
   small Bullies, Big Bully, and the Power Star. The first pickup increases
   File A from 22 to 23 Stars. A repeat pickup keeps the total at 23 through
