@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "db182f4ba5f558dbb1a1a7e92f5d102dd99307fe8d41bdef564089aebe4ca25f",
-      "bytes": 92082
+      "sha256": "4541bd7ccf39ecfc9added7ed67c9a17c221173252c19696e133eeb7642cf714",
+      "bytes": 92230
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7505,8 +7505,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "9ad27cf3747dda10e8183734adfe418f15213adab129f7447e137821280583d3",
-      "bytes": 25465
+      "sha256": "58169e1a98db1f181f54047a84d9f514974757200f369e9af43ec120ac956f65",
+      "bytes": 27256
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "a8306bd9351faba3baf799e54161458dd30748063240db86838051ccb6e7f41c",
-      "bytes": 70075
+      "sha256": "d8cd1aeff51203c7781672fd59d13e8bb1a9149b5e1a6e7106d6dbfa8f152824",
+      "bytes": 70367
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "a6c66b23a451e8b9f5cad5bc36d1509eb721b2a0c6ba75df519d261c6cfc91ca",
-      "bytes": 757033
+      "sha256": "0788cc4036be875c483ab6d4af30c942b8c9a557ae8ec0d0baf28de4f249e952",
+      "bytes": 773855
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "c043e7b67b18b9d222e7713f15cb46e9decf46d16bf64ac8e6692ea3e28d98d9",
-      "bytes": 68932
+      "sha256": "587762f9528ad43afeb01f5ecf85645907e9424c3517ba4b70c2f59d95b63dad",
+      "bytes": 69159
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9290,8 +9290,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "7aa5e1328a852df6dd67f03b0f119b59b9f3efbc83143d922ec0c04375b0a864",
-      "bytes": 106790
+      "sha256": "ea8355657c96ca19292d96eb8161f48363728e71ef8e382a4fd0abe7f2c9b4be",
+      "bytes": 107709
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9807,6 +9807,11 @@
       "path": "port/tools/setup_mesa_runtime.ps1",
       "sha256": "a300760e2c4b7e6af36a0b172037475e3ddd21c2b5ac7b96e4241519ca2a26e9",
       "bytes": 3460
+    },
+    {
+      "path": "port/tools/shell_host.py",
+      "sha256": "9ba6557b1eecbf93b74934ad9b5f2f06a8b069c39e1322d9dfb19b7c0279fb70",
+      "bytes": 3359
     },
     {
       "path": "port/tools/signpost_host.py",

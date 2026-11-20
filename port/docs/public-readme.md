@@ -246,8 +246,35 @@ Audio listening accuracy and complete gameplay remain unverified.
   A longer replay climbs the second pole, lands on the walkway, and
   collects the Hot-Foot-It into the Volcano Star. The original Save &
   Continue screen writes the Star to an isolated save and returns
-  control in the castle. A knockback-free Bully passage, repeat credit
-  checks, and the other volcano Star still need verification.
+  control in the castle. A fresh launch restores the earned Star and
+  the total of 23. Luigi enters through the original painting and
+  volcano entrance, collects the same Star again, and uses Save &
+  Continue. The total stays at 23 and both isolated save files remain
+  byte-identical. A separate replay on the route to the other volcano
+  Star verifies Luigi landing on the second moving lift from the
+  first, riding it, and jumping to the original pole. Luigi climbs
+  and jumps off the first pole, lands on the ledge at the base of the
+  taller pole, and regains normal control. A longer replay climbs
+  the taller pole and jumps onto the shelf above it. Luigi clears
+  the last two gaps, collects Inside the Volcano during the second
+  jump, and lands on the Star shelf. Save & Continue writes the
+  distinct Star to the isolated file and returns control in the
+  castle. A fresh launch restores Inside the Volcano and 23 Stars.
+  Luigi collects it again and saves with the same total and
+  byte-identical isolated save files. A knockback-free passage by
+  the interior Bully still needs verification.
+  The original course menu opens Flaming Silver Stars from an isolated
+  save prepared with the first six course Stars. All five Silver Stars,
+  the reward and its camera, and the shell block spawn at their original
+  placements. The same build's Mission 1 replay has none of those
+  mission-specific placements. Luigi hits the item block from
+  underneath, the original green shell appears, and contact puts him
+  in the native riding state. The muted replay rides across the lava at
+  full health before eventually taking damage on the unattended route.
+  A controlled replay steers the shell through open lava and hops
+  onto the eastern Silver Star. The mission counter advances to one,
+  and Luigi remains mounted. The other four pickups, final award,
+  and a continuous unlock playthrough remain unverified.
   The native lava surface effect produces bubbling particles in the
   exterior and inside the volcano.
   The two original lava-bubble fountains in the volcano interior each

@@ -503,6 +503,8 @@ static PcNativeActorProfile pc_oneup_logo_profile = {
     (void *)&daObj1UpLogo_c_classInit,331,333,0x4800000,0,0xa000,0,0
 };
 extern "C" void *daObjHatenaBlock_c_classInit_ITEM_BLOCK();
+extern "C" void *daShl_c_classInit();
+extern "C" void pc_init_shell_resources();
 extern "C" void *daObjHatenaBlock_c_classInit_HATENA_BLOCK();
 extern "C" unsigned char g_profile_POWER_UP_ITEM[];
 extern "C" unsigned char g_profile_HATENA_SWITCH[];
@@ -517,6 +519,9 @@ static PcNativeActorProfile pc_question_block_profile = {
 // Original ov102 ITEM_BLOCK descriptor; only its constructor is native.
 static PcNativeActorProfile pc_item_block_profile = {
     (void *)&daObjHatenaBlock_c_classInit_ITEM_BLOCK,21,39,2,0x60000,0x100000,0x1000000,0x1000000
+};
+static PcNativeActorProfile pc_shell_profile = {
+    (void *)&daShl_c_classInit,285,151,2,0x64000,0x64000,0x1000000,0x640000
 };
 static_assert(sizeof(PcNativeActorProfile) == 0x1c, "native actor descriptor");
 extern "C" void *daRNk_c_classInit(), *daRFlag_c_classInit();
@@ -919,6 +924,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[229] = &pc_rabbit_key_profile;
     pc_rabbit_init_resources();
     pc_init_number_resources();
+    pc_init_shell_resources();
     pc_buddy_init_resources();pc_shutter_init_resources();
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
@@ -938,6 +944,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[17] = &pc_big_block_profile;
     data_020a4bb8_storage[19] = &pc_switch_block_profile;
     data_020a4bb8_storage[21] = &pc_item_block_profile;
+    data_020a4bb8_storage[285] = &pc_shell_profile;
     data_020a4bb8_storage[20] = &pc_question_block_profile;
     data_020a4bb8_storage[26] = g_profile_HATENA_SWITCH;
     data_020a4bb8_storage[37] = &pc_castle_light_profile;

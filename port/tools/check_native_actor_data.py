@@ -780,6 +780,7 @@ def main():
             ('pc_mri_beam_profile','daEyBm_c_classInit',71,0x02122dc4),
             ('pc_signpost_profile','daObjTatefuda_c_classInit',2,0x02109ad4),
             ('pc_crate_profile','daObjBlockS_c_classInit',98,0x0213c510),
+            ('pc_shell_profile','daShl_c_classInit',102,0x0214e62c),
             ('g_profile_WANWAN_SHUTTER', 'daObjWanwanShutter_c_classInit', 14, 0x0211488c),
             ('g_profile_SBIRD', 'daSBird_c_classInit', 9, 0x02113934),
             ('g_profile_KINOPIO', 'daKinopio_c_classInit', 85, 0x0212fe6c),
@@ -792,6 +793,16 @@ def main():
         if native[4:] != rom[guest - base + 4:guest - base + 28]:
             raise ValueError(f'{name}: priority/flags/ranges differ from the local ROM')
     print('PASS: original KAIDAN65 native factory and full profile descriptor match overlay 63')
+    shell_handles = struct.unpack('<II', pe_bytes(args.exe, named('data_ov102_0214d70c'), 8))
+    if shell_handles != tuple(named(name) for name in ('data_ov002_0210da18', 'data_ov002_0210da20')):
+        raise ValueError('Native SHELL does not use the two original shared model handles')
+    shell_states = ('data_ov102_0214ea48', 'data_ov102_0214ea58',
+                    'data_ov102_0214ea68', 'data_ov102_0214ea78')
+    shell_callbacks = [callback for name in shell_states
+                       for callback in struct.unpack('<II', pe_bytes(args.exe, named(name), 8))]
+    if len(set(shell_callbacks)) != 8 or any(not address for address in shell_callbacks):
+        raise ValueError('Native SHELL does not have eight distinct typed state callbacks')
+    print('PASS: SHELL native profile, original shared model handles, and four state pairs')
     switch_base, switch_rom = overlay(2)
     switch_surface = 0x0210d6f4 - switch_base
     if struct.unpack_from('<4sHH', switch_rom, switch_surface) != (b'CLPS', 8, 1):

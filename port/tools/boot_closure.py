@@ -67,6 +67,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjBC_Switch_c_classInit",
                  "daSCoin_c_classInit", "daObjNumber_c_classInit", "daObjPushblock_c_classInit",
                  "daObjHatenaBlock_c_classInit_ITEM_BLOCK",
+                 "daShl_c_classInit",
                  "daObjHatenaBlock_c_classInit_HATENA_BLOCK",
                  "daObjPowerUpItem_c_classInit",
                  "daFeather_c_classInit",
@@ -533,6 +534,10 @@ def main() -> int:
                 if path.name == 'daObjHatenaBlock_c.cpp':
                     import item_block_host
                     transformed=item_block_host.transform(transformed)
+                    rewrites+=1
+                if path.name == 'd_a_shl.cpp':
+                    import shell_host
+                    transformed=shell_host.transform(root, transformed)
                     rewrites+=1
                 if path.name == 'dBgActor_c.cpp':
                     import item_block_host
