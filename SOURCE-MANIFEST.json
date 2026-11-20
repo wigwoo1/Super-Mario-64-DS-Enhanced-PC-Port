@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "ad2441df65d3a44eb0379b8720ab3391160083e408553fd11774d91a3ea6d227",
-      "bytes": 256058
+      "sha256": "61644561728b1a70dc87a62ba596ecc5452de6e3f01b9e33603ae0a7474b79ea",
+      "bytes": 256107
     },
     {
       "path": "port/build-support/README.md",
@@ -7505,8 +7505,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "5d9e6dfe968b0de139c7c37c83fd8d3614fd8925a05753b0a2fc8691e8e801f3",
-      "bytes": 28722
+      "sha256": "0d860d7a28044e7a041ca4d0f92c6cddac51e64faa525072719a1022f3820eaf",
+      "bytes": 29911
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "d8cd1aeff51203c7781672fd59d13e8bb1a9149b5e1a6e7106d6dbfa8f152824",
-      "bytes": 70367
+      "sha256": "b1827111a44d4d8754cbd332d1d0129f766077a708584a886bf1cb0cee40fda8",
+      "bytes": 70623
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "20c875c641402adc49744e30c4f4b6c35e705d3b1abbf6735d1b386541582a09",
-      "bytes": 787661
+      "sha256": "2cf7491a538b244e8104cde976afd334a399fa78b170b52ed2aad242a05d6220",
+      "bytes": 798700
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "587762f9528ad43afeb01f5ecf85645907e9424c3517ba4b70c2f59d95b63dad",
-      "bytes": 69159
+      "sha256": "00f38f436032d086e55030d003e2243a9cf7e52859fc16ce404507bfc03dd3f4",
+      "bytes": 69409
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9290,8 +9290,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "ea8355657c96ca19292d96eb8161f48363728e71ef8e382a4fd0abe7f2c9b4be",
-      "bytes": 107709
+      "sha256": "2b640ce7e9468856781d33092d0e664e2d49c239e3baaf3b3ed7fe2b16cf8e3f",
+      "bytes": 107800
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9510,8 +9510,8 @@
     },
     {
       "path": "port/tools/fall_block_host.py",
-      "sha256": "2d31d37585762e1c507f0273ea8a86432fa13885a39c4eae3bece54c6873e3ec",
-      "bytes": 7343
+      "sha256": "6980fa0517a0a34660844919c2d9fd441535bcbb6e7c00ba10ff6fe34aaaf49e",
+      "bytes": 8819
     },
     {
       "path": "port/tools/feather_host.py",
@@ -9640,8 +9640,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "6e58bfe91f618e9c0fedab85f1bfee49c2f99145d7c9360596856c9e9f34aefd",
-      "bytes": 31879
+      "sha256": "eaa4512848b9adfb73be687c9a6d4958968e324d33e1e6537f957d0da6ca69b1",
+      "bytes": 31917
     },
     {
       "path": "port/tools/linkage.py",

@@ -346,8 +346,9 @@ def main() -> int:
         'data_ov002_020ff0a0', 'data_ov002_020ff0ac',
         'data_ov002_020ff0b8', 'data_ov002_020ff0c4',
         'data_ov002_020ff090')})
-    # The Goomboss path lift uses the collision surface shared by ov064 scenery.
+    # Native scenery surfaces shared through ov064.
     external_names['_data_ov064_0211ba0c'] = 'data_ov064_0211ba0c'
+    external_names['_data_ov064_0211ba8c'] = 'data_ov064_0211ba8c'
     external_names['_data_ov064_0211bb6c'] = 'data_ov064_0211bb6c'
     from lava_puzzle_host import data_requests as lava_puzzle_data_requests
     external_names.update({'_' + name: name for name in lava_puzzle_data_requests(root)})

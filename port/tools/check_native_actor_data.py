@@ -734,6 +734,7 @@ def main():
             ('pc_arrow_left_profile','daObjYajirusi_c_classInit_YAJIRUSI_L',98,0x0213c398),
             ('pc_arrow_right_profile','daObjYajirusi_c_classInit_YAJIRUSI_R',98,0x0213c3b4),
             ('pc_th_fall_block_profile','daObjTh_Fall_Block_c_classInit',63,0x0211eb34),
+            ('pc_lava_fall_block_profile','daObjFl_Fall_Block_c_classInit',22,0x021142a0),
             ('pc_firesea_fall_block_profile','daObjKm2_Fall_Block_c_classInit',45,0x021130d0),
             ('pc_firesea_arena_profile','daKpa2Bg_c_classInit',60,0x0211a88c),
             ('pc_sky_arena_profile','daKpa3Bg_c_classInit',60,0x0211a964),

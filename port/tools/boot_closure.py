@@ -76,7 +76,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daSetSE_c_classInit",
                  "daObjHeart_c_classInit",
                  "daObjYajirusi_c_classInit_YAJIRUSI_L", "daObjYajirusi_c_classInit_YAJIRUSI_R",
-                 "daObjTh_Fall_Block_c_classInit",
+                 "daObjTh_Fall_Block_c_classInit", "daObjFl_Fall_Block_c_classInit",
                  "daObjKm2_Fall_Block_c_classInit", "daKpa2Bg_c_classInit", "daKpa3Bg_c_classInit",
                  "daTrsTrap_c_classInit_MERRYGOROUND",
                  "daTrsTrap_c_classInit_TERESAPIT",
@@ -585,6 +585,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'd_a_obj_km2_fall_block.cpp':
                     import fall_block_host
                     transformed=fall_block_host.transform_firesea(root,transformed)
+                    rewrites+=1
+                if path.name == 'daObjFl_Fall_Block_c.cpp':
+                    import fall_block_host
+                    transformed=fall_block_host.transform_lava(root,transformed)
                     rewrites+=1
                 if path.name == 'd_a_trs_trap.cpp':
                     import merry_go_round_host

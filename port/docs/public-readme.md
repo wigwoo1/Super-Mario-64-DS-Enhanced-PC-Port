@@ -326,6 +326,23 @@ Audio listening accuracy and complete gameplay remain unverified.
   The November 20 development replay also completes the fight and saves
   with 23 Stars and unchanged course Star flags. Its test pilot reacts to
   a charging Bully even when a stunned Bully is closer to Luigi.
+  An earned save from Mission 1 unlocks Bully the Bullies in the original
+  mission menu. Luigi defeats all three small Bullies and Big Bully,
+  collects the Mission 2 Star, and uses Save & Continue. The isolated
+  campaign save advances from 23 to 24 Stars and records both missions.
+  A separate Boil the Big Bully replay enters Mission 1 through the
+  original painting, rides the moving mesh lift across the lava, and
+  jumps onto the solo Big Bully's arena. All nine original falling
+  blocks on the way to the reward platform initialize and remain hidden
+  and non-solid before the reward. Luigi defeats the solo Big Bully,
+  and his Power Star appears at the original reward platform. All nine
+  blocks render after the reveal. Luigi triggers the falling blocks,
+  jumps across three tiers and reaches the stone reward platform. He
+  collects the Power Star, uses the game's Save & Continue menu and
+  regains control in the castle. The isolated save records the new Star.
+  A fresh launch restores the recorded Star. Luigi repeats the boss,
+  bridge and collection sequence through the original menu. Save &
+  Continue keeps the total at 23 and both isolated saves byte-identical.
   Selected Luigi replays verify Lethal Lava Land puzzle tile contact, all
   14 bonus coins spawning, and a route that collects all eight red coins.
   Luigi collects the revealed Power Star, saves, and reloads with the new

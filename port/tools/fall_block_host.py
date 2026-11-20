@@ -1,8 +1,42 @@
-"""Native startup and read-only probes for the original TH_DOWN_B platform."""
+"""Native startup and read-only probes for original falling blocks."""
 import re
 import struct
 
 from battlefield_platform_host import lazy_handles
+
+
+def transform_lava(root, text):
+    config = (root / 'config/arm9/overlays/ov022/delinks.txt').read_text()
+    base = int(re.search(r'\.text\s+start:0x([\da-f]+)', config)[1], 16)
+    raw = (root / 'extracted/overlays/overlay_0022.bin').read_bytes()
+    assert struct.unpack_from('<3I', raw, 0x0211427c-base) == (0x02114648, 0x02114640, 0x0211ba8c)
+    assert struct.unpack_from('<IHHIiiii', raw, 0x021142a0-base) == (
+        0x0211245c, 83, 291, 2, 0x60000, 0x150000, 0x1000000, 0)
+    text = lazy_handles(text, ('FallBlockModelFile', 'FallBlockCollisionFilePtr'))
+    anchor = '// @symbol daObjFl_Fall_Block_c_classInit'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, 'static void pc_lava_fall_init_files();\n\n' + anchor, 1)
+    anchor = '    return daObjFallBlock_c_InitResources(this, &data_ov022_0211427c);'
+    assert text.count(anchor) == 1
+    text = text.replace(anchor, '    pc_lava_fall_init_files();\n' + anchor, 1)
+    return text + '''
+extern "C" unsigned char data_ov064_0211ba8c[];
+extern "C" {
+ResourceDescriptor data_ov022_0211427c{
+    &data_ov022_02114648, &data_ov022_02114640,
+    reinterpret_cast<CLPS_Block *>(data_ov064_0211ba8c)
+};
+}
+static void pc_lava_fall_init_files() {
+    static const bool ready = [] {
+        data_ov022_02114648.Construct(1529);
+        data_ov022_02114640.Construct(1530);
+        return true;
+    }();
+    (void)ready;
+}
+static_assert(sizeof(daObjFl_Fall_Block_c)==0x34c,"native FL_KUZURE allocation");
+'''
 
 
 def transform_firesea(root, text):

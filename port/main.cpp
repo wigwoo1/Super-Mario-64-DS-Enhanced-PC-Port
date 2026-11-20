@@ -3119,11 +3119,88 @@ static bool replay_dorrie_cap(Player *player, uint64_t tick) {
     return true;
 }
 
-// Drive the existing encounter through ordinary controller input for QA.
+static bool replay_direct_bully_arena_reached = false;
+
+static bool replay_direct_bully_reward(Player *player)
+{
+    if (!std::getenv("SM64DS_PC_TEST_DIRECT_BULLY_REWARD"))
+        return false;
+    const daStar_c *reward = nullptr;
+    for (auto *actor = dActor_c::FindWithActorID(178, nullptr); actor;
+         actor = dActor_c::FindWithActorID(178, actor)) {
+        const auto *star = static_cast<const daStar_c *>(actor);
+        if (star->aliveState == 1 && star->mStarID == 1 && star->mKind == daStar_c::KIND_4 &&
+            star->mState == daStar_c::STATE_IDLE && star->mPosZ < -6100 * 4096) {
+            reward = star;
+            break;
+        }
+    }
+    if (!reward)
+        return false;
+
+    static bool aligned = false;
+    static uint64_t jumps[3]{}, reward_jump = 0;
+    const auto tick = ntr::rt_frame();
+    const double x = player->mPosX / 4096.0, z = player->mPosZ / 4096.0;
+    const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const auto *floor = grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+    const auto *owner = floor && floor->colliderIdx < 24 ? floor->owner : nullptr;
+    const bool on_bridge = owner && owner->actorID == 83;
+    if (!aligned && grounded && std::abs(x) < 60 && std::abs(z + 4550) < 85) {
+        aligned = true;
+        std::fprintf(stderr, "[native direct Bully reward] bridge approach tick=%llu star=%u\n",
+                     static_cast<unsigned long long>(tick), reward->uniqueID);
+    }
+    // Each set of three original blocks raises the walking surface by 150.
+    // Start each jump while the player still has support from the lower row.
+    constexpr int heights[] = {300, 450, 600};
+    constexpr int takeoffs[] = {-5200, -5520, -5910};
+    constexpr int landings[] = {-5460, -5815, -6300};
+    const bool walking = !std::strcmp(pc_player_state_name(player), "St_Walk_Main");
+    double target_z = aligned ? reward->mPosZ / 4096.0 : -4550.0;
+    uint16_t buttons = 0;
+    for (unsigned step = 0; step < 3; ++step) {
+        if (aligned && on_bridge && !jumps[step] && z <= takeoffs[step] &&
+            std::abs(player->mPosY / 4096 - heights[step]) <= 30 &&
+            walking) {
+            jumps[step] = tick;
+            std::fprintf(stderr, "[native direct Bully reward] ramp jump=%u tick=%llu block=%u z=%.1f\n",
+                         step + 1, static_cast<unsigned long long>(tick), owner->uniqueID, z);
+        }
+        if (jumps[step] && tick - jumps[step] < 30)
+            buttons = 2;
+        // Brake into the middle of each landing. Continuing at full speed
+        // reaches the following wall before the landing animation ends.
+        if (jumps[step] && tick - jumps[step] < 75 && !grounded)
+            target_z = landings[step];
+    }
+    if (aligned && grounded && !owner && walking && !reward_jump &&
+        player->mPosY >= 745 * 4096 && z <= -6510) {
+        reward_jump = tick;
+        std::fprintf(stderr, "[native direct Bully reward] Star jump tick=%llu z=%.1f\n",
+                     static_cast<unsigned long long>(tick), z);
+    }
+    if (reward_jump && tick - reward_jump < 32)
+        buttons = 2;
+    const double distance = std::hypot(x, target_z - z);
+    const double magnitude = distance < 35 ? 0 : std::clamp(distance * 90, 11000.0, 28000.0);
+    constexpr double turn = 6.283185307179586 / 65536.0;
+    const double heading = std::atan2(-x, target_z - z) - GetAngleToCamera(0) * turn;
+    ntr::input_test_controls(true, buttons, static_cast<int16_t>(std::sin(heading) * magnitude),
+                             static_cast<int16_t>(-std::cos(heading) * magnitude));
+    return true;
+}
+
+// Drive the existing encounters through ordinary controller input for QA.
 static bool replay_big_bully_combat() {
-    const bool fight_small_bullies = std::getenv("SM64DS_PC_TEST_SMALL_BULLY_COMBAT") != nullptr;
-    if (data_0209f2f8 != 14 || replay_course_route_waypoint < (fight_small_bullies ? 193u : 197u) ||
-        !std::getenv("SM64DS_PC_TEST_BIG_BULLY_COMBAT"))
+    const bool direct = std::getenv("SM64DS_PC_TEST_DIRECT_BULLY_COMBAT") != nullptr;
+    const bool fight_small_bullies = !direct && std::getenv("SM64DS_PC_TEST_SMALL_BULLY_COMBAT");
+    const bool interior_dodges = fight_small_bullies &&
+        std::getenv("SM64DS_PC_TEST_EARNED_BULLY_MISSION");
+    const bool enabled = direct ? replay_direct_bully_arena_reached :
+        replay_course_route_waypoint >= (fight_small_bullies ? 193u : 197u) &&
+        std::getenv("SM64DS_PC_TEST_BIG_BULLY_COMBAT");
+    if (data_0209f2f8 != 14 || !enabled)
         return false;
     auto *player = static_cast<Player *>(data_0209f394[0]);
     if (!player || player->aliveState != 1 || player->mIsControlDisabled || player->mIsNoControl)
@@ -3142,9 +3219,10 @@ static bool replay_big_bully_combat() {
         for (auto *actor = dActor_c::FindWithActorID(216, nullptr); actor;
              actor = dActor_c::FindWithActorID(216, actor)) {
             auto *candidate = static_cast<daBDonketu_c *>(actor);
-            if (candidate->aliveState == 1 && (fight_small_bullies ?
+            const bool target_boss = direct ? candidate->param1 == 0xff01 : (fight_small_bullies ?
                 candidate->mNumBulliesKilled <= 4 : candidate->mNumBulliesKilled == 4) &&
-                candidate->mPosX > 2500 * 4096 && candidate->mPosZ < -4400 * 4096) {
+                candidate->mPosX > 2500 * 4096 && candidate->mPosZ < -4400 * 4096;
+            if (candidate->aliveState == 1 && target_boss) {
                 boss = candidate;
                 boss_uid = candidate->uniqueID;
                 break;
@@ -3162,7 +3240,7 @@ static bool replay_big_bully_combat() {
         (!std::strcmp(state, "St_Walk_Main") || !std::strcmp(state, "St_Wait_Main") ||
          !std::strcmp(state, "St_Land_Main"));
     constexpr double angle_unit = 6.283185307179586 / 65536.0;
-    constexpr double center_x = 3750, center_z = -5500;
+    const double center_x = direct ? 0 : 3750, center_z = direct ? -4245 : -5500;
     const auto is_charging = [](daOts_c &candidate, int bearing) {
         return candidate.tail().mState == daOts_c::STATE_CHASE &&
             candidate.mHorzSpeed >= 12 * 4096 &&
@@ -3214,6 +3292,14 @@ static bool replay_big_bully_combat() {
             (charge_threat || center_distance > 660 || !facing || distance < (small ? 135 : 200))) {
             const double side = (center_x - x) * std::cos(bearing) - (center_z - z) * std::sin(bearing);
             dodge_heading = bearing + (side >= 0 ? 1.570796326794897 : -1.570796326794897);
+            const double dodge_x = x + 380 * std::sin(dodge_heading);
+            const double dodge_z = z + 380 * std::cos(dodge_heading);
+            if (interior_dodges &&
+                (dodge_x < 3100 || dodge_x > 4530 || dodge_z < -5830 || dodge_z > -5010)) {
+                dodge_heading = std::atan2(center_x - x, center_z - z);
+                std::fprintf(stderr, "[native Big Bully replay] inward dodge tick=%llu\n",
+                             static_cast<unsigned long long>(tick));
+            }
             dodge_until = tick + 34;
             jump_until = tick + 27;
             std::fprintf(stderr, "[native Big Bully replay] dodge tick=%llu enemy=%u distance=%.1f\n",
@@ -3241,14 +3327,31 @@ static bool replay_big_bully_combat() {
             heading = bearing;
             magnitude = distance > 345 ? 24500 : 14000;
             const double enemy_radius = std::hypot(bx - center_x, bz - center_z);
-            if (small && distance > 270 && center_distance > enemy_radius + 100) {
+            if (small && interior_dodges &&
+                (x < 3090 || x > 4570 || z < -5860 || z > -4970)) {
                 heading = std::atan2(center_x - x, center_z - z);
                 magnitude = 25000;
-            } else if (center_distance > 690 && distance > 360) {
+            } else if (small && distance > 270 && center_distance > enemy_radius + 100) {
+                heading = std::atan2(center_x - x, center_z - z);
+                magnitude = 25000;
+            } else if (direct && enemy->tail().mState == daOts_c::STATE_LEDGE_TURN && distance > strike_range) {
+                // Close from the stone side even when the boss straddles two
+                // edges. The usual circular limit cannot reach those corners.
+                const double aim_x = std::clamp(bx * 0.82, -660.0, 660.0);
+                const double aim_z = std::clamp(center_z + (bz - center_z) * 0.82, -4820.0, -3700.0);
+                heading = std::atan2(aim_x - x, aim_z - z);
+                magnitude = 18500;
+            } else if (center_distance > (direct ? 620 : 690) && distance > 360) {
                 heading = std::atan2(center_x - x, center_z - z);
                 magnitude = 25000;
             }
         }
+    } else if (direct) {
+        if (replay_direct_bully_reward(player))
+            return true;
+        const double dx = center_x - x, dz = center_z - z;
+        heading = std::atan2(dx, dz);
+        magnitude = std::hypot(dx, dz) > 135 ? 14500 : 0;
     } else if (!waiting_for_boss) {
         for (auto *star = dActor_c::FindWithActorID(178, nullptr); star;
              star = dActor_c::FindWithActorID(178, star)) {
@@ -3306,8 +3409,14 @@ static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
     static uint64_t hold_until = 0;
     const auto tick = ntr::rt_frame();
     const bool already_jumped = jumped_waypoint == waypoint;
-    if (already_jumped && tick < hold_until)
-        return 2;
+    if (already_jumped && tick < hold_until) {
+        // The original menu can shift arrival at this platform when a Star
+        // is already recorded. Time the airborne kick from the real takeoff.
+        const bool ledge_kick = arena && last_takeoff == 8 &&
+            std::getenv("SM64DS_PC_TEST_DIRECT_BULLY_LIFT") &&
+            tick >= hold_until - 40 && tick < hold_until - 34;
+        return 2 | (ledge_kick ? 1 : 0);
+    }
     if (already_jumped && (!arena || last_takeoff == 9))
         return 0;
 
@@ -3334,6 +3443,100 @@ static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
                  static_cast<unsigned long long>(tick), waypoint, takeoff.actor,
                  int(player->mPosX), int(player->mPosY), int(player->mPosZ), int(player->mHorzSpeed));
     return 2;
+}
+
+static const dActor_c *find_direct_bully_lift()
+{
+    for (auto *actor = dActor_c::FindWithActorID(69, nullptr); actor;
+         actor = dActor_c::FindWithActorID(69, actor)) {
+        if (actor->aliveState == 1 && actor->param1 == 0x100 && actor->mPosZ == -4500 * 4096)
+            return actor;
+    }
+    return nullptr;
+}
+
+static void replay_direct_bully_lift(Player *player)
+{
+    enum class Phase { Approach, Board, Ride, Dismount, Done };
+    static Phase phase = Phase::Approach;
+    static uint64_t jump_at = 0, boarded_at = 0, dismount_at = 0;
+    const auto tick = ntr::rt_frame();
+    const double px = player->mPosX / 4096.0, pz = player->mPosZ / 4096.0;
+    const bool grounded = player->mMeshClsn.IsOnGround() && !player->mIsAirborne;
+    const auto *floor = grounded ? static_cast<const dBgPi *>(player->mMeshClsn.GetFloorResult()) : nullptr;
+    const auto *owner = floor && floor->colliderIdx < 24 ? floor->owner : nullptr;
+    const char *state = pc_player_state_name(player);
+    const bool waiting = !std::strcmp(state, "St_Wait_Main");
+    const bool walking = !std::strcmp(state, "St_Walk_Main");
+    const auto *lift = find_direct_bully_lift();
+    const bool on_lift = lift && owner == lift;
+    const double lift_x = lift ? lift->mPosX / 4096.0 : 0.0;
+    const bool early = std::getenv("SM64DS_PC_TEST_DIRECT_BULLY_REPEAT") != nullptr;
+    uint16_t buttons = 0;
+    int16_t sx = 0, sy = 0;
+    auto steer = [&](double x, double z, double upper_magnitude) {
+        const double distance = std::hypot(x - px, z - pz);
+        if (distance < 55) return;
+        constexpr double turn = 6.283185307179586 / 65536.0;
+        const double heading = std::atan2(x - px, z - pz) - GetAngleToCamera(0) * turn;
+        const double magnitude = std::clamp(distance * 95, 10000.0, upper_magnitude);
+        sx = static_cast<int16_t>(std::sin(heading) * magnitude);
+        sy = static_cast<int16_t>(-std::cos(heading) * magnitude);
+    };
+
+    if (phase == Phase::Approach && grounded && !owner && player->mPosY >= 295 * 4096) {
+        // Start the jump while the lift approaches. Waiting at the edge until
+        // the turn lets the small Bullies catch up before takeoff.
+        const double board_x = early ? 2990 : 3200;
+        const double board_z = early ? -4980 : -4930;
+        steer(board_x, board_z, early ? 25500 : 18500);
+        const bool ready = early ? walking : (waiting || walking);
+        if (lift_x >= (early ? 2280 : 2760) &&
+            std::hypot(px - board_x, pz - board_z) < 86 && ready) {
+            phase = Phase::Board;
+            jump_at = tick;
+            std::fprintf(stderr, "[native direct Bully replay] board jump tick=%llu x=%.1f z=%.1f lift_x=%.1f\n",
+                         static_cast<unsigned long long>(tick), px, pz, lift_x);
+        }
+    }
+    if (phase == Phase::Board && lift) {
+        if (on_lift) {
+            phase = Phase::Ride;
+            boarded_at = tick;
+            std::fprintf(stderr, "[native direct Bully replay] boarded tick=%llu uid=%u x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), lift->uniqueID, px, pz);
+        } else if (tick - jump_at < 110) {
+            buttons = tick - jump_at < 38 ? 2 : 0;
+            // Lead the deck toward the eastern turnaround during the rise,
+            // then aim at its live position on descent. Keep the early jump
+            // steerable instead of committing to the kick's fixed heading.
+            const double lead = (std::max)(0.0, (early ? 395.0 : 185.0) - 4.5 * (tick - jump_at));
+            steer((std::min)(lift_x + lead, 3050.0), -4500, 28000);
+        }
+    }
+    if (phase == Phase::Ride && on_lift && lift_x <= 1250 && tick - boarded_at > 80) {
+        // A jump pressed while entering Walk from Wait can be consumed before
+        // the jump check. Build speed on the deck, then send a new press.
+        steer(540, -4600, 28000);
+        if (walking && px <= 1090 && player->mHorzSpeed >= 12 * 4096) {
+            phase = Phase::Dismount;
+            dismount_at = tick;
+            std::fprintf(stderr, "[native direct Bully replay] west jump tick=%llu x=%.1f z=%.1f lift_x=%.1f\n",
+                         static_cast<unsigned long long>(tick), px, pz, lift_x);
+        }
+    }
+    if (phase == Phase::Dismount) {
+        if (grounded && !owner && px < 725 && player->mPosY >= 295 * 4096) {
+            phase = Phase::Done;
+            replay_direct_bully_arena_reached = true;
+            std::fprintf(stderr, "[native direct Bully replay] central arena landing tick=%llu x=%.1f z=%.1f\n",
+                         static_cast<unsigned long long>(tick), px, pz);
+        } else if (tick - dismount_at < 100) {
+            buttons = tick - dismount_at < 42 ? 2 : 0;
+            steer(540, -4600, 28000);
+        }
+    }
+    ntr::input_test_controls(true, buttons, sx, sy);
 }
 
 static void replay_volcano_slab_contact(Player *player)
@@ -4173,6 +4376,11 @@ static bool replay_course_route(const char *route_override=nullptr) {
         (z==-2025 || z==-3650);
     if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
+    }
+    if (level == 14 && x == 2800 && y == 0 && z == -4500 &&
+        std::getenv("SM64DS_PC_TEST_DIRECT_BULLY_LIFT")) {
+        replay_direct_bully_lift(player);
+        return true;
     }
     if (level == 14 && x == 370 && y == 150 && z == 1250 &&
         std::getenv("SM64DS_PC_TEST_LAVA_RING_BOARD_WAIT")) {

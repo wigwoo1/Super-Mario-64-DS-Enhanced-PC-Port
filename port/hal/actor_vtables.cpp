@@ -316,6 +316,7 @@ extern "C" void *daObjC1Hikari_c_classInit();
 extern "C" void *daSetSE_c_classInit();
 extern "C" void *daObjHeart_c_classInit();
 extern "C" void *daObjTh_Fall_Block_c_classInit();
+extern "C" void *daObjFl_Fall_Block_c_classInit();
 extern "C" void *daObjKm2_Fall_Block_c_classInit();
 extern "C" void *daTrsTrap_c_classInit_KAIDAN();
 extern "C" void *daTrs_c_classInit_TERESA();
@@ -462,6 +463,9 @@ static PcNativeActorProfile pc_merry_go_round_profile = {
 };
 static PcNativeActorProfile pc_th_fall_block_profile = {
     (void *)&daObjTh_Fall_Block_c_classInit,66,209,2,0,0x80000,0x1000000,0
+};
+static PcNativeActorProfile pc_lava_fall_block_profile = {
+    (void *)&daObjFl_Fall_Block_c_classInit,83,291,2,0x60000,0x150000,0x1000000,0
 };
 static PcNativeActorProfile pc_firesea_fall_block_profile = {
     (void *)&daObjKm2_Fall_Block_c_classInit,139,210,2,0x60000,0x150000,0x1000000,0
@@ -953,6 +957,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[299] = &pc_arrow_left_profile;
     data_020a4bb8_storage[300] = &pc_arrow_right_profile;
     data_020a4bb8_storage[66] = &pc_th_fall_block_profile;
+    data_020a4bb8_storage[83] = &pc_lava_fall_block_profile;
     data_020a4bb8_storage[139] = &pc_firesea_fall_block_profile;
     data_020a4bb8_storage[65] = &pc_kaidan_profile;
     data_020a4bb8_storage[209] = &pc_boo_profile;
