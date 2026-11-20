@@ -212,13 +212,25 @@ Audio listening accuracy and complete gameplay remain unverified.
   with working collision for repeat crossings. These results use isolated
   test saves and selected courses; other course and mountain warp points were
   not tested.
+  In a selected Luigi replay the rolling log spawns and renders at its
+  original location. The volcano ring launches visible flame particles and
+  the flame actors retire during play. Boarding the log and player damage
+  from the flames still need gameplay checks.
   Selected Luigi replays verify Lethal Lava Land puzzle tile contact, all
   14 bonus coins spawning, and a route that collects all eight red coins.
   Luigi collects the revealed Power Star, saves, and reloads with the new
   credit in an isolated file. A second Luigi pickup leaves the total and
-  saved credit unchanged. A separate Mario fixture passes the eight-coin
-  route, Star pickup, Save & Continue, and a fresh reload. Yoshi and Wario
-  remain open for this puzzle.
+  saved credit unchanged. Separate Mario, Yoshi, and Wario fixtures also pass
+  the eight-coin route, Star pickup, Save & Continue, and a fresh reload. The
+  Yoshi and Wario replays time the jump using the moving tiles' live state.
+  With Gameplay's Stay After Star setting enabled, a local Luigi replay
+  also verifies the in-course save prompt, continued movement in the
+  course, and retained Star credit after a fresh launch. A separate replay
+  chooses Not now, continues in the course with the new Star for that session,
+  and reloads the prior total from an unchanged save.
+  The original gold choice cursor remains visible over the PC dialogue card.
+  The native save prompt's cursor follows directional input in tested D3D11
+  and Mesa llvmpipe OpenGL software sessions.
   A selected open-ground camera test confirms that stopping Yoshi no longer
   pulls the original camera closer. Free-camera movement has software replay
   checks; physical Nintendo Switch Pro behavior remains unverified.

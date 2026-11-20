@@ -33,7 +33,9 @@ void ppu_scanout(Engine eng, Framebuffer &fb, bool transparent_backdrop = false,
 // whatever fb already holds. Plain and affine sprites, 16- and 256-color
 // tiles, 1D and 2D mapping, window masks and 2D priorities. Bitmap OBJs, mosaic
 // and blending are not implemented. Transparent color-0 texels leave fb untouched.
-void ppu_scanout_obj(Engine eng, Framebuffer &fb, uint8_t *visible_bg3 = nullptr);
+// If supplied, visible_objects receives just the sprite pixels that win scan-out.
+void ppu_scanout_obj(Engine eng, Framebuffer &fb, uint8_t *visible_bg3 = nullptr,
+                     Framebuffer *visible_objects = nullptr);
 
 // Snapshot just the atlas identity and affine registers so a paused preview
 // can reuse the gameplay view after the game has repurposed BG3.

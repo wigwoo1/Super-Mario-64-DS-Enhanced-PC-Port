@@ -4235,8 +4235,8 @@
     },
     {
       "path": "include/daObj_volcanoCannon_c.h",
-      "sha256": "3e3e8755636dad2d30368c7d3a056eda803b952ef3ba6faeca7fa377f47740d6",
-      "bytes": 2105
+      "sha256": "4c107aca5d4f6f57672ebfd82005186b7051dbfd42a4d5a1ab31ee99d06f9fc3",
+      "bytes": 2210
     },
     {
       "path": "include/daObjAbuku_c.h",
@@ -4745,8 +4745,8 @@
     },
     {
       "path": "include/daObjMaruta_c.h",
-      "sha256": "2050bbf18425c3bd05b5ad34506fd3b41a9e624e55220423f7c3af875e264337",
-      "bytes": 5682
+      "sha256": "a47b0c443dd793f0092bfa4c2a22432c21b206a6f3169619b2f01793bb09a7d4",
+      "bytes": 5751
     },
     {
       "path": "include/daObjMc_Metalnet_c.h",
@@ -6255,8 +6255,8 @@
     },
     {
       "path": "port/build-support/pc_link_data.json",
-      "sha256": "059a5b59b528bc82104721e48737783226b2df1d5e6f4effd7cbe26b6718fff0",
-      "bytes": 255715
+      "sha256": "eef525d5f156430dab4dd57bb0163164ad45d6afbe98c7d291cb02c7836026d5",
+      "bytes": 255813
     },
     {
       "path": "port/build-support/README.md",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "98964fc94fc57d03438b880ebebac3ab57f11094233af50b6015f8278a460014",
-      "bytes": 91851
+      "sha256": "db182f4ba5f558dbb1a1a7e92f5d102dd99307fe8d41bdef564089aebe4ca25f",
+      "bytes": 92082
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7505,8 +7505,8 @@
     },
     {
       "path": "port/docs/public-readme.md",
-      "sha256": "7494ba500f1e9afa93777dbae84dc700f3ba6285ecbc9a7fa5cb183683507673",
-      "bytes": 20348
+      "sha256": "50857b30d3cd90475263b37381e6fae0d4dde4dd7b6e4dbaaa6d3230f5b1ea13",
+      "bytes": 21215
     },
     {
       "path": "port/docs/rec-room-pause-music-2026-10-22.txt",
@@ -7660,8 +7660,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "866a1ff223840d0b44df4b5d918bd025771704b1ee14851ce68d1dc56f55c700",
-      "bytes": 68637
+      "sha256": "96e6020c9175d9299b69cd2dbd93acca6fd007bf52fc53d04982b0e399fe6402",
+      "bytes": 69132
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -7760,8 +7760,8 @@
     },
     {
       "path": "port/hal/dialogue_runtime.cpp",
-      "sha256": "230647f29711aefa7a5f4dd01d4b31e32650c0a4f294daa808a63009d40d501d",
-      "bytes": 4747
+      "sha256": "9ce9c185ca9d117dd0747b659a6c67abd95478a66a4a15c00d7830a981019145",
+      "bytes": 4838
     },
     {
       "path": "port/hal/distant_actor_shadows.cpp",
@@ -8130,8 +8130,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "8fa9c45883e4efaac9d5ad9ffa4cade88adb6b4e7a92727d621ee94734bd3085",
-      "bytes": 710524
+      "sha256": "5cc644deea3fb3b91ea40172eb95461094708c932c7e8ee8c7d6859fdf2f2336",
+      "bytes": 713008
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8280,8 +8280,8 @@
     },
     {
       "path": "port/ntr/include/ntr/ppu.h",
-      "sha256": "df96230cd41e786323b2258d74ab820afc9e41939c50690a9941a5d716dd29e5",
-      "bytes": 2464
+      "sha256": "36b17be10dc3eff5518fdbdebb5ab2503e4a74115c2bbd4c5fc073077d360bc9",
+      "bytes": 2608
     },
     {
       "path": "port/ntr/include/ntr/remastered_music.h",
@@ -8320,8 +8320,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "7d275356deb78361abfb8201ad1a1d40c0256c91a2964acdc307274fb85c4a49",
-      "bytes": 5644
+      "sha256": "ab3d10d4f45f125cc1da2127fe5170abea41a475ebcae77b67f64149917464e9",
+      "bytes": 5667
     },
     {
       "path": "port/ntr/input.cpp",
@@ -8345,8 +8345,8 @@
     },
     {
       "path": "port/ntr/ppu.cpp",
-      "sha256": "e2da2953f8a63fe61d47935ebd9b4328c5bfc4564d088ad4001bd98dfbc8f1fd",
-      "bytes": 36728
+      "sha256": "8e1f9e1b029e66943d5d8852aa01714621721199176e9b4040ad859325f1972d",
+      "bytes": 36941
     },
     {
       "path": "port/ntr/README.md",
@@ -8410,8 +8410,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "15a216339f52b9554985c1d94d6d52a50d7272d15e5131e85a273b6bd5585570",
-      "bytes": 79690
+      "sha256": "bac83b611b388c3d3090ad19875f83407911579cd9c090f9b7789bf1c2dad6d0",
+      "bytes": 80400
     },
     {
       "path": "port/README.md",
@@ -9130,8 +9130,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "7d442b593ff29c0a56761f8203581c0fed7bedd6b0704d4ca21f7c7d682f7b1d",
-      "bytes": 67236
+      "sha256": "f05a167d0d58302a33bc382e230fa6726c1eed0ed3cbf5acacdc69357010676a",
+      "bytes": 67659
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9290,8 +9290,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "9ae2ac1d7a5643e3481c6acf4899106a614f02299f928a5977610c2cea650326",
-      "bytes": 99920
+      "sha256": "51a9aa463e686901177e38e5195553544d8f94585661e50fa1e939f9f5613415",
+      "bytes": 101908
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9619,6 +9619,11 @@
       "bytes": 6271
     },
     {
+      "path": "port/tools/lava_volcano_host.py",
+      "sha256": "5b8b889bd96b35a4d85b51db4e23fd4452116c6421b1487d3a5b201031b0aeea",
+      "bytes": 9062
+    },
+    {
       "path": "port/tools/level_overlay_data.py",
       "sha256": "736a8351b8a2a22fcc17044b209d7f635d9e4882dd9050868fd9234033794ad5",
       "bytes": 3251
@@ -9635,8 +9640,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "b45086aafda4301204adf4000924a054801bb86da0dd059cdd666250e8047f9d",
-      "bytes": 31579
+      "sha256": "4d1ba8f2151e27328622d5b62b051e73f627873a8332e74b6cd280cc2530160e",
+      "bytes": 31737
     },
     {
       "path": "port/tools/linkage.py",
@@ -9810,8 +9815,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "b7de65f10c6a221636e33e7ef5aa0c756885641d876dcd58023373ecc5522faa",
-      "bytes": 40443
+      "sha256": "ccfaf7646b5b5f276f7e6879ef853d405507a3dd9d14150736a71835e1fb7c01",
+      "bytes": 41099
     },
     {
       "path": "port/tools/skeeter_host.py",

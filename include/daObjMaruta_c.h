@@ -56,7 +56,11 @@ struct daObjMaruta_c : dBgActor_c {
     u8  pad_33f;
     u16 mSoundTimer;        /* 0x340 -- DecIfAbove0_Short */
     u8  mHitByPlayer;       /* 0x342 */
+#ifdef SM64DS_PLATFORM_PC
+    bool mHasMarutaResources;
+#else
     u8  pad_343;
+#endif
 
     /* --- vtable --- */
     /* INLINE ON PURPOSE, for the reason include/dBgActor_c.h gives for its own:

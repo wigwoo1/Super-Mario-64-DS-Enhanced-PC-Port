@@ -37,6 +37,8 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjKm1_Dorifu_c_classInit", "daObjKm3_Dorifu_c_classInit",
                  "daLinelift2_c_classInit_KM2_SUSUMU", "daLinelift2_c_classInit_KM3_LIFT",
                  "daObjKm2_Gura_c_classInit", "daObjFl_Gura_c_classInit", "daObjFl_Ring_c_classInit",
+                 "daObjFlMaruta_c_classInit", "daObj_volcanoCannon_c_classInit",
+                 "_ZN13daObjMaruta_c6RenderEv", "_ZN13daObjMaruta_c15OnHitByMegaCharER6Player",
                  "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA", "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L",
                  "_ZN17daObjFl_Ukiyuka_c13InitResourcesEv",
                  "daObjKm2_Ami_Bou_c_classInit",
@@ -709,6 +711,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daObjFl_Ring_c.cpp':
                     import simple_lift_host
                     transformed=simple_lift_host.transform_lava_ring(root,transformed)
+                    rewrites+=1
+                if path.name in ('d_a_obj_fl_maruta.cpp', 'd_a_obj_maruta.cpp'):
+                    import lava_volcano_host
+                    transformed=lava_volcano_host.transform(root,transformed,path.name)
                     rewrites+=1
                 if path.name == 'd_a_obj_fl_gura.cpp':
                     import simple_lift_host

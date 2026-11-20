@@ -640,9 +640,11 @@ void raster_objects(Engine eng, ObjPlane &out) {
 
 } // namespace
 
-void ppu_scanout_obj(Engine eng,Framebuffer &fb,uint8_t *visible_bg3) {
+void ppu_scanout_obj(Engine eng,Framebuffer &fb,uint8_t *visible_bg3,
+                     Framebuffer *visible_objects) {
     ObjPlane objects;
     raster_objects(eng,objects);
+    if(visible_objects)std::memset(visible_objects,0,sizeof(*visible_objects));
     const EngineMap &em=kEngines[eng];
     const uint32_t control=rd32(em.reg_base);
     const uint8_t backgrounds=last_bg_frame[eng]==&fb ? last_bg_mask[eng] : 0x0f;
@@ -668,6 +670,7 @@ void ppu_scanout_obj(Engine eng,Framebuffer &fb,uint8_t *visible_bg3) {
             }
             if(!covered) {
                 fb.px[y][x]=objects.color[y][x];
+                if(visible_objects)visible_objects->px[y][x]=objects.color[y][x];
                 if(visible_bg3)visible_bg3[y*SCREEN_W+x]=0;
             }
         }

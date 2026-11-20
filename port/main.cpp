@@ -17,6 +17,7 @@
 #include "daBDonketu_c.h"
 #include "daDonketu_c.h"
 #include "daObjFl_Ukiyuka_c.h"
+#include "daObjFl_Puzzle_c.h"
 #include "daKpa_c.h"
 #include "daKpaTail_c.h"
 #include "daKirai_c.h"
@@ -60,6 +61,7 @@
 #include "daObjWanwanShutter_c.h"
 #include "daKinopio_c.h"
 #include "SaveData.h"
+#include "Message.h"
 #include "Timer.h"
 #include "Event.h"
 #include "daObjC0_Switch_c.h"
@@ -129,6 +131,9 @@ static constexpr unsigned player_animation_entries = sizeof(data_ov002_020ff480)
 // expose the global course mapping or message-state observations.
 extern "C" signed char SUBLEVEL_LEVEL_TABLE[];
 extern "C" unsigned char data_0209d660, data_0209d684;
+extern "C" unsigned char data_0209d68c, data_0209d6bc;
+extern "C" short data_0209d6d4;
+extern "C" void func_0201f32c(int message);
 extern "C" int data_0209b490, data_0209b49c;
 // Local extern: verify the historic exported sound ABI through the integer
 // signature used by original door/message callers, rather than its C++ wrapper.
@@ -409,8 +414,26 @@ static bool replay_drain_save_controls() {
 // confirmation. Player control returns only after this screen finishes.
 static bool replay_star_save_controls() {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    if(!automation || std::strcmp(automation,"1"))return false;
+    const char *dialogue_fixture=std::getenv("SM64DS_PC_TEST_SAVE_DIALOGUE");
+    if(dialogue_fixture && !std::strcmp(dialogue_fixture,"1") && data_0209f2f8==1 && !data_0209d660) {
+        // Short native rendering fixture. The runner supplies disposable saves.
+        const auto tick=ntr::rt_frame();
+        if(tick==1700)func_0201f32c(0x187);
+        if(tick==2210)Message::DisplaySaving(0x295);
+    }
+    const char *decline=std::getenv("SM64DS_PC_TEST_DECLINE_STAR_SAVE");
+    if(decline && !std::strcmp(decline,"1") && data_0209d660 && data_0209d6d4==0x187 &&
+       (data_0209d6bc==4 || data_0209d6bc==5) && !data_0209d684) {
+        // Use the original choice cursor, waiting for the actual prompt to accept
+        // input before sending a direction or confirming the highlighted answer.
+        const uint16_t direction=data_0209d6bc==4?0x10:0x80;
+        const uint16_t buttons=data_0209d68c==1?1:direction;
+        ntr::input_test_controls(true,buttons,0,0);
+        return true;
+    }
     const char *enabled=std::getenv("SM64DS_PC_TEST_STAR_SAVE");
-    if(!automation || std::strcmp(automation,"1") || !enabled || std::strcmp(enabled,"1"))return false;
+    if(!enabled || std::strcmp(enabled,"1"))return false;
     static bool started=false,saving=false,done=false;
     const auto tick=ntr::rt_frame();
     auto event=[&](const char *name) {
@@ -4046,6 +4069,27 @@ static bool replay_course_route(const char *route_override=nullptr) {
         (z==-2025 || z==-3650);
     if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
+    }
+    // The puzzle runs before the player reaches it. Start this replay's jump
+    // from the stone apron in the observed safe phase of the retail cycle.
+    if(level==14 && has_y && x==-4760 && y==100 && z==1720 && jump==3 &&
+       std::getenv("SM64DS_PC_TEST_LAVA_PUZZLE_TIMING")) {
+        static bool puzzle_launch_ready=false;
+        if(!puzzle_launch_ready) {
+            for(auto *actor=dActor_c::FindWithActorID(78,nullptr);actor;
+                actor=dActor_c::FindWithActorID(78,actor)) {
+                const auto *tile=static_cast<const daObjFl_Puzzle_c *>(actor);
+                if(tile->aliveState!=1 || tile->mType!=11 || tile->mState!=PIECE_STATE_WAIT ||
+                   tile->mPosX!=-4760*4096 || tile->mPosZ!=1720*4096 ||
+                   tile->mStepIndex!=10 || tile->mStepTimer!=15)continue;
+                puzzle_launch_ready=true;
+                std::fprintf(stderr,"[native lava puzzle replay] launch window tick=%llu tile=%u step=%u timer=%u\n",
+                    static_cast<unsigned long long>(ntr::rt_frame()),tile->uniqueID,
+                    unsigned(tile->mStepIndex),unsigned(tile->mStepTimer));
+                break;
+            }
+            if(!puzzle_launch_ready){ntr::input_test_controls(true,0,0,0);return true;}
+        }
     }
     uint16_t buttons=0;int16_t sx=0,sy=0;
     if(data_0209d660) {

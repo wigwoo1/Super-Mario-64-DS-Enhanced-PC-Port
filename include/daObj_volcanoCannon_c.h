@@ -28,7 +28,13 @@ struct daObj_volcanoCannon_c : dActor_c {
     u8  pad_0d0[0x4];
     dCcAc_c mCylinderClsn;       /* 0x0d4 */
     State *mState;               /* 0x108 */
+#ifdef SM64DS_PLATFORM_PC
+    u32 mSpawnerId;
+    int InitFlight();
+    int UpdateFlight();
+#else
     dActor_c *mSpawner;          /* 0x10c */
+#endif
     u16 mKillTimer;              /* 0x110 */
     u8  pad_112[0x2];
     u32 mParticleID;             /* 0x114 */

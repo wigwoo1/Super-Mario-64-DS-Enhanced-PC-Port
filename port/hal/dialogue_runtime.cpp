@@ -20,7 +20,8 @@ extern "C" void pc_dialogue_observe(){
     // This also lets renderer-only test targets link without game globals.
     // Original Message::AddChar selects its glyph mask using this style byte.
     // Style 1 is black sign/letter text; style 0 is white NPC dialogue.
-    ntr::video_set_dialogue_card_active(data_0209d660!=0,data_0209d6c4==1);
+    const bool choosing=data_0209d6bc>=4 && data_0209d6bc<=6 && data_0209d684==0;
+    ntr::video_set_dialogue_card_active(data_0209d660!=0,data_0209d6c4==1,choosing);
     const char *path=std::getenv("SM64DS_PC_DIALOGUE_CAPTURE");
     if(!path || !*path)return;
     static FILE *file=nullptr;static uint32_t previous[7]={};static bool observed=false;

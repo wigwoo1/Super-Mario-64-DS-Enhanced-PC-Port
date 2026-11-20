@@ -350,6 +350,8 @@ def main() -> int:
     external_names['_data_ov064_0211ba0c'] = 'data_ov064_0211ba0c'
     from lava_puzzle_host import data_requests as lava_puzzle_data_requests
     external_names.update({'_' + name: name for name in lava_puzzle_data_requests(root)})
+    from lava_volcano_host import COLLISION_SURFACE, TRAVEL_LIMIT
+    external_names.update({'_' + name: name for name in (COLLISION_SURFACE, TRAVEL_LIMIT)})
     if manifest_path.is_file():
         try:
             external_names.update(json.loads(manifest_path.read_text(encoding="utf-8")))

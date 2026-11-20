@@ -73,7 +73,7 @@ void video_set_minimap_timer(bool active,unsigned elapsed_hundredths);
 // Peach's 2D letter text follows the widened projection of its 3D panel.
 void video_set_cutscene_letter(bool active);
 // The native game bridge updates this when DS dialogue opens or closes.
-void video_set_dialogue_card_active(bool active, bool dark_text = false);
+void video_set_dialogue_card_active(bool active, bool dark_text = false, bool choosing = false);
 void video_set_course_clear_active(bool active);
 bool video_minimap_visible();
 // Present the original bottom-screen pause/options interface as the main view.

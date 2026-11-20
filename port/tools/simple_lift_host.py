@@ -410,7 +410,16 @@ extern "C" daObjFl_Ring_c_Files data_ov022_02113cc8 = {
                         '    if (!k) return 0;', 1)
     anchor = '            s->mSpawner = this;'
     assert text.count(anchor) == 1
-    return text.replace(anchor, '            if (!s) break;\n' + anchor, 1)
+    text = text.replace(anchor, '            if (!s) break;\n            s->mSpawnerId = uniqueID;', 1)
+    callbacks = '''    func_020393d4(&mMeshCollider, (void *)dBgW::UpdatePosAndAngs);
+    func_020393c4(&mMeshCollider, (void *)func_ov022_02111564);'''
+    assert text.count(callbacks) == 1
+    return text.replace(callbacks, '''    mMeshCollider.beforeClsnCallback = [](dBgW *collider, dActor_c *actor,
+            dBgPi *result, Vector3 *position, Vector3_16 *motion, Vector3_16 *angles) {
+        dBgW::UpdatePosAndAngs(*collider, actor, *result, *position, motion, angles);
+        if (collider->owner && actor)
+            func_ov022_02111564(collider, static_cast<daObjFl_Ring_c *>(collider->owner), actor);
+    };''', 1)
 
 
 def transform_lava_gura(root, text):

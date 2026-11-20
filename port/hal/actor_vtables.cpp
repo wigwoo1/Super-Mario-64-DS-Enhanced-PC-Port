@@ -568,6 +568,14 @@ static PcNativeActorProfile pc_lava_float_large_profile = {
     (void *)&daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L, 76, 284, 2, 0, 0x1000000, 0x2000000, 0
 };
 extern "C" void *daObjFl_Ring_c_classInit();
+extern "C" void *daObjFlMaruta_c_classInit();
+extern "C" void *daObj_volcanoCannon_c_classInit();
+static PcNativeActorProfile pc_lava_log_profile = {
+    (void *)&daObjFlMaruta_c_classInit, 70, 278, 2, 0, 0x500000, 0x2000000, 0
+};
+static PcNativeActorProfile pc_volcano_flame_profile = {
+    (void *)&daObj_volcanoCannon_c_classInit, 243, 101, 2, 0x10000, 0x60000, 0x4000000, 0
+};
 static PcNativeActorProfile pc_lava_ring_profile = {
     (void *)&daObjFl_Ring_c_classInit, 71, 279, 2, 0, 0x780000, 0x2000000, 0
 };
@@ -897,7 +905,9 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_buddy_init_resources();pc_shutter_init_resources();
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
+    data_020a4bb8_storage[70] = &pc_lava_log_profile;
     data_020a4bb8_storage[71] = &pc_lava_ring_profile;
+    data_020a4bb8_storage[243] = &pc_volcano_flame_profile;
     data_020a4bb8_storage[72] = g_profile_FL_GURA;
     data_020a4bb8_storage[73] = g_profile_FL_LONDON;
     data_020a4bb8_storage[75] = &pc_lava_float_small_profile;

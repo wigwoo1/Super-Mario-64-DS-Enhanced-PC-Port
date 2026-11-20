@@ -81,6 +81,33 @@ def main():
         raise ValueError('Lava puzzle collision surface differs from original')
     print('PASS: native lava puzzle handles/callbacks and all fourteen original movement scripts')
 
+    lava_level_base, lava_level_rom = overlay(22)
+    for profile, factory, address in (
+            ('pc_lava_log_profile', 'daObjFlMaruta_c_classInit', 0x02114380),
+            ('pc_volcano_flame_profile', 'daObj_volcanoCannon_c_classInit', 0x02114458)):
+        expected = struct.unpack_from('<IHHIiiii', lava_level_rom, address - lava_level_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual != (named(factory), *expected[1:]):
+            raise ValueError(f'{profile}: native factory or original metadata mismatch')
+    descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov022_02112c9c'), 12))
+    if descriptor != tuple(named(name) for name in ('logModel', 'logCollision', 'data_ov064_0211bbcc')):
+        raise ValueError('Rolling log resource handles or collision surface mismatch')
+    surface_offset = 0x0211bbcc - lava_base
+    magic, stride, count = struct.unpack_from('<4sHH', lava_rom, surface_offset)
+    length = 8 + stride * count
+    if (magic, stride) != (b'CLPS', 8) or not count or pe_bytes(args.exe, descriptor[2], length) != \
+            lava_rom[surface_offset:surface_offset+length]:
+        raise ValueError('Rolling log collision surface differs from the original')
+    if pe_bytes(args.exe, named('data_ov022_02112c98'), 4) != \
+            lava_level_rom[0x02112c98-lava_level_base:0x02112c9c-lava_level_base]:
+        raise ValueError('Rolling log travel limit differs from the original')
+    for callback, method in zip(struct.unpack('<2I', pe_bytes(args.exe, named('data_ov022_02114690'), 8)),
+                                ('InitFlight', 'UpdateFlight')):
+        if not any(pc == callback and name.startswith(f'?{method}@daObj_volcanoCannon_c@@')
+                   for name, pc in symbols.items()):
+            raise ValueError(f'Volcano flame {method} does not reach native code')
+    print('PASS: native rolling log profiles, resource bindings, and volcano flight callbacks')
+
     bowser_base, bowser_rom = overlay(60)
     tilt = bowser_rom[0x02119294-bowser_base:0x021192dc-bowser_base]
     if len(tilt) != 72 or tilt[-2:] != b'\0\0' or pe_bytes(

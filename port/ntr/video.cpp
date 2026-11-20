@@ -39,6 +39,7 @@ bool g_menu_open = false;
 bool g_menu_was_pressed = false;
 Framebuffer g_top;
 Framebuffer g_foreground;
+Framebuffer g_dialogue_objects;
 Framebuffer g_bottom;
 Framebuffer g_minimap;
 Framebuffer g_editor_map;
@@ -62,6 +63,7 @@ bool g_cannon_sight=false;
 bool g_cutscene_letter = false;
 bool g_dialogue_card_active = false;
 bool g_dialogue_card_dark_text = false;
+bool g_dialogue_card_choosing = false;
 bool g_course_clear_active = false;
 bool g_pause_screen = false;
 bool g_hide_pause_objects = false;
@@ -831,9 +833,10 @@ void video_set_cutscene_letter(bool active) {
     g_cutscene_letter = active;
     gpu_set_letter_overlay(active);
 }
-void video_set_dialogue_card_active(bool active, bool dark_text) {
+void video_set_dialogue_card_active(bool active, bool dark_text, bool choosing) {
     g_dialogue_card_active = active;
     g_dialogue_card_dark_text = dark_text;
+    g_dialogue_card_choosing = active && choosing;
 }
 
 void video_set_course_clear_active(bool active) {
@@ -960,8 +963,11 @@ struct PreparedScanout {
 };
 
 PreparedScanout prepare_scanout(bool dual,bool engine_a_on_top,const DualScreenLayout &screens) {
+    const bool dialogue_card=(g_dialogue_card_active || g_course_clear_active) && !g_pause_screen && !g_minigame_active &&
+        !g_cutscene_letter && !g_menu_open && !dual;
+    const bool dialogue_cursor=dialogue_card && !g_course_clear_active && g_dialogue_card_choosing;
     ppu_scanout(ENGINE_A, g_top);
-    ppu_scanout_obj(ENGINE_A, g_top);
+    ppu_scanout_obj(ENGINE_A,g_top,nullptr,dialogue_cursor?&g_dialogue_objects:nullptr);
     const bool geometry_visible=!g_pause_screen && ppu_geometry_active();
     if(std::getenv("SM64DS_PC_BACKGROUND_TRACE")) {
         static bool observed=false;static uint32_t previous[5]{};
@@ -977,11 +983,16 @@ PreparedScanout prepare_scanout(bool dual,bool engine_a_on_top,const DualScreenL
     }
     uint8_t foreground_mask=ppu_backgrounds_above_3d();
     ppu_scanout(ENGINE_A,g_foreground,true,foreground_mask);
-    const bool dialogue_card=(g_dialogue_card_active || g_course_clear_active) && !g_pause_screen && !g_minigame_active &&
-        !g_cutscene_letter && !g_menu_open && !dual;
     const bool dark_text=!g_course_clear_active && g_dialogue_card_dark_text;
     const auto dialogue_bounds=dialogue_card?dialogue_card_bounds(g_foreground,g_course_clear_active):DialogueCardBounds{};
     if(dialogue_card && g_gpu) dialogue_card_on_foreground(g_foreground,dialogue_bounds,dark_text);
+    if(dialogue_cursor) {
+        // The gameplay composite uses a separate 2D foreground over 3D. Keep
+        // the original choice sprite there without duplicating the stage HUD.
+        for(int y=dialogue_bounds.top;y<dialogue_bounds.bottom;++y)
+            for(int x=dialogue_bounds.left;x<dialogue_bounds.right;++x)
+                if(const auto pixel=g_dialogue_objects.px[y][x])g_foreground.px[y][x]=pixel;
+    }
     if (!g_gpu && geometry_visible) {
         gx_render(g_top);
         if(dialogue_card) dialogue_card_on_scene(g_top,dialogue_bounds,dark_text);
