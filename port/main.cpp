@@ -6985,7 +6985,9 @@ static bool replay_course_route(const char *route_override=nullptr) {
         // onto the middle of the raised walkway.
         const bool cage_backflip=level==21 && x==975 && y==600 && (z==-1510 || z==-1620) &&
             std::getenv("SM64DS_PC_TEST_WDW_HEAVE_HO_ASCENT");
-        const bool castle_backflip=level==5 && x==210 && y==3100 && z==550 && jump==2;
+        const bool castle_backflip=jump==2 &&
+            ((level==5 && x==210 && y==3100 && z==550) ||
+             (level==2 && x==1990 && y==800 && z==1180));
         const bool maze_backflip=level==13 && player->mAreaId==2 &&
             x==3250 && y==-400 && z==-6200 && jump==2;
         if(maze_backflip || castle_backflip || (level==21 &&
@@ -11360,13 +11362,32 @@ static bool replay_firesea_first_platform() {
     }
     if (phase == UpperIslandHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_DECK") &&
         !std::strcmp(state, "St_Wait_Main")) phase = UpperDeckRun;
+    auto firesea_flame_window = [&]() {
+        if (!std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_THROW")) return true;
+        for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
+             actor = dActor_c::FindWithActorID(318, actor)) {
+            const auto *jet = static_cast<const daObjFlamethrower_c *>(actor);
+            if (std::abs(jet->mPosX / 4096.0 + 1350.0) < 80.0 &&
+                jet->mState == 0 && jet->mActiveFlames == 0 &&
+                jet->mTimer >= 38 && jet->mTimer <= 50) return true;
+        }
+        return false;
+    };
     if (phase == UpperDeckRun || phase == UpperDeckCrouch || phase == UpperDeckRidgeJump ||
         phase == UpperDeckRidgeBrake || phase == UpperDeckRidgeRun ||
         phase == UpperDeckJump) {
         heading = std::atan2(-70 - x, 93 - z);
         steer = phase == UpperDeckJump && x > -200 ? 0 : 32767;
-        if (phase == UpperDeckRun && hit && owner && owner->actorID == 145 && x > -1830)
-            phase = UpperDeckCrouch;
+        if (phase == UpperDeckRun && hit && owner && owner->actorID == 145 && x > -1830) {
+            if (firesea_flame_window()) {
+                phase = UpperDeckCrouch;
+                std::fprintf(stderr,
+                    "[native Fire Sea route] clear-flame-window tick=%llu x=%.1f\n",
+                    static_cast<unsigned long long>(tick), x);
+            } else {
+                steer = 0;
+            }
+        }
         if (phase == UpperDeckCrouch) {
             if (!std::strcmp(state, "St_LongJump_Main")) {
                 phase = UpperDeckRidgeJump;
@@ -12392,6 +12413,17 @@ static void trace_actor_census(uint64_t frame)
             actor->uniqueID, actor->aliveState, actor->param1,
             static_cast<int>(actor->mAreaId), actor->mPosX, actor->mPosY,
             actor->mPosZ, actor->mFlags);
+    }
+    for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
+         actor = dActor_c::FindWithActorID(318, actor)) {
+        const auto *jet = static_cast<const daObjFlamethrower_c *>(actor);
+        std::fprintf(stderr,
+            "[native flamethrower] tick=%llu uid=%u state=%u active=%u timer=%u "
+            "angle=%d,%d,%d pos=%d,%d,%d\n",
+            static_cast<unsigned long long>(frame), jet->uniqueID,
+            unsigned(jet->mState), unsigned(jet->mActiveFlames),
+            unsigned(jet->mTimer), int(jet->mAngleX), int(jet->mAngleY),
+            int(jet->mAngleZ), jet->mPosX, jet->mPosY, jet->mPosZ);
     }
     if (const auto *actor = dActor_c::FindWithActorID(198, nullptr)) {
         const auto *boss = static_cast<const daKuriKing_c *>(actor);

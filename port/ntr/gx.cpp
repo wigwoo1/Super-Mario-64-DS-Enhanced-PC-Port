@@ -104,6 +104,10 @@ struct State {
 
     std::vector<GxTriangle> tris;
     std::vector<GxTriangle> presented_tris;
+    GxMotionKey motion_key{};
+    std::map<std::pair<uintptr_t,uintptr_t>,uint32_t> motion_draws;
+    std::vector<uint64_t> motion_strip;
+    std::vector<GxMotionTriangle> motion_pending,motion_presented,motion_previous;
     bool has_presented_frame = false;
     GxCameraFrame pending_camera,presented_camera,previous_camera;
     Mat camera_projection{};
@@ -121,6 +125,22 @@ uint32_t bgr555_to_argb(uint16_t c) {
 }
 
 Mat &current_pos() { return g.pos; }
+
+bool temporal_motion=false;
+bool track_model_motion() {
+    static const bool enabled=[] {
+        const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+        const char *capture=std::getenv("SM64DS_PC_FSR_SCENE_CAPTURE");
+        const char *helper=std::getenv("SM64DS_PC_FSR_HELPER");
+        return automation && *automation=='1' && ((capture && *capture) || (helper && *helper));
+    }();
+    return temporal_motion || enabled;
+}
+
+void clear_primitive() {
+    g.strip.clear();
+    if(track_model_motion())g.motion_strip.clear();
+}
 
 // Project a model-space vertex all the way to screen space.
 GxVertex project(int16_t x, int16_t y, int16_t z) {
@@ -169,6 +189,22 @@ void emit_tri(const GxVertex &a, const GxVertex &b, const GxVertex &c) {
     t.camera_space=t.perspective && g.pending_camera.owner &&
         std::memcmp(g.camera_projection.m,g.proj.m,sizeof(g.proj.m))==0;
     g.tris.push_back(t);
+    if(track_model_motion() && g.motion_key.instance) {
+        GxMotionTriangle sidecar{};
+        sidecar.key=g.motion_key;
+        ++g.motion_key.primitive;
+        if(t.camera_space && g.motion_strip.size()==g.strip.size()) {
+            sidecar.triangle_index=g.tris.size()-1;
+            sidecar.viewport={t.viewport_x,t.viewport_y,t.viewport_w,t.viewport_h};
+            const GxVertex *vertices[]={&a,&b,&c};
+            for(unsigned i=0;i<3;++i) {
+                const auto &v=*vertices[i];
+                sidecar.local_vertices[i]=g.motion_strip[size_t(vertices[i]-g.strip.data())];
+                sidecar.clip[i]={v.clip_x,v.clip_y,v.clip_z,v.w};
+            }
+            g.motion_pending.push_back(sidecar);
+        }
+    }
 }
 
 // Assemble according to the active BEGIN_VTXS primitive type.
@@ -177,13 +213,13 @@ void push_vertex(const GxVertex &v) {
     const size_t n = g.strip.size();
     switch (g.prim) {
         case 0:                                        // separate triangles
-            if (n == 3) { emit_tri(g.strip[0], g.strip[1], g.strip[2]); g.strip.clear(); }
+            if (n == 3) { emit_tri(g.strip[0], g.strip[1], g.strip[2]); clear_primitive(); }
             break;
         case 1:                                        // separate quads
             if (n == 4) {
                 emit_tri(g.strip[0], g.strip[1], g.strip[2]);
                 emit_tri(g.strip[0], g.strip[2], g.strip[3]);
-                g.strip.clear();
+                clear_primitive();
             }
             break;
         case 2:                                        // triangle strip
@@ -207,7 +243,12 @@ void push_vertex(const GxVertex &v) {
 
 void vertex(int16_t x, int16_t y, int16_t z) {
     g.vx = x; g.vy = y; g.vz = z;
-    if (g.prim >= 0) push_vertex(project(x, y, z));
+    if(g.prim>=0) {
+        if(track_model_motion())
+            g.motion_strip.push_back(uint64_t(uint16_t(x)) | (uint64_t(uint16_t(y))<<16) |
+                                     (uint64_t(uint16_t(z))<<32));
+        push_vertex(project(x,y,z));
+    }
 }
 
 // --- command execution ------------------------------------------------------
@@ -426,10 +467,10 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
             g.attributes = g.pending_attributes;
             g.light_mask = g.attributes & 0xF;
             g.prim = p[0] & 3;
-            g.strip.clear();
+            clear_primitive();
             g.strip_parity = 0;
             break;
-        case 0x41: g.prim = -1; g.strip.clear(); break;          // END_VTXS
+        case 0x41: g.prim = -1; clear_primitive(); break;      // END_VTXS
         case 0x50:                                              // SWAP_BUFFERS
             if (const char *trace = std::getenv("SM64DS_PC_RENDER_TRACE")) {
                 static unsigned logged = 0;
@@ -459,6 +500,12 @@ void exec(uint8_t cmd, const uint32_t *p, int np) {
             // between simulation ticks (including 120/240 Hz presentation).
             g.presented_tris.swap(g.tris);
             g.tris.clear();
+            if(track_model_motion()) {
+                g.motion_previous.swap(g.motion_presented);
+                g.motion_presented.swap(g.motion_pending);
+                g.motion_pending.clear();
+                g.motion_draws.clear();
+            }
             g.has_presented_frame = true;
             g.previous_camera=g.presented_camera;
             g.presented_camera=g.pending_camera;
@@ -735,14 +782,22 @@ GxVertex interpolate_clip_vertex(const GxVertex &a, const GxVertex &b, float t) 
     return v;
 }
 
-unsigned clip_triangle(const GxTriangle &triangle, std::array<GxVertex, 12> &vertices) {
+unsigned clip_triangle(const GxTriangle &triangle, std::array<GxVertex, 12> &vertices,
+                       std::array<float,3> *source_weights=nullptr) {
     // Far-plane intersections are hidden unless POLYGON_ATTR explicitly allows
     // clipping. All other sides are clipped in homogeneous space before divide.
     if (!(triangle.attributes & (1u << 12)))
         for (const auto &v : triangle.v) if (v.clip_z > v.w) return 0;
     std::array<GxVertex, 12> current{}, next{};
+    std::array<std::array<float,3>,12> current_weights, next_weights;
     unsigned count = 3;
     for (unsigned i = 0; i < count; ++i) current[i] = triangle.v[i];
+    if(source_weights) {
+        for(unsigned i=0;i<3;++i) {
+            current_weights[i]={};
+            current_weights[i][i]=1;
+        }
+    }
     auto distance = [](const GxVertex &v, unsigned plane) {
         switch (plane) {
             case 0: return v.w + v.clip_x;
@@ -763,17 +818,24 @@ unsigned clip_triangle(const GxTriangle &triangle, std::array<GxVertex, 12> &ver
             const float vertex_distance = distance(vertex, plane);
             if ((previous_distance >= 0) != (vertex_distance >= 0)) {
                 if (written == next.size()) return 0;
-                next[written++] = interpolate_clip_vertex(previous, vertex,
-                    previous_distance / (previous_distance - vertex_distance));
+                const float fraction=previous_distance / (previous_distance - vertex_distance);
+                if(source_weights) {
+                    const auto &a=current_weights[i?i-1:count-1];
+                    const auto &b=current_weights[i];
+                    for(unsigned j=0;j<3;++j)next_weights[written][j]=a[j]+(b[j]-a[j])*fraction;
+                }
+                next[written++] = interpolate_clip_vertex(previous, vertex,fraction);
             }
             if (vertex_distance >= 0) {
                 if (written == next.size()) return 0;
+                if(source_weights)next_weights[written]=current_weights[i];
                 next[written++] = vertex;
             }
             previous = vertex;
             previous_distance = vertex_distance;
         }
         current = next;
+        if(source_weights)std::copy_n(next_weights.begin(),written,current_weights.begin());
         count = written;
     }
     for (unsigned i = 0; i < count; ++i) {
@@ -784,6 +846,7 @@ unsigned clip_triangle(const GxTriangle &triangle, std::array<GxVertex, 12> &ver
         v.z = (v.clip_z * reciprocal_w + 1) * 0.5f;
     }
     vertices = current;
+    if(source_weights)std::copy_n(current_weights.begin(),count,source_weights);
     return count;
 }
 }
@@ -792,6 +855,33 @@ const GxTriangle *gx_display_polygons(size_t &count) {
     const auto &triangles = g.has_presented_frame ? g.presented_tris : g.tris;
     count = triangles.size();
     return triangles.empty() ? nullptr : triangles.data();
+}
+GxMotionModelScope::GxMotionModelScope(const void *instance,const void *mesh) {
+    if(!track_model_motion())return;
+    active_=true;
+    previous_=g.motion_key;
+    const auto key=std::make_pair(reinterpret_cast<uintptr_t>(instance),reinterpret_cast<uintptr_t>(mesh));
+    g.motion_key={key.first,key.second,g.motion_draws[key]++,0};
+}
+GxMotionModelScope::~GxMotionModelScope() {
+    if(active_)g.motion_key=previous_;
+}
+const GxMotionTriangle *gx_display_motion_triangles(size_t &count) {
+    count=g.motion_presented.size();
+    return g.motion_presented.data();
+}
+const GxMotionTriangle *gx_previous_motion_triangles(size_t &count) {
+    count=g.motion_previous.size();
+    return g.motion_previous.data();
+}
+void gx_set_temporal_motion(bool active) {
+    temporal_motion=active;
+    if(active)return;
+    g.motion_pending.clear();
+    g.motion_presented.clear();
+    g.motion_previous.clear();
+    g.motion_draws.clear();
+    g.motion_strip.clear();
 }
 void gx_motion_camera(const int32_t *view,const int32_t *eye,uintptr_t owner,unsigned scene) {
     g.pending_camera={};
@@ -803,6 +893,10 @@ void gx_motion_camera(const int32_t *view,const int32_t *eye,uintptr_t owner,uns
     const auto transform=mul(camera,g.proj);
     g.camera_projection=g.proj;
     std::copy_n(transform.m,16,g.pending_camera.view_projection.begin());
+    const float depth_scale=g.proj.m[10],depth_offset=g.proj.m[14],w_scale=g.proj.m[11];
+    g.pending_camera.near_plane=std::fabs(depth_offset/(depth_scale+w_scale));
+    g.pending_camera.far_plane=std::fabs(depth_offset/(depth_scale-w_scale));
+    g.pending_camera.vertical_fov=2*std::atan(std::fabs(w_scale/g.proj.m[5]));
     for(unsigned i=0;i<3;++i) {
         g.pending_camera.eye[i]=eye[i]*FX12;
         g.pending_camera.forward[i]=-camera.m[i*4+2];
@@ -868,9 +962,10 @@ bool gx_apply_camera_prediction(GxTriangle &triangle,const GxCameraPrediction &p
     return true;
 }
 
-unsigned gx_clip_polygon(const GxTriangle &triangle, GxVertex *out) {
+unsigned gx_clip_polygon(const GxTriangle &triangle, GxVertex *out,
+                         std::array<float,3> *source_weights) {
     std::array<GxVertex,12> vertices;
-    const unsigned count = clip_triangle(triangle,vertices);
+    const unsigned count = clip_triangle(triangle,vertices,source_weights);
     for (unsigned i=0;i<count;++i) out[i]=vertices[i];
     return count;
 }

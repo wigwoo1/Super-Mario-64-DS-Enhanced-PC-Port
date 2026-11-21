@@ -10,6 +10,8 @@
 
 namespace ntr {
 enum class VideoRenderer : uint8_t { D3D11, OpenGLSoftware };
+enum class FsrMode : uint8_t { Off, NativeAA, Quality, Balanced, Performance };
+inline constexpr bool fsr_upscales(FsrMode mode) { return mode >= FsrMode::Quality; }
 enum class RenderDistance : uint8_t { Minimum, Low, Medium, EntireMap };
 
 struct VideoSettings {
@@ -19,6 +21,7 @@ struct VideoSettings {
     uint32_t target_fps = 60;
     uint8_t anisotropic_filtering = 0; // 0=off, otherwise 2/4/8/16x
     VideoRenderer renderer = VideoRenderer::D3D11;
+    FsrMode fsr = FsrMode::Off;
     MinigameLayout minigame_layout = MinigameLayout::TopBottom;
     bool minimap = true;
     uint8_t minimap_opacity = 190;  // 0 transparent, 255 opaque

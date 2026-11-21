@@ -75,6 +75,7 @@ std::vector<uint32_t> g_output;
 bool g_gpu = false;
 bool g_forced_software = false,g_renderer_failed = false;
 VideoRenderer g_active_renderer=VideoRenderer::D3D11;
+bool g_active_fsr=false;
 unsigned g_output_width=SCREEN_W,g_output_height=SCREEN_H;
 uint64_t g_scanout_revision=0;
 
@@ -522,6 +523,7 @@ void clamp_settings(VideoSettings &s) {
     if(s.texture_quality>TextureQuality::Generated4K) s.texture_quality=TextureQuality::Original;
     if(s.anisotropic_filtering!=2 && s.anisotropic_filtering!=4 &&
        s.anisotropic_filtering!=8 && s.anisotropic_filtering!=16) s.anisotropic_filtering=0;
+    if(s.fsr>FsrMode::Performance)s.fsr=FsrMode::Off;
     s.width = std::max(256u, std::min(s.width, 3840u));
     s.height = std::max(192u, std::min(s.height, 2160u));
     s.minimap_scale = std::max<uint16_t>(100, std::min<uint16_t>(s.minimap_scale, 500));
@@ -541,7 +543,8 @@ bool video_open(const char *title) {
     const char *software=std::getenv("SM64DS_PC_SOFTWARE_VIDEO");
     g_forced_software=software && software[0]=='1';
     g_renderer_failed=false;
-    g_gpu = !g_forced_software && gpu_open(g_window,false,g_settings.renderer);
+    g_active_fsr=g_settings.renderer==VideoRenderer::D3D11 && g_settings.fsr!=FsrMode::Off;
+    g_gpu = !g_forced_software && gpu_open(g_window,false,g_settings.renderer,g_active_fsr);
     if(!g_forced_software&&!g_gpu&&g_settings.renderer==VideoRenderer::OpenGLSoftware) {
         g_renderer_failed=true;g_settings.renderer=VideoRenderer::D3D11;
         g_gpu=gpu_open(g_window);video_save_settings();
@@ -619,7 +622,13 @@ void video_take_camera_mouse_motion(bool camera_allowed,int &dx,int &dy) {
     g_mouse_camera_dx=g_mouse_camera_dy=0;
 #endif
 }
-const char *video_renderer_notice() {return g_renderer_failed?"OPENGL CPU UNAVAILABLE":"";}
+const char *video_renderer_notice() {
+    if(g_renderer_failed)return "OPENGL CPU UNAVAILABLE";
+    if(g_settings.fsr==FsrMode::Off)return "";
+    if(!g_gpu || g_settings.renderer!=VideoRenderer::D3D11)return "FSR NEEDS D3D11 GPU";
+    if(fsr_upscales(g_settings.fsr) && g_settings.motion_blur)return "FSR NEEDS BLUR OFF";
+    return gpu_fsr_notice();
+}
 
 bool video_load_settings(const char *path) {
     const char *filename = path && path[0] ? path : std::getenv("SM64DS_PC_SETTINGS_FILE");
@@ -671,6 +680,7 @@ bool video_load_settings(const char *path) {
         else if (std::strcmp(line,"music_remastered")==0) loaded.remastered_music=value==1;
         else if (std::strcmp(line,"motion_blur")==0) loaded.motion_blur=value==1;
         else if (std::strcmp(line, "anisotropic_filtering") == 0) loaded.anisotropic_filtering=static_cast<uint8_t>(std::min(value,255ul));
+        else if (std::strcmp(line, "fsr") == 0 && value<=static_cast<unsigned>(FsrMode::Performance)) loaded.fsr=static_cast<FsrMode>(value);
         else if (std::strcmp(line, "renderer") == 0) loaded.renderer=value==1?VideoRenderer::OpenGLSoftware:VideoRenderer::D3D11;
         else if (std::strcmp(line, "minigame_layout") == 0) loaded.minigame_layout=value<=2?static_cast<MinigameLayout>(value):MinigameLayout::TopBottom;
         else if (std::strcmp(line, "minimap") == 0) loaded.minimap = value != 0;
@@ -721,7 +731,7 @@ bool video_save_settings(const char *path) {
         "window_width=%u\nwindow_height=%u\nwindow_maximized=%u\nwidth=%u\nheight=%u\ntarget_fps=%u\nminimap=%u\nminimap_opacity=%u\n"
         "minimap_scale=%u\nminimap_x=%u\nminimap_y=%u\nupscale_2d=%u\nhd_textures=%u\n"
         "minimap_rotate_with_player=%u\nminimap_hide_touch_target=%u\ntexture_quality=%u\nanisotropic_filtering=%u\nminigame_layout=%u\nrenderer=%u\nstay_in_stage_after_star=%u\nbrain_rot_text=%u\ncamera_zoom=%u\ncamera_mode=%u\nalways_run=%u\nrender_distance=%u\n"
-        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\nleft_stick_deadzone=%u\nright_stick_deadzone=%u\npause_music_rec_room=%u\naudio_layout=%u\nmusic_remastered=%u\nmotion_blur=%u\n",
+        "camera_sensitivity=%u\ncamera_invert_x=%u\ncamera_invert_y=%u\ncamera_acceleration=%u\nleft_stick_deadzone=%u\nright_stick_deadzone=%u\npause_music_rec_room=%u\naudio_layout=%u\nmusic_remastered=%u\nmotion_blur=%u\nfsr=%u\n",
         g_window_preferences.width,g_window_preferences.height,g_window_preferences.maximized?1u:0u,
         g_settings.width, g_settings.height, rt_target_fps(), g_settings.minimap ? 1u : 0u,
         static_cast<unsigned>(g_settings.minimap_opacity),
@@ -733,7 +743,7 @@ bool video_save_settings(const char *path) {
         static_cast<unsigned>(g_settings.texture_quality),
         static_cast<unsigned>(g_settings.anisotropic_filtering),static_cast<unsigned>(g_settings.minigame_layout),
         static_cast<unsigned>(g_settings.renderer),g_settings.stay_in_stage_after_star ? 1u : 0u,g_settings.brain_rot_text ? 1u : 0u,static_cast<unsigned>(g_settings.camera_zoom),static_cast<unsigned>(g_settings.camera_mode),g_settings.always_run ? 1u : 0u,static_cast<unsigned>(g_settings.render_distance),
-        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.left_stick_deadzone),unsigned(g_settings.right_stick_deadzone),unsigned(g_settings.pause_music_rec_room),unsigned(g_settings.audio_layout),unsigned(g_settings.remastered_music),unsigned(g_settings.motion_blur)) >= 0;
+        unsigned(g_settings.camera_sensitivity),unsigned(g_settings.camera_invert_x),unsigned(g_settings.camera_invert_y),unsigned(g_settings.camera_acceleration),unsigned(g_settings.left_stick_deadzone),unsigned(g_settings.right_stick_deadzone),unsigned(g_settings.pause_music_rec_room),unsigned(g_settings.audio_layout),unsigned(g_settings.remastered_music),unsigned(g_settings.motion_blur),unsigned(g_settings.fsr)) >= 0;
     for(unsigned i=0;i<binding_count;++i)
         write_ok=(std::fprintf(file,"key_bind_%u=%u\npad_bind_%u=%u\n",i,unsigned(g_settings.bindings.keys[i]),i,unsigned(g_settings.bindings.pad[i]))>=0) && write_ok;
     const bool close_ok = std::fclose(file) == 0;
@@ -1182,16 +1192,18 @@ bool video_present_frame() {
     if (!g_window || !g_open) return false;
     static const char *profile_path=std::getenv("SM64DS_PC_GPU_PROFILE");
     const auto video_start=profile_path?std::chrono::steady_clock::now():std::chrono::steady_clock::time_point{};
-    if(!g_forced_software && g_active_renderer!=g_settings.renderer) {
+    const bool request_fsr=g_settings.renderer==VideoRenderer::D3D11 && g_settings.fsr!=FsrMode::Off;
+    if(!g_forced_software && (g_active_renderer!=g_settings.renderer || g_active_fsr!=request_fsr)) {
         gpu_close();g_renderer_failed=false;
         ++g_scanout_revision;
-        g_gpu=gpu_open(g_window,false,g_settings.renderer);
+        g_gpu=gpu_open(g_window,false,g_settings.renderer,request_fsr);
         if(!g_gpu&&g_settings.renderer==VideoRenderer::OpenGLSoftware) {
             g_renderer_failed=true;g_settings.renderer=VideoRenderer::D3D11;
             g_gpu=gpu_open(g_window);video_save_settings();
             std::fprintf(stderr,"[video] OpenGL CPU unavailable; restored D3D11\n");
         }
         g_active_renderer=g_settings.renderer;
+        g_active_fsr=request_fsr;
         gpu_set_anisotropic_filtering(g_settings.anisotropic_filtering);
         texture_set_backend(g_gpu?TextureBackend::NativeGpu:TextureBackend::SoftwareReference);
     }
@@ -1404,9 +1416,12 @@ bool video_present_frame() {
                         prepared.hud,prepared.hud_width,prepared.hud_height,prepared.hud_revision,motion_gameplay,
                         prepared.map_width,prepared.map_height) ||
             !gpu_present(width,height,dual)) {
-            std::fprintf(stderr,"[video] native GPU presentation failed; reverting to software on the next frame\n");
-            gpu_close();g_gpu=false;
-            texture_set_backend(TextureBackend::SoftwareReference);
+            g_gpu=gpu_recover_presentation(g_window);
+            ++g_scanout_revision;
+            if(g_gpu)gpu_set_anisotropic_filtering(g_settings.anisotropic_filtering);
+            texture_set_backend(g_gpu?TextureBackend::NativeGpu:TextureBackend::SoftwareReference);
+            std::fprintf(stderr,"[video] native GPU presentation failed; %s on the next frame\n",
+                         g_gpu?"restored native D3D11 without FSR":"using DS software rendering");
             return true;
         }
         if(profile_path && profile_path[0]) {

@@ -10,20 +10,25 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-int main() {
+int main(int argc,char **argv) {
+    const bool test_flip=argc==2;
     char directory[MAX_PATH],path[MAX_PATH],title[128];
     if(!GetCurrentDirectoryA(MAX_PATH,directory))return 1;
     std::snprintf(path,sizeof(path),"%s\\sm64ds-window-%lu.ini",directory,GetCurrentProcessId());
     std::snprintf(title,sizeof(title),"SM64DS resolution-window smoke %lu",GetCurrentProcessId());
     if(GetFileAttributesA(path)!=INVALID_FILE_ATTRIBUTES)return 1;
     FILE *file=std::fopen(path,"wb");if(!file)return 2;
-    std::fputs("width=256\nheight=192\nwindow_width=900\nwindow_height=600\n",file);std::fclose(file);
+    std::fputs("width=256\nheight=192\nwindow_width=900\nwindow_height=600\n",file);
+    if(test_flip)std::fputs("fsr=2\n",file);
+    std::fclose(file);
     _putenv_s("SM64DS_PC_SETTINGS_FILE",path);_putenv_s("SM64DS_PC_AUTOMATION_ONLY","1");
     _putenv_s("SM64DS_PC_NATIVE_AUDIO","0");
+    if(test_flip)_putenv_s("SM64DS_PC_FSR_HELPER",argv[1]);
     if(!ntr::io_init() || !ntr::video_open(title))return 3;
     HWND window=FindWindowA("SM64DSNativeVideoWindow",title);
     DWORD owner=0;GetWindowThreadProcessId(window,&owner);
     if(!window || owner!=GetCurrentProcessId())return 4;
+    if(test_flip && (*ntr::gpu_fsr_notice() || !ntr::video_present_frame()))return 14;
     RECT client{};GetClientRect(window,&client);
     if(client.right!=900 || client.bottom!=600)return 5;
     // Exercise this test process's window only. Resizing must not change raster size.
@@ -46,6 +51,12 @@ int main() {
     };
     for(auto size:std::vector<std::pair<unsigned,unsigned>>{{256,192},{1280,720},{1920,1080},{3840,2160}})
         if(!check(size.first,size.second,false))return 7;
+    if(test_flip) {
+        auto s=ntr::video_get_settings();s.fsr=ntr::FsrMode::Off;ntr::video_set_settings(s);
+        if(!check(1280,720,false))return 15;
+        s=ntr::video_get_settings();s.fsr=ntr::FsrMode::Quality;ntr::video_set_settings(s);
+        if(!check(1280,720,false) || *ntr::gpu_fsr_notice())return 16;
+    }
     for(unsigned layout=0;layout<3;++layout) {
         auto s=ntr::video_get_settings();s.minigame_layout=static_cast<ntr::MinigameLayout>(layout);ntr::video_set_settings(s);
         if(!check(256,192,true) || !check(3840,2160,true))return 8;

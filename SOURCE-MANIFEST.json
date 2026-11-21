@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "4541bd7ccf39ecfc9added7ed67c9a17c221173252c19696e133eeb7642cf714",
-      "bytes": 92230
+      "sha256": "1b6c1408a32f4d9c0a32e7bf3d735d3e3e9d7be733eaa838d3f7c255faa4c067",
+      "bytes": 92287
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -6372,6 +6372,11 @@
       "path": "port/docs/fresh-save-startup-investigation-2026-10-17.txt",
       "sha256": "8854f24af776ad722c5a0c355123d88a4f811dd872cc1849c40d86661938e035",
       "bytes": 13118
+    },
+    {
+      "path": "port/docs/fsr3-renderer-integration-plan.md",
+      "sha256": "cef70bb0ae4d35bca89fa3b9b4ea3ffacc150aba24df6774d42144c272118896",
+      "bytes": 14877
     },
     {
       "path": "port/docs/goomba-native-integration-handoff-2026-10-16.txt",
@@ -7475,8 +7480,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "3d9e64826bd74405c4b5c65f108fa138669c8043d00709cfae22ded9cefc5872",
-      "bytes": 44057
+      "sha256": "a5adcdafdc7b036213aadf87b3c56e8c5aa4f65d3f2381eb57e54832fe515e20",
+      "bytes": 44549
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -7970,8 +7975,8 @@
     },
     {
       "path": "port/hal/pc_pause_settings_state.cpp",
-      "sha256": "4ea2c8c770a00ded2d8c656a7e5604d24a55448105709df880004c0cfa0f1f00",
-      "bytes": 23621
+      "sha256": "80bde785e97ef907bf1c933cef0fafb321eb13cfa9c97fd214ef8741f3d17e4d",
+      "bytes": 24257
     },
     {
       "path": "port/hal/pc_pause_settings_state.h",
@@ -8130,8 +8135,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "2cf7491a538b244e8104cde976afd334a399fa78b170b52ed2aad242a05d6220",
-      "bytes": 798700
+      "sha256": "3ba3893c6c912e216af8746c2b7aace976cf97ba7f212b005caa3cd4f2c17730",
+      "bytes": 800289
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -8149,19 +8154,34 @@
       "bytes": 14810
     },
     {
+      "path": "port/ntr/fsr_bridge.cpp",
+      "sha256": "26f9d51f10e9cea6ab542e148d55c1591d295fe973a616542a2947a657cb2ff1",
+      "bytes": 14323
+    },
+    {
+      "path": "port/ntr/fsr_bridge.h",
+      "sha256": "101ce4b3b17f631345d46fb20a3bee00f0d81759922966999117b977e8627993",
+      "bytes": 1620
+    },
+    {
+      "path": "port/ntr/fsr_transport.h",
+      "sha256": "089ce472eb2bcdc8a8cada90377f53a2627fac64dc967c9505f688ac148e7da2",
+      "bytes": 12297
+    },
+    {
       "path": "port/ntr/gl_software.cpp",
-      "sha256": "8331d6f03bd9ec31f07dd908a626049ba697d1318eb404b65f27da4908c3a45b",
-      "bytes": 34048
+      "sha256": "32dfbfa22ae74d24148decae580107e635f47331f85e7e6025ad461b4eb61b12",
+      "bytes": 34744
     },
     {
       "path": "port/ntr/gpu.cpp",
-      "sha256": "bda2bfd72c0945ee42a0021b74add8cff50aac692885f78a660bad31f2d5e6ee",
-      "bytes": 53626
+      "sha256": "a7f0795877a6576ee7941b6762f5a6b834b47135aa0872dd0afc8f2e21ed6f2e",
+      "bytes": 97075
     },
     {
       "path": "port/ntr/gx.cpp",
-      "sha256": "4bcaf52f173977b064eeb3365d28d5ebaaa6ab4cf2c7c683819012a946399732",
-      "bytes": 47484
+      "sha256": "de6196c2c38be979a904afdd5f431510d7fa1e91558040cbb53377952018c822",
+      "bytes": 51649
     },
     {
       "path": "port/ntr/include/ntr/audio.h",
@@ -8210,13 +8230,13 @@
     },
     {
       "path": "port/ntr/include/ntr/gpu.h",
-      "sha256": "e4fe858799829a35772c438bc3faaeb338d012d4799ac0dde145236fb6b45ee2",
-      "bytes": 2166
+      "sha256": "953020dc6022ef8e6f79d8521852c84f956a0571f68daa4b2ddcf7e050748856",
+      "bytes": 2359
     },
     {
       "path": "port/ntr/include/ntr/gx.h",
-      "sha256": "431c3ce332d8b4184e51889eebdde5d8574d259150ded37f9cca73148cdfd1b9",
-      "bytes": 6064
+      "sha256": "199c351fc6ab6583be1cd8811156203ba658db93a7f0ccf565cd83124513d1c8",
+      "bytes": 7123
     },
     {
       "path": "port/ntr/include/ntr/input.h",
@@ -8320,8 +8340,8 @@
     },
     {
       "path": "port/ntr/include/ntr/video.h",
-      "sha256": "ab3d10d4f45f125cc1da2127fe5170abea41a475ebcae77b67f64149917464e9",
-      "bytes": 5667
+      "sha256": "7b6f604c6b4d8c3752f9ba570691e738c7c23c2773a02cbf89d7a4ede3acfdc6",
+      "bytes": 5865
     },
     {
       "path": "port/ntr/input.cpp",
@@ -8410,8 +8430,8 @@
     },
     {
       "path": "port/ntr/video.cpp",
-      "sha256": "bac83b611b388c3d3090ad19875f83407911579cd9c090f9b7789bf1c2dad6d0",
-      "bytes": 80400
+      "sha256": "7973c6869b62bf6d49d0809ab0b4b1370a601ce0e67415cefaf28d398a110885",
+      "bytes": 81448
     },
     {
       "path": "port/README.md",
@@ -8695,8 +8715,8 @@
     },
     {
       "path": "port/tests/smoke_pause_settings.cpp",
-      "sha256": "6e2dc8dc661fe10279d795160b917f9b5f698356f60c768aa543b7d13c4c517f",
-      "bytes": 21959
+      "sha256": "66a545bdccaa6732d0a1d953cd06fb81e2606313840dfbb62c0de0dbcf1fa2e0",
+      "bytes": 22956
     },
     {
       "path": "port/tests/smoke_pc_session.cpp",
@@ -8815,13 +8835,13 @@
     },
     {
       "path": "port/tests/smoke_video.cpp",
-      "sha256": "2c518c502e80ac23bc5ddd87636eec62eb0c7464c10ac02c38bd87c131249fa1",
-      "bytes": 17584
+      "sha256": "5f93353aafa3c33922707566c178019b89af3ed3e5b4537e19045ec3ad26e271",
+      "bytes": 18080
     },
     {
       "path": "port/tests/smoke_video_window.cpp",
-      "sha256": "01410609db7cee0fca168629701cf60fe18127e857a7125dc4903b36017e820e",
-      "bytes": 3623
+      "sha256": "f1076da538b80dce83e36dfd5c88e945c0b1d9cb1f11f83fbf12748b464d1534",
+      "bytes": 4201
     },
     {
       "path": "port/tests/smoke_wanted_settings_surface.cpp",
@@ -9130,8 +9150,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "00f38f436032d086e55030d003e2243a9cf7e52859fc16ce404507bfc03dd3f4",
-      "bytes": 69409
+      "sha256": "99ce930541d42d05d9381055e23dfd6cdb4b5a24a0a4e99527f51860ebebe508",
+      "bytes": 69661
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9527,6 +9547,11 @@
       "path": "port/tools/floor_switch_host.py",
       "sha256": "f0ca8ed5a3827455128e338d7829ef80505b7381e9712ff11fbcdaa3b310c066",
       "bytes": 5299
+    },
+    {
+      "path": "port/tools/fsr3_helper.cpp",
+      "sha256": "ec09d516e5bf1523072ae9bb2f25c473fe67668da0d48527ff858387b11beea1",
+      "bytes": 9950
     },
     {
       "path": "port/tools/goomba_host.py",

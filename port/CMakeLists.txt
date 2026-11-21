@@ -150,7 +150,8 @@ target_include_directories(ntr PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/ntr/include")
 if(MSVC)
     target_include_directories(ntr PRIVATE "${SDL3_SDK}/include")
     target_compile_options(ntr PRIVATE /wd4311 /wd4312)
-    target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 dxgi d3dcompiler winmm mfuuid)
+    target_sources(ntr PRIVATE ntr/fsr_bridge.cpp)
+    target_link_libraries(ntr PUBLIC windowscodecs ole32 d3d11 d3d12 dxgi d3dcompiler winmm mfuuid)
 endif()
 
 # Controller-input smoke: verify the native stick's radial deadzone and its

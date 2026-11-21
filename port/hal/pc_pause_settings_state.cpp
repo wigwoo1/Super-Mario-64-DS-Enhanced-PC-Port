@@ -10,6 +10,9 @@ static constexpr Page pages[]={Page::Display,Page::Graphics,Page::Map,
 static constexpr unsigned page_count=sizeof(pages)/sizeof(pages[0]);
 static constexpr unsigned binding_offsets[]={0,5,10,ntr::camera_turn_left_binding,ntr::binding_count};
 static constexpr unsigned binding_banks=sizeof(binding_offsets)/sizeof(binding_offsets[0])-1;
+static constexpr const char *fsr_labels[]={"OFF","NATIVE AA","QUALITY","BALANCED","PERFORMANCE"};
+static constexpr unsigned fsr_mode_count=sizeof(fsr_labels)/sizeof(fsr_labels[0]);
+static_assert(fsr_mode_count==unsigned(ntr::FsrMode::Performance)+1);
 uint16_t events(uint16_t keys, uint16_t &previous, uint16_t &repeat, unsigned &ticks) {
     uint16_t pressed = keys & ~previous;
     previous = keys;
@@ -27,7 +30,7 @@ unsigned Menu::rows() const {
     if(page==Page::Display) return 4;
     if(page==Page::Map) return 5;
     if(page==Page::Position || page==Page::Save) return 2;
-    if(page==Page::Graphics) return 4;
+    if(page==Page::Graphics) return 5;
     if(page==Page::Screens) return 1;
     if(page==Page::Audio) return 2;
     if(page==Page::Gameplay)return 5;
@@ -94,6 +97,11 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         if (row == 2) s.minimap_rotate_with_player = !s.minimap_rotate_with_player;
         break;
     case Page::Graphics: {
+        if(row==4) {
+            s.fsr=static_cast<ntr::FsrMode>((unsigned(s.fsr)+(direction>0?1:fsr_mode_count-1))%
+                                            fsr_mode_count);
+            break;
+        }
         if(row==3) {
             if(s.renderer!=ntr::VideoRenderer::D3D11)return Action::None;
             s.motion_blur=!s.motion_blur;
@@ -197,6 +205,11 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         if (i==2) std::snprintf(out,size,"MAP ROTATION %s",s.minimap_rotate_with_player?"CAMERA":"UPRIGHT");
         break;
     case Page::Graphics:
+        if(i==4) {
+            const unsigned mode=unsigned(s.fsr);
+            std::snprintf(out,size,"FSR 3 %s",fsr_labels[mode<fsr_mode_count?mode:0]);
+            break;
+        }
         if(i==3) {
             if(s.renderer==ntr::VideoRenderer::D3D11)
                 std::snprintf(out,size,"MOTION BLUR %s",s.motion_blur?on:off);
@@ -425,7 +438,6 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
             output==ntr::AudioOutput::Stereo && s.audio_layout!=ntr::AudioLayout::Stereo?" FALLBACK":"");
         line(label,10);
     }
-    if(m.page==Page::Graphics && ntr::video_renderer_notice()[0])line(ntr::video_renderer_notice(),15);
     // The caller caches a complete four-row button from its native position.
     // Keep its top and bottom bevels; omit the two middle rows to fit16px.
     for (unsigned i=0;i<m.rows();++i) {
@@ -445,7 +457,8 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
     }
     else if (m.page==Page::Options) line(touch_navigation?"TAP ROW    BACK    B BACK":"A SELECT  B BACK",21);
     else {
-        line(touch_navigation?"TAP VALUE OR LEFT/RIGHT":"L/R PAGE  LEFT/RIGHT CHANGE",18);
+        const char *notice=m.page==Page::Graphics?ntr::video_renderer_notice():"";
+        line(*notice?notice:touch_navigation?"TAP VALUE OR LEFT/RIGHT":"L/R PAGE  LEFT/RIGHT CHANGE",18);
         line(touch_navigation?"L PAGE    BACK    R PAGE":"A CHANGE  B BACK",21);
     }
 }

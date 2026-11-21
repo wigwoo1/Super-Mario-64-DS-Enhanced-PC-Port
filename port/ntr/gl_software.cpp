@@ -391,7 +391,28 @@ void close_worker() {
 }
 void glsw_set_menu_scene(bool active){menu_scene=active;}
 void glsw_set_letter_overlay(bool active){letter_overlay=active;}
-void glsw_set_anisotropic_filtering(uint8_t value){anisotropic=value==2||value==4||value==8||value==16?uint8_t(std::min<float>(value,max_aniso)):0;}
+namespace {
+constexpr uint8_t supported_anisotropic_level(uint8_t requested, float maximum) {
+    if (requested != 2 && requested != 4 && requested != 8 && requested != 16)
+        return 0;
+    for (const uint8_t level : {16, 8, 4, 2}) {
+        if (level <= requested && level <= maximum)
+            return level;
+    }
+    return 0;
+}
+
+static_assert(supported_anisotropic_level(16, 1.0f) == 0);
+static_assert(supported_anisotropic_level(16, 6.0f) == 4);
+static_assert(supported_anisotropic_level(16, 16.0f) == 16);
+static_assert(supported_anisotropic_level(0, 16.0f) == 0);
+}
+
+void glsw_set_anisotropic_filtering(uint8_t value) {
+    // A driver limit of 1 means anisotropic filtering is unavailable.
+    // Keep the original sampling path when the driver cannot enable it.
+    anisotropic = supported_anisotropic_level(value, max_aniso);
+}
 uint8_t glsw_anisotropic_filtering(){return anisotropic;}
 bool render_worker(const Framebuffer &base,const uint32_t *map,const VideoSettings &s,bool draw_geometry,
                    const uint32_t *foreground,const DualScreenLayout *screens,const Framebuffer *sub,

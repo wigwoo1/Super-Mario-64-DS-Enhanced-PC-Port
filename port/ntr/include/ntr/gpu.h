@@ -5,8 +5,12 @@
 #include <vector>
 namespace ntr {
 // A null window enables offscreen verification. WARP is only requested by tests.
-bool gpu_open(void *window, bool warp = false, VideoRenderer renderer = VideoRenderer::D3D11);
+bool gpu_open(void *window, bool warp = false, VideoRenderer renderer = VideoRenderer::D3D11,
+              bool request_fsr = false);
+const char *gpu_fsr_notice();
 void gpu_close();
+// Reopen a removed FSR device as native D3D11, or close the failed renderer.
+bool gpu_recover_presentation(void *window);
 void gpu_set_anisotropic_filtering(uint8_t level);
 uint8_t gpu_anisotropic_filtering();
 bool gpu_render(const Framebuffer &base, const uint32_t *minimap,

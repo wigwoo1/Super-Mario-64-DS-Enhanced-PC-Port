@@ -103,11 +103,37 @@ const GxTriangle *gx_polygons(size_t &count);
 
 // Last completed display list, or the current list before the first swap.
 const GxTriangle *gx_display_polygons(size_t &count);
+// A PC-only sidecar. Keys pair a model instance and mesh with the draw and
+// primitive order. The signature must also match before reusing a triangle.
+struct GxMotionKey {
+    uintptr_t instance=0,mesh=0;
+    uint32_t draw=0,primitive=0;
+};
+struct GxMotionTriangle {
+    GxMotionKey key{};
+    size_t triangle_index=0;
+    std::array<int,4> viewport{};
+    std::array<uint64_t,3> local_vertices{};
+    std::array<std::array<float,4>,3> clip{};
+};
+class GxMotionModelScope {
+    GxMotionKey previous_{};
+    bool active_=false;
+public:
+    GxMotionModelScope(const void *instance,const void *mesh);
+    ~GxMotionModelScope();
+    GxMotionModelScope(const GxMotionModelScope &)=delete;
+    GxMotionModelScope &operator=(const GxMotionModelScope &)=delete;
+};
+const GxMotionTriangle *gx_display_motion_triangles(size_t &count);
+const GxMotionTriangle *gx_previous_motion_triangles(size_t &count);
+void gx_set_temporal_motion(bool active);
 // Camera for the same completed geometry frame, before D3D widescreen/depth
 // adjustments. Missing data makes optional temporal effects pass through.
 struct GxCameraFrame {
     std::array<float,16> view_projection{};
     std::array<float,3> eye{},forward{};
+    float near_plane=0,far_plane=0,vertical_fov=0;
     uint64_t serial=0,tick=0;
     uintptr_t owner=0;
     unsigned scene=0;
@@ -123,7 +149,8 @@ GxCameraPrediction gx_camera_prediction();
 bool gx_apply_camera_prediction(GxTriangle &triangle,const GxCameraPrediction &prediction);
 // Shared homogeneous clipping for the software and native GPU rasterizers.
 // out must hold 12 vertices. Returns the clipped polygon's vertex count.
-unsigned gx_clip_polygon(const GxTriangle &triangle, GxVertex *out);
+unsigned gx_clip_polygon(const GxTriangle &triangle, GxVertex *out,
+                         std::array<float,3> *source_weights=nullptr);
 
 // Rasterise them into fb with a depth buffer. Does not clear fb -- the 3D layer
 // composites over whatever the 2D engine already drew.

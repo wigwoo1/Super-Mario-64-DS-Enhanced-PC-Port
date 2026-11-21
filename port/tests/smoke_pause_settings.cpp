@@ -101,7 +101,7 @@ int main() {
     press(1);
     if(!settings.upscale_2d)return 11;
     press(0x100);
-    if(menu.page!=Page::Graphics || menu.rows()!=4)return 43;
+    if(menu.page!=Page::Graphics || menu.rows()!=5)return 43;
     const uint8_t filters[]={2,4,8,16,0};
     for(uint8_t filter:filters) {
         if(press(0x10)!=Action::Changed || settings.anisotropic_filtering!=filter)return 44;
@@ -136,6 +136,20 @@ int main() {
     if(std::strcmp(filter_label,"MOTION BLUR D3D11 ONLY") ||
        press(1)!=Action::None || !settings.motion_blur)return 120;
     settings.renderer=ntr::VideoRenderer::D3D11;
+    press(0x80);
+    if(menu.row!=4 || menu.rows()!=5 || settings.fsr!=ntr::FsrMode::Off)return 131;
+    if(press(1)!=Action::Changed || settings.fsr!=ntr::FsrMode::NativeAA)return 132;
+    if(press(0x10)!=Action::Changed || settings.fsr!=ntr::FsrMode::Quality)return 133;
+    menu.line(4,settings,filter_label,sizeof(filter_label));
+    if(std::strcmp(filter_label,"FSR 3 QUALITY"))return 134;
+    if(press(0x10)!=Action::Changed || settings.fsr!=ntr::FsrMode::Balanced)return 137;
+    menu.line(4,settings,filter_label,sizeof(filter_label));
+    if(std::strcmp(filter_label,"FSR 3 BALANCED"))return 138;
+    if(press(0x10)!=Action::Changed || settings.fsr!=ntr::FsrMode::Performance)return 139;
+    menu.line(4,settings,filter_label,sizeof(filter_label));
+    if(std::strcmp(filter_label,"FSR 3 PERFORMANCE"))return 140;
+    if(press(0x10)!=Action::Changed || settings.fsr!=ntr::FsrMode::Off)return 135;
+    if(press(0x20)!=Action::Changed || settings.fsr!=ntr::FsrMode::Performance)return 136;
     press(0x100);
     if(menu.page!=Page::Map)return 47;
     settings.minimap_opacity=250; press(0x10);

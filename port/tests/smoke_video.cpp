@@ -259,6 +259,7 @@ int main() {
     settings.target_fps = 240;
     settings.anisotropic_filtering = 16;
     settings.renderer = ntr::VideoRenderer::OpenGLSoftware;
+    settings.fsr=ntr::FsrMode::Quality;
     settings.minimap = false;
     settings.minimap_opacity = 137;
     settings.minimap_scale = 310;
@@ -278,6 +279,7 @@ int main() {
     settings.height = 720;
     settings.target_fps = 60;
     settings.renderer = ntr::VideoRenderer::D3D11;
+    settings.fsr=ntr::FsrMode::Off;
     settings.minimap_rotate_with_player = false;
     settings.minimap_hide_touch_target = true;
     settings.stay_in_stage_after_star = false; settings.brain_rot_text=false; settings.camera_zoom=0; settings.always_run=false;
@@ -287,6 +289,7 @@ int main() {
     ntr::video_set_settings(settings);
     if (!ntr::video_load_settings(settings_path)) return 17;
     const ntr::VideoSettings loaded = ntr::video_get_settings();
+    if(loaded.fsr!=ntr::FsrMode::Quality)return 60;
     if(loaded.camera_sensitivity!=175 || !loaded.camera_invert_x || !loaded.camera_invert_y || loaded.camera_acceleration!=2)return 34;
     if(!loaded.pause_music_rec_room)return 35;
     if (loaded.width != 3840 || loaded.height != 2160 || loaded.target_fps != 240 ||
@@ -304,6 +307,13 @@ int main() {
         if(!ntr::video_load_settings(settings_path) ||
             ntr::video_get_settings().texture_quality!=static_cast<ntr::TextureQuality>(quality) ||
             ntr::texture_quality()!=static_cast<ntr::TextureQuality>(quality)) return 26;
+    }
+    for(auto mode:{ntr::FsrMode::Balanced,ntr::FsrMode::Performance}) {
+        settings.fsr=mode;
+        ntr::video_set_settings(settings);
+        if(!ntr::video_save_settings(settings_path))return 61;
+        ntr::video_set_settings(ntr::VideoSettings{});
+        if(!ntr::video_load_settings(settings_path) || ntr::video_get_settings().fsr!=mode)return 62;
     }
     const char *legacy[]={"hd_textures=1\n","hd_textures=0\n",
         "texture_quality=2\nhd_textures=1\n","hd_textures=1\ntexture_quality=3\n",

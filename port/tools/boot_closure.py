@@ -896,7 +896,8 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 texture_hooks = {
                     '_ZN15ModelComponents6RenderEP9Matrix4x3P7Vector3.cpp':
                         ('void ModelComponents::Render(Matrix4x3* mat, Vector3* vec)',
-                         'ntr::TextureModelScope texture_model_scope(info);'),
+                         'ntr::TextureModelScope texture_model_scope(info);\n'
+                         '    ntr::GxMotionModelScope motion_model_scope(this,info);'),
                     '_ZN4Heap10DeallocateEPv.cpp':
                         ('void Heap::Deallocate(void* ptr)', 'ntr::texture_model_forget(ptr);'),
                     '_ZN9SolidHeap14VDeallocateAllEv.cpp':
@@ -919,6 +920,8 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name in texture_hooks:
                     signature,statement=texture_hooks[path.name]
                     transformed='#include "ntr/texture_assets.h"\n'+transformed
+                    if path.name == '_ZN15ModelComponents6RenderEP9Matrix4x3P7Vector3.cpp':
+                        transformed='#include "ntr/gx.h"\n'+transformed
                     pattern=re.escape(signature)+r'\s*\{'
                     transformed,count=re.subn(pattern,lambda m:m[0]+'\n    '+statement,transformed,count=1)
                     if count!=1:raise ValueError('Texture ownership hook changed: '+signature)

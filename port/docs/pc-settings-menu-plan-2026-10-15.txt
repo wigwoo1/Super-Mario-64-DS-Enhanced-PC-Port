@@ -339,6 +339,8 @@ These are planned additions; they are not implemented or verified yet.
   device requirements, frame-generation behavior and input latency before
   integration. Do not label frame generation as true game simulation FPS;
   verify image quality, pacing, latency, settings persistence, and fallback.
+  Backend planning and the local Direct3D 12 capability result are in
+  fsr3-renderer-integration-plan.md.
 - Motion blur: add an Off/On option only after identifying a suitable native
   post-processing path. Keep it off by default, avoid blurring UI/minimap, save
   the preference, and verify motion, pause/menu clarity and frame-time impact.
@@ -569,6 +571,13 @@ Free Camera scales with trigger pressure beyond its deadzone and uses the
 existing sensitivity, acceleration and horizontal inversion. Equal trigger
 pressure cancels. Six focused CTests and the local F: preview passed. Physical
 Xbox and Switch Pro verification is pending.
+
+2026-11-21 scheduling update: Physical Nintendo Switch Pro testing is the
+last project milestone. Continue gameplay, renderer, and other PC work
+without waiting for the controller. Keep the existing virtual-controller
+checks available for input regressions. The final hardware check should
+cover the Bluetooth connection, labeled buttons, sticks, menu navigation,
+and saved bindings.
 
 2026-11-19 surround update. The native mixer now routes camera-relative
 effects to separate 5.1 or 7.1 speaker channels in isolated muted tests.
