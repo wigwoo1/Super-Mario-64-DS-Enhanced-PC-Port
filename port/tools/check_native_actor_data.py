@@ -89,6 +89,23 @@ def main():
         actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
         if actual != (named(factory), *expected[1:]):
             raise ValueError(f'{profile}: native factory or original metadata mismatch')
+    mountain_base, mountain_rom = overlay(30)
+    mountain_profile = struct.unpack_from('<IHHIiiii', mountain_rom, 0x02115a24 - mountain_base)
+    native_profile = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_mountain_log_profile'), 28))
+    if native_profile != (named('daObjHmMaruta_c_classInit'), *mountain_profile[1:]):
+        raise ValueError('Mountain rolling log factory or original profile mismatch')
+    mountain_descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov030_02115a04'), 12))
+    if mountain_descriptor != tuple(named(name) for name in
+                                   ('mountainLogModel', 'mountainLogCollision', 'data_ov030_02114f24')):
+        raise ValueError('Mountain rolling log resource handles or collision surface mismatch')
+    offset = 0x02114f24 - mountain_base
+    if (struct.unpack_from('<4sHH', mountain_rom, offset) != (b'CLPS', 8, 1) or
+            pe_bytes(args.exe, mountain_descriptor[2], 16) != mountain_rom[offset:offset + 16]):
+        raise ValueError('Mountain rolling log collision surface differs from the original')
+    if pe_bytes(args.exe, named('data_ov030_021159f4'), 4) != mountain_rom[
+            0x021159f4 - mountain_base:0x021159f8 - mountain_base]:
+        raise ValueError('Mountain rolling log travel limit differs from the original')
+    print('PASS: mountain rolling log native profile, resources, surface and travel limit')
     descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov022_02112c9c'), 12))
     if descriptor != tuple(named(name) for name in ('logModel', 'logCollision', 'data_ov064_0211bbcc')):
         raise ValueError('Rolling log resource handles or collision surface mismatch')

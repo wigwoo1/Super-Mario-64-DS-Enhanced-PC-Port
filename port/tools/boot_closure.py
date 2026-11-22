@@ -37,7 +37,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daObjKm1_Dorifu_c_classInit", "daObjKm3_Dorifu_c_classInit",
                  "daLinelift2_c_classInit_KM2_SUSUMU", "daLinelift2_c_classInit_KM3_LIFT",
                  "daObjKm2_Gura_c_classInit", "daObjFl_Gura_c_classInit", "daObjFl_Ring_c_classInit",
-                 "daObjFlMaruta_c_classInit", "daObj_volcanoCannon_c_classInit",
+                 "daObjFlMaruta_c_classInit", "daObjHmMaruta_c_classInit", "daObj_volcanoCannon_c_classInit",
                  "daObjFl_Amilift_c_classInit", "daObjFm_Battan_c_classInit", "daObjLava_c_classInit",
                  "daBbl_c_classInit", "daObjFlamethrower_c_classInit",
                  "_ZN13daObjMaruta_c6RenderEv", "_ZN13daObjMaruta_c15OnHitByMegaCharER6Player",
@@ -727,7 +727,7 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import simple_lift_host
                     transformed=simple_lift_host.transform_lava_mesh_lift(root,transformed)
                     rewrites+=1
-                if path.name in ('d_a_obj_fl_maruta.cpp', 'd_a_obj_maruta.cpp'):
+                if path.name in ('d_a_obj_fl_maruta.cpp', 'd_a_obj_maruta.cpp', 'daObjHmMaruta_c.cpp'):
                     import lava_volcano_host
                     transformed=lava_volcano_host.transform(root,transformed,path.name)
                     rewrites+=1

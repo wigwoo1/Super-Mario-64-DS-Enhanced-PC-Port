@@ -578,6 +578,7 @@ static PcNativeActorProfile pc_lava_float_large_profile = {
 };
 extern "C" void *daObjFl_Ring_c_classInit();
 extern "C" void *daObjFlMaruta_c_classInit();
+extern "C" void *daObjHmMaruta_c_classInit();
 extern "C" void *daObj_volcanoCannon_c_classInit();
 extern "C" void *daObjFl_Amilift_c_classInit();
 extern "C" unsigned char g_profile_FM_BATTAN[];
@@ -595,6 +596,9 @@ static PcNativeActorProfile pc_lava_mesh_lift_profile = {
 };
 static PcNativeActorProfile pc_lava_log_profile = {
     (void *)&daObjFlMaruta_c_classInit, 70, 278, 2, 0, 0x500000, 0x2000000, 0
+};
+static PcNativeActorProfile pc_mountain_log_profile = {
+    (void *)&daObjHmMaruta_c_classInit, 102, 265, 2, 0, 0x500000, 0x2000000, 0
 };
 static PcNativeActorProfile pc_volcano_flame_profile = {
     (void *)&daObj_volcanoCannon_c_classInit, 243, 101, 2, 0x10000, 0x60000, 0x4000000, 0
@@ -934,6 +938,7 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_lava_bridge_init_resources();
     data_020a4bb8_storage[69] = &pc_lava_mesh_lift_profile;
     data_020a4bb8_storage[70] = &pc_lava_log_profile;
+    data_020a4bb8_storage[102] = &pc_mountain_log_profile;
     data_020a4bb8_storage[71] = &pc_lava_ring_profile;
     data_020a4bb8_storage[84] = g_profile_FM_BATTAN;
     data_020a4bb8_storage[243] = &pc_volcano_flame_profile;

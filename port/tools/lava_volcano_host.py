@@ -4,6 +4,8 @@ import struct
 
 COLLISION_SURFACE = "data_ov064_0211bbcc"
 TRAVEL_LIMIT = "data_ov022_02112c98"
+MOUNTAIN_LOG_SURFACE = "data_ov030_02114f24"
+MOUNTAIN_LOG_TRAVEL = "data_ov030_021159f4"
 BATTAN_SURFACE = "data_ov064_0211ba4c"
 FLAMETHROWER_TABLES = ("data_ov095_02136f80", "data_ov095_02136f98", "data_ov095_02136fb0")
 
@@ -343,9 +345,54 @@ extern "C" BattanFilePtr data_ov023_02112080 = {};
                    ['int(mState)', 'int(mStateTimer)'])
 
 
+def transform_mountain_log(root, text):
+    overlay = (root / 'extracted/overlays/overlay_0030.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<3I', overlay, 0x02115a04 - base) == (0x02115ca8, 0x02115cb0, 0x02114f24)
+    assert struct.unpack_from('<4sHH', overlay, 0x02114f24 - base) == (b'CLPS', 8, 1)
+    begin = text.index('/* The model handle constructs')
+    end = text.index('/* Reconstructed source-style name:', begin)
+    text = text[:begin] + '''#include <new>
+
+struct CLPS_Block;
+struct ResourceDescriptor {
+    SharedFilePtr *model;
+    SharedFilePtr *collision;
+    CLPS_Block *clps;
+};
+
+extern "C" CLPS_Block data_ov030_02114f24;
+extern "C" int data_ov030_021159f4;
+extern "C" int func_ov080_021270dc(daObjMaruta_c *, ResourceDescriptor *);
+extern "C" int func_ov080_0212714c(daObjMaruta_c *, int *);
+extern "C" int func_ov080_021274ac(daObjMaruta_c *, ResourceDescriptor *);
+extern "C" void *_ZN7fBase_cnwEj(unsigned int);
+
+struct MountainLogHandle : SharedFilePtr { u32 words[2]; };
+static_assert(sizeof(MountainLogHandle) == 8);
+static MountainLogHandle mountainLogModel, mountainLogCollision;
+extern "C" ResourceDescriptor data_ov030_02115a04 = {
+    &mountainLogModel, &mountainLogCollision, &data_ov030_02114f24
+};
+
+''' + text[end:]
+    text = replace(text, '    return new daObjHmMaruta_c();', '''    void *storage = _ZN7fBase_cnwEj(sizeof(daObjHmMaruta_c));
+    return storage ? ::new (storage) daObjHmMaruta_c{} : nullptr;''')
+    text = replace(text, '    return func_ov080_021274ac(this, &data_ov030_02115a04);', '''    static const bool handlesReady = [] {
+        mountainLogModel.Construct(1562);
+        mountainLogCollision.Construct(1563);
+        return true;
+    }();
+    (void)handlesReady;
+    return func_ov080_021274ac(this, &data_ov030_02115a04);''')
+    return text[:text.index('/* Retail construction order:')].rstrip() + '\n'
+
+
 def transform(root, text, name):
     if name == "d_a_obj_maruta.cpp":
         return transform_log_base(text)
+    if name == "daObjHmMaruta_c.cpp":
+        return transform_mountain_log(root, text)
     overlay = (root / 'extracted/overlays/overlay_0022.bin').read_bytes()
     base = 0x021111a0
     assert struct.unpack_from('<3I', overlay, 0x02112c9c-base) == (0x02114668, 0x02114670, 0x0211bbcc)
@@ -527,8 +574,8 @@ def transform_log_base(text):
     text = replace(text, '    t = (*(volatile u16 *)(a1 + 0xc) == 0xbf);',
                    '    t = (reinterpret_cast<dActor_c *>(a1)->actorID == 191);')
     text = replace(text, '    self->mHitByPlayer = 0;\n    return 1;', '''    if (std::getenv("SM64DS_PC_LAVA_VOLCANO_TRACE") && ntr::rt_frame()%10 == 0)
-        std::fprintf(stderr, "[native lava log] tick=%llu uid=%u x=%d y=%d z=%d roll=%d contact=%u collision=%u\\n",
-            static_cast<unsigned long long>(ntr::rt_frame()), self->uniqueID,
+        std::fprintf(stderr, "[native %s log] tick=%llu uid=%u x=%d y=%d z=%d roll=%d contact=%u collision=%u\\n",
+            self->actorID == 102 ? "mountain" : "lava", static_cast<unsigned long long>(ntr::rt_frame()), self->uniqueID,
             self->mPosX, self->mPosY, self->mPosZ, int(self->mRollAngVel),
             unsigned(self->mHitByPlayer), unsigned(self->mMeshCollider.IsEnabled()));
     self->mHitByPlayer = 0;
