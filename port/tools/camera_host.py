@@ -111,7 +111,9 @@ def transform(text):
     anchor = '    {\n        s32 s2 = (s32)(sp[2] + 4) >> 3;'
     if text.count(anchor) != 1:
         raise ValueError('Camera render coordinate conversion changed')
-    text = text.replace(anchor, '    pc_camera_zoom(this, sp);\n\n' + anchor)
+    text = text.replace(anchor, '    pc_camera_zoom(this, sp);\n'
+                        '    if (data_0209f2f8 == 38 && pc_camera_gameplay(this))\n'
+                        '        pc_camera_clear_firesea_floor(sp);\n\n' + anchor)
     behavior = '// @symbol _ZN9dCamera_c8BehaviorEv'
     step = '            func_0200ca50(c);'
     if text.count(behavior) != 1 or text.count(step) != 1:
@@ -120,7 +122,9 @@ def transform(text):
     text = text.replace(step, '            pc_camera_preset_step(this);')
     text = text.replace('// @symbol _ZN9dCamera_c6RenderEv',
                         'static bool pc_camera_gameplay(const dCamera_c *);\n'
-                        'static void pc_camera_zoom(dCamera_c *, s32 *);\n\n// @symbol _ZN9dCamera_c6RenderEv')
+                        'static void pc_camera_zoom(dCamera_c *, s32 *);\n'
+                        'extern "C" void pc_camera_clear_firesea_floor(s32 *);\n\n'
+                        '// @symbol _ZN9dCamera_c6RenderEv')
     # The original lens eases from its authored angle to a narrower idle lens.
     # Keeping the eye distance steady alone cannot remove that visible zoom.
     # Use the authored lens while the player controls the ordinary camera;

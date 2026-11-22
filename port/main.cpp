@@ -1064,6 +1064,41 @@ extern "C" bool pc_camera_on_vertical_lift(const Player *rider) {
     return owner && (owner->actorID==32 || owner->actorID==33 || owner->actorID==131);
 }
 
+extern "C" void pc_camera_clear_firesea_floor(int32_t *view) {
+    const auto clampAboveFloor = [](int32_t *point, int32_t clearance) {
+        // Start above the eye or target so this also finds the moving deck
+        // when the uncorrected camera pose has already dipped through it.
+        const Vector3 origin{point[0], point[1] + 1200 * 4096, point[2]};
+        dBgCh_Gnd probe;
+        probe.SetObjAndPos(origin, nullptr);
+        probe.mProbeHeight = 1400 * 4096;
+        if (!probe.DetectClsn() || !probe.owner || probe.owner->actorID != 166)
+            return INT32_MIN;
+        const int32_t height = probe.clsnY;
+        point[1] = (std::max)(point[1], height + clearance);
+        return height;
+    };
+
+    // Resolve the view after both preset and free camera adjustments. Probe
+    // the authored surface at the two X/Z positions, including its outer rim.
+    // Keeping the aim point above the floor avoids looking through the slope.
+    const int32_t originalEyeY = view[4], originalTargetY = view[1];
+    const int32_t eyeFloorY = clampAboveFloor(view + 3, 160 * 4096);
+    const int32_t targetFloorY = clampAboveFloor(view, 100 * 4096);
+    if (std::getenv("SM64DS_PC_CAMERA_ZOOM_TRACE")) {
+        const auto tick = ntr::rt_frame();
+        static uint64_t lastLogged = UINT64_MAX;
+        if (tick % 5 == 0 && tick != lastLogged) {
+            lastLogged = tick;
+            std::fprintf(stderr,
+                "[firesea camera floor] tick=%llu eye=%d,%d,%d base_y=%d floor_y=%d "
+                "target=%d,%d,%d base_target_y=%d target_floor_y=%d\n",
+                static_cast<unsigned long long>(tick), view[3], view[4], view[5],
+                originalEyeY, eyeFloorY, view[0], view[1], view[2], originalTargetY, targetFloorY);
+        }
+    }
+}
+
 static bool replay_udlift_return() {
     static unsigned first_uid=0,visit=1;
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
@@ -11339,7 +11374,28 @@ static bool replay_firesea_first_platform() {
         }
     }
     if (phase == UpperBridgeHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_ISLAND") &&
-        !std::strcmp(state, "St_Wait_Main")) phase = UpperIslandRun;
+        !std::strcmp(state, "St_Wait_Main")) {
+        if (!std::getenv("SM64DS_PC_TEST_FIRESEA_ARENA_PIPE")) {
+            phase = UpperIslandRun;
+        } else {
+            // With the player settled here, the replay reaches the first jet in
+            // about 50 ticks and the ridge jet in about 235. Leaving at 37 keeps
+            // both crossings in their retracted phase and passes behind the Amp.
+            constexpr int bridge_departure_timer = 37;
+            for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
+                 actor = dActor_c::FindWithActorID(318, actor)) {
+                if (actor->mPosX != -1350 * 4096) continue;
+                const auto *jet = static_cast<const daObjFlamethrower_c *>(actor);
+                if (jet->mState == 0 && jet->mTimer == bridge_departure_timer) {
+                    phase = UpperIslandRun;
+                    std::fprintf(stderr,
+                        "[native Fire Sea route] upper-bridge-flame-depart tick=%llu timer=%d x=%.1f\n",
+                        static_cast<unsigned long long>(tick), jet->mTimer, x);
+                }
+                break;
+            }
+        }
+    }
     if (phase == UpperIslandRun || phase == UpperIslandJump) {
         heading = std::atan2(-1890 - x, 93 - z);
         steer = x < -2040 ? 28000 : 0;
@@ -11362,32 +11418,13 @@ static bool replay_firesea_first_platform() {
     }
     if (phase == UpperIslandHold && std::getenv("SM64DS_PC_TEST_FIRESEA_UPPER_DECK") &&
         !std::strcmp(state, "St_Wait_Main")) phase = UpperDeckRun;
-    auto firesea_flame_window = [&]() {
-        if (!std::getenv("SM64DS_PC_TEST_FIRESEA_BOWSER_THROW")) return true;
-        for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
-             actor = dActor_c::FindWithActorID(318, actor)) {
-            const auto *jet = static_cast<const daObjFlamethrower_c *>(actor);
-            if (std::abs(jet->mPosX / 4096.0 + 1350.0) < 80.0 &&
-                jet->mState == 0 && jet->mActiveFlames == 0 &&
-                jet->mTimer >= 38 && jet->mTimer <= 50) return true;
-        }
-        return false;
-    };
     if (phase == UpperDeckRun || phase == UpperDeckCrouch || phase == UpperDeckRidgeJump ||
         phase == UpperDeckRidgeBrake || phase == UpperDeckRidgeRun ||
         phase == UpperDeckJump) {
         heading = std::atan2(-70 - x, 93 - z);
         steer = phase == UpperDeckJump && x > -200 ? 0 : 32767;
-        if (phase == UpperDeckRun && hit && owner && owner->actorID == 145 && x > -1830) {
-            if (firesea_flame_window()) {
-                phase = UpperDeckCrouch;
-                std::fprintf(stderr,
-                    "[native Fire Sea route] clear-flame-window tick=%llu x=%.1f\n",
-                    static_cast<unsigned long long>(tick), x);
-            } else {
-                steer = 0;
-            }
-        }
+        if (phase == UpperDeckRun && hit && owner && owner->actorID == 145 && x > -1830)
+            phase = UpperDeckCrouch;
         if (phase == UpperDeckCrouch) {
             if (!std::strcmp(state, "St_LongJump_Main")) {
                 phase = UpperDeckRidgeJump;

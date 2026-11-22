@@ -8135,8 +8135,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "3ba3893c6c912e216af8746c2b7aace976cf97ba7f212b005caa3cd4f2c17730",
-      "bytes": 800289
+      "sha256": "bc8b433d1afd209b734379d290cb0344422cc031fe163bf77a7eb1d196ecab0f",
+      "bytes": 802300
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9170,8 +9170,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "6c50d778efc8215015d06538d93a681d6cc9fa8ec3b285e7ac3e24c344429cd9",
-      "bytes": 31724
+      "sha256": "cbd291e83fcbfaae46e831d3fc02444feb992e61eb2b72ee40a47ad0b1b1bd92",
+      "bytes": 31989
     },
     {
       "path": "port/tools/cannon_host.py",
