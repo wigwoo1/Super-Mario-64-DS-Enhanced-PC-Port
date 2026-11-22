@@ -551,7 +551,7 @@ setting exists; the replacement text mod and custom-settings restyle are queued.
 
 2026-10-22: Native Controls rebinding and left/right deadzones are implemented with selected muted runtime verification; see native-rebinding-verified-2026-10-22.txt. Physical Switch Pro acceptance and the original button's distorted letter remain open. The broader settings roadmap remains incomplete.
 
-2026-10-23 request: trigger camera rotation (PLANNED, not implemented).
+2026-10-23 request: trigger camera rotation.
 Add Left Trigger = rotate camera left and Right Trigger = rotate camera right.
 Expose both actions in the keyboard/controller rebinding menu. Support the
 connected controller's trigger representation (including digital triggers),
@@ -571,6 +571,13 @@ Free Camera scales with trigger pressure beyond its deadzone and uses the
 existing sensitivity, acceleration and horizontal inversion. Equal trigger
 pressure cancels. Six focused CTests and the local F: preview passed. Physical
 Xbox and Switch Pro verification is pending.
+
+2026-11-22 update. Horizontal right-stick input now also turns the original
+camera in Preset mode. It uses the saved right-stick deadzone and the same
+preset turn actions as the triggers. A muted Battlefield replay verified
+both directions, stationary Yoshi, and the switch to continuous Free Camera
+with left-stick click. Stick motion inside the deadzone or while paused
+left the view unchanged.
 
 2026-11-21 scheduling update: Physical Nintendo Switch Pro testing is the
 last project milestone. Continue gameplay, renderer, and other PC work

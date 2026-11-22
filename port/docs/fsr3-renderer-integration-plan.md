@@ -194,6 +194,23 @@ pause captures matched the Off control. Quality cleared its history on
 the first resolved frame in each newly entered scene, and all 1,401
 sampled player states and positions matched the Off replay.
 
+A separate 4K Performance check on the NVIDIA RTX 5070 Laptop GPU
+completed the same original Battlefield entry, pause, exit to the castle,
+and course re-entry at the 60 FPS setting. The helper resolved 2,156
+snapshots from 1920×1080 to 3840×2160, with a history reset at the first
+resolved frame in each gameplay scene. The client stayed at 1280×720.
+The selected menu and pause captures and all 1,401 sampled gameplay
+states matched Off. Both replays measured about 60 presentations per
+second over the sampled Battlefield interval. This covers one route
+and device at the 60 FPS cap.
+
+The same 4K Performance replay at the 240 FPS cap matched the 60 FPS
+run's 1,401 sampled gameplay states and course-transition ticks. Over
+the measured Battlefield interval it presented 93.58 frames per second
+while gameplay stayed at 59.99 simulation ticks per second. The menu
+captures still matched and the client remained 1280×720. The 240 setting
+is an upper limit, and actual frame rate depends on the scene and device.
+
 ## Implementation milestones
 
 1. Build a minimal x64 Direct3D 12 FSR 3.1 sample with synthetic geometry.

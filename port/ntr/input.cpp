@@ -318,9 +318,10 @@ void input_poll() {
             };
             g_state.camera_turn=strength(camera_turn_right_binding)-strength(camera_turn_left_binding);
         } else {
+            const int deadzone=std::clamp<int>(settings.right_stick_deadzone,0,50)*32767/100;
             g_state.camera_preset_turn=camera_preset_buttons(
-                binding_down(bindings,camera_turn_left_binding,g_raw_keys,raw_pad),
-                binding_down(bindings,camera_turn_right_binding,g_raw_keys,raw_pad));
+                g_state.right_x < -deadzone || binding_down(bindings,camera_turn_left_binding,g_raw_keys,raw_pad),
+                g_state.right_x > deadzone || binding_down(bindings,camera_turn_right_binding,g_raw_keys,raw_pad));
         }
     }
     g_keyinput = static_cast<uint16_t>((~pressed) & 0x0FFFu);

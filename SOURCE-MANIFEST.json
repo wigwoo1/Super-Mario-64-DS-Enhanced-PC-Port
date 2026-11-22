@@ -6375,8 +6375,8 @@
     },
     {
       "path": "port/docs/fsr3-renderer-integration-plan.md",
-      "sha256": "cef70bb0ae4d35bca89fa3b9b4ea3ffacc150aba24df6774d42144c272118896",
-      "bytes": 14877
+      "sha256": "7fdf8ef1459740bff65c803d4a701bdc0e4508419874e1e83544bca39d7334e0",
+      "bytes": 15896
     },
     {
       "path": "port/docs/goomba-native-integration-handoff-2026-10-16.txt",
@@ -7345,8 +7345,8 @@
     },
     {
       "path": "port/docs/native-tall-tall-mountain-rolling-log-preview.md",
-      "sha256": "3ed4cc52fb981740d9fd6f65df25bac3e2b2fb3072cbb34e719902fbbb1bef28",
-      "bytes": 561
+      "sha256": "1305f78a6a960a8720732c992e9d7ca9db9438c1fc86b7eb6d64d74c4b4c33b6",
+      "bytes": 1046
     },
     {
       "path": "port/docs/native-texture-ownership-checkpoint-2026-10-15.txt",
@@ -7485,8 +7485,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "a5adcdafdc7b036213aadf87b3c56e8c5aa4f65d3f2381eb57e54832fe515e20",
-      "bytes": 44549
+      "sha256": "73aa31c0c20eec88d6407c58c1a4bde782c2dd3846fb832198b92a0cfec83776",
+      "bytes": 44920
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -8350,8 +8350,8 @@
     },
     {
       "path": "port/ntr/input.cpp",
-      "sha256": "19704507b979611b882fdb23ea3fc832a49ff5998773ba4ef784d86ccf8b0ebf",
-      "bytes": 23310
+      "sha256": "8c27502830f88b3b941ce198948956f7f7f3d3af1d59072312eb2439387d374a",
+      "bytes": 23465
     },
     {
       "path": "port/ntr/io.cpp",
@@ -8745,8 +8745,8 @@
     },
     {
       "path": "port/tests/smoke_rebinding.cpp",
-      "sha256": "c3602e6aecc24673dffec294825cecb8bf935b4c4b8b045237453b1a3760a7da",
-      "bytes": 6265
+      "sha256": "e1142fd975b938ef60eb244056077f5673834dc4ff8819ae6698332da66bde28",
+      "bytes": 7012
     },
     {
       "path": "port/tests/smoke_rec_room_touch.cpp",

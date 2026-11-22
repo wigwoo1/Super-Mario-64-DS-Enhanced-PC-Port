@@ -90,6 +90,19 @@ int main() {
     ntr::input_poll();if(ntr::input_state().camera_turn!=0)return 34;
     ntr::input_poll();if(ntr::input_state().camera_turn!=1 || ntr::input_keyinput()!=0xfff)return 35;
     ntr::input_poll();if(ntr::input_state().camera_turn!=0)return 36;
+    ntr::video_set_settings(ntr::VideoSettings{});
+    _putenv_s("SM64DS_PC_TEST_RIGHT_STICK_SCHEDULE",
+              "27:29:-32768:0,29:30:32767:0,30:31:3000:30000,31:34:-32768:0");
+    _putenv_s("SM64DS_PC_TEST_TRIGGER_SCHEDULE","31:32:0:255");
+    for (unsigned short expected : {0x100,0x100,0x200,0,0}) {
+        ntr::input_poll();
+        if(ntr::input_keyinput()!=0xfff || ntr::input_state().camera_preset_turn!=expected)return 37;
+    }
+    ntr_input_set_menu_navigation(1);
+    ntr::input_poll();if(ntr::input_state().camera_preset_turn!=0)return 38;
+    ntr_input_set_menu_navigation(0);
+    ntr::video_set_settings(free);
+    ntr::input_poll();if(ntr::input_state().camera_preset_turn!=0 || ntr::input_state().right_x!=-32768)return 39;
 #endif
     menu.page=Page::Controls;menu.row=4;press(1);
     if(!menu.reset_confirm || settings.bindings.keys[1]!='J')return 18;
