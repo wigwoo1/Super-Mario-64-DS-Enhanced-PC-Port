@@ -1029,11 +1029,27 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                         raise ValueError('Minimap projection orientation hook changed')
                     behavior = behavior.replace(anchor, anchor +
                         '\n    const u16 pcDisplayAngle = ntr::video_minimap_angle(\n'
-                        '        data_0209f318 ? (unsigned short)data_0209f318->f17c : 0);')
+                        '        data_0209f318 ? (unsigned short)data_0209f318->f17c : 0);\n'
+                        '    const bool pcFitMap = (this->mMapWidth == 128 || this->mMapWidth == 256) &&\n'
+                        '        ntr::video_minimap_visible() &&\n'
+                        '        ntr::video_get_settings().minimap_rotate_with_player;')
                     internal, projection = behavior.split('L4d8:\n')
                     projection = projection.replace('this->mAngle', 'pcDisplayAngle')
                     projection = projection.replace(', mAngle);', ', pcDisplayAngle);')
-                    behavior = internal + 'L4d8:\n' + projection
+                    pan_start = '    focusPosSrc = (Vector3 *)'
+                    pan_end = '    /* Project each object list onto the map.'
+                    if projection.count(pan_start) != 1 or projection.count(pan_end) != 1:
+                        raise ValueError('Minimap centering hook changed')
+                    pan_left = projection.index(pan_start)
+                    pan_right = projection.index(pan_end, pan_left)
+                    projection = (projection[:pan_left] + '    if (!pcFitMap) {\n' +
+                                  projection[pan_left:pan_right] + '    }\n\n' +
+                                  projection[pan_right:])
+                    projection = projection.replace('this->mInvScale', 'pcInverseScale')
+                    behavior = (internal + 'L4d8:\n'
+                        '    const s32 pcInverseScale = pcFitMap\n'
+                        '        ? ntr::ppu_minimap_fit_scale(this->mMapWidth, this->mInvScale)\n'
+                        '        : this->mInvScale;\n' + projection)
                     resources = transformed[behavior_end:]
                     anchor = '    mScale = ((mMapWidth) << 12) / (mScale) / 10;'
                     if resources.count(anchor) != 1:

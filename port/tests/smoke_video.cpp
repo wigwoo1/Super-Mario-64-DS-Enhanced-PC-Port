@@ -103,6 +103,12 @@ int main() {
         ntr::VideoSettings overflow;overflow.minimap_x=overflow.minimap_y=1000;
         const auto placed=ntr::minimap_visible_placement(overflow,visible);
         if(placed.minimap_x!=766 || placed.minimap_y!=792 || overflow.minimap_x!=1000)return 214;
+        for(int side : {128,256}) {
+            const int fitted=ntr::minimap_rotation_fit_scale(side,2560);
+            if(fitted*176<side*5793 || (fitted-1)*176>=side*5793)return 215;
+            if(ntr::minimap_rotation_fit_scale(side,9000)!=9000)return 216;
+        }
+        if(ntr::minimap_rotation_fit_scale(512,2560)!=2560)return 217;
         for(unsigned scale=100;scale<=500;scale+=10)for(int delta: {-2000,0,150,2000}) {
             drag.reset();x=y=100;
             drag.update(true,100+scale/3,100+scale/2,uint16_t(scale),x,y);

@@ -7485,8 +7485,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "73aa31c0c20eec88d6407c58c1a4bde782c2dd3846fb832198b92a0cfec83776",
-      "bytes": 44920
+      "sha256": "13656ae5861744f46aa22dc8473148e89f44630b7fcb065c8b6bbb75909468ca",
+      "bytes": 45457
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -8285,8 +8285,8 @@
     },
     {
       "path": "port/ntr/include/ntr/minimap_layout.h",
-      "sha256": "142d5e680909d9556531781f3d5b8f69abc88b41fb09cb0bb7ad76824f1669e4",
-      "bytes": 1510
+      "sha256": "ee7f6ef44e672a44ab4be4548ac436327fbb1d192bf01e5eaeaa892526a4b578",
+      "bytes": 1962
     },
     {
       "path": "port/ntr/include/ntr/mmio.h",
@@ -8305,8 +8305,8 @@
     },
     {
       "path": "port/ntr/include/ntr/ppu.h",
-      "sha256": "36b17be10dc3eff5518fdbdebb5ab2503e4a74115c2bbd4c5fc073077d360bc9",
-      "bytes": 2608
+      "sha256": "d572776973e24d8be7fc14ae21f9c363df03c6fe09c490b71900ea752c42ec69",
+      "bytes": 2667
     },
     {
       "path": "port/ntr/include/ntr/remastered_music.h",
@@ -8365,13 +8365,13 @@
     },
     {
       "path": "port/ntr/minimap_hud.cpp",
-      "sha256": "bd851ec625a7d4b436691c279f8cd0af4268fafa9c648636cbff8a684d643a34",
-      "bytes": 21492
+      "sha256": "dc4a1ae2f2b475e61c194e2ceb71c126aed59c5504bc1930e3c8db7fd136db71",
+      "bytes": 22162
     },
     {
       "path": "port/ntr/ppu.cpp",
-      "sha256": "8e1f9e1b029e66943d5d8852aa01714621721199176e9b4040ad859325f1972d",
-      "bytes": 36941
+      "sha256": "835cc2d9ed7d630631ab698389468c435a666d80d723b053563f82902158374c",
+      "bytes": 38050
     },
     {
       "path": "port/ntr/README.md",
@@ -8670,8 +8670,8 @@
     },
     {
       "path": "port/tests/smoke_minimap_hud.cpp",
-      "sha256": "e14b2ccc4bc4573d057eee0caf755daf9ecd5c728b363ec51c11ae6a45f0f61f",
-      "bytes": 12355
+      "sha256": "82637c74fa9db60200d393b3f9730d0cd88948eb1decf8b5b03c8e1064b673a1",
+      "bytes": 12663
     },
     {
       "path": "port/tests/smoke_model.cpp",
@@ -8735,8 +8735,8 @@
     },
     {
       "path": "port/tests/smoke_ppu_obj.cpp",
-      "sha256": "0282542b158b6b03c21478663dff74cfd939884784026cb7159d37c49e1b1412",
-      "bytes": 7756
+      "sha256": "1aa056f18962085a3f9a189d4392948d249102ac9631bf630db515567f987949",
+      "bytes": 8021
     },
     {
       "path": "port/tests/smoke_ppu_windows.cpp",
@@ -8840,8 +8840,8 @@
     },
     {
       "path": "port/tests/smoke_video.cpp",
-      "sha256": "5f93353aafa3c33922707566c178019b89af3ed3e5b4537e19045ec3ad26e271",
-      "bytes": 18080
+      "sha256": "7e54027f9e1b70cb6041ebb95ee52e8546a92d1e899e785c214460548768f1a1",
+      "bytes": 18423
     },
     {
       "path": "port/tests/smoke_video_window.cpp",
@@ -9155,8 +9155,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "6f6911a78e30bfbb4b826aed8e8c7b25f52d640863707658eded0b36f6b2e6b4",
-      "bytes": 69713
+      "sha256": "3afefe903bcee04527e8e46474c0702e16fdf60a02f0eb68a9c0532e5af496ca",
+      "bytes": 70951
     },
     {
       "path": "port/tools/bowser_host.py",

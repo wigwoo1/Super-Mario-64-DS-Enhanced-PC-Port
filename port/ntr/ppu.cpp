@@ -12,6 +12,7 @@
 #include "ntr/ppu.h"
 
 #include "ntr/mmio.h"
+#include "ntr/minimap_layout.h"
 #include "ntr/rt.h"
 #include "ntr/texture.h"
 
@@ -176,6 +177,7 @@ struct MinimapAtlas {
     uint32_t content_revision=0,screen=0,chars=0,palette=0;
     int side=0;
     uint64_t key=0;
+    int fitted_scale=0;
 } minimap_atlas;
 struct MinimapPack {
     uint32_t epoch=0;
@@ -682,27 +684,52 @@ void ppu_minimap_content_changed() {
     minimap_pack={};
 }
 
-PpuMinimapView ppu_minimap_view() {
-    const char *trace=std::getenv("SM64DS_PC_MINIMAP_PACK_TRACE");
-    const bool inventory=trace && trace[0]=='1';
-    if(!texture_minimap_pack_available() && !inventory)return {};
+static BgConfig minimap_background() {
     const auto &engine=kEngines[ENGINE_B];
     const uint32_t display=rd32(engine.reg_base);
     const auto bg=read_bg(engine,3,display);
     if(!bg.enabled || !bg.affine || !bg.map16 || !bg.bpp8 ||
        (bg.tiles_w!=16 && bg.tiles_w!=32) || (display&0x30080)!=0x10000)return {};
+    return bg;
+}
 
+static void refresh_minimap_atlas(const BgConfig &bg) {
     const int side=bg.tiles_w*8;
     if(minimap_atlas.content_revision!=minimap_content_revision || minimap_atlas.screen!=bg.screen ||
        minimap_atlas.chars!=bg.chars || minimap_atlas.palette!=bg.palette || minimap_atlas.side!=side) {
         std::vector<uint32_t> original(size_t(side)*side,0);
-        for(int y=0;y<side;++y)for(int x=0;x<side;++x)
-            sample_bg_tiles(bg,x,y,original[size_t(y)*side+x]);
+        int radius_squared=0;
+        for(int y=0;y<side;++y)for(int x=0;x<side;++x) {
+            if(!sample_bg_tiles(bg,x,y,original[size_t(y)*side+x]))continue;
+            const int dx=std::max(std::abs(x-side/2),std::abs(x+1-side/2));
+            const int dy=std::max(std::abs(y-side/2),std::abs(y+1-side/2));
+            radius_squared=std::max(radius_squared,dx*dx+dy*dy);
+        }
+        constexpr int safe_height=SCREEN_H-16;
+        const int scale=int(std::ceil(std::sqrt(double(radius_squared))*8192/safe_height));
         const auto key=texture_pixels_key(original.data(),side,side);
-        minimap_atlas={minimap_content_revision,bg.screen,bg.chars,bg.palette,side,key};
-        if(inventory)std::fprintf(stderr,"[minimap pack] key=%016llx size=%dx%d screen=%08x revision=%u\n",
-            static_cast<unsigned long long>(key),side,side,bg.screen,minimap_content_revision);
+        minimap_atlas={minimap_content_revision,bg.screen,bg.chars,bg.palette,side,key,scale};
+        if(const char *trace=std::getenv("SM64DS_PC_MINIMAP_PACK_TRACE");trace && trace[0]=='1')
+            std::fprintf(stderr,"[minimap pack] key=%016llx size=%dx%d screen=%08x revision=%u fit_scale=%d\n",
+                static_cast<unsigned long long>(key),side,side,bg.screen,minimap_content_revision,scale);
     }
+}
+
+int ppu_minimap_fit_scale(int map_side,int inverse_scale) {
+    const auto bg=minimap_background();
+    if(!bg.enabled || bg.tiles_w*8!=map_side)
+        return minimap_rotation_fit_scale(map_side,inverse_scale);
+    refresh_minimap_atlas(bg);
+    return std::max(inverse_scale,minimap_atlas.fitted_scale);
+}
+
+PpuMinimapView ppu_minimap_view() {
+    const char *trace=std::getenv("SM64DS_PC_MINIMAP_PACK_TRACE");
+    if(!texture_minimap_pack_available() && !(trace && trace[0]=='1'))return {};
+    const auto bg=minimap_background();
+    if(!bg.enabled)return {};
+    refresh_minimap_atlas(bg);
+    const int side=bg.tiles_w*8;
     return {minimap_atlas.key,side,bg.pa,bg.pb,bg.pc,bg.pd,bg.ref_x,bg.ref_y,bg.wrap};
 }
 

@@ -579,6 +579,14 @@ both directions, stationary Yoshi, and the switch to continuous Free Camera
 with left-stick click. Stick motion inside the deadzone or while paused
 left the view unchanged.
 
+2026-11-22 rotating minimap fit. Rotate with Camera centers the current map
+and fits its visible pixels inside the minimap's source viewport. Transparent
+padding does not set the scale. The map stays the same size as it turns, and
+markers use its projection. The lower pair of HUD counters makes room for the
+coin row beside narrow maps. Muted replays verified the castle's 256-pixel
+map and Battlefield's 128-pixel map. The preceding fit check also confirmed
+four byte-identical Upright frames against the build before the fit change.
+
 2026-11-21 scheduling update: Physical Nintendo Switch Pro testing is the
 last project milestone. Continue gameplay, renderer, and other PC work
 without waiting for the controller. Keep the existing virtual-controller

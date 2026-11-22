@@ -45,6 +45,7 @@ struct PpuMinimapView {
     bool wrap=false;
 };
 void ppu_minimap_content_changed();
+int ppu_minimap_fit_scale(int map_side,int inverse_scale);
 PpuMinimapView ppu_minimap_view();
 bool ppu_minimap_pack_ready(const PpuMinimapView &view,bool enabled);
 void ppu_minimap_pack_draw(const PpuMinimapView &view,const uint32_t *original,

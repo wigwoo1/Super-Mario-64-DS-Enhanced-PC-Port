@@ -8,6 +8,15 @@ namespace ntr {
 // Bounds of visible map pixels, in thousandths of the source texture.
 struct MinimapHudBounds {unsigned left=0,top=0,right=1000,bottom=1000;};
 
+inline int minimap_rotation_fit_scale(int map_side,int inverse_scale) {
+    if(map_side!=128 && map_side!=256)return inverse_scale;
+    // The square map's longest projection is its diagonal. Keep eight
+    // source screen pixels at each vertical edge for the original markers.
+    constexpr int diagonal_q12=5793; // ceil(sqrt(2) * 4096)
+    constexpr int height=192-16;
+    return std::max(inverse_scale,(map_side*diagonal_q12+height-1)/height);
+}
+
 inline MinimapHudBounds minimap_visible_bounds(const uint8_t *transparent,unsigned width,unsigned height) {
     if(!transparent || !width || !height)return {};
     unsigned left=width,top=height,right=0,bottom=0;

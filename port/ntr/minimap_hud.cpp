@@ -383,14 +383,6 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     int side_x=side_left>=0?side_left:
         (side_right+side_width<=int(width)?side_right:std::clamp(side_left,0,std::max(0,int(width)-side_width)));
     const int side_y=std::clamp(map_y,0,std::max(0,int(height)-2*(row_height+1)));
-    draw_card(side_x,side_y,0);
-    draw_card(side_x,side_y+row_height+1,1);
-    if(timer_visible) {
-        const int timer_cell_w=std::max(2,2*digit_width);
-        const int timer_cell_h=std::max(2,2*digit_height);
-        timer_number(pixels,width,height,0,0,timer_hundredths,timer_cell_w,timer_cell_h,settings.texture_quality);
-    }
-
     const int health_width=card_width(counts[2]),life_width=card_width(counts[3]);
     const int bottom_width=health_width+gap+life_width;
     int bottom_x=int(std::lround((visible_left+(visible_right-visible_left)/2.0)-bottom_width/2.0));
@@ -399,6 +391,23 @@ void minimap_hud_build(uint32_t *pixels,unsigned width,unsigned height,
     const int above_y=map_y-gap-row_height-1;
     int bottom_y=below_y+row_height+1<=int(height)?below_y:
         (above_y>=0?above_y:std::clamp(below_y,0,std::max(0,int(height)-row_height-1)));
+    const int side_bottom=side_y+2*row_height+1;
+    if(side_x<bottom_x+bottom_width && bottom_x<side_x+side_width &&
+       side_y<bottom_y+row_height && bottom_y<side_bottom) {
+        // A narrow visible map can bring the lower pair into the coin row.
+        // Keep the pair at the map edge and move it only far enough sideways.
+        const int adjacent_x=side_x<map_x ? side_x+side_width+gap : side_x-bottom_width-gap;
+        if(adjacent_x>=0 && adjacent_x+bottom_width<=int(width))bottom_x=adjacent_x;
+        else if(side_bottom+gap+row_height<=int(height))bottom_y=side_bottom+gap;
+        else if(side_y>=gap+row_height)bottom_y=side_y-gap-row_height;
+    }
+    draw_card(side_x,side_y,0);
+    draw_card(side_x,side_y+row_height+1,1);
+    if(timer_visible) {
+        const int timer_cell_w=std::max(2,2*digit_width);
+        const int timer_cell_h=std::max(2,2*digit_height);
+        timer_number(pixels,width,height,0,0,timer_hundredths,timer_cell_w,timer_cell_h,settings.texture_quality);
+    }
     draw_card(bottom_x,bottom_y,2);
     draw_card(bottom_x+health_width+gap,bottom_y,3);
 }

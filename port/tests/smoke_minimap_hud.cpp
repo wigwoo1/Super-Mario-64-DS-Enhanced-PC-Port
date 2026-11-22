@@ -69,6 +69,10 @@ int main() {
     minimap_hud_build(other.data(),w,h,s,true,21,47,6,8,3,inset);
     if(other[13*w+165]!=0xffff0000u || other[28*w+165]!=0xff00ff00u)return 21;
     if(other[51*w+198]!=0xff0000ffu || other[51*w+220]!=0xffffff00u)return 22;
+    const MinimapHudBounds narrow{410,360,640,540};
+    minimap_hud_build(other.data(),w,h,s,true,21,47,6,8,3,narrow);
+    for(uint32_t color : {0xffff0000u,0xff00ff00u,0xff0000ffu,0xffffff00u})
+        if(std::count(other.begin(),other.end(),color)!=std::count(pixels.begin(),pixels.end(),color))return 34;
     minimap_hud_build(other.data(),w,h,s,false,21,47,6,8,3);
     if(count(other))return 9;
     s.minimap=false;minimap_hud_build(other.data(),w,h,s,true,21,47,6,8,3);

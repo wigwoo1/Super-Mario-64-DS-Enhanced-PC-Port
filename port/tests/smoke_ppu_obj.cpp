@@ -150,6 +150,8 @@ int main() {
     std::vector<uint32_t> overlay;
     auto view=ppu_minimap_view();
     if(!ppu_minimap_pack_ready(view,true))result=11;
+    const int full_map_fit=ppu_minimap_fit_scale(128,2560);
+    if(full_map_fit*176<128*5792 || full_map_fit>4220)result=18;
     const auto draw=[&] {
         ppu_scanout(ENGINE_B,frame,true,0x0f,ownership.data());
         ppu_scanout_obj(ENGINE_B,frame,ownership.data());
@@ -177,6 +179,10 @@ int main() {
     NTR_MMIO(uint32_t,0x04001000)=0x00011813;
     map[0]=0;ppu_minimap_content_changed();
     if(ppu_minimap_pack_ready(ppu_minimap_view(),true))result=15;
+    std::fill_n(map,16*16,1);
+    map[7*16+7]=0;
+    ppu_minimap_content_changed();
+    if(ppu_minimap_fit_scale(128,2560)!=2560)result=19;
     fs::current_path(old);
     fs::remove_all(temp);
     if(result)return result;
