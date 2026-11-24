@@ -32,6 +32,12 @@
 
 #include "CapIcon.h"
 #include "SaveData.h"
+#ifdef SM64DS_PLATFORM_PC
+#include <cstdio>
+#include <cstdlib>
+extern "C" SaveData data_0209caa0;
+extern "C" signed char data_0209f2f8;
+#endif
 
 extern "C" {
 
@@ -150,4 +156,12 @@ extern "C" void func_ov001_020ab2e4(void)
     }
     data_ov001_020ad620 = 0;
     data_ov001_020ad624 = 0;
+#ifdef SM64DS_PLATFORM_PC
+    if (std::getenv("SM64DS_PC_TRACE_CAP_REQUESTS")) {
+        std::fprintf(stderr, "[cap requests init] level=%d save_flags=%08x mario=%d requests=%u,%u,%u\n",
+            int(data_0209f2f8), unsigned(data_0209caa0.flags2), int(SaveData::IsCharacterUnlocked(0)),
+            unsigned(data_ov001_020ad628[0]), unsigned(data_ov001_020ad628[1]),
+            unsigned(data_ov001_020ad628[2]));
+    }
+#endif
 }

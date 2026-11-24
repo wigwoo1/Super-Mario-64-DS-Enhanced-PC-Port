@@ -30,6 +30,11 @@
 #include "CapIcon.h"
 #include "dActor_c.h"
 #include "Player.h"
+#ifdef SM64DS_PLATFORM_PC
+#include "SaveData.h"
+#include <cstdio>
+#include <cstdlib>
+#endif
 
 extern "C" {
 
@@ -73,6 +78,17 @@ void func_ov001_020aaf40(void);
 
 void func_ov001_020aaf40(void)
 {
+#ifdef SM64DS_PLATFORM_PC
+    static int previous_level = -1;
+    const bool trace = std::getenv("SM64DS_PC_TRACE_CAP_REQUESTS")
+        && previous_level != data_0209f2f8;
+    if (trace) {
+        previous_level = data_0209f2f8;
+        std::fprintf(stderr, "[cap requests before update] level=%d mario=%d requests=%u,%u,%u\n",
+            int(data_0209f2f8), int(SaveData::IsCharacterUnlocked(0)), unsigned(data_ov001_020ad628[0]),
+            unsigned(data_ov001_020ad628[1]), unsigned(data_ov001_020ad628[2]));
+    }
+#endif
     int j;
     int i;
 
@@ -121,6 +137,13 @@ void func_ov001_020aaf40(void)
         }
         func_ov001_020aaa54();
         data_ov001_020ad624 = 0;
+#ifdef SM64DS_PLATFORM_PC
+        if (trace) {
+            std::fprintf(stderr, "[cap requests after update] level=%d requests=%u,%u,%u\n",
+                int(data_0209f2f8), unsigned(data_ov001_020ad628[0]),
+                unsigned(data_ov001_020ad628[1]), unsigned(data_ov001_020ad628[2]));
+        }
+#endif
     }
 }
 

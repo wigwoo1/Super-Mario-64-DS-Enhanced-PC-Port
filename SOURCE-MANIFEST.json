@@ -8140,8 +8140,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "bc8b433d1afd209b734379d290cb0344422cc031fe163bf77a7eb1d196ecab0f",
-      "bytes": 802300
+      "sha256": "f184396c886e0c861b4a7da279e2e3a21e7f15c8a72d07f16cd0e6673843356e",
+      "bytes": 803191
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -12480,8 +12480,8 @@
     },
     {
       "path": "src/actors/CapIconMgr.cpp",
-      "sha256": "320d44fd108368e8a262806c32dfde8c482fe42f02aa31200cbbdf0f0325d7ad",
-      "bytes": 17184
+      "sha256": "a20a95c309fdb89c880a2e9e9acfbf49120a2c4e885656895f0d07841895b9ac",
+      "bytes": 18116
     },
     {
       "path": "src/actors/da1up_c.cpp",
@@ -13310,8 +13310,8 @@
     },
     {
       "path": "src/actors/dCapIcon_c.cpp",
-      "sha256": "56336c591476a4e21783494a9e4f8f2a1c9d61b9e3dea50660b8413da2891567",
-      "bytes": 4515
+      "sha256": "03db9ea8e78e38c235c51defd5ae57e0c9761306e040e5e68390640444bb01f8",
+      "bytes": 5088
     },
     {
       "path": "src/actors/dEnemyBase_c.cpp",

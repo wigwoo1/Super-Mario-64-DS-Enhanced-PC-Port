@@ -12425,6 +12425,7 @@ static bool replay_goomboss_second_hit()
 // Opt-in read-only actor census for fresh-save route investigation. The
 // original object table may spawn actors whose retail profile is not yet
 // named/native; enumerate the live actor IDs once at a requested frame.
+extern "C" unsigned char data_ov001_020ad628[], data_ov001_020ad62c[];
 static void trace_actor_census(uint64_t frame)
 {
     static uint64_t last_frame = ~uint64_t(0);
@@ -12450,6 +12451,20 @@ static void trace_actor_census(uint64_t frame)
             actor->uniqueID, actor->aliveState, actor->param1,
             static_cast<int>(actor->mAreaId), actor->mPosX, actor->mPosY,
             actor->mPosZ, actor->mFlags);
+        if (actor->actorID == 200 && actor->aliveState == 1) {
+            const auto *goomba = static_cast<const daKrb_c *>(actor);
+            const unsigned cap = goomba->mCapId & 7;
+            if (cap < 3) {
+                const auto &icon = goomba->mCapIcon;
+                std::fprintf(stderr,
+                    "[native cap census] tick=%llu uid=%u cap=%u bank=%u icon_flags=%u "
+                    "icon_kind=%u slot=%d request_flags=%u dispatch_flags=%u\n",
+                    static_cast<unsigned long long>(frame), goomba->uniqueID,
+                    unsigned(goomba->mCapId), unsigned(goomba->mCapBank), unsigned(icon.mFlags),
+                    unsigned(icon.unk_19), icon.mSlot, unsigned(data_ov001_020ad628[cap]),
+                    unsigned(data_ov001_020ad62c[cap]));
+            }
+        }
     }
     for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
          actor = dActor_c::FindWithActorID(318, actor)) {
