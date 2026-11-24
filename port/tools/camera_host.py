@@ -356,14 +356,6 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
                 unsigned(settings.camera_invert_x),unsigned(settings.camera_invert_y),unsigned(settings.camera_acceleration));
     }
     if(settings.camera_mode==1) {
-        // Match the game's own horizontal-angle convention (atan2(x,z)),
-        // which is the opposite orientation of the render-space atan2(z,x).
-        const int free_camera_angle=static_cast<int>(std::lround(
-            (1.5707963267948966-orbit_yaw)*65536.0/6.283185307179586));
-        const int native_camera_angle=static_cast<int>(camera->mAngleY)+
-            *reinterpret_cast<const short *>(reinterpret_cast<const char *>(camera)+0x188);
-        const int movement_offset=((free_camera_angle-native_camera_angle+32768)&0xffff)-32768;
-        pc_camera_set_movement_yaw_offset(static_cast<short>(std::clamp(movement_offset,-32768,32767)),1);
         const int denominator[]={4,3,2,1};
         const double distance=settings.camera_zoom>0 && settings.camera_zoom<4
             ? distance_floor*4.0/denominator[settings.camera_zoom] : distance_floor;
@@ -383,6 +375,17 @@ static void pc_camera_zoom(dCamera_c *camera, s32 *view)
             desired={start.x+static_cast<int>(dx*fraction),start.y+static_cast<int>(dy*fraction),start.z+static_cast<int>(dz*fraction)};
         }
         _ZN9dBgCh_LinD1Ev(&line);
+        // Collision can shift the eye off the requested orbit. Steer from
+        // the rendered heading using the game's atan2(x,z) convention.
+        const double rendered_x=double(desired.x)-target.x;
+        const double rendered_z=double(desired.z)-target.z;
+        const double heading=rendered_x!=0 || rendered_z!=0
+            ? std::atan2(rendered_x,rendered_z) : 1.5707963267948966-orbit_yaw;
+        const int free_camera_angle=static_cast<int>(std::lround(heading*65536.0/6.283185307179586));
+        const int native_camera_angle=static_cast<int>(camera->mAngleY)+
+            *reinterpret_cast<const short *>(reinterpret_cast<const char *>(camera)+0x188);
+        const int movement_offset=((free_camera_angle-native_camera_angle+32768)&0xffff)-32768;
+        pc_camera_set_movement_yaw_offset(static_cast<short>(movement_offset),1);
         view[0]=target.x;view[1]=target.y;view[2]=target.z;
         view[3]=desired.x;view[4]=desired.y;view[5]=desired.z;
         if(std::getenv("SM64DS_PC_CAMERA_ORBIT_TRACE")) {

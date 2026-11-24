@@ -654,3 +654,10 @@ setting averages about 240 draws/sec at 720p and 239 at 4K in the tested
 castle scene, with measured game time at 60 Hz. CPU OpenGL draws extra
 frames but trails its 120 FPS target. Character animation still follows
 the original scene updates. Other courses and monitor output remain open.
+
+2026-11-23 Free Camera wall steering. Forward input now follows the
+horizontal heading of the rendered camera after its collision check.
+In a muted castle-grounds replay at the widest zoom, the difference
+between the forward travel and viewing directions dropped from 5.28
+degrees to 0.18 degrees. An open-ground turn and return to Preset also
+passed. Both checks used scripted controller input and isolated saves.

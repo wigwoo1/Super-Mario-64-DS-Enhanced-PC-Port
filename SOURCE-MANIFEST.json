@@ -7485,8 +7485,8 @@
     },
     {
       "path": "port/docs/pc-settings-menu-plan-2026-10-15.txt",
-      "sha256": "13656ae5861744f46aa22dc8473148e89f44630b7fcb065c8b6bbb75909468ca",
-      "bytes": 45457
+      "sha256": "3ec1af4593554953eead87ec8fc42e2170a2acf823beca807ec76894434b6dea",
+      "bytes": 45873
     },
     {
       "path": "port/docs/player-callback-checkpoint-2026-10-14.md",
@@ -8875,8 +8875,8 @@
     },
     {
       "path": "port/tests/test_camera_host.py",
-      "sha256": "dc2a654f69bc6d7f5d87285008b96f234adfbf3eba2d0add2bf4cd30d57432c4",
-      "bytes": 2494
+      "sha256": "66a05a6aed42b41064f617fdb7e5e52165cfa7faa23d1b77a6dfea7017cefd37",
+      "bytes": 3010
     },
     {
       "path": "port/tests/test_cannon_audio_host.py",
@@ -9175,8 +9175,8 @@
     },
     {
       "path": "port/tools/camera_host.py",
-      "sha256": "cbd291e83fcbfaae46e831d3fc02444feb992e61eb2b72ee40a47ad0b1b1bd92",
-      "bytes": 31989
+      "sha256": "0f73574e0f29b21daa3a9b8ae6348e910c6afb4923992f1cef29d94d35825d6c",
+      "bytes": 32184
     },
     {
       "path": "port/tools/cannon_host.py",

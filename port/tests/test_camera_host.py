@@ -15,7 +15,8 @@ class CameraHostTests(unittest.TestCase):
         adapted = camera_host.transform(self.original)
         self.assertEqual(adapted.count('pc_camera_zoom(this, sp);'), 1)
         behavior = self.original.split('int dCamera_c::Behavior()')[1].split('// @symbol')[0]
-        self.assertIn(behavior, adapted)
+        behavior = behavior.replace('            func_0200ca50(c);', '            pc_camera_preset_step(this);')
+        self.assertTrue(behavior in adapted, 'Tracking behavior changed outside the preset step hook')
         self.assertLess(adapted.index('pc_camera_zoom(this, sp);'),
                         adapted.index('s32 s2 = (s32)(sp[2] + 4) >> 3;'))
         self.assertIn('_ZN9dBgCh_Lin10DetectClsnEv(&line)!=0', adapted)
@@ -33,12 +34,17 @@ class CameraHostTests(unittest.TestCase):
         self.assertIn('native_eye={camera->pos.x,camera->pos.y,camera->pos.z}',adapted)
         self.assertIn('distance=%.2f angle=',adapted)
         self.assertIn('pc_camera_set_movement_yaw_offset(static_cast<short>', adapted)
-        self.assertIn('response.update(input.right_x,input.right_y,settings,elapsed)', adapted)
+        self.assertIn('response.update(input.right_x,input.right_y,settings,elapsed,input.camera_turn)', adapted)
         self.assertIn('double(tick-control_tick)/60.0',adapted)
         self.assertIn('response.reset(); control_tick=~0ull',adapted)
         self.assertIn('distance_floor=std::max(distance_floor,std::min(native_distance,max_gameplay_distance))', adapted)
         self.assertIn('distance_floor*4.0/denominator[settings.camera_zoom]', adapted)
-        self.assertIn('(1.5707963267948966-orbit_yaw)*65536.0/6.283185307179586', adapted)
+        self.assertIn('std::atan2(rendered_x,rendered_z)', adapted)
+        eye = adapted.index('const double rendered_x=double(desired.x)-target.x;')
+        clip = adapted.index('desired={start.x+static_cast<int>(dx*fraction)')
+        movement = adapted.index('pc_camera_set_movement_yaw_offset(static_cast<short>(movement_offset),1);')
+        self.assertLess(clip, eye)
+        self.assertLess(eye, movement)
         self.assertIn('max_gameplay_distance=900.0*4096.0', adapted)
 
     def test_changed_anchor_is_rejected(self):
