@@ -3,12 +3,14 @@
 #include <vector>
 
 namespace ntr {
-enum class MinigameLayout : uint8_t { TopBottom, LeftRight, RightLeft };
+enum class MinigameLayout : uint8_t { TopBottom, LeftRight, RightLeft, TopBottomEven };
+constexpr unsigned minigame_layout_count = 4;
 struct ScreenRect { int x=0, y=0, width=0, height=0; };
 struct DualScreenLayout { ScreenRect top, bottom; };
 ScreenRect screen_fit(unsigned source_width, unsigned source_height, const ScreenRect &slot);
-// Split the selected axis 75/25, then fit each original 4:3 screen in its slot.
+// Fit each original 4:3 screen into its slot without stretching it.
 DualScreenLayout screen_layout(MinigameLayout, unsigned width, unsigned height);
+MinigameLayout screen_layout_step(MinigameLayout, int direction);
 DualScreenLayout credits_layout(unsigned width, unsigned height);
 const char *screen_layout_name(MinigameLayout);
 // Reject the top screen and black bars. Coordinates are in output pixels.

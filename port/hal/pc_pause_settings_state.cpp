@@ -129,7 +129,7 @@ Action Menu::update(uint16_t keys, ntr::VideoSettings &s) {
         if (row == 4) s.minimap_rotate_with_player = !s.minimap_rotate_with_player;
         break;
     case Page::Screens:
-        s.minigame_layout=static_cast<ntr::MinigameLayout>((static_cast<unsigned>(s.minigame_layout)+(direction>0?1:2))%3);
+        s.minigame_layout=ntr::screen_layout_step(s.minigame_layout,direction);
         break;
     case Page::Audio:
         if(row==0)s.audio_layout=static_cast<ntr::AudioLayout>((static_cast<unsigned>(s.audio_layout)+(direction>0?1:2))%3);
@@ -195,7 +195,7 @@ void Menu::line(unsigned i, const ntr::VideoSettings &s, char *out, size_t size)
         }
         if (i==1) std::snprintf(out,size,"FRAME RATE %u FPS",s.target_fps);
         if (i==2) std::snprintf(out,size,"%s%s%s",
-            s.texture_quality>=ntr::TextureQuality::Upscaled?"":"TEXTURES ",
+            s.texture_quality>=ntr::TextureQuality::None?"":"TEXTURES ",
             ntr::texture_quality_name(s.texture_quality),ntr::texture_pack_status(s.texture_quality));
         if (i==3) std::snprintf(out,size,"2D SCALING %s",s.upscale_2d?"CRISP":"SMOOTH");
         break;
@@ -431,7 +431,9 @@ void draw(const Menu &m, const ntr::VideoSettings &s, unsigned char *chars,
         line(label,0);
     }
     if(m.page==Page::Camera) line("L3 FREE / R3 ZOOM",15);
-    if(m.page==Page::Screens) line("TOP 75%  BOTTOM 25%",15);
+    if(m.page==Page::Screens)
+        line(s.minigame_layout==ntr::MinigameLayout::TopBottomEven?
+             "TOP 50%  BOTTOM 50%":"TOP 75%  BOTTOM 25%",15);
     if(m.page==Page::Audio) {
         const auto output=ntr::audio_output_status();
         std::snprintf(label,sizeof(label),"ACTIVE %s%s",ntr::audio_output_name(output),

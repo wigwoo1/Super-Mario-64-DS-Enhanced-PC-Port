@@ -217,7 +217,10 @@ bool geometry(bool dual,const GxCameraPrediction &prediction) {
                 gl.TexCoord2f(d.material->width>0?a.u/d.material->width:0,d.material->height>0?a.v/d.material->height:0);
                 float x=a.clip_x*d.w/SCREEN_W+a.w*(2.0f*d.x/SCREEN_W+float(d.w)/SCREEN_W-1);
                 float y=a.clip_y*d.h/SCREEN_H+a.w*(1-2.0f*d.y/SCREEN_H-float(d.h)/SCREEN_H);
-                gl.Vertex4f(x,y,a.clip_z,a.w);
+                // GX already clipped this polygon. Keep roundoff at the
+                // clip planes from triggering a second clip in OpenGL.
+                gl.Vertex4f(std::clamp(x,-a.w,a.w),std::clamp(y,-a.w,a.w),
+                            std::clamp(a.clip_z,-a.w,a.w),a.w);
             }
             gl.End();
         };

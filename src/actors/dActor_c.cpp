@@ -297,18 +297,22 @@ int dActor_c::BeforeRender()
         goto ret1;
 #if defined(SM64DS_PLATFORM_PC)
     {
-        const ntr::RenderDistance distance=ntr::video_get_settings().render_distance;
-        if(distance!=ntr::RenderDistance::Minimum) {
+        const auto settings=ntr::video_get_settings();
+        const auto distance=settings.render_distance;
+        const bool wide=ntr::video_widescreen_gameplay();
+        if(wide || distance!=ntr::RenderDistance::Minimum) {
             /* Re-run only the camera-frustum test. BeforeBehavior owns the
                actor's AI/update flags and the area/story visibility gate; do
                not change either one to draw an already-loaded distant actor. */
             Vector3 cameraPosition;
-            cameraPosition.x=mCamSpacePosX;
+            cameraPosition.x=wide?pc_render_distance::widescreen_x(
+                mCamSpacePosX,settings.width,settings.height):mCamSpacePosX;
             cameraPosition.y=mCamSpacePosY;
             cameraPosition.z=mCamSpacePosZ;
             dClipper *clipper=&data_0209f43c;
             const s32 oldFar=clipper->mFarZ;
-            clipper->mFarZ=0x3fffffff;
+            if(distance!=ntr::RenderDistance::Minimum)
+                clipper->mFarZ=pc_render_distance::kMaximumDepth;
             u8 hint=static_cast<u8>(mClipResult&3);
             const int depth=_ZN8dClipper13Func_020150E8ER7Vector35Fix12IiEPh(
                 reinterpret_cast<char *>(clipper),&cameraPosition,mClipRadius,&hint);

@@ -106,6 +106,14 @@ def main():
             0x021159f4 - mountain_base:0x021159f8 - mountain_base]:
         raise ValueError('Mountain rolling log travel limit differs from the original')
     print('PASS: mountain rolling log native profile, resources, surface and travel limit')
+    cage_profile = struct.unpack_from('<IHHIiiii', mountain_rom, 0x02115950 - mountain_base)
+    native_cage = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_mountain_cage_profile'), 28))
+    if native_cage != (named('daObjHmBskt_c_classInit'), *cage_profile[1:]):
+        raise ValueError('Mountain cage factory or original profile mismatch')
+    cage_surface = 0x02114ee4 - mountain_base
+    if pe_bytes(args.exe, named('data_ov030_02114ee4'), 16) != mountain_rom[cage_surface:cage_surface + 16]:
+        raise ValueError('Mountain cage collision surface differs from the original')
+    print('PASS: mountain cage native profile and collision surface')
     descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov022_02112c9c'), 12))
     if descriptor != tuple(named(name) for name in ('logModel', 'logCollision', 'data_ov064_0211bbcc')):
         raise ValueError('Rolling log resource handles or collision surface mismatch')

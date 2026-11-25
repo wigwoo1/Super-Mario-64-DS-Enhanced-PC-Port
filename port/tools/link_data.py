@@ -353,9 +353,11 @@ def main() -> int:
     from lava_puzzle_host import data_requests as lava_puzzle_data_requests
     external_names.update({'_' + name: name for name in lava_puzzle_data_requests(root)})
     from lava_volcano_host import (BATTAN_SURFACE, COLLISION_SURFACE, FLAMETHROWER_TABLES,
-                                   MOUNTAIN_LOG_SURFACE, MOUNTAIN_LOG_TRAVEL, TRAVEL_LIMIT)
+                                   MOUNTAIN_CAGE_SURFACE, MOUNTAIN_LOG_SURFACE, MOUNTAIN_LOG_TRAVEL,
+                                   TRAVEL_LIMIT)
     external_names.update({'_' + name: name for name in (BATTAN_SURFACE, COLLISION_SURFACE,
-        TRAVEL_LIMIT, MOUNTAIN_LOG_SURFACE, MOUNTAIN_LOG_TRAVEL, *FLAMETHROWER_TABLES)})
+        TRAVEL_LIMIT, MOUNTAIN_CAGE_SURFACE, MOUNTAIN_LOG_SURFACE, MOUNTAIN_LOG_TRAVEL,
+        *FLAMETHROWER_TABLES)})
     if manifest_path.is_file():
         try:
             external_names.update(json.loads(manifest_path.read_text(encoding="utf-8")))

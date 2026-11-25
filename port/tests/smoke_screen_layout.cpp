@@ -15,14 +15,21 @@ int main() {
         top.px[y][x]=0xff112233;bottom.px[y][x]=0xff000000u|(y<<8)|x;
     }
     for(auto dims:{ScreenRect{0,0,1280,720},ScreenRect{0,0,3840,2160},ScreenRect{0,0,3440,1474},ScreenRect{0,0,777,999}})
-        for(unsigned mode=0;mode<3;++mode) {
-            const auto r=screen_layout(static_cast<MinigameLayout>(mode),dims.width,dims.height);
+        for(unsigned mode=0;mode<minigame_layout_count;++mode) {
+            const auto layout=static_cast<MinigameLayout>(mode);
+            const auto r=screen_layout(layout,dims.width,dims.height);
             for(const auto &p:{r.top,r.bottom}) {
                 CHECK(p.width>0 && p.height>0 && p.x>=0 && p.y>=0 && p.x+p.width<=dims.width && p.y+p.height<=dims.height);
                 CHECK(std::abs(p.width*3-p.height*4)<=3);
             }
-            CHECK(mode==0?r.top.y+r.top.height<=r.bottom.y:
-                mode==1?r.top.x+r.top.width<=r.bottom.x:r.bottom.x+r.bottom.width<=r.top.x);
+            if(layout==MinigameLayout::TopBottom || layout==MinigameLayout::TopBottomEven)
+                CHECK(r.top.y+r.top.height<=r.bottom.y);
+            else if(layout==MinigameLayout::LeftRight)
+                CHECK(r.top.x+r.top.width<=r.bottom.x);
+            else
+                CHECK(r.bottom.x+r.bottom.width<=r.top.x);
+            if(layout==MinigameLayout::TopBottomEven)
+                CHECK(std::abs(r.top.height-r.bottom.height)<=1);
             uint16_t x=0,y=0;
             CHECK(!screen_touch(r.bottom,r.top.x+r.top.width/2,r.top.y+r.top.height/2,x,y));
             CHECK(!screen_touch(r.bottom,r.bottom.x-1,r.bottom.y,x,y));
@@ -51,13 +58,13 @@ int main() {
     video_set_credits_active(false);
     CHECK(!video_dual_screen_active());
     video_set_minimap_gameplay(false);
-    for(unsigned mode=0;mode<3;++mode) {
+    for(unsigned mode=0;mode<minigame_layout_count;++mode) {
         VideoSettings s;s.minigame_layout=static_cast<MinigameLayout>(mode);video_set_settings(s);
         CHECK(video_save_settings("screen-layout-smoke.ini"));
         video_set_settings(VideoSettings{});CHECK(video_load_settings("screen-layout-smoke.ini"));
         CHECK(video_get_settings().minigame_layout==static_cast<MinigameLayout>(mode));
     }
-    for(const char *invalid:{"minigame_layout=3\n","minigame_layout=256\n","minigame_layout=-1\n"}) {
+    for(const char *invalid:{"minigame_layout=4\n","minigame_layout=256\n","minigame_layout=-1\n"}) {
         FILE *f=std::fopen("screen-layout-smoke.ini","wb");CHECK(f);if(!f)return 1;
         std::fputs(invalid,f);std::fclose(f);CHECK(video_load_settings("screen-layout-smoke.ini"));
         CHECK(video_get_settings().minigame_layout==MinigameLayout::TopBottom);
@@ -69,18 +76,23 @@ int main() {
         CHECK(s.bottom.width==0 && s.bottom.height==0);
         CHECK(s.top.width>0 && s.top.height>0 && std::abs(s.top.width*3-s.top.height*4)<=3);
         uint16_t tx=0,ty=0;
-        CHECK(star_select_touch(s.top,s.top.x+s.top.width*128/256,s.top.y+s.top.height*129/192,tx,ty));
+        CHECK(star_select_touch(s.top,s.top.x+s.top.width*128/256,s.top.y+s.top.height*124/192,tx,ty));
         CHECK(std::abs(int(tx)-128)<=4 && std::abs(int(ty)-96)<=4);
         CHECK(!star_select_touch(s.top,s.top.x+s.top.width/2,s.top.y+s.top.height*50/192,tx,ty));
+        CHECK(!star_select_touch(s.top,s.top.x+s.top.width/2,
+            s.top.y+(s.top.height*160+191)/192,tx,ty));
         CHECK(!star_select_touch(s.top,s.top.x-1,s.top.y,tx,ty));
     }
     for(auto &row:bottom.px)for(auto &pixel:row)pixel=0xffffffffu;
     for(auto &row:top.px)for(auto &pixel:row)pixel=0xff112233u;
     bottom.px[96][128]=0xffff00ffu;
+    bottom.px[189][128]=0xffcc2211u;
     star_select_overlay(bottom,top);
-    CHECK(top.px[129][128]==0xffff00ffu); // retained character pixel
-    CHECK(top.px[124][128]==0xffffffffu); // decorative medal removed
-    CHECK(top.px[160][200]==0xff112233u); // course title retained
+    CHECK(top.px[124][128]==0xffff00ffu); // retained character pixel
+    CHECK(top.px[129][128]==0xffffffffu); // decorative medal removed
+    CHECK(top.px[155][128]==0xffffffffu); // medal rim beneath the prompt removed
+    CHECK(top.px[159][128]==0xffcc2211u); // final inset row
+    CHECK(top.px[160][128]==0xff112233u); // course title retained, even under the inset
     CHECK(top.px[32][128]==0xff112233u);  // native Star geometry retained
     std::remove("screen-layout-smoke.ini");
     std::puts("Screen layout: geometry, touch bounds, composition, scene state, settings persistence checked");

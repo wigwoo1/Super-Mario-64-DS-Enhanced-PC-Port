@@ -57,7 +57,7 @@ int main(int argc,char **argv) {
         s=ntr::video_get_settings();s.fsr=ntr::FsrMode::Quality;ntr::video_set_settings(s);
         if(!check(1280,720,false) || *ntr::gpu_fsr_notice())return 16;
     }
-    for(unsigned layout=0;layout<3;++layout) {
+    for(unsigned layout=0;layout<ntr::minigame_layout_count;++layout) {
         auto s=ntr::video_get_settings();s.minigame_layout=static_cast<ntr::MinigameLayout>(layout);ntr::video_set_settings(s);
         if(!check(256,192,true) || !check(3840,2160,true))return 8;
     }
@@ -71,7 +71,25 @@ int main(int argc,char **argv) {
     if(!IsZoomed(window) || ntr::video_get_settings().width!=3840)return 12;
     ShowWindow(window,SW_RESTORE);GetClientRect(window,&client);
     if(client.right!=resized_client.right || client.bottom!=resized_client.bottom)return 13;
+    ntr::video_close();
+    // A wide PC window is independent of the supported raster presets.
+    file=std::fopen(path,"wb");if(!file)return 17;
+    std::fputs("width=256\nheight=192\nwindow_width=5120\nwindow_height=2304\n",file);
+    std::fclose(file);
+    if(!ntr::video_open(title))return 18;
+    const auto wide_window_raster=ntr::video_get_settings();
+    if(wide_window_raster.width!=256 || wide_window_raster.height!=192 ||
+       !ntr::video_save_settings())return 19;
+    // Windows may fit the actual startup window to a smaller desktop.
+    // The requested size must survive saving on that desktop.
+    file=std::fopen(path,"rb");if(!file)return 20;
+    char line[160];
+    std::string saved;
+    while(std::fgets(line,sizeof(line),file))saved+=line;
+    std::fclose(file);
     ntr::video_close();DeleteFileA(path);
+    if(saved.find("window_width=5120\n")==std::string::npos ||
+       saved.find("window_height=2304\n")==std::string::npos)return 21;
     std::puts("PASS separate window preferences, resized/maximized bounds, Native DS/720p/1080p/4K GPU targets, all dual layouts and restart");
     return 0;
 }

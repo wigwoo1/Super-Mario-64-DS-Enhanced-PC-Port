@@ -271,9 +271,9 @@ int main() {
     if(press(1)!=Action::Changed || settings.audio_layout!=ntr::AudioLayout::Stereo)return 112;
     press(0x200);
     if(menu.page!=Page::Screens)return 41;
-    const ntr::MinigameLayout layouts[]={ntr::MinigameLayout::LeftRight,ntr::MinigameLayout::RightLeft,ntr::MinigameLayout::TopBottom};
+    const ntr::MinigameLayout layouts[]={ntr::MinigameLayout::LeftRight,ntr::MinigameLayout::RightLeft,ntr::MinigameLayout::TopBottomEven,ntr::MinigameLayout::TopBottom};
     for(auto layout:layouts) {if(press(1)!=Action::Changed || settings.minigame_layout!=layout)return 49;}
-    if(press(0x20)!=Action::Changed || settings.minigame_layout!=ntr::MinigameLayout::RightLeft)return 50;
+    if(press(0x20)!=Action::Changed || settings.minigame_layout!=ntr::MinigameLayout::TopBottomEven)return 50;
     press(0x100);
     if(menu.page!=Page::Audio)return 113;
     press(0x100);

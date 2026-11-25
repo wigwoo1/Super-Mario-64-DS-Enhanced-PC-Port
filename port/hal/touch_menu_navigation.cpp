@@ -42,7 +42,10 @@ void add(ntr::MenuTarget *items,int &count,int id,int x,int y,int hw,int hh) {
         items[count++]={id,x-hw,y-hh,x+hw,y+hh};
 }
 }
-void reset() {navigation=State{};live=false;menu_context=false;last_tick=~uint64_t(0);}
+void reset() {
+    navigation=State{};live=false;menu_context=false;last_tick=~uint64_t(0);
+    ntr::video_set_minigame_unavailable(false);
+}
 
 void Frame::apply(const void *owner,int context,const ntr::MenuTarget *items,int count,int back,int page) {
     menu_context=context!=0;last_tick=ntr::rt_frame();live=false;

@@ -78,7 +78,11 @@ struct daMky_c : dActor_c {
     PathPtr mPathPtr;            /* 0x398 */
     u32 mPathNode;          /* 0x3a0 -- 02111b20 GetNode index */
     /* 021141a8 stores &data_ov030_02115e0c[idx]; 02114170/02114134 call through. */
+#ifdef SM64DS_PLATFORM_PC
+    const void *mStateDesc;
+#else
     void *mStateDesc;       /* 0x3a4 */
+#endif
     void *unk_3a8;          /* 0x3a8 -- ClosestPlayer or pad_0d0 copy */
     /* The cap-thief group. Only actor 0x10b (the MONKEY_THIEF profile) runs it: it reads the
        closest player's fBase_c::param1 (the character number, guarded < 3) into

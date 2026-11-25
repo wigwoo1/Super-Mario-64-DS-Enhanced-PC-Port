@@ -396,8 +396,7 @@ bool input_take_camera_mode() {
 
 void input_test_pointer(bool pressed,uint16_t x,uint16_t y) {
     const char *automation=std::getenv("SM64DS_PC_AUTOMATION_ONLY");
-    const char *schedule=std::getenv("SM64DS_PC_TEST_STAR_SELECT_POINTER");
-    if(!automation||std::strcmp(automation,"1")||!schedule||!*schedule)return;
+    if(!automation || std::strcmp(automation,"1"))return;
     g_test_pointer_pending=true;g_test_pointer_down=pressed;
     g_test_pointer_x=x;g_test_pointer_y=y;
 }

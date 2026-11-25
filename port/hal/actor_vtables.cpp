@@ -15,6 +15,7 @@
 #include "fBase_c.h"
 #if defined(SM64DS_GAME_TARGET)
 #include "hal/dsmt_scene.h"
+#include "ntr/video.h"
 #include "daStar_c.h"
 #include "daStarBase_c.h"
 #include "SharedFilePtr.h"
@@ -125,6 +126,16 @@ int data_020a4ba8[4];           /* fBase_c processing-list root */
 int data_020a4b6c[8];           /* the scene tree root the ctor links into */
 void *data_020a4bb8_storage[512];
 void **data_020a4bb8 = data_020a4bb8_storage;  /* actorID -> SpawnInfo* */
+#if defined(SM64DS_GAME_TARGET)
+bool pc_rec_room_can_launch(unsigned scene_id) {
+    const bool available=scene_id<sizeof(data_020a4bb8_storage)/sizeof(*data_020a4bb8_storage) &&
+        data_020a4bb8 && data_020a4bb8[scene_id];
+    ntr::video_set_minigame_unavailable(!available);
+    if(!available)
+        fprintf(stderr, "[native Rec Room] scene %u unavailable; selection kept open\n", scene_id);
+    return available;
+}
+#endif
 // Lifecycle fixtures seed one actor descriptor directly. Full bootstrap
 // needs the scene/Player overlay resources and native factories only in game.
 #if defined(SM64DS_GAME_TARGET)
@@ -579,6 +590,8 @@ static PcNativeActorProfile pc_lava_float_large_profile = {
 extern "C" void *daObjFl_Ring_c_classInit();
 extern "C" void *daObjFlMaruta_c_classInit();
 extern "C" void *daObjHmMaruta_c_classInit();
+extern "C" void *daObjHmBskt_c_classInit();
+extern "C" void *daMky_c_classInit_MONKEY_STAR(), *daMky_c_classInit_MONKEY_THIEF();
 extern "C" void *daObj_volcanoCannon_c_classInit();
 extern "C" void *daObjFl_Amilift_c_classInit();
 extern "C" unsigned char g_profile_FM_BATTAN[];
@@ -599,6 +612,15 @@ static PcNativeActorProfile pc_lava_log_profile = {
 };
 static PcNativeActorProfile pc_mountain_log_profile = {
     (void *)&daObjHmMaruta_c_classInit, 102, 265, 2, 0, 0x500000, 0x2000000, 0
+};
+static PcNativeActorProfile pc_mountain_cage_profile = {
+    (void *)&daObjHmBskt_c_classInit, 103, 128, 3, 0xbe000, 0xbe000, 0x1000000, 0x1000000
+};
+static PcNativeActorProfile pc_ukiki_thief_profile = {
+    (void *)&daMky_c_classInit_MONKEY_THIEF, 267, 126, 0x8282, 0x5a000, 0x5a000, 0x1000000, 0x1000000
+};
+static PcNativeActorProfile pc_ukiki_star_profile = {
+    (void *)&daMky_c_classInit_MONKEY_STAR, 268, 127, 0x8282, 0x5a000, 0x5a000, 0x1000000, 0x1000000
 };
 static PcNativeActorProfile pc_volcano_flame_profile = {
     (void *)&daObj_volcanoCannon_c_classInit, 243, 101, 2, 0x10000, 0x60000, 0x4000000, 0
@@ -939,6 +961,9 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[69] = &pc_lava_mesh_lift_profile;
     data_020a4bb8_storage[70] = &pc_lava_log_profile;
     data_020a4bb8_storage[102] = &pc_mountain_log_profile;
+    data_020a4bb8_storage[103] = &pc_mountain_cage_profile;
+    data_020a4bb8_storage[267] = &pc_ukiki_thief_profile;
+    data_020a4bb8_storage[268] = &pc_ukiki_star_profile;
     data_020a4bb8_storage[71] = &pc_lava_ring_profile;
     data_020a4bb8_storage[84] = g_profile_FM_BATTAN;
     data_020a4bb8_storage[243] = &pc_volcano_flame_profile;

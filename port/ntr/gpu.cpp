@@ -81,7 +81,7 @@ ComPtr<ID3D11RasterizerState> rasterizer,wireframe;
 Texture base_texture,map_texture,packed_map_texture,white_texture,hud_texture;
 Texture motion_source;
 struct MotionHistory {
-    GxCameraFrame current{};
+    GxCameraFrame current{},previous{};
     DirectX::XMFLOAT4X4 reprojection{};
     float exposure=0;
 } motion_history;
@@ -345,23 +345,45 @@ bool build_camera_reprojection(const GxCameraFrame &camera,const GxCameraFrame &
     return true;
 }
 
+GxCameraFrame camera_with_prediction(GxCameraFrame camera,const GxCameraPrediction &prediction) {
+    if(prediction.fraction==0)return camera;
+    DirectX::XMFLOAT4X4 view,delta;
+    std::memcpy(&view,camera.view_projection.data(),sizeof(view));
+    std::memcpy(&delta,prediction.clip_transform.data(),sizeof(delta));
+    DirectX::XMStoreFloat4x4(&view,DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&view),
+                                                            DirectX::XMLoadFloat4x4(&delta)));
+    std::memcpy(camera.view_projection.data(),&view,sizeof(view));
+    return camera;
+}
+
 void update_motion_history(const GxCameraFrame &camera) {
     if(camera.serial==motion_history.current.serial)return;
-    const auto previous=motion_history.current;
+    motion_history.previous=motion_history.current;
     motion_history.current=camera;
     motion_history.exposure=0;
+    const auto &previous=motion_history.previous;
     if(camera.view_projection==previous.view_projection ||
        !build_camera_reprojection(camera,previous,motion_history.reprojection))return;
     motion_history.exposure=std::min(0.75f,1.0f/float(camera.tick-previous.tick));
 }
 
-void draw_motion_blur(bool enabled) {
+void draw_motion_blur(bool enabled,const GxCameraPrediction &prediction) {
     if(!enabled) {
         motion_history={};motion_source={};
         return;
     }
     update_motion_history(gx_display_camera());
-    if(motion_history.exposure==0 || !prepare_motion_pass())return;
+    if(motion_history.exposure==0)return;
+    auto reprojection=motion_history.reprojection;
+    float exposure=motion_history.exposure;
+    if(prediction.fraction!=0) {
+        const auto camera=camera_with_prediction(motion_history.current,prediction);
+        if(!build_camera_reprojection(camera,motion_history.previous,reprojection))return;
+        // The predicted camera lies farther from the previous sample in time.
+        // Keep the same exposure duration as a completed geometry frame.
+        exposure/=1.0f+prediction.fraction;
+    }
+    if(!prepare_motion_pass())return;
     context->OMSetRenderTargets(0,nullptr,nullptr);
     context->CopyResource(motion_source.resource.Get(),raster->color.Get());
     ID3D11RenderTargetView *rt=raster->color_view.Get();
@@ -373,8 +395,8 @@ void draw_motion_blur(bool enabled) {
     context->PSSetShaderResources(1,1,&z);
     struct Parameters {DirectX::XMFLOAT4X4 matrix;float width,height,exposure,max_pixels;};
     static_assert(sizeof(Parameters)==80,"Motion shader constant layout");
-    const Parameters values{motion_history.reprojection,float(raster->width),float(raster->height),
-                            motion_history.exposure,std::max(4.0f,raster->height/48.0f)};
+    const Parameters values{reprojection,float(raster->width),float(raster->height),
+                            exposure,std::max(4.0f,raster->height/48.0f)};
     context->UpdateSubresource(motion_params.Get(),0,nullptr,&values,0,0);
     ID3D11Buffer *buffer=motion_params.Get();
     context->PSSetConstantBuffers(2,1,&buffer);
@@ -743,14 +765,7 @@ void update_scene_camera(bool gameplay_camera,const GxCameraPrediction &predicti
     auto &history=scene_camera_history;
     const bool same_geometry=camera.serial==history.current.serial;
     if(same_geometry && same_prediction(prediction,history.prediction))return;
-    if(prediction.fraction!=0) {
-        DirectX::XMFLOAT4X4 view,delta;
-        std::memcpy(&view,camera.view_projection.data(),sizeof(view));
-        std::memcpy(&delta,prediction.clip_transform.data(),sizeof(delta));
-        DirectX::XMStoreFloat4x4(&view,DirectX::XMMatrixMultiply(DirectX::XMLoadFloat4x4(&view),
-                                                                DirectX::XMLoadFloat4x4(&delta)));
-        std::memcpy(camera.view_projection.data(),&view,sizeof(view));
-    }
+    camera=camera_with_prediction(camera,prediction);
     history.valid=build_camera_reprojection(camera,history.current,history.reprojection,same_geometry);
     history.same_geometry=same_geometry;
     history.previous_prediction=history.prediction;
@@ -1630,7 +1645,7 @@ bool gpu_render(const Framebuffer &base,const uint32_t *map,const VideoSettings 
        !render_scene(false,{}))return false;
     finish_scene_capture(scene_capture,offset);
     remember_scene_depth(eligible_history,offset);
-    draw_motion_blur(s.motion_blur && gameplay_camera);
+    draw_motion_blur(s.motion_blur && gameplay_camera,prediction);
     if(draw_geometry && foreground) {
         context->OMSetDepthStencilState(depth_off.Get(),0);context->OMSetBlendState(blend_on.Get(),nullptr,~0u);
         context->UpdateSubresource(base_texture.resource.Get(),0,nullptr,foreground,SCREEN_W*4,0);

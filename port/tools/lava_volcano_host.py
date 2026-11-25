@@ -6,6 +6,7 @@ COLLISION_SURFACE = "data_ov064_0211bbcc"
 TRAVEL_LIMIT = "data_ov022_02112c98"
 MOUNTAIN_LOG_SURFACE = "data_ov030_02114f24"
 MOUNTAIN_LOG_TRAVEL = "data_ov030_021159f4"
+MOUNTAIN_CAGE_SURFACE = "data_ov030_02114ee4"
 BATTAN_SURFACE = "data_ov064_0211ba4c"
 FLAMETHROWER_TABLES = ("data_ov095_02136f80", "data_ov095_02136f98", "data_ov095_02136fb0")
 
@@ -386,6 +387,62 @@ extern "C" ResourceDescriptor data_ov030_02115a04 = {
     (void)handlesReady;
     return func_ov080_021274ac(this, &data_ov030_02115a04);''')
     return text[:text.index('/* Retail construction order:')].rstrip() + '\n'
+
+
+def transform_mountain_cage(root, text):
+    overlay = (root / 'extracted/overlays/overlay_0030.bin').read_bytes()
+    base = 0x021111a0
+    assert struct.unpack_from('<IHHIiiii', overlay, 0x02115950 - base) == (
+        0x02111524, 103, 128, 3, 0xbe000, 0xbe000, 0x1000000, 0x1000000)
+    assert struct.unpack_from('<4sHH', overlay, 0x02114ee4 - base) == (b'CLPS', 8, 1)
+    start = text.index('/* SharedFilePtr has no fields;')
+    end = text.index('// @symbol daObjHmBskt_c_classInit', start)
+    text = text[:start] + '''#include <new>
+
+struct CageFileHandle : SharedFilePtr { u32 words[2]; };
+static_assert(sizeof(CageFileHandle) == 8);
+static CageFileHandle data_ov030_02115c80, data_ov030_02115c88;
+
+extern "C" {
+extern CLPS_Block data_ov030_02114ee4;
+void *_ZN7fBase_cnwEj(unsigned int);
+int func_ov030_0211124c(daObjHmBskt_c *, dBgCh_Actr *);
+int _ZN10dBgActor_c21IsClsnInRangeOnScreenE5Fix12IiES1_(dBgActor_c *, s32, s32);
+void _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
+    dBgW_KcMbg *, KCL_File *, const Matrix4x3 *, Fix12i, s16, CLPS_Block *);
+void _ZN10dBgCh_Actr4InitEP8dActor_c5Fix12IiES3_P10Vector3_16S5_(
+    dBgCh_Actr *, dActor_c *, Fix12i, Fix12i, Vector3_16 *, Vector3_16 *);
+void dBgCh_Actr_UpdateContinuous_Veneer(void *);
+void _ZN8Particle6System9NewSimpleEj5Fix12IiES2_S2_(unsigned int, int, int, int);
+}
+
+''' + text[end:]
+    text = replace(text, '    return new daObjHmBskt_c();', '''    void *storage = _ZN7fBase_cnwEj(sizeof(daObjHmBskt_c));
+    return storage ? ::new (storage) daObjHmBskt_c{} : nullptr;''')
+    init = 's32 daObjHmBskt_c::InitResources()\n{'
+    text = replace(text, init, init + '''
+    static const bool handles_ready = [] {
+        data_ov030_02115c88.Construct(1560);
+        data_ov030_02115c80.Construct(1561);
+        return true;
+    }();
+    (void)handles_ready;''')
+    text = replace(text, '        func_ov030_0211124c((char *)this, (char *)&mWithMeshClsn);',
+        '        if (func_ov030_0211124c(this, &mWithMeshClsn) || !mStarActor) return 1;')
+    begin = text.index('extern "C" int func_ov030_0211124c(char *c, char *mc)')
+    return text[:begin] + '''extern "C" int func_ov030_0211124c(daObjHmBskt_c *c, dBgCh_Actr *mc)
+{
+    dBgCh_Actr_UpdateContinuous_Veneer(mc);
+    if (!mc->IsOnGround()) return 0;
+    if (c->mStarActor) c->mStarActor->MarkForDestruction();
+    Vector3 p = {c->mPosX, c->mPosY + 0x96000, c->mPosZ};
+    dActor_c::Spawn(0xb2, (c->param1 & 0xf) | 0x20, p, 0, c->mAreaId, -1);
+    _ZN8Particle6System9NewSimpleEj5Fix12IiES2_S2_(0xb, c->mPosX, c->mPosY, c->mPosZ);
+    _ZN8Particle6System9NewSimpleEj5Fix12IiES2_S2_(0xd, c->mPosX, c->mPosY, c->mPosZ);
+    c->MarkForDestruction();
+    return 1;
+}
+'''
 
 
 def transform(root, text, name):

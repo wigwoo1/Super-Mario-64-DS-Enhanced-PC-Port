@@ -446,7 +446,11 @@ void daMky_c::func_ov030_02112094()
 
     struct Bundle { Vector3_16 rot; short _p; Vector3 trans; int _tail[2]; };
 
+#ifdef SM64DS_PLATFORM_PC
+    M4x3 data_020a0e68;
+#else
     extern M4x3 data_020a0e68;
+#endif
     int idx;
     void* res;
     dActor_c* obj;
@@ -534,9 +538,14 @@ int daMky_c::func_ov030_021122b0()
 }
 // @symbol _ZN7daMky_c12EnterState10Ev
 int daMky_c::EnterState10(){
+#ifdef SM64DS_PLATFORM_PC
+    extern void *data_ov030_02115d18[];
+    _ZN9ModelAnim7SetAnimEP8BCA_Filei5Fix12IiEj(&mModelAnim, data_ov030_02115d18[1], 0, 0x1000, 0);
+#else
     struct S { int w[2]; };
     extern struct S data_ov030_02115d18;
   _ZN9ModelAnim7SetAnimEP8BCA_Filei5Fix12IiEj(&mModelAnim, (void*)data_ov030_02115d18.w[1], 0, 0x1000, 0);
+#endif
   this->mModelAnim.speed = 0x1000;
   mHorzSpeed = 0x13000;
   mActionTimer = 0x1e;
@@ -728,9 +737,14 @@ int daMky_c::func_ov030_02112578()
 }
 // @symbol _ZN7daMky_c11EnterState8Ev
 int daMky_c::EnterState8() {
+#ifdef SM64DS_PLATFORM_PC
+    extern void *data_ov030_02115d18[];
+    _ZN9ModelAnim7SetAnimEP8BCA_Filei5Fix12IiEj(&mModelAnim, data_ov030_02115d18[1], 0, 0x1000, 0);
+#else
     struct G { void *a; void *b; };
     extern struct G data_ov030_02115d18;
     _ZN9ModelAnim7SetAnimEP8BCA_Filei5Fix12IiEj(&this->mModelAnim, data_ov030_02115d18.b, 0, 0x1000, 0);
+#endif
     this->mModelAnim.speed = 0x1000;
     this->mPathPtr.FromID(this->param1 & 0xff);
     mPathNode = 1;
@@ -1579,26 +1593,71 @@ int daMky_c::EnterState0()
     return 1;
 }
 
-// @symbol _ZN7daMky_c19func_ov030_02114134Ev
+#ifdef SM64DS_PLATFORM_PC
+namespace {
+using UkikiCallback = int (daMky_c::*)();
+struct UkikiStateCallbacks {
+    UkikiCallback enter;
+    UkikiCallback update;
+};
+
+// Keep the order from __sinit_ov030_02114924. The DS table stores ARM
+// member pointers, which the host compiler cannot call directly.
+constexpr UkikiStateCallbacks ukikiStateCallbacks[] = {
+    {&daMky_c::EnterState0, &daMky_c::func_ov030_02113ff0},
+    {&daMky_c::EnterState1, &daMky_c::func_ov030_02113d20},
+    {&daMky_c::EnterState2, &daMky_c::func_ov030_02113b38},
+    {&daMky_c::EnterState3, &daMky_c::func_ov030_021136b0},
+    {&daMky_c::EnterState4, &daMky_c::func_ov030_02113324},
+    {&daMky_c::EnterState5, &daMky_c::func_ov030_02113094},
+    {&daMky_c::EnterState6, &daMky_c::func_ov030_02112da0},
+    {&daMky_c::EnterState7, &daMky_c::func_ov030_02112a84},
+    {&daMky_c::EnterState8, &daMky_c::func_ov030_02112578},
+    {&daMky_c::EnterState9, &daMky_c::func_ov030_02112400},
+    {&daMky_c::EnterState10, &daMky_c::func_ov030_021122b0},
+};
+}
+#else
 typedef void (daMky_c::*PMF)();
+#endif
+
+// @symbol _ZN7daMky_c19func_ov030_02114134Ev
 void daMky_c::func_ov030_02114134()
 {
+#ifdef SM64DS_PLATFORM_PC
+    const auto *callbacks = static_cast<const UkikiStateCallbacks *>(mStateDesc);
+    if (callbacks)
+        (this->*callbacks->update)();
+#else
     PMF *p = (PMF *)this->mStateDesc + 1;
     (this->* *p)();
+#endif
 }
 // @symbol _ZN7daMky_c19func_ov030_02114170Ev
 void daMky_c::func_ov030_02114170()
 {
+#ifdef SM64DS_PLATFORM_PC
+    const auto *callbacks = static_cast<const UkikiStateCallbacks *>(mStateDesc);
+    if (callbacks)
+        (this->*callbacks->enter)();
+#else
     PMF *p = (PMF *)this->mStateDesc;
     (this->* *p)();
+#endif
 }
 // @symbol _ZN7daMky_c19func_ov030_021141a8Ei
 void daMky_c::func_ov030_021141a8(int idx)
 {
+#ifdef SM64DS_PLATFORM_PC
+    if (idx < 0 || static_cast<unsigned>(idx) >= sizeof ukikiStateCallbacks / sizeof *ukikiStateCallbacks)
+        return;
+    mStateDesc = &ukikiStateCallbacks[idx];
+#else
     typedef struct { int a, b, c, d; } Item16;
     extern Item16 data_ov030_02115e0c[];
 
     this->mStateDesc = &data_ov030_02115e0c[idx];
+#endif
     func_ov030_02114170();
 }
 /* File-scope extern "C" for the six virtuals below. A block-scope extern

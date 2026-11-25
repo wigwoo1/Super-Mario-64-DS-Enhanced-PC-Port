@@ -214,12 +214,20 @@ def transform(text):
                          ('g->m()', 'g'), ('sl->f68()', 'sl')]:
             text = text.replace(old, 'reinterpret_cast<dScMgBase_c *>(' + obj + ')->OnHitByCannonBlastedChar()')
     if 's32 dScMiniGm_c::Behavior()\n{' in text:
-        text='#include "hal/touch_menu_navigation.h"\n'+text
+        text=('#include "hal/touch_menu_navigation.h"\n'
+              'extern "C" bool pc_rec_room_can_launch(unsigned scene_id);\n'+text)
         text=text.replace('s32 dScMiniGm_c::Behavior()\n{','s32 dScMiniGm_c::Behavior()\n{\n    pc_touch_menu::Frame pc_controller_frame(this);')
         text=text.replace('s32 dScMiniGm_c::CleanupResources()\n{','s32 dScMiniGm_c::CleanupResources()\n{\n    pc_touch_menu::reset();')
         anchor='if ((data_020a0e5a[gActivePlayerSlot << 1] & 0xfff) != 0)'
         if text.count(anchor)!=1: raise ValueError('Rec Room unhandled-button sound gate changed')
         text=text.replace(anchor,'if ((data_020a0e5a[gActivePlayerSlot << 1] & (0xfff & ~0x3f3)) != 0)')
+        anchor='        data_0208a174[0] = sel;'
+        if text.count(anchor)!=1: raise ValueError('Rec Room launch selection changed')
+        text=text.replace(anchor,
+            '        if (!pc_rec_room_can_launch(src->id)) {\n'
+            '            func_02012790(0xe);\n'
+            '            return;\n'
+            '        }\n'+anchor)
     if 'typedef void (C31b4::*PMF31b4)();' in text or 'void func_ov004_020b52fc(C *c)' in text:
         text = '#include "ntr/minigame_callback.h"\n' + text
         text = re.sub(r'typedef void \((?:C31b4|C321c|Base|C)::\*(PMF\w*)\)\(\);',

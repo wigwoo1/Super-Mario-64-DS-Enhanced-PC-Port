@@ -321,13 +321,13 @@ int main(int argc,char **argv) {
     CHECK(pixels[0]==0xff5aef18); // Paused main view retains transparent-backdrop RGB.
     s.width=1920;s.height=1080;CHECK(ntr::gpu_render(base,nullptr,s,false));
     s.width=3840;s.height=2160;CHECK(ntr::gpu_render(base,nullptr,s,false));
-    // Each physical screen remains 4:3 in its 75/25 slot, including when
+    // Each physical screen remains 4:3 in its layout slot, including when
     // POWCNT1 routes 3D onto the touch screen. Check GPU against CPU composition.
     static ntr::Framebuffer sub; // Keep this extra 192 KiB out of the x86 test stack.
     for(auto &row:base.px)for(auto &p:row)p=0xff102030;
     for(auto &row:sub.px)for(auto &p:row)p=0xff506070;
     s.width=1280;s.height=720;s.upscale_2d=true;
-    for(unsigned mode=0;mode<3;++mode) for(bool main_top:{true,false}) {
+    for(unsigned mode=0;mode<ntr::minigame_layout_count;++mode) for(bool main_top:{true,false}) {
         const auto screens=ntr::screen_layout(static_cast<ntr::MinigameLayout>(mode),s.width,s.height);
         CHECK(ntr::gpu_render(base,nullptr,s,false,nullptr,&screens,&sub,main_top));
         CHECK(ntr::gpu_readback(pixels,width,height));

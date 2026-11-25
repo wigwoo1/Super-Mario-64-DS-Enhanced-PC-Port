@@ -2,7 +2,11 @@
 #include <algorithm>
 
 namespace ntr {
-namespace {constexpr ScreenRect star_controls{76,90,104,78};}
+namespace {
+constexpr int course_caption_top=160;
+constexpr ScreenRect star_controls{80,88,96,72};
+static_assert(star_controls.y+star_controls.height<=course_caption_top);
+}
 DualScreenLayout star_select_layout(unsigned width,unsigned height) {
     return {screen_fit(4,3,{0,0,int(width),int(height)}),{}};
 }
@@ -15,7 +19,7 @@ void star_select_overlay(const Framebuffer &controls,Framebuffer &canvas) {
     // Cover only the decorative course medal/number; keep score, mission,
     // course name and corner counters in their original upper-screen places.
     const auto backdrop=controls.px[0][0]|0xff000000u;
-    for(int y=94;y<154;++y)for(int x=64;x<192;++x)canvas.px[y][x]=backdrop;
+    for(int y=94;y<course_caption_top;++y)for(int x=64;x<192;++x)canvas.px[y][x]=backdrop;
     for(int y=0;y<star_controls.height;++y)for(int x=0;x<star_controls.width;++x){
         const auto pixel=controls.px[y*SCREEN_H/star_controls.height][x*SCREEN_W/star_controls.width];
         // The original lower-screen backdrop is white. Keying it preserves
@@ -48,12 +52,20 @@ DualScreenLayout screen_layout(MinigameLayout mode, unsigned width, unsigned hei
         const int split=w-w*3/4;
         return {fit(split,0,w-split,h),fit(0,0,split,h)};
     }
-    const int split=h*3/4;
+    const int split=mode==MinigameLayout::TopBottomEven?h/2:h*3/4;
     return {fit(0,0,w,split),fit(0,split,w,h-split)};
 }
+MinigameLayout screen_layout_step(MinigameLayout mode, int direction) {
+    const auto offset=direction>0?1:minigame_layout_count-1;
+    return static_cast<MinigameLayout>((static_cast<unsigned>(mode)+offset)%minigame_layout_count);
+}
 const char *screen_layout_name(MinigameLayout mode) {
-    return mode==MinigameLayout::LeftRight?"LEFT/RIGHT":
-        mode==MinigameLayout::RightLeft?"RIGHT/LEFT":"TOP/BOTTOM";
+    switch(mode) {
+    case MinigameLayout::LeftRight:return "LEFT/RIGHT";
+    case MinigameLayout::RightLeft:return "RIGHT/LEFT";
+    case MinigameLayout::TopBottomEven:return "TOP/BOTTOM 50/50";
+    default:return "TOP/BOTTOM 75/25";
+    }
 }
 bool screen_touch(const ScreenRect &r,int x,int y,uint16_t &ds_x,uint16_t &ds_y) {
     ds_x=ds_y=0;

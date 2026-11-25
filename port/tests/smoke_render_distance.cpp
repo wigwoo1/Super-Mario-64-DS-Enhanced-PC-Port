@@ -18,6 +18,10 @@ int main() {
     if(pc_render_distance::projection_far(RenderDistance::Medium,1000)!=4000)return 12;
     if(pc_render_distance::projection_far(RenderDistance::EntireMap,1000)!=pc_render_distance::kMaximumDepth)return 13;
     if(pc_render_distance::projection_far(RenderDistance::Medium,0x40000000)!=pc_render_distance::kMaximumDepth)return 14;
+    if(pc_render_distance::widescreen_x(4096,256,192)!=4096 ||
+       pc_render_distance::widescreen_x(4096,1280,720)!=3072 ||
+       pc_render_distance::widescreen_x(-4096,1280,720)!=-3072 ||
+       pc_render_distance::widescreen_x(0x7fffffff,3840,2160)!=1610612735)return 15;
     std::puts("render-distance policy: preset thresholds and frustum rejection pass");
     return 0;
 }
