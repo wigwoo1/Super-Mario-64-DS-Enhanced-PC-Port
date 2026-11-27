@@ -375,6 +375,137 @@ static void init_lava_float_handles() {
 """
 
 
+def transform_moving_ice(root, text):
+    """Bind Chief Chilly's original path-following blocks on the PC."""
+    actor_rom = (root / 'extracted/overlays/overlay_0056.bin').read_bytes()
+    stage_rom = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()
+    assert struct.unpack_from('<IHHIiiii', actor_rom, 0x02113344 - 0x021111a0) == (
+        0x02111594, 173, 15, 2, 0, 0x400000, 0x2000000, 0
+    )
+    assert struct.unpack_from('<3I', actor_rom, 0x02113314 - 0x021111a0) == (
+        0x02113400, 0x02113408, 0x0211bbec
+    )
+    assert struct.unpack_from('<4sHH', stage_rom, 0x0211bbec - 0x02115ee0) == (b'CLPS', 8, 1)
+
+    def replace(old, new):
+        nonlocal text
+        assert text.count(old) == 1, old
+        text = text.replace(old, new, 1)
+
+    text = lazy_handles(text, ('EwmIceBlockModelFilePtr', 'EwmIceBlockCollisionFilePtr'))
+    replace('    data_ov056_02113314[0]->Release();\n    data_ov056_02113314[1]->Release();', '''    if (mNativeResourcesLoaded) {
+        data_ov056_02113314[0]->Release();
+        data_ov056_02113314[1]->Release();
+        mNativeResourcesLoaded = false;
+    }''')
+    replace('''        int q = cstd::fdiv(mHorzSpeed, len);
+        Vec3_MulScalar(&scaled1, &diff, q);
+        SubVec3((Vector3 *)&mPosX, &scaled1, (Vector3 *)&mPosX);''', '''        // A zero-length step advances the node without moving the block.
+        if (len != 0) {
+            int q = cstd::fdiv(mHorzSpeed, len);
+            Vec3_MulScalar(&scaled1, &diff, q);
+            SubVec3((Vector3 *)&mPosX, &scaled1, (Vector3 *)&mPosX);
+        }''')
+    replace('''int daObjEwmIceBlock_c::InitResources()
+{
+    mModel.SetFile((BMD_File *)Model::LoadFile(*data_ov056_02113314[0]), 1, -1);''', '''extern PathDef *PATH_DEFS;
+extern int NUM_PATHS;
+int daObjEwmIceBlock_c::InitResources()
+{
+    mNativeResourcesLoaded = false;
+    const unsigned pathId = param1 & 0xff;
+    if (!PATH_DEFS || !PathPtr::GetNodeTable() || int(pathId) >= NUM_PATHS)
+        return 0;
+    mPath.FromID(pathId);
+    if (mPath.NumNodes() < 2)
+        return 0;
+    // Convert the original resource IDs through the game's file table once.
+    static const bool resourcesReady = [] {
+        data_ov056_02113314[0]->Construct(1517);
+        data_ov056_02113314[1]->Construct(1518);
+        return true;
+    }();
+    (void)resourcesReady;
+    auto *model = static_cast<BMD_File *>(Model::LoadFile(*data_ov056_02113314[0]));
+    if (!model)
+        return 0;
+    if (!mModel.SetFile(model, 1, -1)) {
+        data_ov056_02113314[0]->Release();
+        return 0;
+    }
+    auto *collision = dBgW_Kc::LoadFile(*data_ov056_02113314[1]);
+    if (!collision) {
+        data_ov056_02113314[0]->Release();
+        return 0;
+    }
+    mNativeResourcesLoaded = true;''')
+    replace('        dBgW_Kc::LoadFile(*data_ov056_02113314[1]),', '        collision,')
+    replace('''    func_020393d4(&mMeshCollider, (void *)&dBgW::UpdatePosWithTransform);
+    mPath.FromID(param1 & 0xff);''', '''    mMeshCollider.beforeClsnCallback = [](dBgW *collider, dActor_c *actor,
+            dBgPi *result, Vector3 *position, Vector3_16 *motion, Vector3_16 *angles) {
+        dBgW::UpdatePosWithTransform(*collider, actor, *result, *position, motion, angles);
+    };
+    mPathNodeIdx = 0;''')
+    replace('''    return new daObjEwmIceBlock_c();''', '''    void *storage = _ZN7fBase_cnwEj(sizeof(daObjEwmIceBlock_c));
+    return storage ? ::new (storage) daObjEwmIceBlock_c{} : nullptr;''')
+    text += '''
+extern "C" unsigned char data_ov064_0211bbec[];
+extern "C" SharedFilePtr *data_ov056_02113314[] = {
+    &data_ov056_02113400, &data_ov056_02113408,
+    reinterpret_cast<SharedFilePtr *>(data_ov064_0211bbec)
+};
+'''
+    return observe(text, 'daObjEwmIceBlock_c', 'path,node,direction',
+                   ['int(param1 & 0xff)', 'mPathNodeIdx', 'mPathDir'])
+
+
+def transform_ice_block(text):
+    """Keep the original ice block and Star behavior on the native ABI."""
+    text = lazy_handles(text, ('IceBlockModelFilePtr', 'IceBlockCollisionFilePtr'))
+
+    def replace(old, new):
+        nonlocal text
+        assert text.count(old) == 1, old
+        text = text.replace(old, new, 1)
+
+    replace('    mModel.SetFile((BMD_File *)Model::LoadFile(data_ov081_02128fd8), 1, 0x17);', '''
+    static const bool filesReady = [] {
+        data_ov081_02128fd8.Construct(1114);
+        data_ov081_02128fd0.Construct(1115);
+        return true;
+    }();
+    (void)filesReady;
+    auto *model = static_cast<BMD_File *>(Model::LoadFile(data_ov081_02128fd8));
+    if (!model)
+        return 0;
+    if (!mModel.SetFile(model, 1, 0x17)) {
+        data_ov081_02128fd8.Release();
+        return 0;
+    }
+    auto *collision = reinterpret_cast<KCL_File *>(dBgW_Kc::LoadFile(data_ov081_02128fd0));
+    if (!collision) {
+        data_ov081_02128fd8.Release();
+        return 0;
+    }
+    mNativeResourcesLoaded = true;''')
+    replace('''    KCL_File *kcl = (KCL_File *)dBgW_Kc::LoadFile(data_ov081_02128fd0);
+    _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
+        &mMeshCollider, kcl, &mClsnMat, 0x1000, mAngleY,''', '''    _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
+        &mMeshCollider, collision, &mClsnMat, 0x1000, mAngleY,''')
+    replace('''    data_ov081_02128fd8.Release();
+    data_ov081_02128fd0.Release();''', '''    if (mNativeResourcesLoaded) {
+        data_ov081_02128fd8.Release();
+        data_ov081_02128fd0.Release();
+        mNativeResourcesLoaded = false;
+    }''')
+    text = text.replace('*(s32 *)((u8 *)sys + 0x44)', 'sys->emitterScale')
+    text = text.replace('void *_ZN8Particle6System9NewSimple', 'void _ZN8Particle6System9NewSimple')
+    return observe(text, 'daObjIceBlock_c', 'melt_timer,scale,contained_actor',
+                   ['int(mMeltTimer)', 'mScale',
+                    'mContainedActor ? int(mContainedActor->uniqueID) : 0'],
+                   return_type='s32')
+
+
 def transform_lava_mesh_lift(root, text):
     """Bind the original two-path lift to native resources and collision."""
     rom = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()

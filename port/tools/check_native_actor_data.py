@@ -114,6 +114,19 @@ def main():
     if pe_bytes(args.exe, named('data_ov030_02114ee4'), 16) != mountain_rom[cage_surface:cage_surface + 16]:
         raise ValueError('Mountain cage collision surface differs from the original')
     print('PASS: mountain cage native profile and collision surface')
+    snow_base, snow_rom = overlay(81)
+    for profile, factory, address in (
+            ('pc_snowman_profile', 'daSnowman_c_classInit', 0x021289cc),
+            ('pc_snowball_profile', 'daSnowball_c_classInit', 0x02128a98)):
+        expected = struct.unpack_from('<IHHIiiii', snow_rom, address - snow_base)
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(profile), 28))
+        if actual != (named(factory), *expected[1:]):
+            raise ValueError(f'{profile}: native factory or original metadata mismatch')
+    model_handle = 'data_ov081_02128d90'
+    if (symbols.get(f'?{model_handle}@@3USharedFilePtr@@A') != named(model_handle) or
+            symbols.get(f'?{model_handle}@@3UdaSnowmanModelFilePtr@@A') != named(model_handle)):
+        raise ValueError('Snowman and snowball must share a native model handle')
+    print('PASS: original Mr. Blizzard and snowball profiles and the shared model handle')
     descriptor = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov022_02112c9c'), 12))
     if descriptor != tuple(named(name) for name in ('logModel', 'logCollision', 'data_ov064_0211bbcc')):
         raise ValueError('Rolling log resource handles or collision surface mismatch')
@@ -199,6 +212,54 @@ def main():
         if struct.unpack('<II', pe_bytes(args.exe, named(name), 8)) != (resource, 0):
             raise ValueError('Lava mesh lift initial resource handle mismatch')
     print('PASS: native lava mesh lift profile, initial handles, and two collision properties')
+
+    ice_base, ice_rom = overlay(56)
+    expected = struct.unpack_from('<IHHIiiii', ice_rom, 0x02113344 - ice_base)
+    actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_moving_ice_profile'), 28))
+    if actual != (named('daObjEwmIceBlock_c_classInit'), *expected[1:]):
+        raise ValueError('Moving ice block profile differs from the original')
+    ice_resource_row = ('data_ov056_02113400', 'data_ov056_02113408', 'data_ov064_0211bbec')
+    actual = struct.unpack('<3I', pe_bytes(args.exe, named('data_ov056_02113314'), 12))
+    if actual != tuple(named(name) for name in ice_resource_row):
+        raise ValueError('Moving ice block resources are wired incorrectly')
+    for name, resource in zip(ice_resource_row[:2], (1517, 1518)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(name), 8)) != (resource, 0):
+            raise ValueError('Moving ice block initial resource handle mismatch')
+    ice_surface = 0x0211bbec - lava_base
+    if pe_bytes(args.exe, named(ice_resource_row[2]), 16) != lava_rom[ice_surface:ice_surface+16]:
+        raise ValueError('Moving ice block collision surface differs from the original')
+    print('PASS: moving ice block profile, initial handles, and original collision surface')
+
+    freeze_base, freeze_rom = overlay(81)
+    expected = struct.unpack_from('<IHHIiiii', freeze_rom, 0x02128ca0 - freeze_base)
+    profile = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_ice_block_profile'), 28))
+    if profile != (named('daObjIceBlock_c_classInit'), *expected[1:]):
+        raise ValueError('Deep Freeze ice block profile differs from the original')
+    for name, resource in (('data_ov081_02128fd8', 1114), ('data_ov081_02128fd0', 1115)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(name), 8)) != (resource, 0):
+            raise ValueError('Deep Freeze ice block initial resource handle mismatch')
+    expected = struct.unpack_from('<IHHIiiii', freeze_rom, 0x02128858 - freeze_base)
+    profile = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named('pc_spindrift_profile'), 28))
+    if profile != (named('daHuwa_c_classInit'), *expected[1:]):
+        raise ValueError('Spindrift profile differs from the original')
+    for name, file_id in (('data_ov081_02128d60', 813), ('data_ov081_02128d68', 814)):
+        if struct.unpack('<II', pe_bytes(args.exe, named(name), 8)) != (file_id, 0):
+            raise ValueError('Spindrift initial resource handle mismatch')
+    print('PASS: Spindrift profile, factory, and initial model and animation handles')
+
+    shared_base, shared_rom = overlay(2)
+    surface = 0x0210d8d4 - shared_base
+    if pe_bytes(args.exe, named('data_ov002_0210d8d4'), 16) != shared_rom[surface:surface+16]:
+        raise ValueError('Deep Freeze ice block collision surface differs from the original')
+    print('PASS: Deep Freeze ice block factory, profile, resources, and collision surface')
+
+    for color, address in (('RED', 0x02108ef8), ('BLUE', 0x02108f14)):
+        expected = struct.unpack_from('<IHHIiiii', shared_rom, address - shared_base)
+        name = f'OBJ_{color}_FIRE'
+        actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(f'g_profile_{name}'), 28))
+        if actual != (named(f'daObjFire_c_classInit_{name}'), *expected[1:]):
+            raise ValueError(f'{color} flame profile differs from the original')
+    print('PASS: original red and blue flame profiles and native factories')
 
     bowser_base, bowser_rom = overlay(60)
     tilt = bowser_rom[0x02119294-bowser_base:0x021192dc-bowser_base]
@@ -646,18 +707,19 @@ def main():
         raise ValueError('Fire Sea bobbing-platform descriptor has incorrect native resource pointers')
     print('PASS: native Fire Sea bobbing-platform profile, factory and resource descriptor')
 
-    bully_base, bully_rom = overlay(64)
-    for size, factory, profile, config in (
-        ('small', 'daDonketu_c_classInit', 0x0211b818, 0x0211b834),
-        ('big', 'daBDonketu_c_classInit', 0x0211b920, 0x0211b93c),
+    for size, factory, number, profile, config in (
+        ('small', 'daDonketu_c_classInit', 64, 0x0211b818, 0x0211b834),
+        ('big', 'daBDonketu_c_classInit', 64, 0x0211b920, 0x0211b93c),
+        ('chill', 'daIDonketu_c_classInit', 27, 0x021138d8, 0x021138f4),
     ):
+        bully_base, bully_rom = overlay(number)
         expected = struct.unpack_from('<IHHIiiii', bully_rom, profile - bully_base)
         actual = struct.unpack('<IHHIiiii', pe_bytes(args.exe, named(f'pc_{size}_bully_profile'), 28))
         if actual[0] != named(factory) or actual[1:] != expected[1:]:
             raise ValueError(f'{size} Bully profile/factory differs from the original')
         expected = struct.unpack_from('<13I', bully_rom, config - bully_base)
         actual = struct.unpack('<13I', pe_bytes(args.exe, named(f'pc_{size}_bully_config'), 52))
-        handles = tuple(named(f'data_ov064_{address:08x}') for address in expected[:5])
+        handles = tuple(named(f'data_ov{number:03d}_{address:08x}') for address in expected[:5])
         if actual != handles + expected[5:]:
             raise ValueError(f'{size} Bully handles or behavior constants differ from the original')
         print(f'PASS: native {size} Bully profile, factory and all five original resource handles')

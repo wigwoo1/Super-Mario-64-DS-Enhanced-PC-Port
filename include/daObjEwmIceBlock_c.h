@@ -34,6 +34,9 @@ struct daObjEwmIceBlock_c : dBgActor_c {
     PathPtr mPath;          /* 0x320 */
     s32 mPathNodeIdx;       /* 0x328 */
     s32 mPathDir;           /* 0x32c */
+#ifdef SM64DS_PLATFORM_PC
+    bool mNativeResourcesLoaded;
+#endif
 
     /* Out of line in daObjEwmIceBlock_c.cpp: the key function, so that TU
      * emits _ZTV/_ZTI/_ZTS18daObjEwmIceBlock_c. */

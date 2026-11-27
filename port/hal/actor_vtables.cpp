@@ -594,8 +594,15 @@ extern "C" void *daObjHmBskt_c_classInit();
 extern "C" void *daMky_c_classInit_MONKEY_STAR(), *daMky_c_classInit_MONKEY_THIEF();
 extern "C" void *daObj_volcanoCannon_c_classInit();
 extern "C" void *daObjFl_Amilift_c_classInit();
+extern "C" void *daObjEwmIceBlock_c_classInit();
+extern "C" void *daObjIceBlock_c_classInit();
+extern "C" void *daObjEwbIce_c_classInit_EWB_ICE_A();
+extern "C" void *daObjEwbIce_c_classInit_EWB_ICE_B();
+extern "C" void *daObjEwbIce_c_classInit_EWB_ICE_C();
 extern "C" unsigned char g_profile_FM_BATTAN[];
 extern "C" unsigned char g_profile_LAVA[];
+extern "C" unsigned char g_profile_OBJ_RED_FIRE[];
+extern "C" unsigned char g_profile_OBJ_BLUE_FIRE[];
 extern "C" void *daBbl_c_classInit();
 extern "C" void *daObjFlamethrower_c_classInit();
 static PcNativeActorProfile pc_flamethrower_profile = {
@@ -606,6 +613,55 @@ static PcNativeActorProfile pc_lava_bubble_profile = {
 };
 static PcNativeActorProfile pc_lava_mesh_lift_profile = {
     (void *)&daObjFl_Amilift_c_classInit, 69, 303, 2, 0x80000, 0x1d0000, 0x2000000, 0x2000000
+};
+static PcNativeActorProfile pc_moving_ice_profile = {
+    (void *)&daObjEwmIceBlock_c_classInit, 173, 15, 2, 0, 0x400000, 0x2000000, 0
+};
+extern "C" void *daHuwa_c_classInit();
+static PcNativeActorProfile pc_spindrift_profile = {
+    (void *)&daHuwa_c_classInit, 312, 311, 0x10000003, 0x50000, 0x50000, 0x1000000, 0x7d0000
+};
+
+static PcNativeActorProfile pc_ice_block_profile = {
+    (void *)&daObjIceBlock_c_classInit, 18, 35, 3, 0x100000, 0x300000, 0x1000000, 0x1000000
+};
+static PcNativeActorProfile pc_arena_ice_profiles[] = {
+    {(void *)&daObjEwbIce_c_classInit_EWB_ICE_A, 170, 12, 0, 0, 0x1000000, 0, 0},
+    {(void *)&daObjEwbIce_c_classInit_EWB_ICE_B, 171, 13, 0, 0, 0x1000000, 0, 0},
+    {(void *)&daObjEwbIce_c_classInit_EWB_ICE_C, 172, 14, 0, 0, 0x1000000, 0, 0},
+};
+extern "C" void *daKing_Donketu_c_classInit();
+static PcNativeActorProfile pc_chief_chilly_profile = {
+    (void *)&daKing_Donketu_c_classInit, 218, 62, 0x10000000, 0x1f4000, 0x1f4000,
+    0x1000000, 0x1000000
+};
+extern "C" void *daPgDfdr_c_classInit();
+static PcNativeActorProfile pc_penguin_defender_profile = {
+    (void *)&daPgDfdr_c_classInit, 258, 116, 0x800002, 0xa0000, 0x9c4000,
+    0x1000000, 0x1000000
+};
+extern "C" void *daSnmBth_c_classInit();
+static PcNativeActorProfile pc_snowman_breath_profile = {
+    (void *)&daSnmBth_c_classInit, 275, 134, 0x800002, 0, 0x3e8000,
+    0x1000000, 0x7d0000
+};
+extern "C" void *daSnowman_c_classInit();
+extern "C" void *daSnowball_c_classInit();
+static PcNativeActorProfile pc_snowman_profile = {
+    (void *)&daSnowman_c_classInit, 223, 77, 0x8000003, 0x64000, 0xc8000,
+    0x1000000, 0x1000000
+};
+static PcNativeActorProfile pc_snowball_profile = {
+    (void *)&daSnowball_c_classInit, 224, 78, 2, 0x64000, 0x64000,
+    0x1000000, 0x1000000
+};
+extern "C" void *daObjSlIceBlock_c_classInit_SL_ICEBLOCK();
+extern "C" void *daObjSlIceBlock_c_classInit_SL_ICEBLOCK_SHOT();
+static PcNativeActorProfile pc_sliding_ice_launcher_profile = {
+    (void *)&daObjSlIceBlock_c_classInit_SL_ICEBLOCK, 92, 263, 2, 0x60000, 0x500000, 0x1500000, 0
+};
+static PcNativeActorProfile pc_sliding_ice_shot_profile = {
+    (void *)&daObjSlIceBlock_c_classInit_SL_ICEBLOCK_SHOT, 93, 264, 2, 0x60000, 0x500000, 0x1500000, 0
 };
 static PcNativeActorProfile pc_lava_log_profile = {
     (void *)&daObjFlMaruta_c_classInit, 70, 278, 2, 0, 0x500000, 0x2000000, 0
@@ -676,6 +732,10 @@ static PcNativeActorProfile pc_small_bully_profile = {
 extern "C" void *daBDonketu_c_classInit();
 static PcNativeActorProfile pc_big_bully_profile = {
     (void *)&daBDonketu_c_classInit, 216, 60, 0x10000006, 0xc8000, 0xc8000, 0x1000000, 0x1000000
+};
+extern "C" void *daIDonketu_c_classInit();
+static PcNativeActorProfile pc_chill_bully_profile = {
+    (void *)&daIDonketu_c_classInit, 217, 61, 0x10000006, 0x64000, 0x64000, 0x1000000, 0xbb8000
 };
 static PcNativeActorProfile pc_firesea_path_lift_profile = {
     (void *)&daLinelift2_c_classInit_KM2_SUSUMU,144,215,2,0x100000,0x300000,0x1000000,0
@@ -942,6 +1002,8 @@ extern "C" void pc_actor_spawn_table_init(void)
 #endif
     data_020a4bb8_storage[191] = &pc_player_profile;
     data_020a4bb8_storage[196] = g_profile_LAVA;
+    data_020a4bb8_storage[316] = g_profile_OBJ_RED_FIRE;
+    data_020a4bb8_storage[317] = g_profile_OBJ_BLUE_FIRE;
     data_020a4bb8_storage[214] = &pc_lava_bubble_profile;
     data_020a4bb8_storage[318] = &pc_flamethrower_profile;
     /* CAMERA is the built-in ARM9 actor profile 332 (0x14c). Stage's
@@ -959,9 +1021,20 @@ extern "C" void pc_actor_spawn_table_init(void)
     pc_chomp_init_resources();pc_pile_init_resources();pc_wanwan_fence_init_resources();
     pc_lava_bridge_init_resources();
     data_020a4bb8_storage[69] = &pc_lava_mesh_lift_profile;
+    data_020a4bb8_storage[173] = &pc_moving_ice_profile;
+    data_020a4bb8_storage[18] = &pc_ice_block_profile;
+    for (unsigned i = 0; i < 3; ++i)
+        data_020a4bb8_storage[170 + i] = &pc_arena_ice_profiles[i];
+    data_020a4bb8_storage[218] = &pc_chief_chilly_profile;
     data_020a4bb8_storage[70] = &pc_lava_log_profile;
     data_020a4bb8_storage[102] = &pc_mountain_log_profile;
     data_020a4bb8_storage[103] = &pc_mountain_cage_profile;
+    data_020a4bb8_storage[258] = &pc_penguin_defender_profile;
+    data_020a4bb8_storage[275] = &pc_snowman_breath_profile;
+    data_020a4bb8_storage[223] = &pc_snowman_profile;
+    data_020a4bb8_storage[224] = &pc_snowball_profile;
+    data_020a4bb8_storage[92] = &pc_sliding_ice_launcher_profile;
+    data_020a4bb8_storage[93] = &pc_sliding_ice_shot_profile;
     data_020a4bb8_storage[267] = &pc_ukiki_thief_profile;
     data_020a4bb8_storage[268] = &pc_ukiki_star_profile;
     data_020a4bb8_storage[71] = &pc_lava_ring_profile;
@@ -1077,12 +1150,14 @@ extern "C" void pc_actor_spawn_table_init(void)
     data_020a4bb8_storage[51] = &pc_fortress_rotating_bar_profile;
     data_020a4bb8_storage[52] = &pc_fortress_tower_step_profile;
     data_020a4bb8_storage[230] = &pc_skeeter_profile;
+    data_020a4bb8_storage[312] = &pc_spindrift_profile;
     data_020a4bb8_storage[270] = g_profile_KERONPA;
     data_020a4bb8_storage[271] = g_profile_KERONPA_FIRE;
     data_020a4bb8_storage[238] = &pc_heave_ho_profile;
     data_020a4bb8_storage[145] = g_profile_KM2_UKISHIMA;
     data_020a4bb8_storage[215] = &pc_small_bully_profile;
     data_020a4bb8_storage[216] = &pc_big_bully_profile;
+    data_020a4bb8_storage[217] = &pc_chill_bully_profile;
     data_020a4bb8_storage[144] = &pc_firesea_path_lift_profile;
     data_020a4bb8_storage[157] = &pc_sky_path_lift_profile;
     data_020a4bb8_storage[298] = &pc_warp_pipe_profile;

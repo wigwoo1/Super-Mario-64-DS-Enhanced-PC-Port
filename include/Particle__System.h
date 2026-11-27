@@ -54,7 +54,8 @@ struct System {
     /* simpleCallback_c copies this value in both directions. */
     s16 callbackValue;             /* 0x3a */
     Vector3_16f direction;         /* 0x3c */
-    u8 pad_042[0x06];
+    u8 pad_042[0x02];
+    s32 emitterScale;              /* 0x44, written by the original ice effects */
     /* Descriptive names for callback-owned, body-proven fields. */
     s32 callbackParam;             /* 0x48 */
     s32 callbackVelocity;          /* 0x4c */

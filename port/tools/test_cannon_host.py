@@ -32,10 +32,23 @@ class CannonHostTests(unittest.TestCase):
         source=ROOT/'src/game/actors/d_a_cnn.cpp'
         text,_=hostgen.transform(source.read_text())
         native=cannon_host.transform(ROOT,text,source.name)
+        legacy_stop = (
+            '#if defined(SM64DS_PLATFORM_PC)\n'
+            '        /* The cannon-rise loop spans the load/aim sequence in the host audio\n'
+            '           player. End it when the original launch cue fires. */\n'
+            '        ntr::audio_stop_effect(3,0x14c,4);\n'
+            '#endif\n'
+        )
+        self.assertEqual(text.count(legacy_stop), 1)
+        expected = text.replace(legacy_stop, '', 1)
         for signature in ('void daCnn_c::func_ov098_0213aa28()',
                           'void daCnn_c::func_ov098_0213ad08()'):
-            # Native table/resource changes must preserve both original bodies.
-            self.assertEqual(text[text.index(signature):],native[native.index(signature):native.index('\nstatic_assert(sizeof(State)')])
+            # Native audio replaces the legacy stop through sequence ownership.
+            # The rest of the boarding and launch callbacks must match.
+            self.assertEqual(
+                expected[expected.index(signature):],
+                native[native.index(signature):native.index('\nstatic_assert(sizeof(State)')],
+            )
 
 
 if __name__=='__main__':unittest.main()

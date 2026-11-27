@@ -17,6 +17,7 @@
 #include "daKuriKing_c.h"
 #include "daBombking_c.h"
 #include "daBDonketu_c.h"
+#include "daKing_Donketu_c.h"
 #include "daDonketu_c.h"
 #include "daObjFl_Ukiyuka_c.h"
 #include "daObjFl_Puzzle_c.h"
@@ -40,6 +41,7 @@
 #include "daObjWc_Mizu_c.h"
 #include "daStarBase_c.h"
 #include "daObjMarioCap_c.h"
+#include "daSnowman_c.h"
 #include "daC_Jugem_c.h"
 #include "daDoor_c.h"
 #include "daBook_c.h"
@@ -250,6 +252,7 @@ extern "C" bool pc_ironball_consume_player_hurt() {
 }
 static bool replay_lava_bridge_reentered;
 static uint64_t replay_lava_mesh_clock_shift;
+static uint64_t replay_blizzard_route_clock_shift;
 #include "hal/ironball_replay.h"
 #include "hal/ironball_encounter_state.h"
 static bool replay_course_route_complete;
@@ -469,6 +472,8 @@ static bool replay_star_save_controls() {
        !p->mIsNoControl && !p->mIsControlDisabled) {
         done=true;event("original-save-complete-control-restored");
     }
+    if(done && std::getenv("SM64DS_PC_TEST_CONTINUE_AFTER_STAR_SAVE"))
+        return false;
     ntr::input_test_controls(true,buttons,0,0);return true;
 }
 static bool replay_wdw_hundred_coin_star() {
@@ -1054,6 +1059,74 @@ static bool replay_mri_circle() {
     if(std::hypot(dx,dz)>20*4096.0){const double a=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;sx=static_cast<int16_t>(std::sin(a)*32767);sy=static_cast<int16_t>(-std::cos(a)*32767);}
     if(dying && tick%10==0){auto *r=rewardID?dActor_c::FindWithID(rewardID):nullptr;std::fprintf(stderr,"[mri pickup probe] tick=%llu eye=%u area=%d reward=%u alive=%d area=%d param=%u dx=%.0f dz=%.0f stick=%d,%d\n",static_cast<unsigned long long>(tick),eye?unsigned(eye->uniqueID):0,int(p->mAreaId),rewardID,r?int(r->aliveState):-1,r?int(r->mAreaId):-1,r?unsigned(r->param1):0,dx,dz,int(sx),int(sy));}
     ntr::input_test_controls(true,sx||sy?2048:0,sx,sy);return true;
+}
+
+// Test the original cap recovery using only camera-relative stick input.
+static bool replay_blizzard_cap() {
+    const char *automation = std::getenv("SM64DS_PC_AUTOMATION_ONLY");
+    const char *mode = std::getenv("SM64DS_PC_TEST_BLIZZARD_CAP");
+    if (!automation || std::strcmp(automation, "1") ||
+        !mode || data_0209f2f8 != 19 || !replay_course_route_complete)
+        return false;
+
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1) return false;
+    static uint64_t began = 0;
+    static unsigned cap_id = 0;
+    static bool released = false;
+    static bool second_visit = false;
+    const auto tick = ntr::rt_frame();
+    if (*mode == '2' && replay_lava_bridge_reentered && !second_visit) {
+        began = 0;
+        cap_id = 0;
+        released = false;
+        second_visit = true;
+    }
+    if (!SaveData::HasPlayerLostCap()) {
+        if (began && !released) return false;
+        if (began) {
+            std::fprintf(stderr, "[native Blizzard cap replay] recovered tick=%llu cap=%u\n",
+                         static_cast<unsigned long long>(tick), cap_id);
+            released = false;
+        }
+        return false;
+    }
+    if (!began) began = tick;
+    if (tick - began > 3000) return false;
+
+    auto *carrier = static_cast<daSnowman_c *>(dActor_c::FindWithActorID(223, nullptr));
+    while (carrier && (carrier->aliveState != 1 || carrier->mType != 2))
+        carrier = static_cast<daSnowman_c *>(dActor_c::FindWithActorID(223, carrier));
+    if (!cap_id && carrier) cap_id = carrier->mCapUniqueID;
+    if (!released && cap_id && (!carrier || !carrier->mCapUniqueID)) {
+        released = true;
+        std::fprintf(stderr, "[native Blizzard cap replay] released tick=%llu cap=%u\n",
+                     static_cast<unsigned long long>(tick), cap_id);
+    }
+    const auto *cap = cap_id ? dActor_c::FindWithID(cap_id) : nullptr;
+    double dx = 0, dz = 0;
+    if (!released && carrier) {
+        const double bearing = std::atan2(double(player->mPosX - carrier->mPosX),
+                                         double(player->mPosZ - carrier->mPosZ)) + 0.55;
+        dx = carrier->mPosX - player->mPosX + 185 * 4096.0 * std::sin(bearing);
+        dz = carrier->mPosZ - player->mPosZ + 185 * 4096.0 * std::cos(bearing);
+    } else if (released && cap && cap->aliveState == 1) {
+        dx = cap->mPosX - player->mPosX;
+        dz = cap->mPosZ - player->mPosZ;
+    }
+    if (tick % 15 == 0)
+        std::fprintf(stderr, "[native Blizzard cap replay] sample tick=%llu cap=%u released=%d lean=%d timer=%d\n",
+                     static_cast<unsigned long long>(tick), cap_id, int(released),
+                     carrier ? carrier->mInitAngleY : 0, carrier ? carrier->mTimer : 0);
+    int16_t x = 0, y = 0;
+    if (std::hypot(dx, dz) > 18 * 4096.0) {
+        const double angle = std::atan2(dx, dz) - GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+        const double magnitude = released ? 17000 : 32767;
+        x = static_cast<int16_t>(std::sin(angle) * magnitude);
+        y = static_cast<int16_t>(-std::cos(angle) * magnitude);
+    }
+    ntr::input_test_controls(true, x || y ? 2048 : 0, x, y);
+    return true;
 }
 
 extern "C" bool pc_camera_on_vertical_lift(const Player *rider) {
@@ -2285,10 +2358,11 @@ static bool replay_owl_ride(Player *p) {
     if(!owl)return false;
     const auto tick=ntr::rt_frame();
     struct Pilot {
-        uint64_t began=0,ride=0,jump_until=0,next_jump=0,recovered=0,flight=0;
+        uint64_t began=0,ride=0,jump_until=0,next_jump=0,recovered=0,flight=0,pound_until=0;
+        uint64_t brick_attack_until=0,brick_next_action=0;
         int recovered_x=0,recovered_z=0;
         bool moved=false,released=false,done=false,landing_braked=false;
-        unsigned uid=0;
+        unsigned uid=0,flight_index=0,cap_brick_waypoint=0;
     };
     static Pilot pilot;
     if(pilot.uid!=owl->uniqueID){pilot=Pilot{};pilot.uid=owl->uniqueID;}
@@ -2307,6 +2381,48 @@ static bool replay_owl_ride(Player *p) {
            x>=-20000 && x<=20000 && z>=-20000 && z<=20000) {
             flight_target_x=x;flight_target_z=z;
         }
+    }
+    struct ReboardTarget { unsigned return_after; int next_x,next_z; };
+    ReboardTarget targets[5]{};
+    unsigned target_count=0;
+    int landing_x=0,landing_z=0;
+    const char *reboard=std::getenv("SM64DS_PC_TEST_OWL_REBOARD");
+    const char *landing=std::getenv("SM64DS_PC_TEST_OWL_LANDING_TARGET");
+    auto read_landing=[](const char *value,int &x,int &z) {
+        int parsed_x=0,parsed_z=0;
+        if(!value || std::sscanf(value,"%d:%d",&parsed_x,&parsed_z)!=2 ||
+           parsed_x < -20000 || parsed_x > 20000 ||
+           parsed_z < -20000 || parsed_z > 20000)return false;
+        x=parsed_x;
+        z=parsed_z;
+        return true;
+    };
+    bool has_landing=read_landing(landing,landing_x,landing_z);
+    if(has_landing) {
+        // Each entry gives the return time for this ride and the aim point for the next.
+        while(reboard && *reboard && target_count<sizeof(targets)/sizeof(targets[0])) {
+            auto &target=targets[target_count];
+            int chars=0;
+            if(std::sscanf(reboard,"%u:%d:%d%n",&target.return_after,&target.next_x,&target.next_z,&chars)!=3 ||
+               !target.return_after || target.next_x < -20000 || target.next_x > 20000 ||
+               target.next_z < -20000 || target.next_z > 20000 ||
+               (reboard[chars] && reboard[chars]!=',')) {
+                target_count=0;
+                break;
+            }
+            ++target_count;
+            reboard+=chars;
+            if(*reboard==',')++reboard;
+        }
+    }
+    const bool has_next_ride=pilot.flight_index<target_count;
+    const bool final_landing=target_count && !has_next_ride &&
+        read_landing(std::getenv("SM64DS_PC_TEST_OWL_FINAL_LANDING"),landing_x,landing_z);
+    has_landing|=final_landing;
+    if(pilot.flight_index && pilot.flight_index<=target_count) {
+        const auto &target=targets[pilot.flight_index-1];
+        flight_target_x=target.next_x;
+        flight_target_z=target.next_z;
     }
     if(std::getenv("SM64DS_PC_TEST_OWL_NATURAL_RELEASE")) {
         static unsigned prev_rider=0,prev_held=0;
@@ -2354,10 +2470,37 @@ static bool replay_owl_ride(Player *p) {
             std::fprintf(stderr,"[native owl ride] requested-hold-frames=%llu\n",static_cast<unsigned long long>(flight_hold_frames));
             std::fprintf(stderr,"[native owl ride] requested-steer-frames=%llu target=%d:%d\n",static_cast<unsigned long long>(flight_steer_frames),flight_target_x,flight_target_z);
         }
+        if(full_flight && riding && !released && flight &&
+           (final_landing || (has_next_ride && tick-flight>=targets[pilot.flight_index].return_after))) {
+            const double dx=landing_x*4096.0-p->mPosX,dz=landing_z*4096.0-p->mPosZ;
+            if(std::hypot(dx,dz)<=(final_landing?100:280)*4096.0) {
+                released=true;
+                std::fprintf(stderr,"[native owl %s] release near landing target tick=%llu\n",
+                             final_landing?"final flight":"reboard",static_cast<unsigned long long>(tick));
+                return controls();
+            }
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            return controls(2,static_cast<int16_t>(std::sin(angle)*18000),
+                            static_cast<int16_t>(-std::cos(angle)*18000));
+        }
         if(full_flight && riding && observe_natural && tick<ride+4000 && !released){
             // Keep the carry input active while steering toward the configured
             // aim point so character-specific routes can be tested against
             // known safe floor locations.
+            const char *change=std::getenv("SM64DS_PC_TEST_OWL_AIM_SWITCH");
+            while(change && *change) {
+                unsigned ride_index=0,after=0;
+                int x=0,z=0,chars=0;
+                if(std::sscanf(change,"%u:%u:%d:%d%n",&ride_index,&after,&x,&z,&chars)!=4 ||
+                   (change[chars] && change[chars]!=','))break;
+                if(pilot.flight_index==ride_index && flight && tick-flight>=after &&
+                   x>=-20000 && x<=20000 && z>=-20000 && z<=20000) {
+                    flight_target_x=x;
+                    flight_target_z=z;
+                }
+                change+=chars;
+                if(*change==',')++change;
+            }
             const double dx=flight_target_x*4096.0-p->mPosX,dz=flight_target_z*4096.0-p->mPosZ;
             const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
             return controls(2,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
@@ -2386,6 +2529,21 @@ static bool replay_owl_ride(Player *p) {
         }
         if(!full_flight && tick<ride+80)return controls(2,tick>=ride+40 && tick<ride+70?12000:0);
         if(!released){released=true;std::fprintf(stderr,"[native owl ride] release-input tick=%llu\n",static_cast<unsigned long long>(tick));}
+        if(has_next_ride && pilot.flight_index && released && !riding &&
+           p->mIsAirborne && !std::strcmp(state,"St_Fall_Main")) {
+            if(const char *below=std::getenv("SM64DS_PC_TEST_OWL_REBOARD_POUND_Y")) {
+                char *end=nullptr;
+                const long height=std::strtol(below,&end,10);
+                if(!pilot.pound_until && end!=below && !*end && height>=-20000 && height<=20000 &&
+                   p->mPosY<=height*4096 && std::hypot(double(p->mPosX)-landing_x*4096.0,
+                                                       double(p->mPosZ)-landing_z*4096.0)<500*4096.0) {
+                    pilot.pound_until=tick+6;
+                    std::fprintf(stderr,"[native owl reboard] ground-pound input tick=%llu y=%d\n",
+                                 static_cast<unsigned long long>(tick),p->mPosY);
+                }
+                if(tick<pilot.pound_until)return controls(0x100);
+            }
+        }
         if(!riding && std::getenv("SM64DS_PC_TEST_OWL_LANDING_TARGET") &&
            !std::strcmp(state,"St_LedgeHang_Main")){
             // Original ledge controls require a fresh Jump press to climb.
@@ -2396,33 +2554,134 @@ static bool replay_owl_ride(Player *p) {
         }
         // Optional input-only landing approach. Neutral air input otherwise
         // brakes outside the platform after an extended flight orbit.
-        if(!riding && p->mIsAirborne && !std::strcmp(state,"St_Fall_Main")){
-            if(const char *target=std::getenv("SM64DS_PC_TEST_OWL_LANDING_TARGET")){
-                int x=0,z=0;
-                if(std::sscanf(target,"%d:%d",&x,&z)==2 &&
-                   x>=-20000 && x<=20000 && z>=-20000 && z<=20000){
-                    // Fall steering turns gradually while horizontal speed is
-                    // nonzero. Brake using neutral input before asking for a
-                    // heading change; a nearby target otherwise produces an
-                    // orbit that cannot converge before reaching the floor.
-                    if(!pilot.landing_braked){
-                        if(p->mHorzSpeed!=0)return controls();
-                        pilot.landing_braked=true;
-                        std::fprintf(stderr,"[native owl ride] landing-braked tick=%llu\n",static_cast<unsigned long long>(tick));
-                    }
-                    const double dx=x*4096.0-p->mPosX,dz=z*4096.0-p->mPosZ;
-                    const double speed=p->mHorzSpeed/4096.0;
-                    const double stopping_distance=speed*speed+40.0; // neutral deceleration is 0.5 units/frame
-                    if(std::hypot(dx,dz)>stopping_distance*4096.0){
-                        const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-                        return controls(0,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
-                    }
-                }
+        if(has_landing && !riding && p->mIsAirborne && !std::strcmp(state,"St_Fall_Main")){
+            // Stop the inherited flight momentum before steering toward a
+            // nearby landing point to avoid circling it.
+            if(!pilot.landing_braked){
+                if(p->mHorzSpeed!=0)return controls();
+                pilot.landing_braked=true;
+                std::fprintf(stderr,"[native owl ride] landing-braked tick=%llu\n",static_cast<unsigned long long>(tick));
+            }
+            const double dx=landing_x*4096.0-p->mPosX,dz=landing_z*4096.0-p->mPosZ;
+            const double speed=p->mHorzSpeed/4096.0;
+            const double stopping_distance=speed*speed+40.0; // neutral deceleration is 0.5 units/frame
+            if(std::hypot(dx,dz)>stopping_distance*4096.0){
+                const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                return controls(0,static_cast<int16_t>(std::sin(angle)*18000),static_cast<int16_t>(-std::cos(angle)*18000));
             }
         }
         if(!riding && !p->mIsAirborne && !p->mIsControlDisabled && !p->mIsNoControl && !done && !std::strcmp(state,"St_Wait_Main")){
             done=true;recovered=tick;recovered_x=p->mPosX;recovered_z=p->mPosZ;
             std::fprintf(stderr,"[native owl ride] landed tick=%llu state=%s\n",static_cast<unsigned long long>(tick),state);
+        }
+        const bool cap_approach = std::getenv("SM64DS_PC_TEST_OWL_CAP_APPROACH");
+        const bool brick_star = std::getenv("SM64DS_PC_TEST_OWL_BRICK_STAR");
+        const bool wearing_wario_cap = p->mCharacter == 0 && p->mHatCharacter == 2 && p->param1 == 2;
+        const bool cap_brick_route = cap_approach && brick_star && wearing_wario_cap;
+        if(recovered && has_landing && data_0209f2f8==22 && cap_approach && !cap_brick_route) {
+            if(p->param1==2 || p->mIsAirborne || p->mIsControlDisabled || p->mIsNoControl)
+                return controls();
+            const double dx=landing_x*4096.0-p->mPosX,dz=landing_z*4096.0-p->mPosZ;
+            if(std::hypot(dx,dz)<=20*4096.0)return controls();
+            const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+            return controls(0,static_cast<int16_t>(std::sin(angle)*12000),
+                            static_cast<int16_t>(-std::cos(angle)*12000));
+        }
+        if (recovered && data_0209f2f8 == 22 && brick_star && (p->mCharacter == 2 || cap_brick_route)) {
+            if (cap_brick_route) {
+                // Drop onto the lower shelf and approach the face clear of the brick's corner.
+                constexpr int route[][2] = {{2330, -1400}, {2620, -750}, {2700, 830},
+                                            {2580, 1010}, {2350, 1180}, {1910, 1240}};
+                const auto waypoint_count = sizeof(route) / sizeof(route[0]);
+                if (p->mIsControlDisabled || p->mIsNoControl) return controls();
+                while (pilot.cap_brick_waypoint < waypoint_count) {
+                    const auto &target = route[pilot.cap_brick_waypoint];
+                    const double dx = target[0] - p->mPosX / 4096.0;
+                    const double dz = target[1] - p->mPosZ / 4096.0;
+                    const double distance = std::hypot(dx, dz);
+                    const double radius = pilot.cap_brick_waypoint + 1 == waypoint_count ? 22 : 55;
+                    if (distance > radius) {
+                        const double angle = std::atan2(dx, dz) - GetAngleToCamera(0) * 6.283185307179586 / 65536.0;
+                        const double stick = distance < 140 ? 13000 : 19000;
+                        return controls(0, static_cast<int16_t>(std::sin(angle) * stick),
+                                        static_cast<int16_t>(-std::cos(angle) * stick));
+                    }
+                    ++pilot.cap_brick_waypoint;
+                    std::fprintf(stderr, "[native cap brick replay] waypoint=%u tick=%llu y=%d\n",
+                                 pilot.cap_brick_waypoint, static_cast<unsigned long long>(tick), p->mPosY);
+                }
+            }
+            if (p->mIsControlDisabled || p->mIsNoControl ||
+                std::abs(double(p->mPosY) - 1050 * 4096.0) > 150 * 4096.0)
+                return controls();
+            constexpr double angle_unit = 6.283185307179586 / 65536.0;
+            const bool on_foot = !p->mIsAirborne &&
+                (!std::strcmp(state, "St_Wait_Main") || !std::strcmp(state, "St_Walk_Main"));
+            for (unsigned id : {17u, 178u}) {
+                for (auto *actor = dActor_c::FindWithActorID(id, nullptr); actor;
+                     actor = dActor_c::FindWithActorID(id, actor)) {
+                    if (actor->aliveState != 1 || (actor->param1 & 0x1f) != 7 ||
+                        std::abs(double(actor->mPosY) - p->mPosY) > 350 * 4096.0)
+                        continue;
+                    const double dx = (double(actor->mPosX) - p->mPosX) / 4096.0;
+                    const double dz = (double(actor->mPosZ) - p->mPosZ) / 4096.0;
+                    const double distance = std::hypot(dx, dz);
+                    const double bearing = std::atan2(dx, dz);
+                    const int desired = static_cast<int>(bearing / angle_unit);
+                    const bool facing = std::abs(int(static_cast<s16>(desired - p->mAngleY))) < 0x1100;
+                    const bool brick = id == 17;
+                    const double stop = brick ? 150 : 24;
+                    if (brick && on_foot && facing && distance < 206 &&
+                        !p->mPunchKickCooldown && tick >= pilot.brick_next_action) {
+                        pilot.brick_attack_until = tick + 6;
+                        pilot.brick_next_action = tick + 90;
+                        std::fprintf(stderr, "[native Wario brick replay] punch tick=%llu uid=%u distance=%.1f\n",
+                                     static_cast<unsigned long long>(tick), actor->uniqueID, distance);
+                    }
+                    if (brick && tick < pilot.brick_attack_until) return controls(1);
+                    if (!brick && tick < jump_until) return controls(2);
+                    if (distance > stop) {
+                        const double heading = bearing - GetAngleToCamera(0) * angle_unit;
+                        return controls(0, static_cast<int16_t>(std::sin(heading) * 13000),
+                                        static_cast<int16_t>(-std::cos(heading) * 13000));
+                    }
+                    if (!brick && on_foot && !p->mHorzSpeed && tick >= next_jump) {
+                        jump_until = tick + 14;
+                        next_jump = tick + 100;
+                        return controls(2);
+                    }
+                    return controls();
+                }
+            }
+            return controls();
+        }
+        if(recovered && final_landing && data_0209f2f8==22) {
+            // Mission 6's summit reward floats above the landing surface.
+            // Approach its live position on foot and send the ordinary jump.
+            if(p->mIsControlDisabled || p->mIsNoControl)return controls();
+            if(tick<jump_until)return controls(2);
+            if(p->mIsAirborne)return controls();
+            for(auto *actor=dActor_c::FindWithActorID(178,nullptr);actor;
+                actor=dActor_c::FindWithActorID(178,actor)) {
+                if(actor->aliveState!=1 || actor->param1!=0x46 ||
+                   std::abs(double(actor->mPosY)-p->mPosY)>600*4096.0)continue;
+                const double dx=double(actor->mPosX)-p->mPosX;
+                const double dz=double(actor->mPosZ)-p->mPosZ;
+                if(std::hypot(dx,dz)>45*4096.0) {
+                    const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
+                    return controls(0,static_cast<int16_t>(std::sin(angle)*10000),
+                                    static_cast<int16_t>(-std::cos(angle)*10000));
+                }
+                if(!p->mHorzSpeed && tick>=next_jump && !std::strcmp(state,"St_Wait_Main")) {
+                    jump_until=tick+24;
+                    next_jump=tick+150;
+                    std::fprintf(stderr,"[native owl final flight] summit jump tick=%llu target=%u\n",
+                                 static_cast<unsigned long long>(tick),actor->uniqueID);
+                    return controls(2);
+                }
+                return controls();
+            }
+            return controls();
         }
         if(recovered && data_0209f2f8==7 && replay_fortress_island_transfer(p,tick))return true;
         if(recovered && data_0209f2f8==7 && std::getenv("SM64DS_PC_TEST_OWL_CAGE_STAR")) {
@@ -2447,6 +2706,15 @@ static bool replay_owl_ride(Player *p) {
         }
         if(recovered && !moved && std::hypot(double(p->mPosX)-recovered_x,double(p->mPosZ)-recovered_z)>20*4096.0){
             moved=true;std::fprintf(stderr,"[native owl ride] movement-recovered tick=%llu state=%s\n",static_cast<unsigned long long>(tick),state);
+            if(has_next_ride) {
+                // Restart only the input pilot; the owl must return and accept a fresh grab.
+                const unsigned next_flight=pilot.flight_index+1;
+                pilot=Pilot{};
+                pilot.uid=owl->uniqueID;
+                pilot.flight_index=next_flight;
+                std::fprintf(stderr,"[native owl reboard] approach tick=%llu uid=%u\n",
+                             static_cast<unsigned long long>(tick),owl->uniqueID);
+            }
             if(std::getenv("SM64DS_PC_TEST_OWL_CYCLE"))replay_course_route_complete=true;
         }
         return controls();
@@ -3412,6 +3680,321 @@ static bool replay_big_bully_combat() {
     return true;
 }
 
+// Follow Snowman's Land's authored Bully and reward with ordinary controller input.
+static bool replay_chill_bully_combat() {
+    const char *enabled = std::getenv("SM64DS_PC_TEST_CHILL_BULLY_COMBAT");
+    if (!enabled || std::strcmp(enabled, "1") || data_0209f2f8 != 19 ||
+        replay_course_route_waypoint < 62)
+        return false;
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1 || player->mIsControlDisabled || player->mIsNoControl ||
+        player->mPosY < 1300 * 4096)
+        return false;
+
+    constexpr double angle_unit = 6.283185307179586 / 65536.0;
+    const double x = player->mPosX / 4096.0, z = player->mPosZ / 4096.0;
+    const char *state = pc_player_state_name(player);
+    const bool ready = !player->mIsAirborne &&
+        (!std::strcmp(state, "St_Walk_Main") || !std::strcmp(state, "St_Wait_Main") ||
+         !std::strcmp(state, "St_Land_Main"));
+    const auto steer = [&](double aim_x, double aim_z, double magnitude, uint16_t buttons) {
+        const double angle = std::atan2(aim_x - x, aim_z - z) - GetAngleToCamera(0) * angle_unit;
+        ntr::input_test_controls(true, buttons, static_cast<int16_t>(std::sin(angle) * magnitude),
+                                 static_cast<int16_t>(-std::cos(angle) * magnitude));
+    };
+
+    static uint64_t attack_until = 0, next_attack = 0, jump_until = 0, next_jump = 0;
+    static unsigned observed_uid = 0;
+    static unsigned strong_hits = 0;
+    static int observed_state = -1;
+    static bool flank = false;
+    const auto tick = ntr::rt_frame();
+    for (auto *actor = dActor_c::FindWithActorID(217, nullptr); actor;
+         actor = dActor_c::FindWithActorID(217, actor)) {
+        if (actor->aliveState != 1 || actor->param1 != 0xff02)
+            continue;
+        auto &bully = *static_cast<daOts_c *>(actor);
+        const int bully_state = bully.tail().mState;
+        const double bx = bully.mPosX / 4096.0, bz = bully.mPosZ / 4096.0;
+        const double distance = std::hypot(bx - x, bz - z);
+        if (observed_uid != actor->uniqueID || observed_state != bully_state) {
+            if (observed_uid != actor->uniqueID) {
+                flank = false;
+                strong_hits = 0;
+            }
+            if (bully_state == daOts_c::STATE_KNOCKED_BACK && bully.mHorzSpeed > 30 * 4096) {
+                flank = true;
+                ++strong_hits;
+            }
+            observed_uid = actor->uniqueID;
+            observed_state = bully_state;
+            std::fprintf(stderr, "[native Chill Bully replay] tick=%llu uid=%u state=%d speed=%.1f x=%.1f z=%.1f player_x=%.1f player_z=%.1f\n",
+                         static_cast<unsigned long long>(tick), observed_uid, bully_state,
+                         bully.mHorzSpeed / 4096.0, bx, bz, x, z);
+        }
+        if (bully_state >= daOts_c::STATE_DYING)
+            break;
+        const auto bearing = static_cast<int>(std::atan2(bx - x, bz - z) / angle_unit);
+        const bool facing = std::abs(int(static_cast<s16>(bearing - player->mAngleY))) < 0x1000;
+        const bool west_finish = strong_hits >= 3 && bx < -135 && bz > -4480;
+        const bool facing_west = std::abs(int(static_cast<s16>(0xc000 - player->mAngleY))) < 0x8c0;
+        const bool west_line = x > bx && std::abs(bz - z) < 65 && facing_west;
+        const bool charging = bully_state == daOts_c::STATE_CHASE && bully.mHorzSpeed >= 12 * 4096 &&
+            std::abs(int(static_cast<s16>(bearing + 0x8000 - bully.mPrevAngleY))) < 0x2400;
+        // The first two hits establish the westward line. On the later
+        // wind-ups Mario needs to start the punch before stepping closer.
+        const double strike_range = charging ? 295 : strong_hits >= 2 ? 245 : flank ? 200 : 170;
+        const bool strike = ready && facing && !player->mPunchKickCooldown && tick >= next_attack &&
+            bully_state != daOts_c::STATE_KNOCKED_BACK && distance < strike_range &&
+            (!west_finish || west_line);
+        if (strike) {
+            attack_until = tick + 6;
+            next_attack = tick + 20;
+            std::fprintf(stderr, "[native Chill Bully replay] attack tick=%llu distance=%.1f\n",
+                         static_cast<unsigned long long>(tick), distance);
+        }
+        if (tick < attack_until)
+            steer(west_finish ? x - 200 : bx, west_finish ? z : bz, 12000, 1);
+        else if (west_finish) {
+            // Aim along the west rim's open water. A northwestern punch
+            // reaches the sloped bank below the arena, where the Bully survives.
+            const double aim_x = -45;
+            const double aim_z = -4045;
+            const double separation = std::hypot(aim_x - x, aim_z - z);
+            if (separation > 55 && !west_line)
+                steer(aim_x, aim_z, separation > 140 ? 28500 : 15000, 0);
+            else
+                steer(x - 200, z, facing_west ? 0 : 12000, 0);
+        }
+        else if (flank && bully_state == daOts_c::STATE_KNOCKED_BACK && bx < 395) {
+            // Brake southeast of the stunned Bully and face across the arena
+            // before it recovers. Running all the way to its latitude left
+            // Mario turning through its attack range.
+            const double aim_x = bx + 195;
+            const double aim_z = bz - 75;
+            const double separation = std::hypot(aim_x - x, aim_z - z);
+            if (separation > 100)
+                steer(aim_x, aim_z, separation > 165 ? 24500 : 15000, 0);
+            else
+                steer(bx, bz, facing ? 0 : 12000, 0);
+        } else if (bully_state == daOts_c::STATE_KNOCKED_BACK || x > 645 || x < -200 || z < -4990 || z > -3900)
+            steer(245, -4530, std::hypot(x - 245, z + 4530) > 110 ? 23000 : 0, 0);
+        else
+            steer(bx, bz, distance > 240 ? 23000 : 14000, 0);
+        return true;
+    }
+
+    for (auto *star = dActor_c::FindWithActorID(178, nullptr); star;
+         star = dActor_c::FindWithActorID(178, star)) {
+        if (star->aliveState != 1 || star->param1 != 0x42 || star->mPosY < 1320 * 4096)
+            continue;
+        const double sx = star->mPosX / 4096.0, sz = star->mPosZ / 4096.0;
+        const double distance = std::hypot(sx - x, sz - z);
+        if (ready && distance < 175 && star->mPosY > player->mPosY + 75 * 4096 && tick >= next_jump) {
+            jump_until = tick + 18;
+            next_jump = tick + 85;
+        }
+        steer(sx, sz, distance > 135 ? 19000 : distance > 42 ? 11000 : 0, tick < jump_until ? 2 : 0);
+        return true;
+    }
+    steer(245, -4530, std::hypot(x - 245, z + 4530) > 110 ? 17500 : 0, 0);
+    return true;
+}
+
+// Replay the rim knockbacks and retreats using ordinary controller input.
+static bool replay_chief_chilly_counter() {
+    if (data_0209f2f8 != 49 || !std::getenv("SM64DS_PC_AUTOMATION_ONLY") ||
+        !std::getenv("SM64DS_PC_TEST_CHIEF_CHILLY_COUNTER"))
+        return false;
+    auto *player = static_cast<Player *>(data_0209f394[0]);
+    if (!player || player->aliveState != 1)
+        return false;
+    const auto tick = ntr::rt_frame();
+    const double x = player->mPosX / 4096.0, z = player->mPosZ / 4096.0;
+    constexpr double angle_unit = 6.283185307179586 / 65536.0;
+    const auto steer = [&](double aim_x, double aim_z, double magnitude, uint16_t buttons) {
+        const double heading = std::atan2(aim_x - x, aim_z - z) - GetAngleToCamera(0) * angle_unit;
+        ntr::input_test_controls(true, buttons, static_cast<int16_t>(std::sin(heading) * magnitude),
+                                 static_cast<int16_t>(-std::cos(heading) * magnitude));
+    };
+    if (std::getenv("SM64DS_PC_TEST_CHIEF_CHILLY_KEY")) {
+        auto *key = static_cast<daObjKey_c *>(dActor_c::FindWithActorID(282, nullptr));
+        if (key && key->aliveState == 1 && key->mState == 4) {
+            const double kx = key->mPosX / 4096.0, kz = key->mPosZ / 4096.0;
+            const double distance = std::hypot(kx - x, kz - z);
+            const bool ready = key->mStep == 2 && !key->mPlayer &&
+                !player->mIsControlDisabled && !player->mIsNoControl;
+            steer(kx, kz, ready && distance > 65 ? (distance > 250 ? 23000 : 14000) : 0, 0);
+            return true;
+        }
+    }
+    auto *boss = static_cast<daKing_Donketu_c *>(dActor_c::FindWithActorID(218, nullptr));
+    if (!boss || boss->aliveState != 1)
+        return false;
+    extern daKing_Donketu_c::State data_ov073_02123360;
+    extern daKing_Donketu_c::State data_ov073_02123390;
+    extern daKing_Donketu_c::State data_ov073_021233a0;
+    extern daKing_Donketu_c::State data_ov073_021233d0;
+    extern daKing_Donketu_c::State data_ov073_02123410;
+    enum class Approach { Bait, Side, Inward, Attack };
+    static Approach approach = Approach::Bait;
+    static unsigned boss_uid = 0;
+    static uint64_t attack_until = 0;
+    static uint64_t side_jump_until = 0;
+    static uint64_t defeat_talk_tick = 0;
+    static bool reached_center = false;
+    static bool second_started = false;
+    static bool final_started = false;
+    if (boss_uid != unsigned(boss->uniqueID)) {
+        boss_uid = unsigned(boss->uniqueID);
+        approach = Approach::Bait;
+        attack_until = 0;
+        side_jump_until = 0;
+        defeat_talk_tick = 0;
+        reached_center = false;
+        second_started = false;
+        final_started = false;
+    }
+    if (final_started && boss->mState == &data_ov073_02123410) {
+        if (!defeat_talk_tick) {
+            defeat_talk_tick = tick;
+            std::fprintf(stderr, "[native Chief Chilly replay] defeat dialogue tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+        }
+        const auto elapsed = tick - defeat_talk_tick;
+        ntr::input_test_controls(true, elapsed >= 140 && elapsed % 40 < 6 ? 1 : 0, 0, 0);
+        return true;
+    }
+    if (player->mIsControlDisabled || player->mIsNoControl)
+        return false;
+    if (final_started && boss->mState == &data_ov073_021233d0) {
+        const double bx = boss->mPosX / 4096.0, bz = boss->mPosZ / 4096.0;
+        const double distance = std::hypot(bx - x, bz - z);
+        const int desired = static_cast<int>(std::atan2(bx - x, bz - z) / angle_unit);
+        const bool facing = std::abs(int(static_cast<s16>(desired - player->mAngleY))) < 0x1100;
+        const char *state = pc_player_state_name(player);
+        const bool ready = !player->mIsAirborne &&
+            (!std::strcmp(state, "St_Walk_Main") || !std::strcmp(state, "St_Wait_Main"));
+        if (ready && facing && distance <= 335 && !player->mPunchKickCooldown && tick >= attack_until) {
+            attack_until = tick + 6;
+            std::fprintf(stderr, "[native Chief Chilly replay] finisher tick=%llu distance=%.1f\n",
+                         static_cast<unsigned long long>(tick), distance);
+        }
+        steer(bx, bz, distance > 300 ? 14000 : 0, tick < attack_until ? 1 : 0);
+        return true;
+    }
+    const bool chase = boss->mState == &data_ov073_02123360 ||
+                       boss->mState == &data_ov073_02123390 ||
+                       boss->mState == &data_ov073_021233a0;
+    const bool second = boss->mHitsRemaining == 2;
+    if (second && reached_center && !second_started && chase) {
+        second_started = true;
+        approach = Approach::Bait;
+        attack_until = 0;
+        std::fprintf(stderr, "[native Chief Chilly replay] second bait tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (second && !second_started) {
+        if (!reached_center && z >= -1060 && std::abs(x) < 850) {
+            reached_center = true;
+            std::fprintf(stderr, "[native Chief Chilly replay] center tick=%llu player=%.1f,%.1f\n",
+                         static_cast<unsigned long long>(tick), x, z);
+        }
+        steer(570, -930, reached_center ? 0 : 24000, 0);
+        return true;
+    }
+    const bool final = boss->mHitsRemaining == 1 && second_started;
+    if (final && !final_started && chase) {
+        final_started = true;
+        approach = Approach::Bait;
+        attack_until = 0;
+        side_jump_until = 0;
+        std::fprintf(stderr, "[native Chief Chilly replay] final bait tick=%llu\n",
+                     static_cast<unsigned long long>(tick));
+    }
+    if (final && !final_started) {
+        const double radius = std::hypot(x, z);
+        steer(0, 0, radius > 950 ? 24000 : 0, 0);
+        return true;
+    }
+    if ((!second && !final && boss->mHitsRemaining != 3) || !chase)
+        return false;
+    const double bx = boss->mPosX / 4096.0, bz = boss->mPosZ / 4096.0;
+    const double dx = bx - x, dz = bz - z;
+    const double distance = std::hypot(dx, dz);
+    // Keep the phase-two bait on Luigi's side of the rink, away from
+    // the charge along the west half, then cut inside from the east.
+    const auto previous = approach;
+    const double bait_z = final ? -1070 : second ? -1540 : -1750;
+    const double bait_distance = final ? 570 : second ? 625 : 680;
+    if (approach == Approach::Bait && z < bait_z &&
+        (distance < bait_distance || bz < -1520))
+        approach = Approach::Side;
+    if (approach == Approach::Side && x > (final ? 630 : second ? 800 : 430))
+        approach = Approach::Inward;
+    if (approach == Approach::Inward && z > bz + 275)
+        approach = Approach::Attack;
+    if (previous != approach)
+        std::fprintf(stderr, "[native Chief Chilly replay] tick=%llu approach=%d player=%.1f,%.1f boss=%.1f,%.1f\n",
+                     static_cast<unsigned long long>(tick), int(approach), x, z, bx, bz);
+
+    double aim_x = final ? 350 : second ? 550 : 0;
+    double aim_z = final ? -1260 : second ? -1870 : -2120;
+    double magnitude = final ? 22500 : 26000;
+    uint16_t buttons = 0;
+    if (approach == Approach::Side) {
+        aim_x = final ? 800 : second ? 990 : 650;
+        aim_z = final ? -1030 : second ? -1570 : -1950;
+    } else if (approach == Approach::Inward) {
+        aim_x = final ? 800 : second ? 990 : 650;
+        aim_z = bz + 450;
+    } else if (approach == Approach::Attack) {
+        const double radius = (std::max)(1.0, std::hypot(bx, bz));
+        const double outward = (dx * bx + dz * bz) / radius;
+        const double attack_bearing = std::atan2(dx, dz);
+        const int desired = static_cast<int>(attack_bearing / angle_unit);
+        const bool facing = std::abs(int(static_cast<s16>(desired - player->mAngleY))) < 0x1100;
+        const char *state = pc_player_state_name(player);
+        const bool ready = !player->mIsAirborne &&
+            (!std::strcmp(state, "St_Walk_Main") || !std::strcmp(state, "St_Wait_Main"));
+        // The second phase's surviving southeast ice supports the boss out
+        // to about 2320 units. Leave room for the original punch to connect
+        // while the boss is still outside the previous 1515-unit contact.
+        constexpr double diagonal = 0.7071067811865475;
+        const double face = (std::max)({std::abs(bx), std::abs(bz), (std::abs(bx) + std::abs(bz)) * diagonal});
+        const bool at_rim = final ? face > 1100 && distance < 375 :
+            !second || ((bx - bz) * diagonal > 1850 && distance < 335);
+        if (ready && !player->mPunchKickCooldown && facing && distance < 425 && at_rim &&
+            outward > distance * 0.72 && tick >= attack_until && boss->mState != &data_ov073_021233a0) {
+            attack_until = tick + 6;
+            std::fprintf(stderr, "[native Chief Chilly replay] attack tick=%llu distance=%.1f outward=%.1f boss=%.1f,%.1f\n",
+                         static_cast<unsigned long long>(tick), distance, outward, bx, bz);
+        }
+        if (tick < attack_until || outward > distance * 0.72) {
+            aim_x = bx;
+            aim_z = bz;
+            magnitude = distance > 440 ? 22000 : 11500;
+            if (tick < attack_until) buttons = 1;
+        } else {
+            aim_x = bx * (radius - 360) / radius;
+            aim_z = bz * (radius - 360) / radius;
+            magnitude = 21000;
+        }
+    }
+    if (approach == Approach::Bait && std::hypot(x - aim_x, z - aim_z) < 140)
+        magnitude = 0;
+    if ((second || final) && approach == Approach::Side && !side_jump_until &&
+        !player->mIsAirborne && distance < 590) {
+        side_jump_until = tick + 10;
+        std::fprintf(stderr, "[native Chief Chilly replay] side jump tick=%llu distance=%.1f\n",
+                     static_cast<unsigned long long>(tick), distance);
+    }
+    if ((second || final) && tick < side_jump_until)
+        buttons |= 2;
+    steer(aim_x, aim_z, magnitude, buttons);
+    return true;
+}
+
 // Use the contact and takeoff positions observed in the successful route.
 // Platform phase continues to affect the real player and collider.
 static uint16_t replay_lava_platform_jump(Player *player, unsigned waypoint) {
@@ -3731,11 +4314,36 @@ static bool replay_course_route(const char *route_override=nullptr) {
     }
     if(!route_override && replay_wdw_hundred_coin_star())return true;
     if(!route_override && replay_big_bully_combat())return true;
+    if(!route_override && replay_chill_bully_combat())return true;
+    if(!route_override && replay_chief_chilly_counter())return true;
     if(!route_override && replay_haunt_rear_boos(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && replay_big_boo_combat())return true;
     if(!route_override && pc_replay_sign_pound(static_cast<Player *>(data_0209f394[0])))return true;
     if(!route_override && pc_replay_crate_pound(static_cast<Player *>(data_0209f394[0])))return true;
     auto &waypoint=replay_course_route_waypoint;
+    // Let isolated replays insert timed controller segments between waypoints.
+    // The first entry also bounds the opening chute predictor.
+    unsigned resume_waypoint = 0;
+    unsigned long long resume_tick = 0;
+    const char *resume = std::getenv("SM64DS_PC_TEST_ROUTE_RESUME");
+    while (resume && *resume) {
+        unsigned hold_waypoint = 0;
+        unsigned long long hold_until = 0;
+        int consumed = 0;
+        if (std::sscanf(resume, "%u:%llu%n", &hold_waypoint, &hold_until, &consumed) != 2) break;
+        if (!resume_tick) {
+            resume_waypoint = hold_waypoint;
+            resume_tick = hold_until;
+        }
+        if (waypoint == hold_waypoint &&
+            ntr::rt_frame() < hold_until + replay_blizzard_route_clock_shift) {
+            ntr::input_test_controls(false, 0, 0, 0);
+            return false;
+        }
+        resume += consumed;
+        if (*resume != ',') break;
+        ++resume;
+    }
     const char *segment=route;
     for(unsigned i=0;i<waypoint && segment;++i) {
         const char *next=std::strchr(segment,',');segment=next?next+1:nullptr;
@@ -4209,6 +4817,16 @@ static bool replay_course_route(const char *route_override=nullptr) {
         ntr::input_test_controls(true,0,0,0);
         return true;
     }
+    if (level == 50 && data_0209f2f8 == 50 && x == 2820 && z == -2754 &&
+        player->mCharacter == 2 && std::getenv("SM64DS_PC_TEST_WARIO_DOOR")) {
+        // The original door returns Wario to the hall. End the approach
+        // here so the held direction cannot send him back through it.
+        ++waypoint;
+        std::fprintf(stderr, "[native Wario door replay] character selected tick=%llu\n",
+                     static_cast<unsigned long long>(ntr::rt_frame()));
+        ntr::input_test_controls(true, 0, 0, 0);
+        return true;
+    }
 
     const char *cannon_mode=std::getenv("SM64DS_PC_TEST_CANNON");
     const bool silver_reward_cannon=cannon_mode && !std::strcmp(cannon_mode,"wdw-silver-reward");
@@ -4366,10 +4984,10 @@ static bool replay_course_route(const char *route_override=nullptr) {
     static uint64_t settle_until=0;
     const char *settle=std::getenv("SM64DS_PC_TEST_ROUTE_SETTLE");
     const char *slide_route=std::getenv("SM64DS_PC_TEST_SLIDE_ROUTE");
-    const bool slide_course=level==29 && slide_route && !std::strcmp(slide_route,"1");
-    // Castle waypoints need precise stops, but the verified slide approach
-    // needs continuous input into its ledge jump. Settling there carries the
-    // player beneath the box before takeoff and causes an underside collision.
+    // Let opt-in slide replays track waypoints while the player is moving.
+    // Neutral input at a waypoint does not stop momentum on either chute.
+    const bool slide_course=(level==29 || (level==48 && z<=-4000)) &&
+        slide_route && !std::strcmp(slide_route,"1");
     if(!route_override && replay_reentry_goomba_dodge(player,x,z))return true;
     // Keep advancing markers during the evasive jump. Stopping at each marker
     // lets the pursuing Goomba catch the player again immediately after landing.
@@ -4409,6 +5027,227 @@ static bool replay_course_route(const char *route_override=nullptr) {
         player->mFloorNormalY<0x0f00 && player->mFloorClass>=2 && player->mFloorClass<5;
     const bool fortress_lower_gap=fortress_lower_started && fortress_lower && x==-2075 &&
         (z==-2025 || z==-3650);
+    // QA shell-route markers use ordinary riding input without stopping at each turn.
+    if (!route_override && level==19 && !std::strcmp(pc_player_state_name(player),"St_Shell_Main")) {
+        if (x==-5400 && y==1250 && z==5800 && jump==2 && std::strchr(segment,',')) {
+            ++waypoint;
+            std::fprintf(stderr,"[native Snowman shell replay] boarded tick=%llu\n",
+                         static_cast<unsigned long long>(ntr::rt_frame()));
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        if (has_y && y==949) {
+            if (approach_horizontal<420*4096.0 && std::strchr(segment,',')) {
+                ++waypoint;
+                std::fprintf(stderr,"[native Snowman shell replay] marker tick=%llu x=%d z=%d\n",
+                             static_cast<unsigned long long>(ntr::rt_frame()),x,z);
+            }
+            constexpr double angle_unit=6.283185307179586/65536.0;
+            const double heading=std::atan2(approach_dx,approach_dz)-GetAngleToCamera(0)*angle_unit;
+            // Retail riding loses speed on the snow lip. Use its normal jump
+            // rather than holding the same uphill steering indefinitely.
+            static uint64_t shell_jump_until=0, shell_next_jump=0;
+            const uint64_t shell_tick=ntr::rt_frame();
+            if (!player->mIsAirborne && player->mFloorNormalY<0x0f00 &&
+                player->mHorzSpeed<10*4096 && shell_tick>=shell_next_jump) {
+                shell_jump_until=shell_tick+12;
+                shell_next_jump=shell_tick+90;
+                std::fprintf(stderr,"[native Snowman shell replay] slope jump tick=%llu speed=%d normal_y=%d\n",
+                             static_cast<unsigned long long>(shell_tick),player->mHorzSpeed,player->mFloorNormalY);
+            }
+            ntr::input_test_controls(true,shell_tick<shell_jump_until?2:0,static_cast<int16_t>(std::sin(heading)*26000),
+                                     static_cast<int16_t>(-std::cos(heading)*26000));
+            return true;
+        }
+    }
+    // Give the original tree warp a chance to activate from Wait before steering west.
+    if (!route_override && level==19 && x==5268 && y==1029 && z==-5400) {
+        if (player->mPosX<-3000*4096 && !player->mIsNoControl &&
+            !std::strcmp(pc_player_state_name(player),"St_Wait_Main")) {
+            std::fprintf(stderr,"[native Snowman's Land replay] west tree arrival tick=%llu\n",
+                         static_cast<unsigned long long>(ntr::rt_frame()));
+            ++waypoint;
+            settle_until=ntr::rt_frame()+45;
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        if (approach_horizontal<25.0*4096.0 || player->mPosX<0) {
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+    }
+    // QA-only approach to either surveyed Spindrift.
+    const bool pond_spindrift=level==19 && x==-4100 && y==949 && z==2900;
+    const bool snowfield_spindrift=level==19 && x==1500 && y==1000 && z==3300;
+    if (!route_override && (pond_spindrift || snowfield_spindrift) &&
+        player->mCharacter==3 && std::getenv("SM64DS_PC_TEST_SPINDRIFT_STOMP")) {
+        static unsigned uid=0;
+        static uint64_t launch=0, pond_bounce=0;
+        const auto now=ntr::rt_frame();
+        const char *state=pc_player_state_name(player);
+        constexpr double angle_unit=6.283185307179586/65536.0;
+        if (pond_spindrift && pond_bounce) {
+            if (!player->mIsAirborne && player->mMeshClsn.IsOnGround() &&
+                player->mPosY>=1300*4096 && player->mPosZ>=4050*4096) {
+                std::fprintf(stderr,"[native Spindrift replay] pond shelf landing tick=%llu\n",
+                             static_cast<unsigned long long>(now));
+                ++waypoint;
+                settle_until=now+45;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
+            static unsigned second_uid=0;
+            static bool second_bounce=false;
+            if (!second_uid) {
+                double best=540.0*4096.0;
+                for (auto *actor=dActor_c::FindWithActorID(312,nullptr); actor;
+                     actor=dActor_c::FindWithActorID(312,actor)) {
+                    if (actor->aliveState!=1 || actor->uniqueID==uid) continue;
+                    const double offset=std::hypot(actor->mPosX+4100*4096.0,actor->mPosZ-3800*4096.0);
+                    if (offset<best) {second_uid=actor->uniqueID;best=offset;}
+                }
+            }
+            const auto *second=second_uid ? dActor_c::FindWithID(second_uid) : nullptr;
+            const bool tracking=second && second->aliveState==1 && !second_bounce;
+            if (second_uid && !tracking && !second_bounce && player->mVertSpeed>20*4096 &&
+                !std::strcmp(state,"St_Spin_Main")) {
+                second_bounce=true;
+                std::fprintf(stderr,"[native Spindrift replay] second pond spin tick=%llu uid=%u\n",
+                             static_cast<unsigned long long>(now),second_uid);
+            }
+            double sx=-4100*4096.0-player->mPosX, sz=4210*4096.0-player->mPosZ;
+            if (tracking) {
+                sx=double(second->mPosX)-player->mPosX;
+                sz=double(second->mPosZ)-player->mPosZ;
+            }
+            const double distance=std::hypot(sx,sz)/4096.0;
+            const double speed=std::abs(double(player->mHorzSpeed))/4096.0;
+            const double brake=tracking ? speed*6+35 : 60;
+            const int strength=now-pond_bounce<400 && distance>brake ? 30000 : 0;
+            const double heading=std::atan2(sx,sz)-GetAngleToCamera(0)*angle_unit;
+            const auto buttons=static_cast<uint16_t>(player->mIsAirborne && strength && (!tracking || distance>170) ? 2 : 0);
+            if (now%10==0 && tracking && now-pond_bounce<220) {
+                std::fprintf(stderr,"[native Spindrift replay] second aim tick=%llu uid=%u distance=%.1f height=%.1f speed=%.1f\n",
+                             static_cast<unsigned long long>(now),second_uid,distance,
+                             (player->mPosY-second->mPosY)/4096.0,speed);
+            }
+            ntr::input_test_controls(true,buttons,static_cast<int16_t>(std::sin(heading)*strength),
+                                     static_cast<int16_t>(-std::cos(heading)*strength));
+            return true;
+        }
+        if (launch && !std::strcmp(state,"St_Spin_Main")) {
+            std::fprintf(stderr,"[native Spindrift replay] spin tick=%llu uid=%u\n",
+                         static_cast<unsigned long long>(now),uid);
+            if (pond_spindrift) {
+                pond_bounce=now;
+                ntr::input_test_controls(true,2,0,0);
+                return true;
+            }
+            ++waypoint;
+            settle_until=now+75;
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+
+        dActor_c *target=nullptr;
+        double best=(pond_spindrift ? 570.0 : 920.0)*4096.0;
+        for (auto *actor=dActor_c::FindWithActorID(312,nullptr); actor;
+             actor=dActor_c::FindWithActorID(312,actor)) {
+            if (actor->aliveState!=1) continue;
+            if (uid) {
+                if (actor->uniqueID==uid) {target=actor;break;}
+                continue;
+            }
+            const double offset=std::hypot(actor->mPosX-x*4096.0,actor->mPosZ-z*4096.0);
+            if (offset<best) {target=actor;best=offset;}
+        }
+        if (!target) {
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        uid=target->uniqueID;
+        const double dx=target->mPosX-player->mPosX;
+        const double dz=target->mPosZ-player->mPosZ;
+        const double distance=std::hypot(dx,dz)/4096.0;
+        const double bearing=std::atan2(dx,dz);
+        const auto desired=static_cast<int>(bearing/angle_unit);
+        const bool aligned=std::abs(int(static_cast<s16>(desired-player->mAngleY)))<0x900;
+        if (!launch && !player->mIsAirborne && !player->mIsNoControl &&
+            !std::strcmp(state,"St_Walk_Main") && aligned && distance<=390 &&
+            player->mHorzSpeed>=6*4096) {
+            launch=now;
+            std::fprintf(stderr,"[native Spindrift replay] jump tick=%llu uid=%u distance=%.1f speed=%.1f\n",
+                         static_cast<unsigned long long>(now),uid,distance,player->mHorzSpeed/4096.0);
+        }
+        if (now%10==0 && (!launch || now-launch<120)) {
+            std::fprintf(stderr,"[native Spindrift replay] aim tick=%llu uid=%u distance=%.1f height=%.1f vz=%.1f dx=%.1f dz=%.1f state=%s\n",
+                         static_cast<unsigned long long>(now),uid,distance,
+                         (player->mPosY-target->mPosY)/4096.0,player->mVertSpeed/4096.0,
+                         dx/4096.0,dz/4096.0,state);
+        }
+        const int strength=launch ? (now-launch>=120 || distance<47 ? 0 : 22000) : 26000;
+        const double stick_angle=bearing-GetAngleToCamera(0)*angle_unit;
+        const auto buttons=static_cast<uint16_t>(launch && now-launch<15 ? 2 : 0);
+        ntr::input_test_controls(true,buttons,static_cast<int16_t>(std::sin(stick_angle)*strength),
+                                 static_cast<int16_t>(-std::cos(stick_angle)*strength));
+        return true;
+    }
+    // Explicit isolated route markers for acquiring a live flame and breathing
+    // it toward the Deep Freeze ice. Both use the normal Yoshi attack input.
+    const bool snow_flame=level==19 && x==4100 && y==1050 && z==-5797;
+    const bool upper_snow_ice=level==19 && x==3700 && y==1800 && z==4700;
+    const bool snow_ice=upper_snow_ice || (level==19 && x==4300 && y==1350 && z==4100);
+    if((snow_flame || snow_ice) && player->mCharacter==3) {
+        static uint64_t press_until=0, retry_at=0, ice_jump_at=0;
+        const auto now=ntr::rt_frame();
+        const char *state=pc_player_state_name(player);
+        const double bearing=std::atan2(approach_dx,approach_dz);
+        constexpr double angle_unit=6.283185307179586/65536.0;
+        const int desired=static_cast<int>(bearing/angle_unit);
+        const bool aligned=std::abs(int(static_cast<s16>(desired-player->mAngleY)))<0x700;
+        if((snow_flame && player->unk_6f4) || (snow_ice && !player->unk_6f4 && press_until)) {
+            std::fprintf(stderr,"[native Deep Freeze fire replay] %s tick=%llu charge=%u\n",
+                         snow_flame ? "flame-acquired" : "breath-consumed",
+                         static_cast<unsigned long long>(now),unsigned(player->unk_6f4));
+            ++waypoint;
+            press_until=retry_at=0;
+            ice_jump_at=0;
+            settle_until=now+50;
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        const double distance=approach_horizontal/4096.0;
+        const bool ready=!player->mIsAirborne &&
+            (!std::strcmp(state,"St_Wait_Main") || !std::strcmp(state,"St_Walk_Main"));
+        const bool upper_airborne=upper_snow_ice && player->mIsAirborne &&
+            player->mPosY>=1730*4096 && player->mPosY<=1980*4096;
+        const bool attack_ready=upper_snow_ice ? upper_airborne : ready;
+        if(attack_ready && aligned && now>=retry_at &&
+           distance<(snow_flame ? 235 : upper_snow_ice ? 370 : 300)) {
+            press_until=now+8;
+            retry_at=now+65;
+            std::fprintf(stderr,"[native Deep Freeze fire replay] %s tick=%llu distance=%.1f\n",
+                         snow_flame ? "tongue-input" : "breath-input",
+                         static_cast<unsigned long long>(now),distance);
+        }
+        if(upper_snow_ice && !ice_jump_at && aligned && distance<=500 &&
+           player->mPosY>=1490*4096 && player->mPosY<=1510*4096 && !player->mIsAirborne &&
+           player->mHorzSpeed>=10*4096 &&
+           !std::strcmp(state,"St_Walk_Main")) {
+            ice_jump_at=now;
+            std::fprintf(stderr,"[native Deep Freeze fire replay] upper-takeoff tick=%llu distance=%.1f\n",
+                         static_cast<unsigned long long>(now),distance);
+        }
+        const double angle=bearing-GetAngleToCamera(0)*angle_unit;
+        const int strength=((ready || (upper_snow_ice && player->mIsAirborne)) &&
+                            now>=retry_at && (distance>150 || !aligned)) ?
+                            (upper_snow_ice ? 32767 : 12000) : 0;
+        const uint16_t buttons=now<press_until ? 1 : ice_jump_at && now-ice_jump_at<65 ? 2 : 0;
+        ntr::input_test_controls(true,buttons,
+                                 static_cast<int16_t>(std::sin(angle)*strength),
+                                 static_cast<int16_t>(-std::cos(angle)*strength));
+        return true;
+    }
     if(precise && ntr::rt_frame()<settle_until && !maintain_uphill && !fortress_lower_gap) {
         ntr::input_test_controls(true,replay_route_window_buttons(waypoint,true),0,0);return true;
     }
@@ -6922,6 +7761,9 @@ static bool replay_course_route(const char *route_override=nullptr) {
             replay_path::Point points[256];unsigned count=0,route_index=0;
             bool valid=true;
             for(const char *s=route;s && *s;) {
+                // The timed input segment ends this section of the route.
+                if (resume_tick && resume_waypoint > slide_route_base &&
+                    route_index == resume_waypoint) break;
                 if(route_index>=slide_route_base) {
                     int l,px,pz,r,n=0;
                     if(count==256 || std::sscanf(s,"%d:%d:%d:%d%n",&l,&px,&pz,&r,&n)!=4 ||
@@ -7025,7 +7867,18 @@ static bool replay_course_route(const char *route_override=nullptr) {
              (level==2 && x==1990 && y==800 && z==1180));
         const bool maze_backflip=level==13 && player->mAreaId==2 &&
             x==3250 && y==-400 && z==-6200 && jump==2;
-        if(maze_backflip || castle_backflip || (level==21 &&
+        const bool deep_freeze_backflip=level==19 && x==3700 && y==1500 &&
+            (z==4150 || z==4680) && jump==2;
+        const bool snow_silver_backflip=level==19 && x==4300 && y==1345 && z==-4900 && jump==2;
+        if(snow_silver_backflip && data_0209f310[0]>=1) {
+            std::fprintf(stderr,"[native Snowman's Land replay] first silver pickup tick=%llu\n",
+                         static_cast<unsigned long long>(tick));
+            ++waypoint;
+            settle_until=tick+45;
+            ntr::input_test_controls(true,0,0,0);
+            return true;
+        }
+        if(maze_backflip || castle_backflip || deep_freeze_backflip || snow_silver_backflip || (level==21 &&
            (cage_backflip || (x==-2200 && z==-2160) || (x==1110 && z==800) || (x==-3540 && z==4000) || (x==890 && z==3370) || (x==625 && (z==3370 || z==3625))) &&
            std::getenv("SM64DS_PC_TEST_WDW_PLATEAU_JUMP"))) {
             static unsigned launched_waypoint=~0u;
@@ -7054,16 +7907,29 @@ static bool replay_course_route(const char *route_override=nullptr) {
                 if(!launched) {
                     launched_waypoint=waypoint;
                     std::fprintf(stderr,"[native %s] tick=%llu heading=%d\n",
-                        maze_backflip ? "HMC exit backflip" : castle_backflip ? "castle upper landing backflip" : "WDW walkway flip",
+                        maze_backflip ? "HMC exit backflip" : castle_backflip ? "castle upper landing backflip" :
+                        deep_freeze_backflip ? "Deep Freeze block backflip" :
+                        snow_silver_backflip ? "Snowman silver backflip" : "WDW walkway flip",
                         static_cast<unsigned long long>(tick),int(player->mPrevAngleY));
                 }
                 const double angle=std::atan2(dx,dz)-GetAngleToCamera(0)*6.283185307179586/65536.0;
-                const int magnitude=horizontal>(maze_backflip ? 30 : 75)*4096.0 ? 14000 : 0;
+                const int magnitude=horizontal>((maze_backflip || deep_freeze_backflip || snow_silver_backflip) ? 30 : 75)*4096.0 ? 14000 : 0;
                 ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*magnitude),
                                          static_cast<int16_t>(-std::cos(angle)*magnitude));
                 return true;
             }
             if(!launched) {
+                if((deep_freeze_backflip || snow_silver_backflip) && !player->mIsAirborne) {
+                    constexpr double angle_unit=6.283185307179586/65536.0;
+                    const double away=std::atan2(-dx,-dz);
+                    const auto facing=static_cast<int>(away/angle_unit);
+                    if(std::abs(int(static_cast<s16>(facing-player->mAngleY)))>0x600) {
+                        const double angle=away-GetAngleToCamera(0)*angle_unit;
+                        ntr::input_test_controls(true,0,static_cast<int16_t>(std::sin(angle)*12500),
+                                                 static_cast<int16_t>(-std::cos(angle)*12500));
+                        return true;
+                    }
+                }
                 const bool ready=player->mHorzSpeed==0 && !player->mIsAirborne;
                 const uint16_t input=!ready ? 0 : !std::strcmp(state,"St_Crouch_Main") ? 0x102 :
                     !std::strcmp(state,"St_Wait_Main") ? 0x100 : 0;
@@ -7697,6 +8563,18 @@ static bool replay_course_route(const char *route_override=nullptr) {
         static bool route3_jump_command=false,route3_long_jump=false;
         static unsigned downtown_gap_waypoint=~0u;
         if(jump==3) {
+            // The far snow bank is deeper than the waypoint's landing radius.
+            if(level==19 && x==-3680 && y==1000 && z==720 &&
+               player->mPosX<-3600*4096 && player->mPosZ>=720*4096 &&
+               player->mPosZ<1800*4096 && std::abs(int64_t(player->mPosY)-1000*4096)<20*4096 &&
+               !player->mIsAirborne && player->mMeshClsn.IsOnGround()) {
+                std::fprintf(stderr,"[native Snowman's Land replay] far bank landing tick=%llu\n",
+                             static_cast<unsigned long long>(tick));
+                ++waypoint;
+                settle_until=tick+18;
+                ntr::input_test_controls(true,0,0,0);
+                return true;
+            }
             const bool volcano_bully_jump = level == 15 && x == -690 && y == 2385 && z == -2500 &&
                 std::getenv("SM64DS_PC_TEST_VOLCANO_ENTRY");
             const bool wdw_gap=level==21 && x==-1550 && z==-3550 &&
@@ -7909,6 +8787,21 @@ static bool replay_course_route(const char *route_override=nullptr) {
         const char *trapdoor_recovery=std::getenv("SM64DS_PC_TEST_TRAPDOOR_RECOVERY");
         const bool trapdoor_mode=level==46 && jump==3 && trapdoor_recovery && !std::strcmp(trapdoor_recovery,"1");
         if(horizontal_reached && height_reached && !trapdoor_mode) {
+            const char *blizzard_mode = std::getenv("SM64DS_PC_TEST_BLIZZARD_CAP");
+            if (!route_override && level == 19 && waypoint == 37 &&
+                blizzard_mode && *blizzard_mode == '2') {
+                // Reuse the first visit's input timing from the same entrance marker.
+                static uint64_t first_entry = 0;
+                if (!replay_lava_bridge_reentered) {
+                    first_entry = tick;
+                } else if (first_entry) {
+                    replay_blizzard_route_clock_shift = tick - first_entry;
+                    ntr::input_test_button_schedule_shift(replay_blizzard_route_clock_shift);
+                    std::fprintf(stderr, "[native Blizzard cap replay] re-entry clock tick=%llu shift=%llu\n",
+                                 static_cast<unsigned long long>(tick),
+                                 static_cast<unsigned long long>(replay_blizzard_route_clock_shift));
+                }
+            }
             if (level==14 && waypoint==151 &&
                 std::getenv("SM64DS_PC_TEST_LAVA_MESH_LIFT_ROUTE") &&
                 std::getenv("SM64DS_PC_TEST_LAVA_BRIDGE_LIFECYCLE")) {
@@ -8215,7 +9108,8 @@ static bool replay_lava_bridge_lifecycle() {
             const bool select_mission=course_level==21 || std::getenv("SM64DS_PC_TEST_OWL_CYCLE");
             const unsigned target=select_mission ? unsigned(pc_test_mission()-1):0;
             if(selectionReady && !confirmed && selectionMode==0 && tick%20<3)
-                buttons=selected==target && selectionPhase==2?1:course_level==21 && selected<target?0x10:0x20;
+                buttons=select_mission ? (selected==target ? 1 : selected<target ? 0x10 : 0x20)
+                                       : (selected==target && selectionPhase==2 ? 1 : 0x20);
             else if(selectionReady && !confirmed && selectionMode==2 && selected==target &&
                     select_mission && tick%20<3)
                 buttons=1; // Original Yoshi character choice needs a second confirm edge.
@@ -12465,6 +13359,22 @@ static void trace_actor_census(uint64_t frame)
                     unsigned(data_ov001_020ad62c[cap]));
             }
         }
+        if (actor->actorID == 269 && actor->aliveState == 1) {
+            const auto *cap = static_cast<const daObjMarioCap_c *>(actor);
+            const auto &icon = cap->mCapIcon;
+            const unsigned model = unsigned(cap->mModelIndex);
+            if (model < 3) {
+                std::fprintf(stderr,
+                    "[native world cap census] tick=%llu uid=%u character=%u type=%d dormant=%u "
+                    "scale=%d icon_flags=%u icon_kind=%u slot=%d requests=%u dispatch=%u "
+                    "collision_flags=%u hit=%u other=%u\n",
+                    static_cast<unsigned long long>(frame), actor->uniqueID, model, cap->mType,
+                    unsigned(cap->mDormant), cap->mScaleX, unsigned(icon.mFlags),
+                    unsigned(icon.unk_19), icon.mSlot, unsigned(data_ov001_020ad628[model]),
+                    unsigned(data_ov001_020ad62c[model]), unsigned(cap->mdCcAc_c.flags),
+                    unsigned(cap->mdCcAc_c.hitFlags), unsigned(cap->mdCcAc_c.otherOwner));
+            }
+        }
     }
     for (auto *actor = dActor_c::FindWithActorID(318, nullptr); actor;
          actor = dActor_c::FindWithActorID(318, actor)) {
@@ -12826,6 +13736,7 @@ static bool trace_script_progress(uint64_t)
         if(!replay_goomboss_second_hit())
         if(!replay_big_mri_approach())
         if(!replay_mri_circle())
+        if(!replay_blizzard_cap())
         if(!replay_furniture_encounter())
         if(!replay_firesea_first_platform() && !replay_dark_world_island_hold() && !replay_bowser_tail_controls() && !pc_replay_fall_block_crossing() && !pc_replay_fall_block_recovery() && !pc_replay_arrow_contact() && !replay_healing_heart_cycle() && !pc_replay_healing_heart(static_cast<Player *>(data_0209f394[0])) && !pc_replay_koopa(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_lift_ride(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete,replay_lava_bridge_reentered) && !replay_question_block_reentry() && !replay_castle_light_talk_controls() && !replay_castle_tower_entry_controls() && !replay_hatena_switch_controls() && !replay_lava_bridge_lifecycle() && !pc_replay_warp_repeat(static_cast<Player *>(data_0209f394[0]),replay_course_route_complete) && !pc_replay_warp_lifecycle(static_cast<Player *>(data_0209f394[0])) && !replay_toad_controls() && !replay_chomp_controls() && !replay_wdw_skeeter_contact() && !replay_wdw_skeeter_attack() && !replay_wdw_flame_chomp_dodge() && !replay_wdw_flame_chomp_eat() && !replay_waterbomb_controls() && !replay_cannon_cycle_controls() && !replay_cannon_controls() && !replay_buddy_controls() && !replay_rabbit_controls() && !replay_pillar_controls() && !replay_drain_save_controls() && !replay_star_save_controls() && !replay_book_puzzle() && !replay_udlift_return() && !replay_rainbow_castle_entry() && !replay_rainbow_disc() && !replay_carpet_reboard() && !replay_course_route() && !replay_power_star_controls())replay_boss_controls();
     }

@@ -29,6 +29,9 @@ struct daObjIceBlock_c : dBgActor_c {
     u32 mParticleHandle1;         /* 0x35c -- recycled Particle::System handle, effect 0x77 */
     u32 mParticleHandle2;         /* 0x360 -- the same, effect 0x78 */
     dActor_c *mContainedActor;    /* 0x364 -- the actor frozen inside (actor 0xb2), or null */
+#ifdef SM64DS_PLATFORM_PC
+    bool mNativeResourcesLoaded = false;
+#endif
 
     /* Inline is load-bearing: out-of-line emits D0 before D1. */
     virtual ~daObjIceBlock_c() {}

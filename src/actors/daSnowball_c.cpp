@@ -55,6 +55,10 @@
 #include "SharedFilePtr.h"
 
 extern SharedFilePtr data_ov081_02128d90;
+#if defined(SM64DS_PLATFORM_PC) && defined(_MSC_VER)
+// Both actors use the same model handle owned by daSnowman_c.cpp.
+#pragma comment(linker, "/alternatename:?data_ov081_02128d90@@3USharedFilePtr@@A=?data_ov081_02128d90@@3UdaSnowmanModelFilePtr@@A")
+#endif
 extern daSnowball_StateRec data_ov081_02128eb4;
 
 extern "C" {

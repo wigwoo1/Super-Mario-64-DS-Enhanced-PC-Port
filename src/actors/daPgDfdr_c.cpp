@@ -41,6 +41,9 @@
 #include "SharedFilePtr.h"
 #include "TextureSequence.h"
 #include "dBgCh_Gnd.h"
+#if defined(SM64DS_PLATFORM_PC)
+#include "hal/actor_render_probe.h"
+#endif
 
 bool ApproachLinear(short &value, short target, short step);
 
@@ -50,15 +53,21 @@ struct BTP_File;
 /* SharedFilePtr has no fields. This TU reads the file word at +4
    (sinit constructs these as SharedFilePtr; LoadFile/Release take the
    object, SetAnim/SetFile/Prepare read +4). */
-struct FileRef {
+struct FileRef
+#if defined(SM64DS_PLATFORM_PC)
+    : SharedFilePtr
+#endif
+{
     s32 refs;
     void *file;
 };
 
 /* Two 8-byte daPgDfdr_c member pointers (enter, then the per-frame tick). */
+#if !defined(SM64DS_PLATFORM_PC)
 struct StatePair {
     int w[4];
 };
+#endif
 
 enum {
     kStateTurn = 0,
@@ -91,6 +100,12 @@ int func_ov027_02111ca8(daPgDfdr_c *self);
  * __sinit_daPgDfdr_c.cpp from those definitions. The wrapper names are
  * local; the handle constructors and destructors are the ROM resource-family
  * functions, aliased in the manifest. */
+#if defined(SM64DS_PLATFORM_PC)
+using PgDfdrModelFile = FileRef;
+using PgDfdrAnimationFilePtr = FileRef;
+using PgDfdrTexSequenceFilePtr = FileRef;
+using PgDfdrCollisionFilePtr = FileRef;
+#else
 struct PgDfdrModelFile : SharedFilePtr {
     u32 words[2];
 
@@ -129,17 +144,20 @@ struct DfdrStateTable {
     DfdrDesc a, b, c, d;
 };
 
+#endif
 extern PgDfdrCollisionFilePtr data_ov027_02113c6c;
 extern PgDfdrModelFile data_ov027_02113c7c;
 extern PgDfdrTexSequenceFilePtr data_ov027_02113c94;
 extern PgDfdrAnimationFilePtr data_ov027_02113c84;
 extern PgDfdrAnimationFilePtr data_ov027_02113c74;
 extern PgDfdrAnimationFilePtr data_ov027_02113c8c;
+#if !defined(SM64DS_PLATFORM_PC)
 extern DfdrDesc data_ov027_021139d4;
 extern DfdrDesc data_ov027_021139cc;
 extern DfdrDesc data_ov027_021139dc;
 extern DfdrDesc data_ov027_021139c4;
 extern DfdrStateTable data_ov027_02113ce4;
+#endif
 struct PatrolStep {
     s32 distance;
     s32 speed;
@@ -148,6 +166,21 @@ struct PatrolStep {
 };
 extern PatrolStep data_ov027_02113a1c[];
 }
+
+#if defined(SM64DS_PLATFORM_PC)
+namespace {
+struct PenguinCallbacks {
+    void (*enter)(daPgDfdr_c &);
+    void (*update)(daPgDfdr_c &);
+};
+PenguinCallbacks penguinCallbacks[] = {
+    {[](daPgDfdr_c &self) { func_ov027_02111ca8(&self); },
+     [](daPgDfdr_c &self) { func_ov027_02111c48(&self); }},
+    {[](daPgDfdr_c &self) { func_ov027_02111b2c(&self); },
+     [](daPgDfdr_c &self) { self.func_ov027_02111a28(); }},
+};
+}
+#endif
 
 // @symbol daPgDfdr_c_classInit
 extern "C" daPgDfdr_c *daPgDfdr_c_classInit()
@@ -162,13 +195,36 @@ s32 daPgDfdr_c::InitResources()
     void *file;
     Vector3 pos;
 
+#if defined(SM64DS_PLATFORM_PC)
+    static_assert(sizeof(FileRef) == 8);
+    static const bool filesInitialized = [] {
+        data_ov027_02113c7c.Construct(0x3fb);
+        data_ov027_02113c84.Construct(0x406);
+        data_ov027_02113c74.Construct(0x409);
+        data_ov027_02113c8c.Construct(0x3fe);
+        data_ov027_02113c94.Construct(0x407);
+        data_ov027_02113c6c.Construct(0x3fc);
+        return true;
+    }();
+    (void)filesInitialized;
+#endif
     file = Model::LoadFile(*(SharedFilePtr *)&data_ov027_02113c7c);
+#if defined(SM64DS_PLATFORM_PC)
+    bool loaded = file && mModelAnim.SetFile(static_cast<BMD_File *>(file), 1, -1);
+    for (i = 0; i < 3; i++) {
+        if (!dExtFrameCtrl_c::LoadFile(*(SharedFilePtr *)data_ov027_02112ca4[i]))
+            loaded = false;
+    }
+    if (!TextureSequence::LoadFile(data_ov027_02113c94) || !loaded)
+        return 0;
+#else
     mModelAnim.SetFile((BMD_File *)file, 1, -1);
 
     for (i = 0; i < 3; i++)
         dExtFrameCtrl_c::LoadFile(*(SharedFilePtr *)data_ov027_02112ca4[i]);
 
     TextureSequence::LoadFile(*(SharedFilePtr *)&data_ov027_02113c94);
+#endif
     TextureSequence::Prepare(*(BMD_File *)((FileRef *)&data_ov027_02113c7c)->file,
                              *(BTP_File *)((FileRef *)&data_ov027_02113c94)->file);
     _ZN15TextureSequence7SetFileER8BTP_Filei5Fix12IiEj(
@@ -182,6 +238,10 @@ s32 daPgDfdr_c::InitResources()
     func_ov027_02111994(this);
 
     file = dBgW_Kc::LoadFile(*(SharedFilePtr *)&data_ov027_02113c6c);
+#if defined(SM64DS_PLATFORM_PC)
+    if (!file)
+        return 0;
+#endif
     _ZN10dBgW_KcMbg7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
         &mMeshCollider, file, &mClsnMat, 0x199, mAngleY, &data_ov027_021130e8);
     func_020393d4((int *)&mMeshCollider, (int)&dBgW::UpdatePosAndAngs);
@@ -228,6 +288,9 @@ s32 daPgDfdr_c::Behavior()
 // @symbol _ZN10daPgDfdr_c6RenderEv
 s32 daPgDfdr_c::Render()
 {
+#if defined(SM64DS_PLATFORM_PC)
+    const pc_render_probe::Scope probe(this, 0, &mModelAnim.mat4x3);
+#endif
     mTextureSequence.Update(mModelAnim.data);
     mModelAnim.Render(0);
     return 1;
@@ -258,24 +321,36 @@ s32 daPgDfdr_c::CleanupResources()
 /* Select state idx and run its enter function. */
 void daPgDfdr_c::func_ov027_02111d70(int idx)
 {
+#if defined(SM64DS_PLATFORM_PC)
+    mStateTable = &penguinCallbacks[idx];
+#else
     mStateTable = &((StatePair *)&data_ov027_02113ce4)[idx];
+#endif
     func_ov027_02111d38();
 }
 
 // @symbol _ZN10daPgDfdr_c19func_ov027_02111d38Ev
 void daPgDfdr_c::func_ov027_02111d38()
 {
+#if defined(SM64DS_PLATFORM_PC)
+    static_cast<const PenguinCallbacks *>(mStateTable)->enter(*this);
+#else
     typedef void (daPgDfdr_c::*Fn)();
     Fn *fn = (Fn *)mStateTable;
     (this->**fn)();
+#endif
 }
 
 // @symbol _ZN10daPgDfdr_c19func_ov027_02111cfcEv
 void daPgDfdr_c::func_ov027_02111cfc()
 {
+#if defined(SM64DS_PLATFORM_PC)
+    static_cast<const PenguinCallbacks *>(mStateTable)->update(*this);
+#else
     typedef void (daPgDfdr_c::*Fn)();
     Fn *fn = (Fn *)mStateTable + 1;
     (this->**fn)();
+#endif
 }
 
 // @symbol func_ov027_02111ca8
@@ -404,6 +479,17 @@ extern "C" void func_ov027_02111994(daPgDfdr_c *self)
  * handle (file 0x3fb), the three animation handles (files 0x406, 0x409,
  * 0x3fe), the texture-sequence handle (file 0x407), the collision handle
  * (file 0x3fc), then the four state words copied into the state table. */
+#if defined(SM64DS_PLATFORM_PC)
+PgDfdrModelFile data_ov027_02113c7c;
+PgDfdrAnimationFilePtr data_ov027_02113c84;
+PgDfdrAnimationFilePtr data_ov027_02113c74;
+PgDfdrAnimationFilePtr data_ov027_02113c8c;
+PgDfdrTexSequenceFilePtr data_ov027_02113c94;
+PgDfdrCollisionFilePtr data_ov027_02113c6c;
+extern "C" void *data_ov027_02112ca4[] = {
+    &data_ov027_02113c84, &data_ov027_02113c74, &data_ov027_02113c8c
+};
+#else
 PgDfdrModelFile data_ov027_02113c7c(0x3fb);
 PgDfdrAnimationFilePtr data_ov027_02113c84(0x406);
 PgDfdrAnimationFilePtr data_ov027_02113c74(0x409);
@@ -414,3 +500,4 @@ DfdrStateTable data_ov027_02113ce4 = {
     data_ov027_021139d4, data_ov027_021139cc,
     data_ov027_021139dc, data_ov027_021139c4
 };
+#endif

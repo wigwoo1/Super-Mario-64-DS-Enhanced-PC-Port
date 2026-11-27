@@ -4115,8 +4115,8 @@
     },
     {
       "path": "include/daKing_Donketu_c.h",
-      "sha256": "ddc2c211aa27ab377ed72f8f497f29746201b5105d38d881e27f90b7c4431269",
-      "bytes": 12102
+      "sha256": "24db70150cdad97cb5f531ff50b99c061eab3de46229d055eeb7c5d107b89acc",
+      "bytes": 12287
     },
     {
       "path": "include/daKinopio_c.h",
@@ -4450,13 +4450,13 @@
     },
     {
       "path": "include/daObjEwbIce_c.h",
-      "sha256": "e44a46c7810df6a72948b2cf385c661c857f577a09e94493c69839c72629b08f",
-      "bytes": 4758
+      "sha256": "32e59b000c291571c5b04ebd890a6f00bc3d808ef814a67142ffd25f09229020",
+      "bytes": 4792
     },
     {
       "path": "include/daObjEwmIceBlock_c.h",
-      "sha256": "4248b4641241b12f9f656167309015a549368bd2748e462b6007df6a8e8123fc",
-      "bytes": 2113
+      "sha256": "31aaa58826fe6ffc3e40e9172d92a8d0636ec7ab1cf808b927e3957540bc466b",
+      "bytes": 2179
     },
     {
       "path": "include/daObjFallBlock_c.h",
@@ -4590,8 +4590,8 @@
     },
     {
       "path": "include/daObjIceBlock_c.h",
-      "sha256": "9bd3863524569bebe424e603896b35c6b15591bbfa794647787e6e101c98728d",
-      "bytes": 2129
+      "sha256": "333154aab75a37a0d614e2b09a8824fce42c12626f0c79df64ab4fc3a6d2feb1",
+      "bytes": 2203
     },
     {
       "path": "include/daObjIceBoard_c.h",
@@ -6080,8 +6080,8 @@
     },
     {
       "path": "include/Particle__System.h",
-      "sha256": "228e44478fa32a7c70518e1efbde03d5f60ad125aa99a8e752b444d590df6303",
-      "bytes": 2521
+      "sha256": "b3f356680c3f7475c4f66d203d474f6015cac620d2b61728e610addf52830c4c",
+      "bytes": 2604
     },
     {
       "path": "include/Particle__SysTracker.h",
@@ -6265,8 +6265,8 @@
     },
     {
       "path": "port/CMakeLists.txt",
-      "sha256": "9d51c760d1c1aec7d611d789ebf55fe157a28c9bb53fa2595e38affde75ae1bd",
-      "bytes": 92497
+      "sha256": "eed2a6734153eb2f54b24222c0ee105bc8434ee5effd154f9cfa0a36fbc59934",
+      "bytes": 92815
     },
     {
       "path": "port/docs/actor-integration-checkpoint-2026-10-14.md",
@@ -7345,8 +7345,8 @@
     },
     {
       "path": "port/docs/native-tall-tall-mountain-rolling-log-preview.md",
-      "sha256": "a39f35d6d1fb3da59fe4411b3ddd39a617ae089ab9e2a7060821be846e526f82",
-      "bytes": 2978
+      "sha256": "43963e1978f979c1754165c594995a3ec460fa070b46914326dff16e4571980f",
+      "bytes": 3505
     },
     {
       "path": "port/docs/native-texture-ownership-checkpoint-2026-10-15.txt",
@@ -7670,8 +7670,8 @@
     },
     {
       "path": "port/hal/actor_vtables.cpp",
-      "sha256": "feb7b0e05a0c3ee9c4fc6072671be7de7bf81782c84f6db485b52715d8e7d9a7",
-      "bytes": 72093
+      "sha256": "82385f524a5e38896f49ff11c8ab17628a0c4edc9880c7778390ed89746bf445",
+      "bytes": 75747
     },
     {
       "path": "port/hal/anim_bridge.cpp",
@@ -8140,8 +8140,8 @@
     },
     {
       "path": "port/main.cpp",
-      "sha256": "f184396c886e0c861b4a7da279e2e3a21e7f15c8a72d07f16cd0e6673843356e",
-      "bytes": 803191
+      "sha256": "95185c428f6aac6493b3aeb49450c2d09eb1aa81df3a0e926f687ceeb2560173",
+      "bytes": 853736
     },
     {
       "path": "port/ntr/audio.cpp",
@@ -9155,8 +9155,8 @@
     },
     {
       "path": "port/tools/boot_closure.py",
-      "sha256": "c22982eca1f7a6e5025b6b653f51cb00cf74c3984f1d3689699ba5a03ad945b8",
-      "bytes": 71486
+      "sha256": "36c9fe7394faec1700ec577eb5632c7ed56361a44305097db8df7b30c0bbb793",
+      "bytes": 73842
     },
     {
       "path": "port/tools/bowser_host.py",
@@ -9170,8 +9170,8 @@
     },
     {
       "path": "port/tools/bully_host.py",
-      "sha256": "27889ab5ffa5a6e38559a4fb87da2bd1cab502a18728cc777a776b7e4fc0a8d1",
-      "bytes": 6766
+      "sha256": "d2a2c54b6b0c8b480919c3879158ff749d5b7dc397b420ed19b3b559e0ccbf9f",
+      "bytes": 8535
     },
     {
       "path": "port/tools/camera_host.py",
@@ -9315,8 +9315,8 @@
     },
     {
       "path": "port/tools/check_native_actor_data.py",
-      "sha256": "06f11e0ae03716c758fc7be0d4f979de7d7390fff61c43a54be5093bb73f7837",
-      "bytes": 109881
+      "sha256": "0d81803b70d04ccff1a9b5da190326897d8ca771d96a4755f955290e104a9822",
+      "bytes": 114344
     },
     {
       "path": "port/tools/check_native_big_boo_combat.py",
@@ -9477,6 +9477,11 @@
       "path": "port/tools/check_yoshi_swallow_replay.py",
       "sha256": "8f95d8211bb693f9933ebbd28a2871afd1bc68d8a6a89c5387e6f7b986982cbc",
       "bytes": 2009
+    },
+    {
+      "path": "port/tools/chief_chilly_host.py",
+      "sha256": "9e524d039c49e54cea6eeb9f74c9c6f2c508f059c44efb5881e706eecfe7cbd6",
+      "bytes": 13195
     },
     {
       "path": "port/tools/chomp_host.py",
@@ -9670,8 +9675,8 @@
     },
     {
       "path": "port/tools/link_data.py",
-      "sha256": "e810777c9559bdea682a1045886500dc1b3f5a375042cc4a10a74c628666a00c",
-      "bytes": 32137
+      "sha256": "c95b42be3158b87d012186a63a76b7d381e9b5fb6c4db6d433f3443d8dc4f402",
+      "bytes": 32771
     },
     {
       "path": "port/tools/linkage.py",
@@ -9850,8 +9855,8 @@
     },
     {
       "path": "port/tools/simple_lift_host.py",
-      "sha256": "94023c64c239f9b453efcde3274958e81753e8890961b82b515a98f7b14201bf",
-      "bytes": 45523
+      "sha256": "c20a53a3b35e64dfd6d5ac7dbe3f992cfb617aa7a8baa6240375eea1c4525bba",
+      "bytes": 51437
     },
     {
       "path": "port/tools/skeeter_host.py",
@@ -9862,6 +9867,11 @@
       "path": "port/tools/sound_host.py",
       "sha256": "eb486fc9fb330c8f106621b005e70e2f5c3a1d7be0c1852c34f39a7bb0200c14",
       "bytes": 6620
+    },
+    {
+      "path": "port/tools/spindrift_host.py",
+      "sha256": "571e0a0c43d689cb11f28cb4e739b5d72a41de46f9046f37b0773f979aa818df",
+      "bytes": 1600
     },
     {
       "path": "port/tools/star_gate_host.py",
@@ -9895,8 +9905,8 @@
     },
     {
       "path": "port/tools/test_cannon_host.py",
-      "sha256": "fd1219645da87be5ed25d7029bc7b87e3fc363584434fedefd737c9846ddcec6",
-      "bytes": 1943
+      "sha256": "994980a3d7665b4da4e6b02347c22d8b790db91fceeee1da51e08e77d3f4fa5b",
+      "bytes": 2515
     },
     {
       "path": "port/tools/test_floor_switch_host.py",
@@ -13080,8 +13090,8 @@
     },
     {
       "path": "src/actors/daObjSlIceBlock_c.cpp",
-      "sha256": "5dd3b86623bfb1698a25ef2aa752cda747f847ebc9c6d0cde2475359e75ab4dd",
-      "bytes": 6871
+      "sha256": "0e0cb7f510aeff36181590d817475a24f77ad4052b43bed013d9470c4e45e358",
+      "bytes": 7229
     },
     {
       "path": "src/actors/daObjSm_Lift_c.cpp",
@@ -13160,8 +13170,8 @@
     },
     {
       "path": "src/actors/daPgDfdr_c.cpp",
-      "sha256": "a0ab286ba7648a6e0aa09abcafbb1a1cf627ce81dc59543c907483cbcb613895",
-      "bytes": 15450
+      "sha256": "76139018b380a7a1f681c1b0d6acf02b41d098778250476a8acefbd9f0262e7e",
+      "bytes": 18033
     },
     {
       "path": "src/actors/daPicGate_c.cpp",
@@ -13220,13 +13230,13 @@
     },
     {
       "path": "src/actors/daSnmBth_c.cpp",
-      "sha256": "e4095ff2573e8d57e8916de1850e1794b003f5234bae0e957db8a7fa675394fc",
-      "bytes": 13444
+      "sha256": "e12f7d81885e5f644f1e93143f7c6c0e8beee1dd1ca10197532d99f1bcc86e8e",
+      "bytes": 14028
     },
     {
       "path": "src/actors/daSnowball_c.cpp",
-      "sha256": "6e8ef06d626adc258e1266bd5b776745f0f54f40eb732f79de13895c1717ef0a",
-      "bytes": 15690
+      "sha256": "591d9080962de1a67fc1b6f5f709124b54c5dfc968a1a0f0aa8765cf91815566",
+      "bytes": 15949
     },
     {
       "path": "src/actors/daSnowman_c.cpp",

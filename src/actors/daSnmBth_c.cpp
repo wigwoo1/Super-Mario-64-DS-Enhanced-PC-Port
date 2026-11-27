@@ -78,7 +78,13 @@ void InvMat4x3(Matrix4x3 *dst, const Matrix4x3 *src);
 int _ZN5Sound8PlayLongEjjjRK7Vector3s(int handle, unsigned int a,
                                      unsigned int b, void *pos,
                                      unsigned int c);
+#if defined(SM64DS_PLATFORM_PC)
+/* Values assigned by the original ov027 static initializer, which the host
+ * does not execute. The emitter needs them before constructing its particles. */
+Vector3 data_ov027_02113d10 = {0x27a52b, 0xdf2000, 0x2626bb};
+#else
 extern Vector3 data_ov027_02113d10;
+#endif
 extern Matrix4x3 data_020a0e68;
 extern s32 data_0209e650;
 extern u8 data_0209f2d8[];
@@ -125,7 +131,11 @@ void SnowmanBreathParticle::HitPlayer()
         return;
     if (player->mIsBalloon)
         return;
+#if defined(SM64DS_PLATFORM_PC)
+    player->BlowAway(mAngleY);
+#else
     _ZN6Player8BlowAwayEs(player, mAngleY);
+#endif
     if (player->IsCollectingCap())
         return;
     if (player->mHasWings)
@@ -171,6 +181,10 @@ void SnowmanBreathParticle::HitPlayer()
 void SnowmanBreathParticle::CheckSnowman()
 {
     dActor_c *snowman = dActor_c::FindWithActorID(0x102, 0);
+#if defined(SM64DS_PLATFORM_PC)
+    if (!snowman)
+        return;
+#endif
     s32 threshold = mCollider.radius + 0x12b000;
     s32 distance = Vec3_Dist(&mPos, (Vector3 *)&snowman->mPosX);
     if (distance >= threshold)
@@ -256,6 +270,10 @@ int daSnmBth_c::IsPlayerInRange()
 {
     Player *player = ClosestPlayer();
     mTalkPlayer = player;
+#if defined(SM64DS_PLATFORM_PC)
+    if (!player)
+        return 0;
+#endif
 
     Vector3 playerPos;
     Vec3_Asr(&playerPos, (Vector3 *)&player->mPosX, 3);
@@ -361,7 +379,11 @@ int daSnmBth_c::Behavior()
             break;
         case 2:
             if (mTalkPlayer->GetTalkState() == -1) {
+#if defined(SM64DS_PLATFORM_PC)
+                mTalkPlayer->HasFinishedTalking();
+#else
                 _ZN6Player18HasFinishedTalkingEv(mTalkPlayer);
+#endif
                 mTalkDone = 1;
             }
             break;

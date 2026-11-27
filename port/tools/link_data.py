@@ -222,6 +222,9 @@ def records(root: pathlib.Path):
                 # Three halfwords per Fire Sea tilt phase, including the terminator.
                 # The labels at +2/+4 identify columns within the same table.
                 row["size"] = 0x021192dc - row["address"]
+            if module == "ov027" and row["address"] == 0x02113a1c:
+                # The labels in the first patrol step are individual fields.
+                row["size"] = 9 * 12
             if module == "ov091" and row["address"] == 0x02134cdc:
                 # Three ten-node paths. Interior coordinate labels do not end
                 # the array; the native lift also reads node5.y from this span.
@@ -350,6 +353,13 @@ def main() -> int:
     external_names['_data_ov064_0211ba0c'] = 'data_ov064_0211ba0c'
     external_names['_data_ov064_0211ba8c'] = 'data_ov064_0211ba8c'
     external_names['_data_ov064_0211bb6c'] = 'data_ov064_0211bb6c'
+    external_names['_data_ov064_0211bbec'] = 'data_ov064_0211bbec'
+    external_names['_data_ov002_0210d8d4'] = 'data_ov002_0210d8d4'
+    external_names['_data_ov027_021130e8'] = 'data_ov027_021130e8'
+    external_names['_data_ov027_02113a1c'] = 'data_ov027_02113a1c'
+    from chief_chilly_host import ICE_SURFACES
+    external_names.update({'_' + name: name for name in ICE_SURFACES})
+    external_names['_data_ov073_02123040'] = 'data_ov073_02123040'
     from lava_puzzle_host import data_requests as lava_puzzle_data_requests
     external_names.update({'_' + name: name for name in lava_puzzle_data_requests(root)})
     from lava_volcano_host import (BATTAN_SURFACE, COLLISION_SURFACE, FLAMETHROWER_TABLES,

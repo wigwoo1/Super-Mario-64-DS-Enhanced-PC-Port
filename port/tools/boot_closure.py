@@ -41,7 +41,15 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "daMky_c_classInit_MONKEY_STAR", "daMky_c_classInit_MONKEY_THIEF",
                  "daObj_volcanoCannon_c_classInit",
                  "daObjFl_Amilift_c_classInit", "daObjFm_Battan_c_classInit", "daObjLava_c_classInit",
+                 "daObjEwmIceBlock_c_classInit", "daObjIceBlock_c_classInit",
+                 "daObjEwbIce_c_classInit_EWB_ICE_A", "daObjEwbIce_c_classInit_EWB_ICE_B",
+                 "daObjEwbIce_c_classInit_EWB_ICE_C", "_ZN13daObjEwbIce_cD1Ev",
+                 "daKing_Donketu_c_classInit", "daPgDfdr_c_classInit",
+                 "daSnmBth_c_classInit", "_ZN6Player8BlowAwayEs",
+                 "daSnowman_c_classInit", "daSnowball_c_classInit", "daHuwa_c_classInit",
+                 "daObjSlIceBlock_c_classInit_SL_ICEBLOCK", "daObjSlIceBlock_c_classInit_SL_ICEBLOCK_SHOT",
                  "daBbl_c_classInit", "daObjFlamethrower_c_classInit",
+                 "daObjFire_c_classInit_OBJ_RED_FIRE", "daObjFire_c_classInit_OBJ_BLUE_FIRE",
                  "_ZN13daObjMaruta_c6RenderEv", "_ZN13daObjMaruta_c15OnHitByMegaCharER6Player",
                  "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA", "daObjFl_Ukiyuka_c_classInit_FL_UKIYUKA_L",
                  "_ZN17daObjFl_Ukiyuka_c13InitResourcesEv",
@@ -55,6 +63,7 @@ DEFAULT_ROOTS = ("func_0201a054", "func_020197b8",
                  "_ZN6Player5ShockEj",
                  "daObjKm2_Ukishima_c_classInit",
                  "daDonketu_c_classInit", "daBDonketu_c_classInit", "_ZN7daOts_c19InitResourcesCommonEv", "_ZN7daOts_c14BehaviorCommonEv",
+                 "daIDonketu_c_classInit",
                  "daBar_c_classInit",
                  "daObjWcObj01_c_classInit", "_ZN17daObjFloatBoard_c19func_ov002_020b5e58EP27daObjFloatBoard_c_Resources", "_ZN17daObjFloatBoard_c8BehaviorEv", "daObjWcObj06_c_classInit", "daObjWc_Obj02_c_classInit", "daObjWc_Obj03_c_classInit", "daObjWc_Mizu_c_classInit", "daObjSimpleLift_c_classInit_KM1_DERU", "daObjSimpleLift_c_classInit_KM2_RIFUT01", "daObjSimpleBg_c_classInit_DOKAN", "daObjWlSubmarine_c_classInit", "daObjRotateUpdownLift_c_classInit_UPDOWN_LIFT", "daObjKm1_Ukishima_c_classInit", "daObjKm1_Kuruma_c_classInit", "daObjKm1_Kurumajiku_c_classInit",
                  "daObjBSwdoor_c_classInit",
@@ -729,6 +738,28 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import simple_lift_host
                     transformed=simple_lift_host.transform_lava_mesh_lift(root,transformed)
                     rewrites+=1
+                if path.name == 'daObjEwmIceBlock_c.cpp':
+                    import simple_lift_host
+                    transformed=simple_lift_host.transform_moving_ice(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_obj_ice_block.cpp':
+                    import simple_lift_host
+                    transformed = simple_lift_host.transform_ice_block(transformed)
+                    rewrites += 1
+                if path.name in ('d_a_obj_ewb_ice_ewb_ice_a.c', 'd_a_obj_ewb_ice_ewb_ice_b.c',
+                                 'd_a_obj_ewb_ice_ewb_ice_c.c'):
+                    import chief_chilly_host
+                    transformed = chief_chilly_host.transform_ice_factory(transformed)
+                    cpp_marker = True
+                    rewrites += 1
+                if path.name == 'daObjEwbIce_c.cpp':
+                    import chief_chilly_host
+                    transformed = chief_chilly_host.transform_ice(root, transformed)
+                    rewrites += 1
+                if path.name == 'daKing_Donketu_c.cpp':
+                    import chief_chilly_host
+                    transformed = chief_chilly_host.transform_boss(root, transformed)
+                    rewrites += 1
                 if path.name in ('d_a_obj_fl_maruta.cpp', 'd_a_obj_maruta.cpp', 'daObjHmMaruta_c.cpp'):
                     import lava_volcano_host
                     transformed=lava_volcano_host.transform(root,transformed,path.name)
@@ -798,6 +829,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                     import whomp_host
                     transformed=whomp_host.transform(root,transformed)
                     rewrites+=1
+                if path.name == 'daHuwa_c.cpp':
+                    import spindrift_host
+                    transformed=spindrift_host.transform(transformed)
+                    rewrites+=1
                 if path.name == 'daMenbo_c.cpp':
                     import skeeter_host
                     transformed=skeeter_host.transform(root,transformed)
@@ -826,6 +861,10 @@ static_assert(offsetof(daFeather_c,mModel)==0xd4,"native Feather model");
                 if path.name == 'daBDonketu_c.cpp':
                     import bully_host
                     transformed=bully_host.transform_big(root,transformed)
+                    rewrites+=1
+                if path.name == 'd_a_i_donketu.cpp':
+                    import bully_host
+                    transformed=bully_host.transform_chill(root,transformed)
                     rewrites+=1
                 if path.name == 'daOts_c.cpp':
                     import bully_host

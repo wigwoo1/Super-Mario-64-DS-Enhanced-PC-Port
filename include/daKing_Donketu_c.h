@@ -36,8 +36,13 @@ struct daKing_Donketu_c : dEnemyBase_c {
        records at data_ov073_02123320 .. data_ov073_02123410 are filled in by
        __sinit_ov073_02122874. */
     struct State {
+#ifdef SM64DS_PLATFORM_PC
+        int (*enter)(daKing_Donketu_c &);
+        int (*update)(daKing_Donketu_c &);
+#else
         int (daKing_Donketu_c::*enter)();
         int (daKing_Donketu_c::*update)();
+#endif
     };
 
     /* The current state: the address of one of the sixteen state records
@@ -162,6 +167,9 @@ struct daKing_Donketu_c : dEnemyBase_c {
     /* The handle Sound::PlayLong returns for the looping sound several states
        keep alive; they pass it back in every frame. */
     u32 mSoundHandle;                                      /* 0x500 */
+#ifdef SM64DS_PLATFORM_PC
+    u16 mNativeLoadedFiles;
+#endif
 
     /* OUT OF LINE, DECLARED FIRST. `#pragma defer_codegen off` in the TU
        emits D1 then D0 then homeless D2, the cartridge's order. */

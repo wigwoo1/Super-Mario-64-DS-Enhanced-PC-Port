@@ -80,10 +80,43 @@ def transform_big(root, text):
     )
 
 
+def transform_chill(root, text):
+    rom = (root / 'extracted/overlays/overlay_0027.bin').read_bytes()
+    base = 0x021111a0
+    profile = struct.unpack_from('<IHHIiiii', rom, 0x021138d8 - base)
+    assert profile == (0x0211186c, 217, 61, 0x10000006, 0x64000, 0x64000, 0x1000000, 0xbb8000)
+    handles = (0x02113c10, 0x02113c18, 0x02113c08, 0x02113c20, 0x02113c28)
+    assert struct.unpack_from('<5I', rom, 0x021138f4 - base) == handles
+    text = lazy_handles(text, ('IDonketuModelFilePtr', 'IDonketuAnimationFileHandle'))
+    for index, address in enumerate(handles):
+        kind = 'IDonketuModelFilePtr' if index == 0 else 'IDonketuAnimationFileHandle'
+        definition = f'{kind} data_ov027_{address:08x}('
+        assert text.count(definition) == 1
+        text = text.replace(definition, 'extern "C" ' + definition, 1)
+    anchor = '''    mFileTable = (int)data_ov027_021138f4;
+    int r = InitResourcesCommon();'''
+    assert text.count(anchor) == 1
+    text = 'extern "C" int pc_chill_bully_resources();\n' + text.replace(anchor, '''    mFileTable = pc_chill_bully_resources();
+    int r = InitResourcesCommon();
+    if (!r) return 0;''', 1)
+    constructor = '\n'.join(f'        data_ov027_{address:08x}.Construct({0x2e4 + index});'
+                            for index, address in enumerate(handles))
+    return text + (
+        '\nextern "C" void pc_construct_chill_bully_handles() {\n'
+        '    static bool ready = false;\n'
+        '    if (!ready) {\n' + constructor + '\n'
+        '        ready = true;\n'
+        '    }\n'
+        '}\n'
+    )
+
+
 def transform_base(root, text):
     rom = (root / 'extracted/overlays/overlay_0064.bin').read_bytes()
     resource = '\n'.join(resource_config(rom, kind, address)
                          for kind, address in (('small', 0x0211b834), ('big', 0x0211b93c)))
+    chill_rom = (root / 'extracted/overlays/overlay_0027.bin').read_bytes()
+    resource += resource_config(chill_rom, 'chill', 0x021138f4, 27, 0x021111a0)
     anchor = '#define CONFIG(obj)'
     text = text.replace(anchor, resource + '\n' + anchor, 1)
     text = text.replace(
@@ -110,11 +143,11 @@ def transform_base(root, text):
     return '#include <cstdio>\n#include <cstdlib>\n#include "ntr/rt.h"\n' + text
 
 
-def resource_config(rom, kind, address):
-    table = struct.unpack_from('<5I7iI', rom, address - 0x02115ee0)
-    handles = ', '.join(f'&data_ov064_{pointer:08x}' for pointer in table[:5])
+def resource_config(rom, kind, address, overlay=64, base=0x02115ee0):
+    table = struct.unpack_from('<5I7iI', rom, address - base)
+    handles = ', '.join(f'&data_ov{overlay:03d}_{pointer:08x}' for pointer in table[:5])
     values = ', '.join(str(value) for value in table[5:])
-    declarations = '\n'.join(f'extern "C" SharedFilePtr data_ov064_{pointer:08x};'
+    declarations = '\n'.join(f'extern "C" SharedFilePtr data_ov{overlay:03d}_{pointer:08x};'
                              for pointer in table[:5])
     return declarations + f"""
 extern "C" BullyResourceConfig pc_{kind}_bully_config = {{{{{handles}}}, {values}}};

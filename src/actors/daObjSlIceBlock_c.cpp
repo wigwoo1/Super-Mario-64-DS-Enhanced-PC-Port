@@ -62,6 +62,12 @@ struct SlIceBlockClsnFileHandle : SharedFilePtr {
     ~SlIceBlockClsnFileHandle();
 };
 
+#ifdef SM64DS_PLATFORM_PC
+static_assert(sizeof(SlIceBlockModelFilePtr) == 8);
+static_assert(sizeof(SlIceBlockClsnFileHandle) == 8);
+
+#endif
+
 extern SlIceBlockModelFilePtr data_ov027_02113be8;
 extern SlIceBlockClsnFileHandle data_ov027_02113be0;
 
@@ -147,8 +153,15 @@ int daObjSlIceBlock_c::Behavior()
 // @symbol _ZN17daObjSlIceBlock_c13InitResourcesEv
 int daObjSlIceBlock_c::InitResources()
 {
+#ifdef SM64DS_PLATFORM_PC
+    const auto *model = Model::LoadFile(data_ov027_02113be8);
+    const auto *collision = dBgW_Kc::LoadFile(data_ov027_02113be0);
+    if (!model || !collision)
+        return 0;
+#else
     Model::LoadFile(data_ov027_02113be8);
     dBgW_Kc::LoadFile(data_ov027_02113be0);
+#endif
 
     int on = (actorID == 0x5d);
     if (on) {
